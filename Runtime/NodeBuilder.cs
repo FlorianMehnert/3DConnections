@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace com.florian_mehnert._3d_connections.Editor
+namespace Runtime
 {
     public class NodeBuilder : MonoBehaviour
     {

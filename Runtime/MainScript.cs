@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace com.florian_mehnert._3d_connections.Editor
+namespace Runtime
 {
     public class MainScript : MonoBehaviour
     {

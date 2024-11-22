@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace com.florian_mehnert._3d_connections.Editor
+namespace Runtime
 {
     public class ScriptVisualization : MonoBehaviour
     {

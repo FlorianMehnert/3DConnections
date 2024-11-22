@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace com.florian_mehnert._3d_connections.Editor
+namespace Runtime
 {
     public class SceneHandler : MonoBehaviour
     {
@@ -60,6 +60,11 @@ namespace com.florian_mehnert._3d_connections.Editor
                 // Load new Scene in overlapping mode (additive)
                 SceneManager.LoadScene("NewScene", LoadSceneMode.Additive);
             }
+        }
+
+        public OnGui()
+        {
+            
         }
     }
 }
