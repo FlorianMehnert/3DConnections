@@ -1,7 +1,6 @@
 using UnityEngine;
 
-
-namespace _3DConnections
+namespace com.florian_mehnert._3d_connections.Editor
 {
     public class GUIBuilder : MonoBehaviour
     {

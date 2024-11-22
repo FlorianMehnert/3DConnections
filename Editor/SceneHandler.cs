@@ -1,9 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace _3DConnections
+namespace com.florian_mehnert._3d_connections.Editor
 {
     public class SceneHandler : MonoBehaviour
     {

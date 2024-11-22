@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace _3DConnections
+namespace com.florian_mehnert._3d_connections.Editor
 {
     public static class ClassParser
     {
