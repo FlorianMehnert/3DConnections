@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace _3DConnections
 {
-    public class LoadSceneAdditive : MonoBehaviour
+    public class SceneHandler : MonoBehaviour
     {
         private static bool IsSceneLoaded(string sceneName)
         {

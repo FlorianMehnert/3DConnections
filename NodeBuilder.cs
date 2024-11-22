@@ -8,7 +8,7 @@ namespace _3DConnections
     {
         private static void AddNodeAtGameObjectPosition(GameObject referenceObject, Scene scene)
         {
-            LoadSceneAdditive.GetOverlayedScene();
+            SceneHandler.GetOverlayedScene();
 
             var targetPosition = referenceObject.transform.position;
 
