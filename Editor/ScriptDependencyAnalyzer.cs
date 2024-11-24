@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Editor
+namespace _3DConnections.Editor
 {
     public class ScriptDependencyVisualizer : EditorWindow
     {
