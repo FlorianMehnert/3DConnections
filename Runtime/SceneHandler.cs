@@ -61,10 +61,5 @@ namespace Runtime
                 SceneManager.LoadScene("NewScene", LoadSceneMode.Additive);
             }
         }
-
-        public OnGui()
-        {
-            
-        }
     }
 }
