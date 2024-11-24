@@ -1,6 +1,10 @@
 # 3D Connections
 - this plugin requires to be symlinked into the Packages folder of the project you want to use it in
 - add an empty and add the GUIBuilder Script to it
+```bash
+# in the folder of 3D
+ln -s <PATH-TO-3DConnections> <PATH-TO-PACKAGES-FOLDER-IN-YOUR-PROJECT>
+```
 
 ## GUIBuilder
 - executes all Button GUI Methods to ensure proper placement of UI Elements
