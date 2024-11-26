@@ -27,23 +27,24 @@ namespace Runtime
 
         private void SpawnNode()
         {
-            // assemble node
             var mainBody = new GameObject("New Sprite");
             var spriteRenderer = mainBody.AddComponent<SpriteRenderer>();
             var pos = GetNextSpawnPosition();
             mainBody.transform.SetPositionAndRotation(new Vector3(pos.x, pos.y, 0), Quaternion.identity);
+
             var texture = Resources.Load<Texture2D>("Prefabs/Connector");
             var sprite = Sprite.Create(texture,
                 new Rect(0, 0, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f));
             spriteRenderer.sprite = sprite;
             spriteRenderer.color = nodeColor;
-            
-            // save somewhere
+
+            // Add DragHandler to enable dragging
+            mainBody.AddComponent<DragHandler>();
+
             _nodes.Add(new Node(initialSpawnPosition.x, initialSpawnPosition.y, nodeWidth, nodeHeight));
             _nodeCounter++;
 
-            // move to the correct scene add to correct
             var targetScene = SceneManager.GetSceneByName(targetSceneName);
 
             if (!targetScene.isLoaded)
@@ -52,12 +53,11 @@ namespace Runtime
                 return;
             }
 
-            // Move the node to the target scene
             SceneManager.MoveGameObjectToScene(mainBody, targetScene);
 
-            // Configure node appearance and content
             ConfigureNode(mainBody);
         }
+
 
         private Vector2 GetNextSpawnPosition()
         {

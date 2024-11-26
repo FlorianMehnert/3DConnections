@@ -29,11 +29,9 @@ namespace _3DConnections.Editor
             _maxScripts = EditorGUILayout.IntField("Max Scripts", _maxScripts);
             _radius = EditorGUILayout.Slider("Layout Radius", _radius, 5f, 50f);
 
-            if (GUILayout.Button("Open Visualization"))
-            {
-                OpenVisualizationScene();
-                VisualizeDependencies();
-            }
+            if (!GUILayout.Button("Open Visualization")) return;
+            OpenVisualizationScene();
+            VisualizeDependencies();
         }
 
         private void OpenVisualizationScene()
