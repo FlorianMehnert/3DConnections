@@ -11,12 +11,10 @@ namespace Runtime
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-
                 // Check if the scene name matches
-                if (scene.name == sceneName && scene.isLoaded)
-                {
-                    return true;
-                }
+                if (scene.name != sceneName || !scene.isLoaded) continue;
+                Debug.Log("In IsSceneLoaded: found NewScene");
+                return true;
             }
 
             // Return false if no matching scene is found
@@ -24,17 +22,17 @@ namespace Runtime
         }
 
         /// <summary>
-        /// Retrieve the Overlayed Scene if already loaded 
+        /// Retrieve the scene in which the new nodes will be spawned
         /// </summary>
         /// <returns></returns>
         internal static Scene? GetOverlayedScene()
         {
             const string sceneNameToCheck = "NewScene";
-            if (IsSceneLoaded(sceneNameToCheck)) return null;
+            if (!IsSceneLoaded(sceneNameToCheck)) return null;
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-
+                
                 // Check if the scene name matches
                 if (scene is { name: sceneNameToCheck, isLoaded: true })
                 {
