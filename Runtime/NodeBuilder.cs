@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
-using Unity.VisualScripting;
 
 namespace Runtime
 {
@@ -62,7 +60,7 @@ namespace Runtime
 
         private void SpawnTestNodeOnSecondDisplay()
         {
-            // Get second scene
+            // Get the second scene
             var overlayedScene = SceneHandler.GetOverlayedScene();
             
             // create GOs in the overlay scene
@@ -74,7 +72,7 @@ namespace Runtime
                 
             if (secondDisplayCamera)
             {
-                // 1. Create Dummy Node
+                // 1. Create Placeholder Node
                 var nodeObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     
                 // set name allowing to differentiate between them 
@@ -90,8 +88,18 @@ namespace Runtime
                     
                 // might not be required
                 nodeObject.transform.LookAt(secondDisplayCamera.transform);
+                
+                // required to only visible in display2
+                nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
+                
+                // remove BoxCollider and add BoxCollider2D
+                var boxCollider = nodeObject.GetComponent<BoxCollider>();
+                if (boxCollider)
+                {
+                    DestroyImmediate(boxCollider);
+                }
                     
-                // Add to nodes list for later use
+                // Add to a node list for later use
                 _nodes.Add(new Node(
                     initialSpawnPosition.x, 
                     initialSpawnPosition.y + (verticalSpacing * _nodeCounter), 
@@ -104,6 +112,10 @@ namespace Runtime
 
                 // TODO: check if this can be done with fewer steps
                 ConfigureNode(nodeObject);
+                // allow moving
+                
+                
+                nodeObject.AddComponent<DragHandler>();
             }
             else
             {

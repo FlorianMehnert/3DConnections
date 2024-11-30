@@ -1,14 +1,15 @@
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace Runtime
 {
     public class SceneHandler : MonoBehaviour
     {
         public Camera mainCamera;
-        public Camera overlayCamera { get; set; }
-        public Scene overlayScene { get; set; }
+        private Camera OverlayCamera { get; set; }
+        public Scene overlayScene;
 
         private static bool IsSceneLoaded(string sceneName)
         {
@@ -17,7 +18,7 @@ namespace Runtime
             {
                 var scene = SceneManager.GetSceneAt(i);
                 // Check if the scene name matches
-                if (scene.name != sceneName || !scene.isLoaded) continue;
+                if (scene.name != sceneName) continue;
                 return true;
             }
 
@@ -33,22 +34,20 @@ namespace Runtime
         {
             const string sceneNameToCheck = "NewScene";
             if (!IsSceneLoaded(sceneNameToCheck)) return null;
+            Debug.Log("after not loaded");
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-                
+                Debug.Log("scene name: " + scene.name);
+
                 // Check if the scene name matches
                 if (scene is { name: sceneNameToCheck, isLoaded: true })
                 {
                     return scene;
                 }
             }
-            return null;
-        }
 
-        public void ConfigureCamera()
-        {
-            
+            return null;
         }
 
         /// <summary>
@@ -58,7 +57,7 @@ namespace Runtime
         /// <returns>The first camera rendering to display 2</returns>
         private Camera GetOverlayCamera(int display)
         {
-            return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display); 
+            return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
         }
 
         /// <summary>
@@ -66,13 +65,13 @@ namespace Runtime
         /// </summary>
         /// <param name="x">x coordinate on the screen</param>
         /// <param name="y">y coordinate on the screen</param>
-        public void Execute(int x=20, int y=30)
+        public void Execute(int x = 20, int y = 30)
         {
             // 1. load scene if not already loaded additively
-            // 2. set camera to render correct stuffs
-            
+            // 2. set the camera to render correct stuffs
+
             const string sceneNameToCheck = "NewScene";
-            
+
             // ACTION_REQUIRED: Add OverlayScene layer to project
             const string layerOverlay = "OverlayScene";
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
@@ -82,21 +81,45 @@ namespace Runtime
                 SceneManager.LoadScene("NewScene", LoadSceneMode.Additive);
             }
 
+            Debug.Log("the overlayed scene is: " + overlayScene.name);
+
             var scene = GetOverlayedScene();
+            Debug.Log("the overlayed scene is: " + overlayScene.name);
+            Debug.Log(scene);
             if (scene != null)
             {
                 overlayScene = (Scene)scene;
             }
             else
             {
-                Debug.LogError("GetOverlayedScene failed to get a scene in SceneHandler");
+                Debug.LogWarning("GetOverlayedScene failed to get a scene in SceneHandler");
             }
 
             var overlayLayerMask = LayerMask.NameToLayer(layerOverlay);
-            
-            // find a camera that is rendering to the second display (display 1) in a multi display else set to null
+
+            // find a camera rendering to the second display (display 1) in a multi display else set to null
             mainCamera = GetOverlayCamera(0);
-            overlayCamera = GetOverlayCamera(1);
+            OverlayCamera = GetOverlayCamera(1);
+            
+            // disable culling Mask for the main camera and enable for overlay camera
+            if (mainCamera)
+            {
+                mainCamera.cullingMask &= ~(1 << overlayLayerMask);
+            }
+            else
+            {
+                Debug.LogWarning("MainCamera not available");
+            }
+
+            if (OverlayCamera)
+            {
+                OverlayCamera.cullingMask = 1 << overlayLayerMask;
+            }
+            else
+            {
+                Debug.LogWarning("OverlayCamera not available");
+            }
+
             
         }
     }
