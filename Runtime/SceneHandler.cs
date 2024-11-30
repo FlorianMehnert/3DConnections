@@ -13,7 +13,6 @@ namespace Runtime
                 var scene = SceneManager.GetSceneAt(i);
                 // Check if the scene name matches
                 if (scene.name != sceneName || !scene.isLoaded) continue;
-                Debug.Log("In IsSceneLoaded: found NewScene");
                 return true;
             }
 
