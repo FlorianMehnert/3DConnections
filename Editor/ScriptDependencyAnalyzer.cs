@@ -11,7 +11,6 @@ namespace _3DConnections.Editor
     public class ScriptDependencyVisualizer : EditorWindow
     {
         private SceneAsset _previousScene;
-        private Scene _visualizationScene;
         private string _namespaceFilter = "";
         private int _maxScripts = 100;
         private float _radius = 15f;
@@ -37,7 +36,7 @@ namespace _3DConnections.Editor
         private void OpenVisualizationScene()
         {
             _previousScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(SceneManager.GetActiveScene().path);
-            _visualizationScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
         }
 
         private void VisualizeDependencies()
@@ -97,7 +96,7 @@ namespace _3DConnections.Editor
             }
         }
 
-        private List<MonoScript> GetScriptDependencies(MonoScript script)
+        private static List<MonoScript> GetScriptDependencies(MonoScript script)
         {
             var dependencies = new List<MonoScript>();
             var scriptText = script.text;
@@ -105,20 +104,10 @@ namespace _3DConnections.Editor
             if (scriptClass == null) return dependencies;
 
             var referencedClasses = Regex.Matches(scriptText, @"\busing\s+([A-Za-z0-9_.]+);")
-                .Cast<Match>()
                 .Select(match => match.Groups[1].Value)
                 .Distinct();
 
-            foreach (var otherScript in Resources.FindObjectsOfTypeAll<MonoScript>())
-            {
-                var otherClass = otherScript.GetClass();
-                var classes = referencedClasses as string[] ?? referencedClasses.ToArray();
-                var enumerable = referencedClasses as string[] ?? classes.ToArray();
-                if (otherClass != null && enumerable.Contains(otherClass.Namespace))
-                {
-                    dependencies.Add(otherScript);
-                }
-            }
+            dependencies.AddRange(from otherScript in Resources.FindObjectsOfTypeAll<MonoScript>() let otherClass = otherScript.GetClass() let referencedClasses1 = referencedClasses as string[] ?? referencedClasses.ToArray() let classes = referencedClasses as string[] ?? referencedClasses1.ToArray() let enumerable = referencedClasses as string[] ?? classes.ToArray() where otherClass != null && enumerable.Contains(otherClass.Namespace) select otherScript);
 
             return dependencies;
         }

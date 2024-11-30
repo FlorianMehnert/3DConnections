@@ -62,7 +62,7 @@ namespace Runtime
         private Vector2 GetNextSpawnPosition()
         {
             // Calculate spawn position with vertical offset
-            return initialSpawnPosition + (Vector2.up * (verticalSpacing * _nodeCounter++));
+            return initialSpawnPosition + Vector2.up * (verticalSpacing * _nodeCounter++);
         }
 
         private void ConfigureNode(GameObject nodeObject)
@@ -89,30 +89,10 @@ namespace Runtime
             }
         }
 
-        private static void AddNodeAtGameObjectPosition(GameObject referenceObject, Scene scene)
-        {
-            SceneHandler.GetOverlayedScene();
-
-            var targetPosition = referenceObject.transform.position;
-
-            var newNode = new GameObject("NewNode")
-            {
-                transform = { position = targetPosition }
-            };
-
-            // Move the new node to the second scene
-            SceneManager.MoveGameObjectToScene(newNode, scene);
-        }
-
         public void Execute(int x = 20, int y = 60)
         {
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
             SpawnNode();
-        }
-
-        public void SetTargetScene(string sceneName)
-        {
-            targetSceneName = sceneName;
         }
     }
 }
