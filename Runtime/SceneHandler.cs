@@ -1,7 +1,7 @@
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 
 namespace Runtime
 {
@@ -10,6 +10,7 @@ namespace Runtime
         public Camera mainCamera;
         private Camera OverlayCamera { get; set; }
         public Scene overlayScene;
+        private const string LayerOverlay = "OverlayScene";
 
         private static bool IsSceneLoaded(string sceneName)
         {
@@ -24,6 +25,70 @@ namespace Runtime
 
             // Return false if no matching scene is found
             return false;
+        }
+
+        private void LoadSceneAndWait(string sceneName)
+        {
+            StartCoroutine(LoadSceneCoroutine(sceneName));
+        }
+
+        private IEnumerator LoadSceneCoroutine(string sceneName)
+        {
+            // Start loading the scene asynchronously
+            var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+
+            // Wait until the scene is fully loaded
+            while (!asyncLoad.isDone)
+            {
+                // Optionally, you can use asyncLoad.progress to display loading progress (0.0 to 0.9).
+                yield return null;
+            }
+
+            // Scene is fully loaded
+            OnSceneLoaded();
+        }
+
+        private void OnSceneLoaded()
+        {
+            Debug.Log("Scene fully loaded!");
+            Debug.Log("the overlayed scene is: " + overlayScene.name);
+
+            var scene = GetOverlayedScene();
+            Debug.Log("the overlayed scene is: " + overlayScene.name);
+            Debug.Log(scene);
+            if (scene != null)
+            {
+                overlayScene = (Scene)scene;
+            }
+            else
+            {
+                Debug.LogWarning("GetOverlayedScene failed to get a scene in SceneHandler");
+            }
+
+            var overlayLayerMask = LayerMask.NameToLayer(LayerOverlay);
+
+            // find a camera rendering to the second display (display 1) in a multi display else set to null
+            mainCamera = GetOverlayCamera(0);
+            OverlayCamera = GetOverlayCamera(1);
+            
+            // disable culling Mask for the main camera and enable for overlay camera
+            if (mainCamera)
+            {
+                mainCamera.cullingMask &= ~(1 << overlayLayerMask);
+            }
+            else
+            {
+                Debug.LogWarning("MainCamera not available");
+            }
+
+            if (OverlayCamera)
+            {
+                OverlayCamera.cullingMask = 1 << overlayLayerMask;
+            }
+            else
+            {
+                Debug.LogWarning("OverlayCamera not available");
+            }
         }
 
         /// <summary>
@@ -41,7 +106,7 @@ namespace Runtime
                 Debug.Log("scene name: " + scene.name);
 
                 // Check if the scene name matches
-                if (scene is { name: sceneNameToCheck, isLoaded: true })
+                if (scene is { name: sceneNameToCheck })
                 {
                     return scene;
                 }
@@ -73,54 +138,12 @@ namespace Runtime
             const string sceneNameToCheck = "NewScene";
 
             // ACTION_REQUIRED: Add OverlayScene layer to project
-            const string layerOverlay = "OverlayScene";
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
             if (!IsSceneLoaded(sceneNameToCheck))
             {
                 // Load new Scene in overlapping mode (additive)
-                SceneManager.LoadScene("NewScene", LoadSceneMode.Additive);
+                LoadSceneAndWait("NewScene");
             }
-
-            Debug.Log("the overlayed scene is: " + overlayScene.name);
-
-            var scene = GetOverlayedScene();
-            Debug.Log("the overlayed scene is: " + overlayScene.name);
-            Debug.Log(scene);
-            if (scene != null)
-            {
-                overlayScene = (Scene)scene;
-            }
-            else
-            {
-                Debug.LogWarning("GetOverlayedScene failed to get a scene in SceneHandler");
-            }
-
-            var overlayLayerMask = LayerMask.NameToLayer(layerOverlay);
-
-            // find a camera rendering to the second display (display 1) in a multi display else set to null
-            mainCamera = GetOverlayCamera(0);
-            OverlayCamera = GetOverlayCamera(1);
-            
-            // disable culling Mask for the main camera and enable for overlay camera
-            if (mainCamera)
-            {
-                mainCamera.cullingMask &= ~(1 << overlayLayerMask);
-            }
-            else
-            {
-                Debug.LogWarning("MainCamera not available");
-            }
-
-            if (OverlayCamera)
-            {
-                OverlayCamera.cullingMask = 1 << overlayLayerMask;
-            }
-            else
-            {
-                Debug.LogWarning("OverlayCamera not available");
-            }
-
-            
         }
     }
 }
