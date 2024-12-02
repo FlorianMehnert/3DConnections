@@ -4,12 +4,12 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [Header("Zoom Settings")]
-    public float zoomSpeed = 5f;
-    public float minOrthographicSize = 2f;
-    public float maxOrthographicSize = 20f;
+    public float zoomSpeed = 10f;
+    public float minOrthographicSize = .1f;
+    public float maxOrthographicSize = 200f;
 
     [Header("Pan Settings")]
-    public float basePanSpeed = 0.5f;
+    public float basePanSpeed = 1;
 
     private Camera _cam;
     private Vector3 _lastMousePosition;

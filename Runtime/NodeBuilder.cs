@@ -1,15 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using TMPro;
 
 namespace Runtime
 {
     public class NodeBuilder : MonoBehaviour
     {
-        private List<Node> _nodes = new();
+        private readonly List<Node> _nodes = new();
+        private readonly Dictionary<string, Node> _scripts = new();
 
         [Header("Node Configuration")] [SerializeField]
         private float nodeWidth = 2.0f;
@@ -25,45 +27,12 @@ namespace Runtime
 
         private int _nodeCounter;
 
-        private void SpawnNode()
-        {
-            var mainBody = new GameObject("New Sprite");
-            var spriteRenderer = mainBody.AddComponent<SpriteRenderer>();
-            var pos = GetNextSpawnPosition();
-            mainBody.transform.SetPositionAndRotation(new Vector3(pos.x, pos.y, 0), Quaternion.identity);
-
-            var texture = Resources.Load<Texture2D>("Prefabs/Connector");
-            var sprite = Sprite.Create(texture,
-                new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f));
-            spriteRenderer.sprite = sprite;
-            spriteRenderer.color = nodeColor;
-
-            // Add DragHandler to enable dragging
-            mainBody.AddComponent<DragHandler>();
-
-            _nodes.Add(new Node(initialSpawnPosition.x, initialSpawnPosition.y, nodeWidth, nodeHeight));
-            _nodeCounter++;
-
-            var targetScene = SceneManager.GetSceneByName(targetSceneName);
-
-            if (!targetScene.isLoaded)
-            {
-                Debug.LogError($"Target scene '{targetSceneName}' is not loaded!");
-                return;
-            }
-
-            SceneManager.MoveGameObjectToScene(mainBody, targetScene);
-
-            ConfigureNode(mainBody);
-        }
-
         /// <summary>
         /// Spawn a single node on the display
         /// </summary>
         /// <param name="spawnPosition"></param>
         /// <param name="nodeExtend"></param>
-        /// <param name="display">display in which the node will be visible where <b>0</b> is display 1 and <b>1</b> is display 2</param>
+        /// <param name="display">display in which the node will be visible where <b>0</b> is display 1, and <b>1</b> is display 2</param>
         private void SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, int display = 1)
         {
             // Get the second scene
@@ -101,6 +70,7 @@ namespace Runtime
 
                 // Add to a node list for later use
                 _nodes.Add(new Node(
+                    "TestNode_" + _nodeCounter,
                     spawnPosition.x,
                     spawnPosition.y,
                     nodeExtend.x,
@@ -122,20 +92,65 @@ namespace Runtime
             }
         }
 
-        public void InitialSpawnNodes(List<Node> nodes, int display)
+        private void InitialSpawnNodes(int display)
         {
+            var nodes = _nodes.ToArray();
             foreach (var node in nodes)
             {
                 SpawnTestNodeOnSecondDisplay(new Vector3(node.X, node.Y, 0), new Vector3(node.Height, node.Width, 1f), display);
             }
         }
-
-
-        private Vector2 GetNextSpawnPosition()
+        
+        /// <summary>
+        /// Create references between nodes
+        /// </summary>
+        /// <param name="reference"></param>
+        /// <param name="sourceNode"></param>
+        private void CreateReference(KeyValuePair<string, ClassReferences> reference, Node sourceNode)
         {
-            // Calculate spawn position with vertical offset
-            return initialSpawnPosition + Vector2.up * (verticalSpacing * _nodeCounter++);
+            foreach (var className in reference.Value.References.Select(referencedScript =>
+                         referencedScript.Contains(".")
+                             ? referencedScript[
+                                 (referencedScript.LastIndexOf(".", StringComparison.Ordinal) + 1)..]
+                             : referencedScript))
+            {
+                if (_scripts.TryGetValue(className, out var targetNode))
+                {
+                    CreateEdge(sourceNode, targetNode);
+                }
+            }
         }
+
+        private void CreateEdge(Node sourceNode, Node targetNode)
+        {
+        }
+
+        /// <summary>
+        /// Populates _nodes using scripts found in the project
+        /// </summary>
+        private void FindScriptNodes(string path)
+        {
+            Dictionary<string, ClassReferences> allReferences;
+            {
+                allReferences = ClassParser.GetAllClassReferencesParallel(path);
+            }
+
+            foreach (var (scriptName, _) in allReferences)
+            {
+                var node = new Node (scriptName, 0, 0, nodeWidth, nodeHeight );
+                _scripts[scriptName] = node;
+                _nodes.Add(node);
+            }
+
+            Parallel.ForEach(allReferences, reference =>
+            {
+                var sourceScriptName = reference.Key;
+                if (!_scripts.TryGetValue(sourceScriptName, out var sourceNode)) return;
+
+                CreateReference(reference, sourceNode);
+            });
+        }
+
 
         /// <summary>
         /// Set node color, 
@@ -160,11 +175,8 @@ namespace Runtime
         public void Execute(int x = 20, int y = 60)
         {
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
-            SpawnTestNodeOnSecondDisplay(new Vector3(0, 0, 0), new Vector3(nodeWidth, nodeHeight, 1f));
-            SpawnTestNodeOnSecondDisplay(new Vector3(1, 1.5f, 0), new Vector3(nodeWidth, nodeHeight, 1f));
-            SpawnTestNodeOnSecondDisplay(new Vector3(3, 1.5f, 0), new Vector3(nodeWidth, nodeHeight, 1f));
-            SpawnTestNodeOnSecondDisplay(new Vector3(3, 3, 0), new Vector3(nodeWidth, nodeHeight, 1f));
-            SpawnTestNodeOnSecondDisplay(new Vector3(4.5f, 4, 0), new Vector3(nodeWidth, nodeHeight, 1f));
+            FindScriptNodes("/home/florian/gamedev");
+            InitialSpawnNodes(1);
         }
     }
 }

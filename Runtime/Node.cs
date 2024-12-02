@@ -2,13 +2,16 @@ namespace Runtime
 {
     public class Node
     {
-        public float X { get; private set; }
-        public float Y { get; private set; }
-        public float Width { get; private set; }
-        public float Height { get; private set; }
+        
+        public string Name;
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Width { get; set; }
+        public float Height { get; set; }
 
-        public Node(float x, float y, float width, float height)
+        public Node(string name, float x, float y, float width, float height)
         {
+            Name = name;
             X = x;
             Y = y;
             Width = width;
