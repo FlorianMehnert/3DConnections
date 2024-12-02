@@ -120,7 +120,7 @@ namespace Runtime
         /// </summary>
         /// <param name="display">The display to which the found camera should render to where 0 is display 1 and 1 is display 2</param>
         /// <returns>The first camera rendering to display 2</returns>
-        private Camera GetOverlayCamera(int display)
+        public static Camera GetOverlayCamera(int display)
         {
             return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
         }
