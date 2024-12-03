@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -19,13 +20,18 @@ namespace Runtime
         [SerializeField] private float nodeHeight = 1.0f;
         [SerializeField] private Color nodeColor = Color.white;
 
-        [Header("Spawn Settings")] [SerializeField]
-        private Vector2 initialSpawnPosition = new(0, 0);
-
         [SerializeField] private float verticalSpacing = 1.5f;
         [SerializeField] private string targetSceneName = "SecondDisplayScene"; // Scene to spawn nodes in
-
+        
+        [SerializeField] private NodeConnectionManager connectionManager;
+        
         private int _nodeCounter;
+
+        private void Start()
+        {
+            connectionManager = GetComponent<NodeConnectionManager>();
+        }
+        
 
         /// <summary>
         /// Spawn a single node on the display
@@ -33,13 +39,14 @@ namespace Runtime
         /// <param name="spawnPosition"></param>
         /// <param name="nodeExtend"></param>
         /// <param name="display">display in which the node will be visible where <b>0</b> is display 1, and <b>1</b> is display 2</param>
-        private void SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, int display = 1)
+        [CanBeNull]
+        private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, int display = 1)
         {
             // Get the second scene
             var overlayedScene = SceneHandler.GetOverlayedScene();
 
             // create GOs in the overlay scene
-            if (overlayedScene == null) return;
+            if (overlayedScene == null) return null;
             SceneManager.SetActiveScene((Scene)overlayedScene);
 
             // 0. Get overlayed camera for second display
@@ -85,11 +92,14 @@ namespace Runtime
 
                 // allow dragging nodes
                 nodeObject.AddComponent<DragHandler>();
+                return nodeObject;
             }
             else
             {
                 Debug.Log("did not find second camera");
             }
+
+            return null;
         }
 
         private void InitialSpawnNodes(int display)
@@ -175,8 +185,13 @@ namespace Runtime
         public void Execute(int x = 20, int y = 60)
         {
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
-            FindScriptNodes("/home/florian/gamedev");
-            InitialSpawnNodes(1);
+            
+            //FindScriptNodes("/home/florian/gamedev");
+            //InitialSpawnNodes(1);
+            var node1 = SpawnTestNodeOnSecondDisplay(new Vector3(0,0,0), new Vector3(nodeWidth, nodeHeight, 1f));
+            var node2 = SpawnTestNodeOnSecondDisplay(new Vector3(8,8,8), new Vector3(nodeWidth, nodeHeight, 1f));
+            connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+
         }
     }
 }
