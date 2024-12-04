@@ -99,11 +99,9 @@ namespace Runtime
         {
             const string sceneNameToCheck = "NewScene";
             if (!IsSceneLoaded(sceneNameToCheck)) return null;
-            Debug.Log("after not loaded");
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-                Debug.Log("scene name: " + scene.name);
 
                 // Check if the scene name matches
                 if (scene is { name: sceneNameToCheck })

@@ -22,16 +22,16 @@ namespace Runtime
 
         [SerializeField] private float verticalSpacing = 1.5f;
         [SerializeField] private string targetSceneName = "SecondDisplayScene"; // Scene to spawn nodes in
-        
+
         [SerializeField] private NodeConnectionManager connectionManager;
-        
+
         private int _nodeCounter;
 
         private void Start()
         {
             connectionManager = GetComponent<NodeConnectionManager>();
         }
-        
+
 
         /// <summary>
         /// Spawn a single node on the display
@@ -54,26 +54,23 @@ namespace Runtime
 
             if (secondDisplayCamera)
             {
-                // 1. Create Placeholder Node
                 var nodeObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+                // Ensure renderer and material are set up
+                //EnsureRendererWithMaterial(nodeObject);
+
 
                 // set name allowing to differentiate between them 
                 nodeObject.name = $"TestNode_{_nodeCounter}";
                 nodeObject.transform.localScale = nodeExtend;
+                nodeObject.transform.position = CalculateNodePosition(secondDisplayCamera, spawnPosition);
 
-                nodeObject.transform.position = secondDisplayCamera.transform.position 
-                                                + secondDisplayCamera.transform.forward * 5f 
-                                                + spawnPosition;
 
                 // required to only visible in display2
                 nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
 
-                // remove BoxCollider and add BoxCollider2D
-                var boxCollider = nodeObject.GetComponent<BoxCollider>();
-                if (boxCollider)
-                {
-                    DestroyImmediate(boxCollider);
-                }
+
+                RemoveAndReplaceCollider(nodeObject);
 
                 // Add to a node list for later use
                 _nodes.Add(new Node(
@@ -87,19 +84,35 @@ namespace Runtime
                 // Increment node counter - remove later
                 _nodeCounter++;
 
-                // TODO: check if this can be done with fewer steps
                 ConfigureNode(nodeObject);
 
                 // allow dragging nodes
                 nodeObject.AddComponent<DragHandler>();
                 return nodeObject;
             }
-            else
-            {
-                Debug.Log("did not find second camera");
-            }
+
+            Debug.Log("did not find second camera");
 
             return null;
+        }
+
+        private static void RemoveAndReplaceCollider(GameObject nodeObject)
+        {
+            // Remove 3D box collider
+            var boxCollider = nodeObject.GetComponent<BoxCollider>();
+            if (boxCollider)
+            {
+                DestroyImmediate(boxCollider);
+            }
+
+            nodeObject.AddComponent<BoxCollider2D>();
+        }
+
+        private static Vector3 CalculateNodePosition(Camera secondDisplayCamera, Vector3 spawnPosition)
+        {
+            return secondDisplayCamera.transform.position
+                   + secondDisplayCamera.transform.forward * 5f
+                   + spawnPosition;
         }
 
         private void InitialSpawnNodes(int display)
@@ -110,7 +123,7 @@ namespace Runtime
                 SpawnTestNodeOnSecondDisplay(new Vector3(node.X, node.Y, 0), new Vector3(node.Height, node.Width, 1f), display);
             }
         }
-        
+
         /// <summary>
         /// Create references between nodes
         /// </summary>
@@ -147,7 +160,7 @@ namespace Runtime
 
             foreach (var (scriptName, _) in allReferences)
             {
-                var node = new Node (scriptName, 0, 0, nodeWidth, nodeHeight );
+                var node = new Node(scriptName, 0, 0, nodeWidth, nodeHeight);
                 _scripts[scriptName] = node;
                 _nodes.Add(node);
             }
@@ -185,11 +198,11 @@ namespace Runtime
         public void Execute(int x = 20, int y = 60)
         {
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
-            
+
             //FindScriptNodes("/home/florian/gamedev");
             //InitialSpawnNodes(1);
-            var node1 = SpawnTestNodeOnSecondDisplay(new Vector3(0,0,0), new Vector3(nodeWidth, nodeHeight, 1f));
-            var node2 = SpawnTestNodeOnSecondDisplay(new Vector3(8,8,0), new Vector3(nodeWidth, nodeHeight, 1f));
+            var node1 = SpawnTestNodeOnSecondDisplay(new Vector3(0, 0, 0), new Vector3(nodeWidth, nodeHeight, 1f));
+            var node2 = SpawnTestNodeOnSecondDisplay(new Vector3(8, 8, 0), new Vector3(nodeWidth, nodeHeight, 1f));
             connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
         }
     }
