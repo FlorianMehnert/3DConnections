@@ -189,9 +189,8 @@ namespace Runtime
             //FindScriptNodes("/home/florian/gamedev");
             //InitialSpawnNodes(1);
             var node1 = SpawnTestNodeOnSecondDisplay(new Vector3(0,0,0), new Vector3(nodeWidth, nodeHeight, 1f));
-            var node2 = SpawnTestNodeOnSecondDisplay(new Vector3(8,8,8), new Vector3(nodeWidth, nodeHeight, 1f));
+            var node2 = SpawnTestNodeOnSecondDisplay(new Vector3(8,8,0), new Vector3(nodeWidth, nodeHeight, 1f));
             connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-
         }
     }
 }

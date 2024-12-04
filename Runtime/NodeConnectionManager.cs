@@ -1,89 +1,83 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class NodeConnectionManager : MonoBehaviour
 {
-    // Represents a connection between two nodes
     [System.Serializable]
     public class NodeConnection
     {
         public GameObject startNode;
         public GameObject endNode;
+        public LineRenderer lineRenderer;
         public Color connectionColor = Color.white;
         public float lineWidth = 0.1f;
-        
-        // Optional: Custom data for the connection
-        public object Metadata;
     }
 
-    // List of all connections
     public List<NodeConnection> connections = new();
-
-    // Line renderer prefab for drawing connections
     public GameObject lineRendererPrefab;
 
-    // Add a new connection between nodes
     public void AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 0.1f)
     {
+        // Create line renderer
+        var lineObj = Instantiate(lineRendererPrefab, transform);
+        var lineRenderer = lineObj.GetComponent<LineRenderer>();
+
         var newConnection = new NodeConnection
         {
             startNode = startNode,
             endNode = endNode,
+            lineRenderer = lineRenderer,
             connectionColor = color ?? Color.white,
             lineWidth = lineWidth
         };
         
-        connections.Add(newConnection);
-        DrawConnection(newConnection);
-    }
-
-    // Draw a specific connection
-    private void DrawConnection(NodeConnection connection)
-    {
-        // Instantiate line renderer
-        var lineObj = Instantiate(lineRendererPrefab);
-        var lineRenderer = lineObj.GetComponent<LineRenderer>();
-
         // Configure line renderer
-        lineRenderer.startColor = connection.connectionColor;
-        lineRenderer.endColor = connection.connectionColor;
-        lineRenderer.startWidth = connection.lineWidth;
-        lineRenderer.endWidth = connection.lineWidth;
-
-        // Set line positions
+        lineRenderer.startColor = newConnection.connectionColor;
+        lineRenderer.endColor = newConnection.connectionColor;
+        lineRenderer.startWidth = newConnection.lineWidth;
+        lineRenderer.endWidth = newConnection.lineWidth;
         lineRenderer.positionCount = 2;
-        lineRenderer.SetPosition(0, connection.startNode.transform.position);
-        lineRenderer.SetPosition(1, connection.endNode.transform.position);
+
+        connections.Add(newConnection);
     }
 
-    // Update connections if nodes move
     private void Update()
     {
         UpdateConnectionPositions();
     }
 
-    // Refresh line renderer positions
     private void UpdateConnectionPositions()
     {
-        foreach (var connection in connections)
+        foreach (var connection in connections.Where(connection => connection.startNode && connection.endNode && connection.lineRenderer))
         {
-            var lineRenderer = connection.startNode.GetComponentInChildren<LineRenderer>();
-            if (!lineRenderer) continue;
-            lineRenderer.SetPosition(0, connection.startNode.transform.position);
-            lineRenderer.SetPosition(1, connection.endNode.transform.position);
+            connection.lineRenderer.SetPosition(0, connection.startNode.transform.position);
+            connection.lineRenderer.SetPosition(1, connection.endNode.transform.position);
         }
     }
 
-    // Remove a specific connection
     public void RemoveConnection(GameObject startNode, GameObject endNode)
     {
-        connections.RemoveAll(conn => 
-            conn.startNode == startNode && conn.endNode == endNode);
+        for (var i = connections.Count - 1; i >= 0; i--)
+        {
+            var conn = connections[i];
+            if (conn.startNode != startNode || conn.endNode != endNode) continue;
+            // Destroy line renderer
+            if (conn.lineRenderer != null)
+                Destroy(conn.lineRenderer.gameObject);
+                
+            // Remove from the list
+            connections.RemoveAt(i);
+        }
     }
 
-    // Clear all connections
     public void ClearConnections()
     {
+        foreach (var conn in connections.Where(conn => conn.lineRenderer != null))
+        {
+            Destroy(conn.lineRenderer.gameObject);
+        }
+
         connections.Clear();
     }
 }
