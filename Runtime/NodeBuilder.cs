@@ -69,6 +69,10 @@ namespace Runtime
                 // required to only visible in display2
                 nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
 
+                if (!nodeObject.GetComponent<CubeTextOverlay>())
+                {
+                    nodeObject.AddComponent<CubeTextOverlay>();
+                }
 
                 RemoveAndReplaceCollider(nodeObject);
 
