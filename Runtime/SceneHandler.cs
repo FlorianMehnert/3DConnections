@@ -50,12 +50,7 @@ namespace Runtime
 
         private void OnSceneLoaded()
         {
-            Debug.Log("Scene fully loaded!");
-            Debug.Log("the overlayed scene is: " + overlayScene.name);
-
             var scene = GetOverlayedScene();
-            Debug.Log("the overlayed scene is: " + overlayScene.name);
-            Debug.Log(scene);
             if (scene != null)
             {
                 overlayScene = (Scene)scene;

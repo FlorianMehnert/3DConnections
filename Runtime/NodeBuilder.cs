@@ -16,9 +16,6 @@ namespace Runtime
         [SerializeField] private float nodeHeight = 1.0f;
         [SerializeField] private Color nodeColor = Color.white;
 
-        [SerializeField] private float verticalSpacing = 1.5f;
-        [SerializeField] private string targetSceneName = "SecondDisplayScene"; // Scene to spawn nodes in
-
         [SerializeField] private NodeConnectionManager connectionManager;
 
         private int _nodeCounter;
