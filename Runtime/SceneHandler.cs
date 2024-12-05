@@ -90,7 +90,7 @@ namespace Runtime
         /// Retrieve the scene in which the new nodes will be spawned
         /// </summary>
         /// <returns></returns>
-        internal static Scene? GetOverlayedScene()
+        public static Scene? GetOverlayedScene()
         {
             const string sceneNameToCheck = "NewScene";
             if (!IsSceneLoaded(sceneNameToCheck)) return null;
