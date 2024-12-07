@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
+/// <summary>
+/// Manager that handles all the connections in the node graph
+/// </summary>
 public class NodeConnectionManager : MonoBehaviour
 {
     [System.Serializable]

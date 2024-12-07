@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 namespace Runtime
 {
+    /// <summary>
+    /// Manager for SceneSwitching and interacting with the second display
+    /// </summary>
     public class SceneHandler : MonoBehaviour
     {
         public Camera mainCamera;

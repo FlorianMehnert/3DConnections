@@ -2,6 +2,9 @@ using Runtime;
 using UnityEngine;
 using SFB;
 
+/// <summary>
+/// Manager class responsible for the Layout of all Buttons in scene1/2
+/// </summary>
 public class GUIBuilder : MonoBehaviour
 {
     private NodeBuilder _nodeBuilder;

@@ -1,5 +1,8 @@
 namespace Runtime
 {
+    /// <summary>
+    /// Internal representation of a Node used to compute layouts and keep track of all available nodes
+    /// </summary>
     public class Node
     {
         

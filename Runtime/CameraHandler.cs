@@ -1,6 +1,9 @@
 using Runtime;
 using UnityEngine;
 
+/// <summary>
+/// Manager Class to move the orthographic camera using middle mouse drag and zoom in/out using mouse wheel
+/// </summary>
 public class CameraController : MonoBehaviour
 {
     [Header("Zoom Settings")]

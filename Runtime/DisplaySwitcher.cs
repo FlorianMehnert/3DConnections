@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Manager responsible for display switching using shortcuts
+/// </summary>
 public class DisplaySwitcher : MonoBehaviour
 {
     private void Update()

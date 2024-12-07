@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// MonoBehaviour to add to a node game-object, which then renders text on the node
+/// </summary>
 public class CubeTextOverlay : MonoBehaviour
 {
     // Prefab for the text overlay

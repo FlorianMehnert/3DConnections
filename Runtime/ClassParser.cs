@@ -10,6 +10,9 @@ using UnityEngine;
 
 namespace Runtime
 {
+    /// <summary>
+    /// Copy of the ClassParser from SceneConnections to find all references within a given path
+    /// </summary>
     public static class ClassParser
     {
         private static readonly ThreadLocal<HashSet<string>> UsingStatements = new(() => new HashSet<string>());
@@ -28,7 +31,7 @@ namespace Runtime
             return GetAllClassReferencesParallel(scriptPaths, includeInheritance, includeFields, includeMethods);
         }
 
-        public static Dictionary<string, ClassReferences> GetAllClassReferencesParallel(IEnumerable<string> scriptPaths, bool includeInheritance = true, bool includeFields = true, bool includeMethods = true)
+        private static Dictionary<string, ClassReferences> GetAllClassReferencesParallel(IEnumerable<string> scriptPaths, bool includeInheritance = true, bool includeFields = true, bool includeMethods = true)
         {
             var resultDictionary = new ConcurrentDictionary<string, ClassReferences>();
 

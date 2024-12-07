@@ -6,6 +6,9 @@ using TMPro;
 
 namespace Runtime
 {
+    /// <summary>
+    /// Manager class responsible for the construction of the node-graph
+    /// </summary>
     public class NodeBuilder : MonoBehaviour
     {
         private readonly Dictionary<string, Node> _scripts = new();

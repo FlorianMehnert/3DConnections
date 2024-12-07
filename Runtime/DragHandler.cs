@@ -1,8 +1,10 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// MonoBehaviour to add to Cubes allowing them to be draggable
+/// </summary>
 [RequireComponent(typeof(BoxCollider2D))]
-
 public class DragHandler : MonoBehaviour 
 {
 

@@ -4,6 +4,9 @@ using JetBrains.Annotations;
 
 namespace Runtime
 {
+    /// <summary>
+    /// Dataclass to keep track of different kinds of references within the project
+    /// </summary>
     public class ClassReferences 
     {
         public List<string> InheritanceReferences { [UsedImplicitly] get; set; }
