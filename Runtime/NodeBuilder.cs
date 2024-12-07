@@ -48,7 +48,6 @@ namespace Runtime
             nodeObject.AddComponent<CubeTextOverlay>();
             RemoveAndReplaceCollider(nodeObject); // TODO: improve on this - unity always creates cube primitives using a collider attached
             ConfigureNode(nodeObject);
-            nodeObject.AddComponent<DragHandler>();
             return nodeObject;
         }
 
