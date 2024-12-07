@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -22,6 +21,7 @@ namespace Runtime
         [SerializeField] private NodeConnectionManager connectionManager;
 
         private int _nodeCounter;
+        private Camera _secondCamera;
 
         private void Start()
         {
@@ -49,6 +49,15 @@ namespace Runtime
             RemoveAndReplaceCollider(nodeObject); // TODO: improve on this - unity always creates cube primitives using a collider attached
             ConfigureNode(nodeObject);
             return nodeObject;
+        }
+
+        /// <summary>
+        /// Takes a node and executes <see cref="SpawnTestNodeOnSecondDisplay"/>
+        /// </summary>
+        /// <param name="node"></param>
+        private void SpawnCubeNodeUsingNodeObject(Node node)
+        {
+            SpawnTestNodeOnSecondDisplay(CalculateNodePosition(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f));
         }
 
         private static void RemoveAndReplaceCollider(GameObject nodeObject)
@@ -122,25 +131,41 @@ namespace Runtime
             }
         }
 
-        public void Execute(int x = 20, int y = 60)
+        public void Execute(int x = 20, int y = 60, string[] paths = null)
         {
             if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
 
-            var secondCamera = SceneHandler.GetOverlayCamera(1);
             var overlayedScene = SceneHandler.GetOverlayedScene();
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+            _secondCamera = SceneHandler.GetOverlayCamera(1);
+            if (paths == null)
+            {
+                var pos1 = CalculateNodePosition(_secondCamera.transform.position, new Vector3(0, 0, 0));
+                var pos2 = CalculateNodePosition(_secondCamera.transform.position, new Vector3(8, 8, 0));
+                var pos3 = CalculateNodePosition(_secondCamera.transform.position, new Vector3(-8, 4, 0));
 
-            var pos1 = CalculateNodePosition(secondCamera.transform.position, new Vector3(0, 0, 0));
-            var pos2 = CalculateNodePosition(secondCamera.transform.position, new Vector3(8, 8, 0));
-            var pos3 = CalculateNodePosition(secondCamera.transform.position, new Vector3(-8, 4, 0));
+                var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
+                var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
+                var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
 
-            var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
-            var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
-            var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
-
-            connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-            connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-            connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+                connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+                connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
+                connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+            }
+            else
+            {
+                var scriptNodes = new List<Node>();
+                foreach (var path in paths)
+                {
+                    scriptNodes.AddRange(FindScriptNodes(path));
+                }
+                
+                // Spawn a node for each node in scriptPaths
+                foreach (var scriptNode in scriptNodes)
+                {
+                    SpawnCubeNodeUsingNodeObject(scriptNode);
+                }
+            }
         }
     }
 }

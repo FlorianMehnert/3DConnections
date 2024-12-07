@@ -9,6 +9,7 @@ public class GUIBuilder : MonoBehaviour
 {
     private NodeBuilder _nodeBuilder;
     private SceneHandler _sceneHandler;
+    public string[] path;
 
     private void Start()
     {
@@ -20,9 +21,10 @@ public class GUIBuilder : MonoBehaviour
         _sceneHandler.Execute(20, 30);
         if (GUI.Button(new Rect(20, 60, 150, 30), "Open File"))
         {
-            var path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);
+            path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);
             Debug.Log(path[0]);
         }
-        _nodeBuilder.Execute(20,90);
+        
+        _nodeBuilder.Execute(20,90, path);
     }
 }
