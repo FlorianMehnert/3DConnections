@@ -113,13 +113,11 @@ public class CubeSelector : MonoBehaviour
         }
     }
 
-    void DeselectCube(GameObject cube)
+    private void DeselectCube(GameObject cube)
     {
-        if (_selectedCubes.Contains(cube))
-        {
-            _selectedCubes.Remove(cube);
-            RemoveOutlineCube(cube);
-        }
+        if (!_selectedCubes.Contains(cube)) return;
+        _selectedCubes.Remove(cube);
+        RemoveOutlineCube(cube);
     }
 
     private void ClearSelections()
