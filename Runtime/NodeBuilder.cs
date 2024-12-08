@@ -160,6 +160,8 @@ namespace Runtime
                     scriptNodes.AddRange(FindScriptNodes(path));
                 }
                 
+                NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
+                
                 // Spawn a node for each node in scriptPaths
                 foreach (var scriptNode in scriptNodes)
                 {

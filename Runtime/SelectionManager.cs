@@ -30,7 +30,7 @@ public class CubeSelector : MonoBehaviour
             return;
         }
 
-        // Get the layer for raycasting
+        // Get the layer for ray casting
         _targetLayerMask = LayerMask.GetMask(targetLayerName);
         
         if (_targetLayerMask == 0)
@@ -52,7 +52,7 @@ public class CubeSelector : MonoBehaviour
             // Perform 2D raycast
             RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
-            bool isShiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            var isShiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
             if (hit.collider != null)
             {
@@ -80,15 +80,16 @@ public class CubeSelector : MonoBehaviour
             }
             else if (!isShiftHeld)
             {
-                // Clear selections if clicking on empty space and shift is not held
+                // Clear selections if clicking on empty space and shift are not held
                 ClearSelections();
             }
         }
 
         // Handle dragging
-        if (Input.GetMouseButton(0) && _currentlyDraggedCube != null)
+        var isShiftHeldWhileDragging = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        if (Input.GetMouseButton(0) && _currentlyDraggedCube && !isShiftHeldWhileDragging)
         {
-            foreach (GameObject cube in _selectedCubes)
+            foreach (var cube in _selectedCubes)
             {
                 // Calculate new position with offset
                 var drag = new Vector2(mousePosition.x, mousePosition.y) + new Vector2(_dragOffset.x, _dragOffset.y);
@@ -121,7 +122,7 @@ public class CubeSelector : MonoBehaviour
         }
     }
 
-    void ClearSelections()
+    private void ClearSelections()
     {
         foreach (GameObject cube in _selectedCubes.ToArray())
         {
@@ -136,21 +137,21 @@ public class CubeSelector : MonoBehaviour
         RemoveOutlineCube(originalCube);
 
         // Create outline cube
-        GameObject outlineCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var outlineCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         
         // Set the parent and reset local position to match the original cube
         outlineCube.transform.SetParent(originalCube.transform, false);
         outlineCube.transform.localPosition = Vector3.zero;
         
         // Scale the outline cube uniformly
-        Vector3 uniformScale = Vector3.one * outlineScale;
-        outlineCube.transform.localScale = uniformScale;
+        var uniformScale = Vector2.one * outlineScale;
+        outlineCube.transform.localScale = new Vector3(uniformScale.x, uniformScale.y, .5f);
         
         outlineCube.layer = originalCube.layer;
 
         // Modify renderer
-        Renderer outlineRenderer = outlineCube.GetComponent<Renderer>();
-        Material outlineMaterial = new Material(Shader.Find("Standard"));
+        var outlineRenderer = outlineCube.GetComponent<Renderer>();
+        var outlineMaterial = new Material(Shader.Find("Standard"));
         
         // Configure material for wireframe-like appearance
         outlineMaterial.SetFloat(Mode, 2); // Fade mode
@@ -163,7 +164,7 @@ public class CubeSelector : MonoBehaviour
         outlineMaterial.renderQueue = 3000;
 
         // Set color with transparency
-        Color transparentOutlineColor = outlineColor;
+        var transparentOutlineColor = outlineColor;
         transparentOutlineColor.a = 0.8f;
         outlineMaterial.color = transparentOutlineColor;
 

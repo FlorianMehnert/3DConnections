@@ -8,8 +8,6 @@ public class CameraController : MonoBehaviour
 {
     [Header("Zoom Settings")]
     public float zoomSpeed = 10f;
-    public float minOrthographicSize = 0.1f;
-    public float maxOrthographicSize = 200f;
 
     private Camera _cam;
     private Vector3 _lastMousePosition;
@@ -59,7 +57,6 @@ public class CameraController : MonoBehaviour
         // Calculate zoom speed dynamically based on the current zoom level
         var dynamicZoomSpeed = zoomSpeed * (_cam.orthographicSize / 10f);
         _cam.orthographicSize -= scroll * dynamicZoomSpeed;
-        _cam.orthographicSize = Mathf.Clamp(_cam.orthographicSize, minOrthographicSize, maxOrthographicSize);
     }
 
     private void HandlePan()
