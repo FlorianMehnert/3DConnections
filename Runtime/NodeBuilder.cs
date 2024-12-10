@@ -197,7 +197,12 @@ namespace Runtime
             var overlayedScene = SceneHandler.GetOverlayedScene();
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
             _secondCamera = SceneHandler.GetOverlayCamera(1);
-            if (paths == null)
+            if (!_secondCamera)
+            {
+                Debug.Log("The second camera is null please load the second Scene");
+                return;
+            }
+            if (paths!.Length == 0)
             {
                 var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
                 var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
@@ -213,6 +218,7 @@ namespace Runtime
             }
             else
             {
+                Debug.Log(paths);
                 var scriptNodes = FindScriptNodes(paths[0]);
                 NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
                 

@@ -115,7 +115,7 @@ namespace Runtime
         /// Iterating through all cameras and returns the first one rendering to the second display (display 1 since starting with 0)
         /// </summary>
         /// <param name="display">The display to which the found camera should render to where 0 is display 1 and 1 is display 2</param>
-        /// <returns>The first camera rendering to display 2</returns>
+        /// <returns>The first camera rendering to display 2. Might be null</returns>
         public static Camera GetOverlayCamera(int display)
         {
             return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
