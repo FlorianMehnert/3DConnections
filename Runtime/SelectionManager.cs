@@ -18,6 +18,9 @@ public class CubeSelector : MonoBehaviour
     private int _targetLayerMask;
     private Vector3 _dragOffset;
     private GameObject _currentlyDraggedCube;
+    private GameObject _currentContextMenu;
+    public GameObject contextMenuPrefab;  // Prefab for the context menu
+    public Canvas parentCanvas;
 
     private void Start()
     {
@@ -50,13 +53,13 @@ public class CubeSelector : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             // Perform 2D raycast
-            RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+            var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
             var isShiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-            if (hit.collider != null)
+            if (hit.collider)
             {
-                GameObject hitObject = hit.collider.gameObject;
+                var hitObject = hit.collider.gameObject;
 
                 // Start drag preparation
                 _dragOffset = hitObject.transform.position - (Vector3)mousePosition;
@@ -80,9 +83,14 @@ public class CubeSelector : MonoBehaviour
             }
             else if (!isShiftHeld)
             {
-                // Clear selections if clicking on empty space and shift are not held
                 ClearSelections();
+                CloseContextMenu();
             }
+        }
+        else if (Input.GetMouseButtonDown(1))
+        {
+            ShowContextMenu();
+            return;
         }
 
         // Handle dragging
@@ -102,6 +110,39 @@ public class CubeSelector : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             _currentlyDraggedCube = null;
+        }
+    }
+
+    private void ShowContextMenu()
+    {
+        // Raycast to detect if a 3D object was clicked
+        if (_currentContextMenu)
+        {
+            Destroy(_currentContextMenu);
+        }
+
+        // Instantiate the context menu at the mouse position
+        _currentContextMenu = Instantiate(contextMenuPrefab, transform);
+        _currentContextMenu.SetActive(true);
+
+        // Set the position of the context menu to the mouse position
+        Vector2 mousePosition = Input.mousePosition;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parentCanvas.GetComponent<RectTransform>(), 
+            Input.mousePosition, 
+            _displayCamera, 
+            out Vector2 localPoint
+        );
+
+        // Position the context menu
+        _currentContextMenu.GetComponent<RectTransform>().localPosition = localPoint;
+    }
+
+    private void CloseContextMenu()
+    {
+        if (_currentContextMenu != null)
+        {
+            Destroy(_currentContextMenu);
         }
     }
 

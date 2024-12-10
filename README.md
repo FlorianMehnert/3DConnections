@@ -57,3 +57,5 @@ ln -s <PATH-TO-3DConnections> <PATH-TO-ASSETS-FOLDER-IN-YOUR-PROJECT>/3DConnecti
 https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 ```
 - install NuGet Package of roslyn: `Microsoft.CodeAnalysis` `Microsoft.CodeAnalysis.CSharp`
+- resolved the issue of Workspaces*.dll could not load (linux only) by just deleting them 🙈
+- added context menu (raycast still not working on second monitor)
