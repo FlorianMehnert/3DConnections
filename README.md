@@ -49,3 +49,11 @@ ln -s <PATH-TO-3DConnections> <PATH-TO-ASSETS-FOLDER-IN-YOUR-PROJECT>/3DConnecti
 - trying to remove the nodes from the colliders
   - remove checkboxes in the project settings for the node layer (2D and 3D)
 - delay the scene load until finally loaded
+
+## 10.December
+- trying out roslyn to parse classes
+- install using NuGet (which is installed using the git url)
+```bash
+https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
+```
+- install NuGet Package of roslyn: `Microsoft.CodeAnalysis` `Microsoft.CodeAnalysis.CSharp`
