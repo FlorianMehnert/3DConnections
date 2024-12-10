@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Runtime;
 
 public class CubeSelector : MonoBehaviour
 {
@@ -25,7 +26,7 @@ public class CubeSelector : MonoBehaviour
     private void Start()
     {
         // Find the camera for Display 2 (index 1)
-        _displayCamera = Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == 1);
+        _displayCamera = SceneHandler.GetCameraOfScene("NewScene");
         
         if (_displayCamera == null)
         {
@@ -115,28 +116,29 @@ public class CubeSelector : MonoBehaviour
 
     private void ShowContextMenu()
     {
-        // Raycast to detect if a 3D object was clicked
+        // Destroy the current context menu if it exists
         if (_currentContextMenu)
         {
             Destroy(_currentContextMenu);
         }
 
-        // Instantiate the context menu at the mouse position
-        _currentContextMenu = Instantiate(contextMenuPrefab, transform);
+        // Instantiate the context menu as a child of the canvas
+        _currentContextMenu = Instantiate(contextMenuPrefab, parentCanvas.transform);
         _currentContextMenu.SetActive(true);
 
-        // Set the position of the context menu to the mouse position
-        Vector2 mousePosition = Input.mousePosition;
+        // Convert the mouse position to a local position relative to the canvas
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             parentCanvas.GetComponent<RectTransform>(), 
             Input.mousePosition, 
             _displayCamera, 
-            out Vector2 localPoint
+            out var localPoint
         );
 
-        // Position the context menu
-        _currentContextMenu.GetComponent<RectTransform>().localPosition = localPoint;
+        // Position the context menu relative to the canvas
+        var contextMenuRect = _currentContextMenu.GetComponent<RectTransform>();
+        contextMenuRect.localPosition = localPoint;
     }
+
 
     private void CloseContextMenu()
     {

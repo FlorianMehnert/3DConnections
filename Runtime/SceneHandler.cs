@@ -12,7 +12,6 @@ namespace Runtime
     {
         public Camera mainCamera;
         private Camera OverlayCamera { get; set; }
-        public Scene overlayScene;
         private const string LayerOverlay = "OverlayScene";
 
         private static bool IsSceneLoaded(string sceneName)
@@ -53,26 +52,21 @@ namespace Runtime
 
         private void OnSceneLoaded()
         {
-            var scene = GetOverlayedScene();
-            if (scene != null)
-            {
-                overlayScene = (Scene)scene;
-            }
-            else
-            {
-                Debug.LogWarning("GetOverlayedScene failed to get a scene in SceneHandler");
-            }
-
             var overlayLayerMask = LayerMask.NameToLayer(LayerOverlay);
+            var uiLayer = LayerMask.NameToLayer("UI");
 
             // find a camera rendering to the second display (display 1) in a multi display else set to null
-            mainCamera = GetOverlayCamera(0);
-            OverlayCamera = GetOverlayCamera(1);
+            mainCamera = GetCameraOfSpecificDisplay(0);
+            OverlayCamera = GetCameraOfScene("NewScene");
             
             // disable culling Mask for the main camera and enable for overlay camera
             if (mainCamera)
             {
                 mainCamera.cullingMask &= ~(1 << overlayLayerMask);
+                if (uiLayer != -1) // Ensure the UI layer exists
+                {
+                    mainCamera.cullingMask |= (1 << uiLayer);
+                }
             }
             else
             {
@@ -116,10 +110,33 @@ namespace Runtime
         /// </summary>
         /// <param name="display">The display to which the found camera should render to where 0 is display 1 and 1 is display 2</param>
         /// <returns>The first camera rendering to display 2. Might be null</returns>
-        public static Camera GetOverlayCamera(int display)
+        private static Camera GetCameraOfSpecificDisplay(int display)
         {
             return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
         }
+
+        public static Camera GetCameraOfScene(string sceneName)
+        {
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (!scene.IsValid()) return null;
+            var rootObjects = scene.GetRootGameObjects();
+            return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(camera => camera);
+        }
+
+        public static void ToggleOverlay()
+        {
+            Debug.Log("in toggle overlay");
+            if (!IsSceneLoaded("NewScene")) return;
+            Debug.Log("after scene is loaded");
+            var scene = GetOverlayedScene();
+            Debug.Log("after get overlay scene: " + scene);
+            if (scene == null) return;
+            var camera = GetCameraOfScene(scene.Value.name);
+            Debug.Log("camera: " + camera);
+            camera.enabled = !camera.enabled;
+        }
+        
+        
 
         /// <summary>
         /// Place a button in the GUI at the desired position that will load the predefined "NewScene" Scene in Additive Mode

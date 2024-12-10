@@ -1,3 +1,4 @@
+using Runtime;
 using UnityEngine;
 
 /// <summary>
@@ -8,18 +9,15 @@ public class DisplaySwitcher : MonoBehaviour
     private void Update()
     {
         // Check if F1 is pressed to switch to Display 1
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            SwitchDisplay(0); // Display 1 (Index 0)
-        }
-
-        // Check if F2 is pressed to switch to Display 2
-        if (Input.GetKeyDown(KeyCode.F2))
-        {
-            SwitchDisplay(1); // Display 2 (Index 1)
-        }
+        if (!Input.GetKeyDown(KeyCode.F1)) return;
+        Debug.Log("toggle display");
+        SceneHandler.ToggleOverlay();
     }
 
+    /// <summary>
+    /// "Open" display2 if this is required. Currently, not since the node tree is more like an overlay than a second scene or window
+    /// </summary>
+    /// <param name="displayIndex"></param>
     private static void SwitchDisplay(int displayIndex)
     {
         // Check if the specified display index exists and is active

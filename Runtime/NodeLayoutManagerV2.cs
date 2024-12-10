@@ -21,38 +21,38 @@ public class NodeLayoutManagerV2
         float totalArea = nodes.Sum(n => n.Width * n.Height);
 
         // Determine layout grid dimensions
-        int nodeCount = nodes.Count;
-        int gridColumns = Mathf.CeilToInt(Mathf.Sqrt(nodeCount));
-        int gridRows = Mathf.CeilToInt((float)nodeCount / gridColumns);
+        var nodeCount = nodes.Count;
+        var gridColumns = Mathf.CeilToInt(Mathf.Sqrt(nodeCount));
+        var gridRows = Mathf.CeilToInt((float)nodeCount / gridColumns);
 
         // Normalize node sizes to a fixed aspect ratio while preserving total area
-        List<Node> normalizedNodes = nodes.Select(node => 
+        var normalizedNodes = nodes.Select(node => 
         {
             // Calculate new dimensions maintaining the target aspect ratio
-            float newWidth = Mathf.Sqrt(node.Width * node.Height * targetAspectRatio);
-            float newHeight = newWidth / targetAspectRatio;
+            var newWidth = Mathf.Sqrt(node.Width * node.Height * targetAspectRatio);
+            var newHeight = newWidth / targetAspectRatio;
 
             return new Node(node.Name, 0, 0, newWidth, newHeight);
         }).ToList();
 
         // Determine max node dimensions in the grid
-        float maxNodeWidth = normalizedNodes.Max(n => n.Width);
-        float maxNodeHeight = normalizedNodes.Max(n => n.Height);
+        var maxNodeWidth = normalizedNodes.Max(n => n.Width);
+        var maxNodeHeight = normalizedNodes.Max(n => n.Height);
 
         // Parallel processing for positioning
         Parallel.For(0, normalizedNodes.Count, (int i) =>
         {
             // Calculate grid position
-            int row = i / gridColumns;
-            int col = i % gridColumns;
+            var row = i / gridColumns;
+            var col = i % gridColumns;
 
             // Position calculation with padding
-            float x = col * (maxNodeWidth + minimumPadding);
-            float y = row * (maxNodeHeight + minimumPadding);
+            var x = col * (maxNodeWidth + minimumPadding);
+            var y = row * (maxNodeHeight + minimumPadding);
 
             // Update node position and size
-            Node originalNode = nodes[i];
-            Node normalizedNode = normalizedNodes[i];
+            var originalNode = nodes[i];
+            var normalizedNode = normalizedNodes[i];
 
             // Preserve original scaling while positioning
             originalNode.X = x + (maxNodeWidth - originalNode.Width) / 2;
@@ -72,8 +72,8 @@ public class NodeLayoutManagerV2
         // First, apply compact layout
         CompactFixedAspectRatioLayout(nodes, targetAspectRatio, minimumPadding);
 
-        // Refinement pass to optimize spacing and maintain aspect ratio
-        for (int iteration = 0; iteration < maxIterations; iteration++)
+        // Refinement pass to optimize spacing and maintain an aspect ratio
+        for (var iteration = 0; iteration < maxIterations; iteration++)
         {
             Parallel.For(0, nodes.Count, (int i) =>
             {

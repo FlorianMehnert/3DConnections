@@ -196,7 +196,7 @@ namespace Runtime
 
             var overlayedScene = SceneHandler.GetOverlayedScene();
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-            _secondCamera = SceneHandler.GetOverlayCamera(1);
+            _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
             if (!_secondCamera)
             {
                 Debug.Log("The second camera is null please load the second Scene");

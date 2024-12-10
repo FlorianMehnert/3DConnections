@@ -22,7 +22,7 @@ public class CameraController : MonoBehaviour
 
     private void Start()
     {
-        _cam = SceneHandler.GetOverlayCamera(1);
+        _cam = SceneHandler.GetCameraOfScene("NewScene");
         
         // Calculate screen dimensions
         _screenWidth = Screen.width;
