@@ -49,12 +49,12 @@ public class CubeSelector : MonoBehaviour
 
         // Convert mouse position to world position
         Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
-
+        
+        // Perform 2D raycast
+        var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
         // Handle mouse down (selection or drag start)
         if (Input.GetMouseButtonDown(0))
         {
-            // Perform 2D raycast
-            var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
             var isShiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
@@ -85,12 +85,18 @@ public class CubeSelector : MonoBehaviour
             else if (!isShiftHeld)
             {
                 ClearSelections();
-                CloseContextMenu();
+                
+                if (!hit)
+                {
+                    CloseContextMenu();
+                }
             }
         }
         else if (Input.GetMouseButtonDown(1))
         {
-            ShowContextMenu();
+            if (!hit || !hit.collider) return;
+            var hitObject = hit.collider.gameObject;
+            ShowContextMenu(hitObject, mousePosition);
             return;
         }
 
@@ -114,7 +120,7 @@ public class CubeSelector : MonoBehaviour
         }
     }
 
-    private void ShowContextMenu()
+    private void ShowContextMenu(GameObject hitObject, Vector3 hitPosition)
     {
         // Destroy the current context menu if it exists
         if (_currentContextMenu)
@@ -125,24 +131,21 @@ public class CubeSelector : MonoBehaviour
         // Instantiate the context menu as a child of the canvas
         _currentContextMenu = Instantiate(contextMenuPrefab, parentCanvas.transform);
         _currentContextMenu.SetActive(true);
+        var col = hitObject.GetComponent<Collider>();
+        var worldCenter = col ? col.bounds.center : // Get the exact center of the object (more accurate)
+            hitObject.transform.position; // Fallback to the transform's position
 
-        // Convert the mouse position to a local position relative to the canvas
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentCanvas.GetComponent<RectTransform>(), 
-            Input.mousePosition, 
-            _displayCamera, 
-            out var localPoint
-        );
-
-        // Position the context menu relative to the canvas
-        var contextMenuRect = _currentContextMenu.GetComponent<RectTransform>();
-        contextMenuRect.localPosition = localPoint;
+        // Set the position of the context menu in the world
+        var rectTransform = _currentContextMenu.GetComponent<RectTransform>();
+        rectTransform.position = worldCenter;
+        var pos = _currentContextMenu.transform.localPosition;
+        _currentContextMenu.GetComponent<RectTransform>().localPosition = new Vector3(pos.x, pos.y, 1);
     }
 
 
     private void CloseContextMenu()
     {
-        if (_currentContextMenu != null)
+        if (_currentContextMenu)
         {
             Destroy(_currentContextMenu);
         }
@@ -165,14 +168,14 @@ public class CubeSelector : MonoBehaviour
 
     private void ClearSelections()
     {
-        foreach (GameObject cube in _selectedCubes.ToArray())
+        foreach (var cube in _selectedCubes.ToArray())
         {
             RemoveOutlineCube(cube);
         }
         _selectedCubes.Clear();
     }
 
-    void CreateOutlineCube(GameObject originalCube)
+    private void CreateOutlineCube(GameObject originalCube)
     {
         // Destroy any existing outline for this cube
         RemoveOutlineCube(originalCube);
@@ -216,12 +219,10 @@ public class CubeSelector : MonoBehaviour
         _outlineCubes[originalCube] = outlineCube;
     }
 
-    void RemoveOutlineCube(GameObject originalCube)
+    private void RemoveOutlineCube(GameObject originalCube)
     {
-        if (_outlineCubes.TryGetValue(originalCube, out GameObject outlineCube))
-        {
-            Destroy(outlineCube);
-            _outlineCubes.Remove(originalCube);
-        }
+        if (!_outlineCubes.TryGetValue(originalCube, out GameObject outlineCube)) return;
+        Destroy(outlineCube);
+        _outlineCubes.Remove(originalCube);
     }
 }
