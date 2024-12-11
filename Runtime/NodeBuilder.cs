@@ -21,6 +21,7 @@ namespace Runtime
         [SerializeField] private Color nodeColor = Color.white;
 
         [SerializeField] private NodeConnectionManager connectionManager;
+        [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
         private Camera _secondCamera;
@@ -39,13 +40,13 @@ namespace Runtime
         /// <param name="nodeExtend">Node dimension</param>
         private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend)
         {
-            var nodeObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
+            // spawn node prefab as child of this element
+            var nodeObject = Instantiate(nodePrefab, transform);
+            
             // set name allowing to differentiate between them 
             nodeObject.transform.position = spawnPosition;
             nodeObject.transform.localScale = nodeExtend;
-
-            nodeObject.name = $"TestNode_{_nodeCounter}";
+            nodeObject.name = $"Node";
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
             nodeObject.AddComponent<CubeTextOverlay>();
             RemoveAndReplaceCollider(nodeObject); // TODO: improve on this - unity always creates cube primitives using a collider attached
@@ -123,7 +124,7 @@ namespace Runtime
             foreach (var (scriptName, classReferences) in allReferences)
             {
                 // Skip if the current script doesn't have a corresponding node
-                if (!nodesByScriptName.TryGetValue(scriptName, out Node currentNode))
+                if (!nodesByScriptName.TryGetValue(scriptName, out var currentNode))
                     continue;
 
                 // Ensure we have an entry for this node in the connection dictionary
@@ -137,7 +138,7 @@ namespace Runtime
                 {
                     // Avoid self-references and ensure the referenced script exists as a node
                     if (referencedScript != scriptName && 
-                        nodesByScriptName.TryGetValue(referencedScript, out Node referencedNode))
+                        nodesByScriptName.TryGetValue(referencedScript, out var referencedNode))
                     {
                         nodeConnections[currentNode].Add(referencedNode);
                     }
@@ -154,7 +155,7 @@ namespace Runtime
             foreach (var (sourceNode, connectedNodes) in nodeConnections)
             {
                 // Skip if we can't find the source GameObject
-                if (!nodeToGameObjectMap.TryGetValue(sourceNode, out GameObject sourceGameObject))
+                if (!nodeToGameObjectMap.TryGetValue(sourceNode, out var sourceGameObject))
                     continue;
 
                 foreach (var targetNode in connectedNodes)
@@ -164,7 +165,7 @@ namespace Runtime
                         continue;
 
                     // Draw connection between the two GameObjects
-                    connectionManager.AddConnection(sourceGameObject, targetGameObject);
+                    connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
                 }
             }
         }

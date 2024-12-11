@@ -13,7 +13,7 @@ public class NodeConnectionManager : MonoBehaviour
         public GameObject startNode;
         public GameObject endNode;
         public LineRenderer lineRenderer;
-        public Color connectionColor = Color.white;
+        public Color connectionColor = new(1,255,50);
         public float lineWidth = 0.1f;
     }
 

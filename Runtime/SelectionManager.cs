@@ -5,11 +5,6 @@ using Runtime;
 
 public class CubeSelector : MonoBehaviour
 {
-    private static readonly int Mode = Shader.PropertyToID("_Mode");
-    private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
-    private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
-    private static readonly int ZWrite = Shader.PropertyToID("_ZWrite");
-    [SerializeField] private Color outlineColor = Color.yellow;
     [SerializeField] private float outlineScale = 1.1f;
     [SerializeField] private string targetLayerName = "OverlayLayer";
 
@@ -20,9 +15,10 @@ public class CubeSelector : MonoBehaviour
     private Vector3 _dragOffset;
     private GameObject _currentlyDraggedCube;
     private GameObject _currentContextMenu;
-    public GameObject contextMenuPrefab;  // Prefab for the context menu
-    public Canvas parentCanvas;
-
+    [SerializeField] private GameObject contextMenuPrefab;  // Prefab for the context menu
+    [SerializeField] private Canvas parentCanvas;
+    [SerializeField] private GameObject highlightPrefab;
+    [SerializeField] private Material highlightMaterial;
     private void Start()
     {
         // Find the camera for Display 2 (index 1)
@@ -175,48 +171,24 @@ public class CubeSelector : MonoBehaviour
         _selectedCubes.Clear();
     }
 
+    /// <summary>
+    /// Spawn Highlight prefab and scale to fit the cube currently selected
+    /// </summary>
+    /// <param name="originalCube"></param>
     private void CreateOutlineCube(GameObject originalCube)
     {
         // Destroy any existing outline for this cube
         RemoveOutlineCube(originalCube);
 
-        // Create outline cube
-        var outlineCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var highlight = Instantiate(highlightPrefab, originalCube.transform);
+        highlight.transform.SetParent(originalCube.transform, false);
+        highlight.transform.localScale = new Vector3(outlineScale, outlineScale, .8f);
+        highlight.GetComponent<MeshRenderer>().sharedMaterial = highlightMaterial;
+        highlight.transform.localPosition = Vector3.zero;
         
-        // Set the parent and reset local position to match the original cube
-        outlineCube.transform.SetParent(originalCube.transform, false);
-        outlineCube.transform.localPosition = Vector3.zero;
-        
-        // Scale the outline cube uniformly
-        var uniformScale = Vector2.one * outlineScale;
-        outlineCube.transform.localScale = new Vector3(uniformScale.x, uniformScale.y, .5f);
-        
-        outlineCube.layer = originalCube.layer;
+        highlight.layer = originalCube.layer;
 
-        // Modify renderer
-        var outlineRenderer = outlineCube.GetComponent<Renderer>();
-        var outlineMaterial = new Material(Shader.Find("Standard"));
-        
-        // Configure material for wireframe-like appearance
-        outlineMaterial.SetFloat(Mode, 2); // Fade mode
-        outlineMaterial.SetInt(SrcBlend, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        outlineMaterial.SetInt(DstBlend, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        outlineMaterial.SetInt(ZWrite, 0);
-        outlineMaterial.DisableKeyword("_ALPHATEST_ON");
-        outlineMaterial.EnableKeyword("_ALPHABLEND_ON");
-        outlineMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        outlineMaterial.renderQueue = 3000;
-
-        // Set color with transparency
-        var transparentOutlineColor = outlineColor;
-        transparentOutlineColor.a = 0.8f;
-        outlineMaterial.color = transparentOutlineColor;
-
-        outlineRenderer.material = outlineMaterial;
-        outlineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-        // Store reference to outline cube
-        _outlineCubes[originalCube] = outlineCube;
+        _outlineCubes[originalCube] = highlight;
     }
 
     private void RemoveOutlineCube(GameObject originalCube)
