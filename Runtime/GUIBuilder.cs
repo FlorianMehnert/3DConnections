@@ -10,11 +10,15 @@ public class GUIBuilder : MonoBehaviour
     private NodeBuilder _nodeBuilder;
     private SceneHandler _sceneHandler;
     public string[] path;
-    public Transform root_transform;
+    public Transform rootTransform;
 
     private void Start()
     {
-        _nodeBuilder = gameObject.AddComponent<NodeBuilder>();
+        _nodeBuilder = GetComponent<NodeBuilder>();
+        if (_nodeBuilder == null)
+        {
+            Debug.Log("The NodeBuilder component is missing on the manager");
+        }
         _sceneHandler = gameObject.AddComponent<SceneHandler>();
     }
     
@@ -40,7 +44,7 @@ public class GUIBuilder : MonoBehaviour
 
         if (GUI.Button(new Rect(20, 150, 150, 30), "Print Scene Hierarchy"))
         {
-            PrintHierarchy(root_transform);
+            PrintHierarchy(rootTransform);
 
         }
     }
