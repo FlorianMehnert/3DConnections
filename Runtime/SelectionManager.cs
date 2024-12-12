@@ -13,7 +13,10 @@ public class CubeSelector : MonoBehaviour
     private Camera _displayCamera;
     private int _targetLayerMask;
     private Vector3 _dragOffset;
+    private Vector3? _dragStartPosition = null;
+    private bool _isDragging;
     private GameObject _currentlyDraggedCube;
+    private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
     [SerializeField] private GameObject contextMenuPrefab;  // Prefab for the context menu
     [SerializeField] private Canvas parentCanvas;
@@ -41,79 +44,126 @@ public class CubeSelector : MonoBehaviour
 
     private void Update()
     {
+        HandleMouseInput();
+    }
+    
+    void HandleMouseInput()
+    {
         if (!_displayCamera || _targetLayerMask == 0) return;
-
-        // Convert mouse position to world position
-        Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
         
-        // Perform 2D raycast
+        // Cast a ray from the mouse position
+        Ray ray = _displayCamera.ScreenPointToRay(Input.mousePosition);
+        Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
         var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
-        // Handle mouse down (selection or drag start)
+
+        // Left mouse button down
         if (Input.GetMouseButtonDown(0))
         {
-
-            var isShiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-
-            if (hit.collider)
+            if (hit)
             {
-                var hitObject = hit.collider.gameObject;
+                // Cube is hit
+                GameObject hitObject = hit.collider.gameObject;
 
-                // Start drag preparation
-                _dragOffset = hitObject.transform.position - (Vector3)mousePosition;
-
-                if (!isShiftHeld)
+                // If shift is not pressed, deselect all cubes first
+                if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                 {
-                    // Clear previous selections if shift is not held
-                    ClearSelections();
+                    DeselectAllCubes();
                 }
 
-                // Toggle selection
-                if (_selectedCubes.Contains(hitObject))
-                {
-                    DeselectCube(hitObject);
-                }
-                else
-                {
-                    SelectCube(hitObject);
-                    _currentlyDraggedCube = hitObject;
-                }
+                // Select the cube
+                SelectCube(hitObject);
+
+                // Prepare for dragging
+                _dragOffset = hitObject.transform.position - (Vector3)hit.point;
+                _currentlyDraggedCube = hitObject;
             }
-            else if (!isShiftHeld)
+            else
             {
-                ClearSelections();
-                
-                if (!hit)
+                // No cube hit, deselect all if shift is not pressed
+                if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                 {
-                    CloseContextMenu();
+                    DeselectAllCubes();
                 }
             }
         }
-        else if (Input.GetMouseButtonDown(1))
+
+        hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+        
+        // Dragging logic
+        if (Input.GetMouseButton(0))
         {
-            if (!hit || !hit.collider) return;
-            var hitObject = hit.collider.gameObject;
-            ShowContextMenu(hitObject, mousePosition);
-            return;
-        }
-
-        // Handle dragging
-        var isShiftHeldWhileDragging = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        if (Input.GetMouseButton(0) && _currentlyDraggedCube && !isShiftHeldWhileDragging)
-        {
-            foreach (var cube in _selectedCubes)
+            if (hit)
             {
-                // Calculate new position with offset
-                var drag = new Vector2(mousePosition.x, mousePosition.y) + new Vector2(_dragOffset.x, _dragOffset.y);
-                var newPosition = new Vector3(drag.x, drag.y, cube.transform.position.z);
-                cube.transform.position = newPosition;
+                // Dragging with shift allows moving all selected cubes
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                {
+                    foreach (GameObject cube in _selectedCubes)
+                    {
+                        MoveCube(cube, hit.point);
+                    }
+                }
+                // Otherwise, only move the initially selected cube
+                else if (_currentlyDraggedCube != null)
+                {
+                    MoveCube(_currentlyDraggedCube, hit.point);
+                }
             }
         }
 
-        // Reset dragging
+        // Reset dragging when mouse button is released
         if (Input.GetMouseButtonUp(0))
         {
             _currentlyDraggedCube = null;
         }
+    }
+
+    void MoveCube(GameObject cube, Vector3 hitPoint)
+    {
+        // Move the cube to the new position, maintaining the original offset
+        cube.transform.position = hitPoint + _dragOffset;
+    }
+
+    void SelectCube(GameObject cube)
+    {
+        // If shift is pressed, add to selection without deselecting others
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        {
+            if (_selectedCubes.Add(cube))
+            {
+                CreateOutlineCube(cube);
+            }
+        }
+        // Normal selection
+        else {
+            // If cube is not already selected, select it
+            if (!_selectedCubes.Contains(cube))
+            {
+                // Deselect all first
+                DeselectAllCubes();
+                
+                _selectedCubes.Add(cube);
+                // Optional: Add visual feedback for selection
+                CreateOutlineCube(cube);
+            }
+        }
+    }
+
+    void DeselectAllCubes()
+    {
+        // Deselect all cubes
+        foreach (GameObject cube in _selectedCubes)
+        {
+            // Optional: Remove visual feedback
+            RemoveOutlineCube(cube);
+        }
+        _selectedCubes.Clear();
+        _currentlyDraggedCube = null;
+    }
+
+    private static void MoveSelectedNodes(HashSet<GameObject> selectedNodes, Vector3 drag)
+    {
+        foreach (var node in selectedNodes)
+            node.transform.position += drag;
     }
 
     private void ShowContextMenu(GameObject hitObject, Vector3 hitPosition)
@@ -145,21 +195,6 @@ public class CubeSelector : MonoBehaviour
         {
             Destroy(_currentContextMenu);
         }
-    }
-
-    private void SelectCube(GameObject cube)
-    {
-        if (_selectedCubes.Add(cube))
-        {
-            CreateOutlineCube(cube);
-        }
-    }
-
-    private void DeselectCube(GameObject cube)
-    {
-        if (!_selectedCubes.Contains(cube)) return;
-        _selectedCubes.Remove(cube);
-        RemoveOutlineCube(cube);
     }
 
     private void ClearSelections()
