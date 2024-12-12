@@ -10,7 +10,7 @@ namespace Runtime
     /// </summary>
     public class SceneHandler : MonoBehaviour
     {
-        public Camera mainCamera;
+        private Camera mainCamera;
         private Camera OverlayCamera { get; set; }
         private const string LayerOverlay = "OverlayScene";
 
