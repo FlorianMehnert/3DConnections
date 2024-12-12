@@ -20,7 +20,7 @@ namespace Runtime
         [SerializeField] private float nodeHeight = 1.0f;
         [SerializeField] private Color nodeColor = Color.white;
 
-        [SerializeField] private NodeConnectionManager connectionManager;
+        private NodeConnectionManager connectionManager;
         [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
