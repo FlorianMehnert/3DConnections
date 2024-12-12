@@ -2,20 +2,22 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Runtime;
+using Vector3 = UnityEngine.Vector3;
 
 public class CubeSelector : MonoBehaviour
 {
     [SerializeField] private float outlineScale = 1.1f;
     [SerializeField] private string targetLayerName = "OverlayLayer";
 
-    private readonly HashSet<GameObject> _selectedCubes = new();
+    public readonly HashSet<GameObject> _selectedCubes = new();
     private readonly Dictionary<GameObject, GameObject> _outlineCubes = new();
     private Camera _displayCamera;
     private int _targetLayerMask;
-    private Vector3 _dragOffset;
-    private Vector3? _dragStartPosition = null;
+    public Vector3 _dragOffset;
+    public Vector3? _dragStartPosition = null;
+    public int SelectedCubesCount = 0; 
     private bool _isDragging;
-    private GameObject _currentlyDraggedCube;
+    public GameObject _currentlyDraggedCube;
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
     [SerializeField] private GameObject contextMenuPrefab;  // Prefab for the context menu
@@ -46,13 +48,15 @@ public class CubeSelector : MonoBehaviour
     {
         HandleMouseInput();
     }
-    
-    void HandleMouseInput()
+
+    private void HandleMouseInput()
     {
         if (!_displayCamera || _targetLayerMask == 0) return;
         
+        // only for debugging
+        SelectedCubesCount = _selectedCubes.Count;
+        
         // Cast a ray from the mouse position
-        Ray ray = _displayCamera.ScreenPointToRay(Input.mousePosition);
         Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
         var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
@@ -62,17 +66,19 @@ public class CubeSelector : MonoBehaviour
             if (hit)
             {
                 // Cube is hit
-                GameObject hitObject = hit.collider.gameObject;
+                var hitObject = hit.collider.gameObject;
 
                 // If shift is not pressed, deselect all cubes first
-                if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && _selectedCubes.Count < 2)
                 {
                     DeselectAllCubes();
                 }
 
-                // Select the cube
-                SelectCube(hitObject);
-
+                if (_selectedCubes.Count < 2)
+                {
+                    // Select the cube
+                    SelectCube(hitObject);
+                }
                 // Prepare for dragging
                 _dragOffset = hitObject.transform.position - (Vector3)hit.point;
                 _currentlyDraggedCube = hitObject;
@@ -87,7 +93,6 @@ public class CubeSelector : MonoBehaviour
             }
         }
 
-        hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
         
         // Dragging logic
         if (Input.GetMouseButton(0))
@@ -97,7 +102,8 @@ public class CubeSelector : MonoBehaviour
                 // Dragging with shift allows moving all selected cubes
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
                 {
-                    foreach (GameObject cube in _selectedCubes)
+                    if (_selectedCubes == null) return;
+                    foreach (var cube in _selectedCubes.Where(cube => !cube))
                     {
                         MoveCube(cube, hit.point);
                     }
@@ -106,6 +112,12 @@ public class CubeSelector : MonoBehaviour
                 else if (_currentlyDraggedCube != null)
                 {
                     MoveCube(_currentlyDraggedCube, hit.point);
+                }else if (_currentlyDraggedCube != null && _selectedCubes.Count > 1)
+                {
+                    foreach (var cube in _selectedCubes.Where(cube => !cube))
+                    {
+                        MoveCube(cube, hit.point);
+                    }
                 }
             }
         }
@@ -114,6 +126,8 @@ public class CubeSelector : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             _currentlyDraggedCube = null;
+            _dragOffset = Vector3.zero;
+            _dragStartPosition = null;
         }
     }
 
