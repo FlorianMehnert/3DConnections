@@ -59,3 +59,8 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 - install NuGet Package of roslyn: `Microsoft.CodeAnalysis` `Microsoft.CodeAnalysis.CSharp`
 - resolved the issue of Workspaces*.dll could not load (linux only) by just deleting them 🙈
 - added context menu (raycast still not working on second monitor)
+## 11.December
+- using prefabs for nodes and materials now aswell for the highlighting of nodes
+## 12.December
+- fix linux installation of roslyn by manually installing the SQLitePCLRaw.bundle_green package form NuGet
+- fixing highlight/dragging interaction with nodes
