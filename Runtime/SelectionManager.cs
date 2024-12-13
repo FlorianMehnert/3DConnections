@@ -129,7 +129,7 @@ public class CubeSelector : MonoBehaviour
         // the mouseDownFunction is only called once to set up the drag afterward we will work with the start values and add the current position
         if (Input.GetMouseButton(0))
         {
-            if (hit || _isDragging)
+            if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && hit || _isDragging)
             {   
                 _dragEnd = mousePosition;
                 pos2.transform.position = new Vector3(_dragEnd.Value.x, _dragEnd.Value.y, 12);
