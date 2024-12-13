@@ -24,10 +24,6 @@ public class CameraController : MonoBehaviour
     {
         _cam = SceneHandler.GetCameraOfScene("NewScene");
         
-        // Calculate screen dimensions
-        _screenWidth = Screen.width;
-        _screenHeight = Screen.height;
-
         // Calculate world dimensions based on current orthographic size
         CalculateWorldDimensions();
     }
@@ -43,6 +39,8 @@ public class CameraController : MonoBehaviour
 
     private void CalculateWorldDimensions()
     {
+        _screenWidth = Screen.width;
+        _screenHeight = Screen.height;
         // Calculate world width and height based on camera's orthographic size and aspect ratio
         var aspectRatio = (float)Screen.width / Screen.height;
         _worldWidth = _cam.orthographicSize * 2f * aspectRatio;
