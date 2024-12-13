@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Runtime;
 using Vector3 = UnityEngine.Vector3;
 
@@ -9,12 +10,15 @@ public class CubeSelector : MonoBehaviour
     [SerializeField] private float outlineScale = 1.1f;
     [SerializeField] private string targetLayerName = "OverlayLayer";
 
-    public readonly HashSet<GameObject> _selectedCubes = new();
+    private readonly List<GameObject> _selectedCubes = new();
+    private readonly List<Vector3> _selectedCubesStartPositions = new();
     private readonly Dictionary<GameObject, GameObject> _outlineCubes = new();
     private Camera _displayCamera;
     private int _targetLayerMask;
     public Vector3 _dragOffset;
-    public Vector3? _dragStartPosition = null;
+    private Vector3? _dragStart = null;
+    private Vector3? _dragEnd = null;
+    public Vector3 delta = Vector3.zero;
     public int SelectedCubesCount = 0; 
     private bool _isDragging;
     public GameObject _currentlyDraggedCube;
@@ -63,10 +67,17 @@ public class CubeSelector : MonoBehaviour
         // Left mouse button down
         if (Input.GetMouseButtonDown(0))
         {
+            _selectedCubesStartPositions.Clear();
+            foreach(var cube in _selectedCubes)
+            {
+                _selectedCubesStartPositions.Add(cube.transform.position);
+            }
+
             if (hit)
             {
-                // Cube is hit
+                _dragStart = mousePosition;
                 var hitObject = hit.collider.gameObject;
+                _currentlyDraggedCube = hitObject;
 
                 // If shift is not pressed, deselect all cubes first
                 if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift) && _selectedCubes.Count < 2)
@@ -79,9 +90,6 @@ public class CubeSelector : MonoBehaviour
                     // Select the cube
                     SelectCube(hitObject);
                 }
-                // Prepare for dragging
-                _dragOffset = hitObject.transform.position - (Vector3)hit.point;
-                _currentlyDraggedCube = hitObject;
             }
             else
             {
@@ -94,29 +102,24 @@ public class CubeSelector : MonoBehaviour
         }
 
         
-        // Dragging logic
+        // the mouseDownFunction is only called once to set up the drag afterward we will work with the start values and add the current position
         if (Input.GetMouseButton(0))
         {
-            if (hit)
-            {
+            if (hit || _isDragging)
+            {   
+                _dragEnd = mousePosition;
+                _isDragging = true;
                 // Dragging with shift allows moving all selected cubes
-                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                if (_currentlyDraggedCube != null)
                 {
-                    if (_selectedCubes == null) return;
-                    foreach (var cube in _selectedCubes.Where(cube => !cube))
+                    var drag = _dragEnd - _dragStart;
+                    foreach (var cube in _selectedCubes)
                     {
-                        MoveCube(cube, hit.point);
-                    }
-                }
-                // Otherwise, only move the initially selected cube
-                else if (_currentlyDraggedCube != null)
-                {
-                    MoveCube(_currentlyDraggedCube, hit.point);
-                }else if (_currentlyDraggedCube != null && _selectedCubes.Count > 1)
-                {
-                    foreach (var cube in _selectedCubes.Where(cube => !cube))
-                    {
-                        MoveCube(cube, hit.point);
+                        // we need to first calculate the offset between starting the motion and ending the motion
+                        // starting to drag will first place the dragStart
+                        // continuing to drag will place second variable dragEnd
+                        // dragEnd - dragStart defines the drag vector
+                        cube.transform.position = Only2D((Vector3)drag, cube.transform.position.z);
                     }
                 }
             }
@@ -127,14 +130,16 @@ public class CubeSelector : MonoBehaviour
         {
             _currentlyDraggedCube = null;
             _dragOffset = Vector3.zero;
-            _dragStartPosition = null;
+            _dragStart = null;
+            _dragEnd = null;
+            delta = Vector3.zero;
+            _isDragging = false;
         }
     }
 
-    void MoveCube(GameObject cube, Vector3 hitPoint)
+    Vector3 Only2D(Vector3 position, float z)
     {
-        // Move the cube to the new position, maintaining the original offset
-        cube.transform.position = hitPoint + _dragOffset;
+        return new Vector3(position.x, position.y, z);
     }
 
     void SelectCube(GameObject cube)
@@ -142,10 +147,9 @@ public class CubeSelector : MonoBehaviour
         // If shift is pressed, add to selection without deselecting others
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
         {
-            if (_selectedCubes.Add(cube))
-            {
-                CreateOutlineCube(cube);
-            }
+            if (_selectedCubes.Contains(cube)) return;
+            _selectedCubes.Add(cube);
+            CreateOutlineCube(cube);
         }
         // Normal selection
         else {
@@ -230,6 +234,7 @@ public class CubeSelector : MonoBehaviour
         RemoveOutlineCube(originalCube);
 
         var highlight = Instantiate(highlightPrefab, originalCube.transform);
+        DestroyImmediate(highlight.gameObject.GetComponent<Collider2D>());
         highlight.transform.SetParent(originalCube.transform, false);
         highlight.transform.localScale = new Vector3(outlineScale, outlineScale, .8f);
         highlight.GetComponent<MeshRenderer>().sharedMaterial = highlightMaterial;
