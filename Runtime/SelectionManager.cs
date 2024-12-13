@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using Runtime;
 using Vector3 = UnityEngine.Vector3;
 
@@ -16,13 +15,10 @@ public class CubeSelector : MonoBehaviour
     private readonly Dictionary<GameObject, bool> _markUnselect = new();
     private Camera _displayCamera;
     private int _targetLayerMask;
-    public Vector3 _dragOffset;
-    private Vector3? _dragStart = null;
-    private Vector3? _dragEnd = null;
-    public Vector3 delta = Vector3.zero;
-    public int SelectedCubesCount = 0; 
+    private Vector3? _dragStart;
+    private Vector3? _dragEnd;
     private bool _isDragging;
-    public GameObject _currentlyDraggedCube;
+    public GameObject currentlyDraggedCube;
     private int _indexOfCurrentlyDraggedCube;
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
@@ -30,8 +26,6 @@ public class CubeSelector : MonoBehaviour
     [SerializeField] private Canvas parentCanvas;
     [SerializeField] private GameObject highlightPrefab;
     [SerializeField] private Material highlightMaterial;
-    private GameObject pos1;
-    private GameObject pos2;
     private void Start()
     {
         // Find the camera for Display 2 (index 1)
@@ -50,47 +44,21 @@ public class CubeSelector : MonoBehaviour
         {
             Debug.LogError($"Layer '{targetLayerName}' not found!");
         }
-        
-        pos1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        pos2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        pos1.transform.localScale = new Vector3(2,2,2);
-        pos2.transform.localScale = new Vector3(2,2,2);
-        pos1.layer = LayerMask.NameToLayer("OverlayScene");
-        pos2.layer = LayerMask.NameToLayer("OverlayScene");
-        Destroy(pos1.gameObject.GetComponent<Collider>());
-        Destroy(pos2.gameObject.GetComponent<Collider>());
     }
 
     private void Update()
     {
         // before
-        if (_dragStart != null)
+        if (currentlyDraggedCube)
         {
-            pos1.transform.position = new Vector3(_dragStart.Value.x, _dragStart.Value.y, 12);
-            pos1.gameObject.GetComponent<Renderer>().material.color = Color.yellow;
+            currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.red;
         }
-        
-        if (_dragEnd != null)
-        {
-            pos2.transform.position = new Vector3(_dragEnd.Value.x, _dragEnd.Value.y, 12);
-            pos2.gameObject.GetComponent<Renderer>().material.color = Color.green;
-        }
-        
-        if (_currentlyDraggedCube)
-        {
-            _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.red;
-        }
-        
-        // actual updates
         HandleMouseInput();
     }
 
     private void HandleMouseInput()
     {
         if (!_displayCamera || _targetLayerMask == 0) return;
-        
-        // only for debugging
-        SelectedCubesCount = _selectedCubes.Count;
         
         // Cast a ray from the mouse position
         Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
@@ -108,15 +76,13 @@ public class CubeSelector : MonoBehaviour
                 _dragStart = mousePosition;
                 
                 // debug
-                pos1.transform.position = new Vector3(_dragStart.Value.x, _dragStart.Value.y, 12);
                 var hitObject = hit.collider.gameObject;
-                _currentlyDraggedCube = hitObject;
+                currentlyDraggedCube = hitObject;
                 
                 // In left click DO NOT REMOVE here only mark as being removed after drag
                 // assuming we hit a highlighted object: move the object
                 SelectCube(hitObject);
 
-                // TODO: Ensure this is not already present in here
                 foreach(var cube in _selectedCubes)
                 {
                     _selectedCubesStartPositions[cube] = cube.transform.position;
@@ -128,8 +94,14 @@ public class CubeSelector : MonoBehaviour
                 if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                 {
                     DeselectAllCubes();
+                    CloseContextMenu();
                 }
             }
+        }
+
+        if (Input.GetMouseButtonDown(1) && hit.collider != null)
+        {
+            ShowContextMenu(hit.collider.gameObject);
         }
 
         
@@ -140,11 +112,11 @@ public class CubeSelector : MonoBehaviour
             if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && hit || _isDragging )
             {   
                 _dragEnd = mousePosition;
-                pos2.transform.position = new Vector3(_dragEnd.Value.x, _dragEnd.Value.y, 12);
                 _isDragging = true;
                 // Dragging with shift allows moving all selected cubes
-                if (_currentlyDraggedCube != null)
+                if (currentlyDraggedCube != null)
                 {
+                    if (_dragStart == null || _dragEnd == null) return;
                     var drag = _dragEnd - _dragStart;
                     foreach (var cube in _selectedCubes)
                     {
@@ -162,7 +134,7 @@ public class CubeSelector : MonoBehaviour
                     {
                         _markUnselect[toBeUnselectedCube] = false;
                     }
-                    _currentlyDraggedCube.transform.position = Only2D(_selectedCubesStartPositions[_currentlyDraggedCube] + (Vector3)drag, _currentlyDraggedCube.transform.position.z);
+                    currentlyDraggedCube.transform.position = Only2D(_selectedCubesStartPositions[currentlyDraggedCube] + (Vector3)drag, currentlyDraggedCube.transform.position.z);
                 }
             }
         }
@@ -172,27 +144,31 @@ public class CubeSelector : MonoBehaviour
             if (_markUnselect[toBeUnselectedCube])
             {
                 RemoveOutlineCube(toBeUnselectedCube);
-                _selectedCubes.Remove(toBeUnselectedCube);                
+                _selectedCubes.Remove(toBeUnselectedCube);
             }
+        }
+
+        if (_markUnselect.Count > 0)
+        {
+            CloseContextMenu();
         }
 
         // Reset dragging when mouse button is released
         if (Input.GetMouseButtonUp(0))
         {
-            if (_currentlyDraggedCube != null)
+            if (currentlyDraggedCube != null)
             {
                 if (_dragStart != null && _dragEnd != null && (Vector3)_dragEnd - (Vector3)_dragStart == Vector3.zero)
                 {
-                    RemoveOutlineCube(_currentlyDraggedCube);
-                    _selectedCubes.Remove(_currentlyDraggedCube);
+                    RemoveOutlineCube(currentlyDraggedCube);
+                    _selectedCubes.Remove(currentlyDraggedCube);
                 }
-                _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.white;
-                _currentlyDraggedCube = null;
+                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.white;
+                currentlyDraggedCube = null;
             }
-            _dragOffset = Vector3.zero;
+            _markUnselect.Clear();
             _dragStart = null;
             _dragEnd = null;
-            delta = Vector3.zero;
             _isDragging = false;
         }
     }
@@ -203,9 +179,7 @@ public class CubeSelector : MonoBehaviour
     }
 
     /// <summary>
-    /// Might require 2-part execution now where the on click selection will only mark cube for select (and deselect with only left click).
-    /// For real deselect all cubes if marked for deselection
-    /// This deselection flag might be undone in the drag method 
+    /// Marking cubes for deselection that will cause deselection/removal of the outline if not dragged
     /// </summary>
     /// <param name="cube"></param>
     void SelectCube(GameObject cube)
@@ -233,13 +207,7 @@ public class CubeSelector : MonoBehaviour
         _selectedCubes.Clear();
     }
 
-    private static void MoveSelectedNodes(HashSet<GameObject> selectedNodes, Vector3 drag)
-    {
-        foreach (var node in selectedNodes)
-            node.transform.position += drag;
-    }
-
-    private void ShowContextMenu(GameObject hitObject, Vector3 hitPosition)
+    private void ShowContextMenu(GameObject hitObject)
     {
         // Destroy the current context menu if it exists
         if (_currentContextMenu)
@@ -270,15 +238,6 @@ public class CubeSelector : MonoBehaviour
         }
     }
 
-    private void ClearSelections()
-    {
-        foreach (var cube in _selectedCubes.ToArray())
-        {
-            RemoveOutlineCube(cube);
-        }
-        _selectedCubes.Clear();
-    }
-
     /// <summary>
     /// Spawn Highlight prefab and scale to fit the cube currently selected
     /// </summary>
@@ -305,11 +264,5 @@ public class CubeSelector : MonoBehaviour
         if (!_outlineCubes.TryGetValue(originalCube, out GameObject outlineCube)) return;
         Destroy(outlineCube);
         _outlineCubes.Remove(originalCube);
-    }
-
-    [CanBeNull]
-    private GameObject IsSelected(GameObject selectedCube)
-    {
-        return _outlineCubes.GetValueOrDefault(selectedCube);
     }
 }
