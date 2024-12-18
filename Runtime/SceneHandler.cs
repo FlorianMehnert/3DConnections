@@ -126,8 +126,10 @@ namespace Runtime
 
         public static GameObject GetNodeGraph(string sceneName)
         {
+            Debug.Log("in get node graph");
             var scene = SceneManager.GetSceneByName(sceneName);
             if (!scene.IsValid()) return null;
+            Debug.Log("scene is valid");
             var rootObjects = scene.GetRootGameObjects();
             foreach (var obj in rootObjects)
             {

@@ -44,9 +44,9 @@ namespace Runtime
         private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend)
         {
             // spawn node prefab as child of this element
-            if (_nodeGraph == null)
+            if (!_nodeGraph)
             {
-                _nodeGraph = SceneHandler.GetNodeGraph("New Scene");
+                _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
                 if (!_nodeGraph)
                 {
                     Debug.Log("still null");
@@ -216,17 +216,39 @@ namespace Runtime
             }
             if (paths!.Length == 0)
             {
-                var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
-                var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
-                var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
-
-                var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
-                var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
-                var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
-
-                _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-                _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-                _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+                // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
+                // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
+                // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
+                //
+                // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
+                // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
+                // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
+                //
+                // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+                // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
+                // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+                
+                var connections = ParentChildConnections.CalculateNodeConnections();
+        
+                foreach (var nodeConnection in connections)
+                {
+                    var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                    _nodes.Add(nodeConnection.Key, currentNodeGameObject);
+                    foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
+                    {
+                        GameObject childGameObject;
+                        if (!_nodes.TryGetValue(childNode, out var node))
+                        {
+                            childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                            _nodes.Add(childNode, childGameObject);
+                        }
+                        else
+                        {
+                            childGameObject = node;
+                        }
+                        _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
+                    }
+                }
             }
             else
             {
@@ -239,7 +261,7 @@ namespace Runtime
                 {
                     _nodes.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
                 }
-
+                
                 var connections = CalculateNodeConnections(scriptNodes, _allReferences);
                 DrawNodeConnections(connections, _nodes);
             }
