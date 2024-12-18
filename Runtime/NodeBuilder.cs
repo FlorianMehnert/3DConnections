@@ -49,17 +49,18 @@ namespace Runtime
                 _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
                 if (!_nodeGraph)
                 {
-                    Debug.Log("still null");
+                    Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
                 }
             }
+
             var nodeObject = Instantiate(nodePrefab, _nodeGraph.transform);
-            
+
             // set name allowing to differentiate between them 
             nodeObject.transform.position = spawnPosition;
             nodeObject.transform.localScale = nodeExtend;
             nodeObject.name = "Node";
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
-            nodeObject.AddComponent<CubeTextOverlay>();
+            // nodeObject.AddComponent<NodeTextOverlay>();
             // RemoveAndReplaceCollider(nodeObject);
             ConfigureNode(nodeObject);
             return nodeObject;
@@ -114,18 +115,18 @@ namespace Runtime
                 var node = new Node(scriptName, 0, 0, nodeWidth, nodeHeight);
                 nodes.Add(node);
             }
-            
+
             return nodes;
         }
-        
+
         private static Dictionary<Node, HashSet<Node>> CalculateNodeConnections(
-            List<Node> nodes, 
+            List<Node> nodes,
             Dictionary<string, ClassReferences> allReferences)
         {
             // Create a lookup dictionary to quickly find nodes by their script name
             var nodesByScriptName = nodes
                 .ToDictionary(
-                    node => node.Name, 
+                    node => node.Name,
                     node => node
                 );
 
@@ -148,7 +149,7 @@ namespace Runtime
                 foreach (var referencedScript in classReferences.References)
                 {
                     // Avoid self-references and ensure the referenced script exists as a node
-                    if (referencedScript != scriptName && 
+                    if (referencedScript != scriptName &&
                         nodesByScriptName.TryGetValue(referencedScript, out var referencedNode))
                     {
                         nodeConnections[currentNode].Add(referencedNode);
@@ -158,9 +159,9 @@ namespace Runtime
 
             return nodeConnections;
         }
-        
+
         private void DrawNodeConnections(
-            Dictionary<Node, HashSet<Node>> nodeConnections, 
+            Dictionary<Node, HashSet<Node>> nodeConnections,
             Dictionary<Node, GameObject> nodeToGameObjectMap)
         {
             foreach (var (sourceNode, connectedNodes) in nodeConnections)
@@ -176,7 +177,7 @@ namespace Runtime
                         continue;
 
                     // Draw connection between the two GameObjects
-                    _connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
+                    _connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f));
                 }
             }
         }
@@ -202,69 +203,104 @@ namespace Runtime
             }
         }
 
+        private void Clear()
+        {
+            // clear node objects
+            _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
+            foreach (Transform child in _nodeGraph.transform)
+            {
+                if (child && child.parent)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+            _nodes.Clear();
+            
+            // clear connections
+            _connectionManager.ClearConnections();
+            
+            // clear text
+            var textManager = GetComponent<NodeTextOverlay>();
+            if (textManager)
+            {
+                textManager.ClearText();
+            }
+        }
+
         public void Execute(int x = 20, int y = 60, string[] paths = null)
         {
-            if (!GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive")) return;
-
-            var overlayedScene = SceneHandler.GetOverlayedScene();
-            if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-            _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
-            if (!_secondCamera)
+            if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
             {
-                Debug.Log("The second camera is null please load the second Scene");
-                return;
-            }
-            if (paths!.Length == 0)
-            {
-                // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
-                // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
-                // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
-                //
-                // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
-                // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
-                // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
-                //
-                // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-                // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-                // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
-                
-                var connections = ParentChildConnections.CalculateNodeConnections();
-        
-                foreach (var nodeConnection in connections)
+                var overlayedScene = SceneHandler.GetOverlayedScene();
+                if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+                _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
+                if (!_secondCamera)
                 {
-                    var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                    _nodes.Add(nodeConnection.Key, currentNodeGameObject);
-                    foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
+                    Debug.Log("The second camera is null please load the second Scene");
+                    return;
+                }
+
+                if (paths!.Length == 0)
+                {
+                    // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
+                    // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
+                    // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
+                    //
+                    // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
+                    // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
+                    // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
+                    //
+                    // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+                    // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
+                    // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+
+                    var connections = ParentChildConnections.CalculateNodeConnections();
+
+                    foreach (var nodeConnection in connections)
                     {
-                        GameObject childGameObject;
-                        if (!_nodes.TryGetValue(childNode, out var node))
+                        var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                        _nodes.Add(nodeConnection.Key, currentNodeGameObject);
+                        foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
                         {
-                            childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                            _nodes.Add(childNode, childGameObject);
+                            GameObject childGameObject;
+                            if (!_nodes.TryGetValue(childNode, out var node))
+                            {
+                                childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                                _nodes.Add(childNode, childGameObject);
+                            }
+                            else
+                            {
+                                childGameObject = node;
+                            }
+
+                            _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f));
                         }
-                        else
-                        {
-                            childGameObject = node;
-                        }
-                        _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
                     }
                 }
-            }
-            else
-            {
-                Debug.Log(paths);
-                var scriptNodes = FindScriptNodes(paths[0]);
-                NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
-                
-                // Spawn a node for each node in scriptPaths
-                foreach (var scriptNode in scriptNodes)
+                else
                 {
-                    _nodes.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
+                    Debug.Log(paths);
+                    var scriptNodes = FindScriptNodes(paths[0]);
+                    NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
+
+                    // Spawn a node for each node in scriptPaths
+                    foreach (var scriptNode in scriptNodes)
+                    {
+                        _nodes.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
+                    }
+
+                    var connections = CalculateNodeConnections(scriptNodes, _allReferences);
+                    DrawNodeConnections(connections, _nodes);
                 }
-                
-                var connections = CalculateNodeConnections(scriptNodes, _allReferences);
-                DrawNodeConnections(connections, _nodes);
+            }else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
+            {
+                Clear();
             }
+        }
+
+        private void OnDestroy()
+        {
+            Clear();
         }
     }
 }

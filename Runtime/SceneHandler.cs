@@ -129,13 +129,17 @@ namespace Runtime
             Debug.Log("in get node graph");
             var scene = SceneManager.GetSceneByName(sceneName);
             if (!scene.IsValid()) return null;
-            Debug.Log("scene is valid");
             var rootObjects = scene.GetRootGameObjects();
-            foreach (var obj in rootObjects)
-            {
-                Debug.Log(obj);
-            }
             return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
+        }
+
+        public static GameObject GetCanvas(string sceneName)
+        {
+            Debug.Log("in get canvas");
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (!scene.IsValid()) return null;
+            var rootObjects = scene.GetRootGameObjects();
+            return rootObjects.FirstOrDefault(obj => obj.name == "Canvas");
         }
         
 
