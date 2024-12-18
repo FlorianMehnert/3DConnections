@@ -132,6 +132,10 @@ public class CubeSelector : MonoBehaviour
         {
             RemoveOutlineCube(toBeUnselectedCube);
             _selectedCubes.Remove(toBeUnselectedCube);
+            foreach(Transform child in toBeUnselectedCube.transform)
+            {
+                Destroy(child.gameObject);
+            }
         }
 
         if (_markUnselect.Count > 0)

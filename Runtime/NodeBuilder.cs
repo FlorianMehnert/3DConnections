@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -20,15 +21,17 @@ namespace Runtime
         [SerializeField] private float nodeHeight = 1.0f;
         [SerializeField] private Color nodeColor = Color.white;
 
-        private NodeConnectionManager connectionManager;
+        private NodeConnectionManager _connectionManager;
         [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
         private Camera _secondCamera;
+        private GameObject _nodeGraph;
 
         private void Start()
         {
-            connectionManager = GetComponent<NodeConnectionManager>();
+            _connectionManager = GetComponent<NodeConnectionManager>();
+            _nodeGraph = SceneHandler.GetNodeGraph("New Scene");
         }
 
 
@@ -41,15 +44,23 @@ namespace Runtime
         private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend)
         {
             // spawn node prefab as child of this element
-            var nodeObject = Instantiate(nodePrefab, transform);
+            if (_nodeGraph == null)
+            {
+                _nodeGraph = SceneHandler.GetNodeGraph("New Scene");
+                if (!_nodeGraph)
+                {
+                    Debug.Log("still null");
+                }
+            }
+            var nodeObject = Instantiate(nodePrefab, _nodeGraph.transform);
             
             // set name allowing to differentiate between them 
             nodeObject.transform.position = spawnPosition;
             nodeObject.transform.localScale = nodeExtend;
-            nodeObject.name = $"Node";
+            nodeObject.name = "Node";
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
             nodeObject.AddComponent<CubeTextOverlay>();
-            RemoveAndReplaceCollider(nodeObject); // TODO: improve on this - unity always creates cube primitives using a collider attached
+            // RemoveAndReplaceCollider(nodeObject);
             ConfigureNode(nodeObject);
             return nodeObject;
         }
@@ -165,7 +176,7 @@ namespace Runtime
                         continue;
 
                     // Draw connection between the two GameObjects
-                    connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
+                    _connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f ));
                 }
             }
         }
@@ -213,9 +224,9 @@ namespace Runtime
                 var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
                 var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
 
-                connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-                connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-                connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+                _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+                _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
+                _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
             }
             else
             {

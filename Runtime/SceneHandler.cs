@@ -10,8 +10,9 @@ namespace Runtime
     /// </summary>
     public class SceneHandler : MonoBehaviour
     {
-        private Camera mainCamera;
+        private Camera _mainCamera;
         private Camera OverlayCamera { get; set; }
+        private GameObject NodeGraph {get; set;}
         private const string LayerOverlay = "OverlayScene";
 
         private static bool IsSceneLoaded(string sceneName)
@@ -56,16 +57,16 @@ namespace Runtime
             var uiLayer = LayerMask.NameToLayer("UI");
 
             // find a camera rendering to the second display (display 1) in a multi display else set to null
-            mainCamera = GetCameraOfSpecificDisplay(0);
+            _mainCamera = GetCameraOfSpecificDisplay(0);
             OverlayCamera = GetCameraOfScene("NewScene");
             
             // disable culling Mask for the main camera and enable for overlay camera
-            if (mainCamera)
+            if (_mainCamera)
             {
-                mainCamera.cullingMask &= ~(1 << overlayLayerMask);
+                _mainCamera.cullingMask &= ~(1 << overlayLayerMask);
                 if (uiLayer != -1) // Ensure the UI layer exists
                 {
-                    mainCamera.cullingMask |= (1 << uiLayer);
+                    _mainCamera.cullingMask |= (1 << uiLayer);
                 }
             }
             else
@@ -122,6 +123,19 @@ namespace Runtime
             var rootObjects = scene.GetRootGameObjects();
             return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(camera => camera);
         }
+
+        public static GameObject GetNodeGraph(string sceneName)
+        {
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (!scene.IsValid()) return null;
+            var rootObjects = scene.GetRootGameObjects();
+            foreach (var obj in rootObjects)
+            {
+                Debug.Log(obj);
+            }
+            return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
+        }
+        
 
         public static void ToggleOverlay()
         {
