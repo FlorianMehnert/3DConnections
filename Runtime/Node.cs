@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace Runtime
 {
     /// <summary>
@@ -11,6 +13,7 @@ namespace Runtime
         public float Y { get; set; }
         public float Width { get; set; }
         public float Height { get; set; }
+        public Color Color { get; set; }
 
         public Node(string name, float x, float y, float width, float height)
         {

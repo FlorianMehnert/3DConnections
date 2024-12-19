@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Runtime
+namespace _3DConnections.Runtime
 {
     /// <summary>
     /// Manager for SceneSwitching and interacting with the second display

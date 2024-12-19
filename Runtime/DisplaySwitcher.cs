@@ -1,41 +1,44 @@
 using Runtime;
 using UnityEngine;
 
-/// <summary>
-/// Manager responsible for display switching using shortcuts
-/// </summary>
-public class DisplaySwitcher : MonoBehaviour
+namespace _3DConnections.Runtime
 {
-    private void Update()
-    {
-        // Check if F1 is pressed to switch to Display 1
-        if (!Input.GetKeyDown(KeyCode.F1)) return;
-        Debug.Log("toggle display");
-        SceneHandler.ToggleOverlay();
-    }
-
     /// <summary>
-    /// "Open" display2 if this is required. Currently, not since the node tree is more like an overlay than a second scene or window
+    /// Manager responsible for display switching using shortcuts
     /// </summary>
-    /// <param name="displayIndex"></param>
-    private static void SwitchDisplay(int displayIndex)
+    public class DisplaySwitcher : MonoBehaviour
     {
-        // Check if the specified display index exists and is active
-        if (displayIndex < Display.displays.Length)
+        private void Update()
         {
-            if (!Display.displays[displayIndex].active)
+            // Check if F1 is pressed to switch to Display 1
+            if (!Input.GetKeyDown(KeyCode.F1)) return;
+            Debug.Log("toggle display");
+            SceneHandler.ToggleOverlay();
+        }
+
+        /// <summary>
+        /// "Open" display2 if this is required. Currently, not since the node tree is more like an overlay than a second scene or window
+        /// </summary>
+        /// <param name="displayIndex"></param>
+        private static void SwitchDisplay(int displayIndex)
+        {
+            // Check if the specified display index exists and is active
+            if (displayIndex < Display.displays.Length)
             {
-                Display.displays[displayIndex].Activate();
-                Debug.Log($"Activated Display {displayIndex + 1}");
+                if (!Display.displays[displayIndex].active)
+                {
+                    Display.displays[displayIndex].Activate();
+                    Debug.Log($"Activated Display {displayIndex + 1}");
+                }
+                else
+                {
+                    Debug.Log($"Display {displayIndex + 1} is already active.");
+                }
             }
             else
             {
-                Debug.Log($"Display {displayIndex + 1} is already active.");
+                Debug.LogWarning($"Display {displayIndex + 1} does not exist or is unavailable.");
             }
-        }
-        else
-        {
-            Debug.LogWarning($"Display {displayIndex + 1} does not exist or is unavailable.");
         }
     }
 }

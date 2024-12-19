@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace Runtime
+namespace _3DConnections.Runtime
 {
     /// <summary>
     /// Dataclass to keep track of different kinds of references within the project
