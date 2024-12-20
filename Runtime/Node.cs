@@ -1,23 +1,29 @@
-using System.Drawing;
+using System;
+using UnityEngine;
+using UnityEngine.Serialization;
+using Color = System.Drawing.Color;
 
 namespace Runtime
 {
     /// <summary>
     /// Internal representation of a Node used to compute layouts and keep track of all available nodes
     /// </summary>
+    [Serializable]
     public class Node
     {
         
-        public string Name;
+        public string name;
         public float X { get; set; }
         public float Y { get; set; }
         public float Width { get; set; }
         public float Height { get; set; }
         public Color Color { get; set; }
+        public Node[] Children { get; set; }
+        public GameObject relatedGameObject;
 
         public Node(string name, float x, float y, float width, float height)
         {
-            Name = name;
+            this.name = name;
             X = x;
             Y = y;
             Width = width;
@@ -30,7 +36,9 @@ namespace Runtime
             Y = 0;
             Width = 150;
             Height = 30;
-            Name = name;
+            this.name = name;
+            Children = Array.Empty<Node>();
+            relatedGameObject = null;
         }
     }
 }

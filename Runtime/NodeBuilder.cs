@@ -1,19 +1,20 @@
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using _3DConnections.Runtime;
+using Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Unity.VisualScripting;
 
-namespace Runtime
+namespace _3DConnections.Runtime
 {
     /// <summary>
     /// Manager class responsible for the construction of the node-graph
     /// </summary>
     public class NodeBuilder : MonoBehaviour
     {
-        private readonly Dictionary<Node, GameObject> _nodes = new();
+        private readonly Dictionary<Node, GameObject> _relatedGameObjects = new();
         private Dictionary<string, ClassReferences> _allReferences = new();
 
         [Header("Node Configuration")] [SerializeField]
@@ -28,6 +29,9 @@ namespace Runtime
         private int _nodeCounter;
         private Camera _secondCamera;
         private GameObject _nodeGraph;
+
+        private Node[] _nodes = {};
+        
 
         private void Start()
         {
@@ -62,7 +66,6 @@ namespace Runtime
             nodeObject.name = "Node";
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
             // nodeObject.AddComponent<NodeTextOverlay>();
-            // RemoveAndReplaceCollider(nodeObject);
             ConfigureNode(nodeObject);
             return nodeObject;
         }
@@ -73,19 +76,10 @@ namespace Runtime
         /// <param name="node"></param>
         private GameObject SpawnCubeNodeUsingNodeObject(Node node)
         {
-            return SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f));
-        }
-
-        private static void RemoveAndReplaceCollider(GameObject nodeObject)
-        {
-            // Remove 3D box collider
-            var boxCollider = nodeObject.GetComponent<BoxCollider>();
-            if (boxCollider)
-            {
-                DestroyImmediate(boxCollider);
-            }
-
-            nodeObject.AddComponent<BoxCollider2D>();
+            print(node);
+            print(node.X);
+            print(node.Y);
+            return !_secondCamera ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f));
         }
 
         /// <summary>
@@ -127,7 +121,7 @@ namespace Runtime
             // Create a lookup dictionary to quickly find nodes by their script name
             var nodesByScriptName = nodes
                 .ToDictionary(
-                    node => node.Name,
+                    node => node.name,
                     node => node
                 );
 
@@ -218,7 +212,8 @@ namespace Runtime
                     }
                 }
             }
-            _nodes.Clear();                
+            _relatedGameObjects.Clear();
+            _nodes = new Node[] { };
             
             
             // clear connections
@@ -229,6 +224,83 @@ namespace Runtime
             if (textManager)
             {
                 textManager.ClearText();
+            }
+        }
+        
+        private void VisualizeSubtree(Tree tree, Tree.TreeNode node, GameObject visualizationRoot, Dictionary<Tree.TreeNode, GameObject> nodeVisuals)
+        {
+            // Create visual for current node
+            GameObject nodeVisual = SpawnCubeNodeUsingNodeObject(node.Data);
+            nodeVisual.transform.SetParent(visualizationRoot.transform);
+            nodeVisuals[node] = nodeVisual;
+
+            // Create connection to parent if it exists and isn't the virtual root
+            if (node.Parent != null && node.Parent != tree.virtualRoot && nodeVisuals.TryGetValue(node.Parent, out var visual))
+            {
+                _connectionManager.AddConnection(
+                    visual,
+                    nodeVisual,
+                    Color.HSVToRGB(0, 0.5f, 0.9f)
+                );
+            }
+
+            // Process children
+            foreach (var child in node.Children)
+            {
+                VisualizeSubtree(tree, child, visualizationRoot, nodeVisuals);
+            }
+        }
+
+        private void VisualizeTree(Tree tree, GameObject visualizationRoot)
+        {
+            Dictionary<Tree.TreeNode, GameObject> nodeVisuals = new Dictionary<Tree.TreeNode, GameObject>();
+
+            // Create visual nodes for actual roots first
+            foreach (var rootNode in tree.actualRoots)
+            {
+                VisualizeSubtree(tree, rootNode, visualizationRoot, nodeVisuals);
+            }
+        }
+
+        private void BuildTree()
+        {
+            Clear();
+            var toExploreNodes = new Queue<Node>();
+            var rootTransforms = SceneHandler.GetSceneRootObjects();
+            foreach (var rootTransform in rootTransforms)
+            {
+                var newNode = new Node(rootTransform.name)
+                {
+                    relatedGameObject = rootTransform.gameObject
+                };
+                
+                _nodes.AddRange(new[] { newNode });
+                _relatedGameObjects[newNode] = rootTransform.gameObject;
+                toExploreNodes.Enqueue(newNode);
+            }
+
+            while (toExploreNodes.Count > 0)
+            {
+                var currentNodes = toExploreNodes.ToList();
+                foreach (var node in currentNodes)
+                {
+                    if (node.relatedGameObject.transform.childCount > 0)
+                    {
+                        foreach (Transform child in node.relatedGameObject.transform)
+                        {
+                            // only create new Node object if this not already present
+                            if (!_relatedGameObjects.ContainsValue(child.gameObject))
+                            {
+                                var childrenNode = new Node(child.gameObject.name)
+                                {
+                                    relatedGameObject = child.gameObject
+                                };
+                                toExploreNodes.Enqueue(childrenNode);
+                                ((IList)node.Children).Add(childrenNode);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -264,14 +336,14 @@ namespace Runtime
                     foreach (var nodeConnection in connections)
                     {
                         var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                        _nodes.Add(nodeConnection.Key, currentNodeGameObject);
+                        _relatedGameObjects.Add(nodeConnection.Key, currentNodeGameObject);
                         foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
                         {
                             GameObject childGameObject;
-                            if (!_nodes.TryGetValue(childNode, out var node))
+                            if (!_relatedGameObjects.TryGetValue(childNode, out var node))
                             {
                                 childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                                _nodes.Add(childNode, childGameObject);
+                                _relatedGameObjects.Add(childNode, childGameObject);
                             }
                             else
                             {
@@ -291,19 +363,20 @@ namespace Runtime
                     // Spawn a node for each node in scriptPaths
                     foreach (var scriptNode in scriptNodes)
                     {
-                        _nodes.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
+                        _relatedGameObjects.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
                     }
 
                     var connections = CalculateNodeConnections(scriptNodes, _allReferences);
-                    DrawNodeConnections(connections, _nodes);
+                    DrawNodeConnections(connections, _relatedGameObjects);
                 }
             }else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
             {
                 Clear();
             }else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
             {
-               // find root elements
-               // - 
+                var visualizationRoot = new GameObject("Tree Visualization");
+                var sceneTree = new Tree("NewScene", _connectionManager);
+                VisualizeTree(sceneTree, visualizationRoot);
             }
         }
 
