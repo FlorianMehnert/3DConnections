@@ -30,8 +30,9 @@ namespace _3DConnections.Runtime
         private Camera _secondCamera;
         private GameObject _nodeGraph;
 
-        private Node[] _nodes = {};
-        
+        private List<Node> _nodes = new();
+        private readonly List<GameObject> _rootNodes = new();
+
 
         private void Start()
         {
@@ -76,9 +77,6 @@ namespace _3DConnections.Runtime
         /// <param name="node"></param>
         private GameObject SpawnCubeNodeUsingNodeObject(Node node)
         {
-            print(node);
-            print(node.X);
-            print(node.Y);
             return !_secondCamera ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f));
         }
 
@@ -212,13 +210,14 @@ namespace _3DConnections.Runtime
                     }
                 }
             }
+
             _relatedGameObjects.Clear();
-            _nodes = new Node[] { };
-            
-            
+            _nodes.Clear();
+
+
             // clear connections
             _connectionManager.ClearConnections();
-            
+
             // clear text
             var textManager = GetComponent<NodeTextOverlay>();
             if (textManager)
@@ -226,7 +225,7 @@ namespace _3DConnections.Runtime
                 textManager.ClearText();
             }
         }
-        
+
         private void VisualizeSubtree(Tree tree, Tree.TreeNode node, GameObject visualizationRoot, Dictionary<Tree.TreeNode, GameObject> nodeVisuals)
         {
             // Create visual for current node
@@ -253,7 +252,7 @@ namespace _3DConnections.Runtime
 
         private void VisualizeTree(Tree tree, GameObject visualizationRoot)
         {
-            Dictionary<Tree.TreeNode, GameObject> nodeVisuals = new Dictionary<Tree.TreeNode, GameObject>();
+            var nodeVisuals = new Dictionary<Tree.TreeNode, GameObject>();
 
             // Create visual nodes for actual roots first
             foreach (var rootNode in tree.actualRoots)
@@ -264,125 +263,155 @@ namespace _3DConnections.Runtime
 
         private void BuildTree()
         {
-            Clear();
-            var toExploreNodes = new Queue<Node>();
-            var rootTransforms = SceneHandler.GetSceneRootObjects();
+            var toExploreNodes = new List<Node>();
+            var rootTransforms = SceneHandler.GetSceneRootObjects("SampleScene");
             foreach (var rootTransform in rootTransforms)
             {
+                _rootNodes.Add(rootTransform.gameObject);
                 var newNode = new Node(rootTransform.name)
                 {
                     relatedGameObject = rootTransform.gameObject
                 };
-                
-                _nodes.AddRange(new[] { newNode });
-                _relatedGameObjects[newNode] = rootTransform.gameObject;
-                toExploreNodes.Enqueue(newNode);
-            }
 
-            while (toExploreNodes.Count > 0)
-            {
-                var currentNodes = toExploreNodes.ToList();
-                foreach (var node in currentNodes)
+                _nodes.Add(newNode);
+                _relatedGameObjects[newNode] = rootTransform.gameObject;
+                if (!toExploreNodes.Contains(newNode))
                 {
-                    if (node.relatedGameObject.transform.childCount > 0)
+                    toExploreNodes.Add(newNode);
+                }
+
+                while (toExploreNodes.Count > 0)
+                {
+                    var currentNodes = toExploreNodes.ToList();
+                    foreach (var node in currentNodes)
                     {
-                        foreach (Transform child in node.relatedGameObject.transform)
+                        if (node.relatedGameObject.transform.childCount > 0)
                         {
-                            // only create new Node object if this not already present
-                            if (!_relatedGameObjects.ContainsValue(child.gameObject))
+                            foreach (Transform child in node.relatedGameObject.transform)
                             {
-                                var childrenNode = new Node(child.gameObject.name)
+                                // only create new Node object if this not already present
+                                if (!_relatedGameObjects.ContainsValue(child.gameObject))
                                 {
-                                    relatedGameObject = child.gameObject
-                                };
-                                toExploreNodes.Enqueue(childrenNode);
-                                ((IList)node.Children).Add(childrenNode);
+                                    var childrenNode = new Node(child.gameObject.name)
+                                    {
+                                        relatedGameObject = child.gameObject
+                                    };
+                                    if (!_nodes.Contains(childrenNode))
+                                    {
+                                        _nodes.Add(newNode);
+                                    }
+
+                                    _relatedGameObjects[newNode] = child.gameObject;
+                                    if (!toExploreNodes.Contains(childrenNode))
+                                    {
+                                        toExploreNodes.Add(childrenNode);
+                                    }
+
+                                    node.Children.Add(childrenNode);
+                                }
                             }
                         }
+
+                        toExploreNodes.Remove(node);
                     }
                 }
             }
         }
 
         public void Execute(int x = 20, int y = 60, string[] paths = null)
-        {
-            if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
             {
-                var overlayedScene = SceneHandler.GetOverlayedScene();
-                if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-                _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
-                if (!_secondCamera)
+                if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
                 {
-                    Debug.Log("The second camera is null please load the second Scene");
-                    return;
-                }
-
-                if (paths!.Length == 0)
-                {
-                    // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
-                    // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
-                    // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
-                    //
-                    // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
-                    // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
-                    // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
-                    //
-                    // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-                    // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-                    // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
-
-                    var connections = ParentChildConnections.CalculateNodeConnections();
-
-                    foreach (var nodeConnection in connections)
+                    var overlayedScene = SceneHandler.GetOverlayedScene();
+                    if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+                    _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
+                    if (!_secondCamera)
                     {
-                        var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                        _relatedGameObjects.Add(nodeConnection.Key, currentNodeGameObject);
-                        foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
-                        {
-                            GameObject childGameObject;
-                            if (!_relatedGameObjects.TryGetValue(childNode, out var node))
-                            {
-                                childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                                _relatedGameObjects.Add(childNode, childGameObject);
-                            }
-                            else
-                            {
-                                childGameObject = node;
-                            }
+                        Debug.Log("The second camera is null please load the second Scene");
+                        return;
+                    }
 
-                            _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f));
+                    if (paths!.Length == 0)
+                    {
+                        // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
+                        // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
+                        // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
+                        //
+                        // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
+                        // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
+                        // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
+                        //
+                        // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
+                        // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
+                        // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
+
+                        var connections = ParentChildConnections.CalculateNodeConnections();
+
+                        foreach (var nodeConnection in connections)
+                        {
+                            var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                            _relatedGameObjects.Add(nodeConnection.Key, currentNodeGameObject);
+                            foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
+                            {
+                                GameObject childGameObject;
+                                if (!_relatedGameObjects.TryGetValue(childNode, out var node))
+                                {
+                                    childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
+                                    _relatedGameObjects.Add(childNode, childGameObject);
+                                }
+                                else
+                                {
+                                    childGameObject = node;
+                                }
+
+                                _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log(paths);
+                        var scriptNodes = FindScriptNodes(paths[0]);
+                        NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
+
+                        // Spawn a node for each node in scriptPaths
+                        foreach (var scriptNode in scriptNodes)
+                        {
+                            _relatedGameObjects.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
+                        }
+
+                        var connections = CalculateNodeConnections(scriptNodes, _allReferences);
+                        DrawNodeConnections(connections, _relatedGameObjects);
+                    }
+                }
+                else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
+                {
+                    Clear();
+                }
+                else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
+                {
+                    BuildTree();
+                    foreach (var rootGO in _rootNodes)
+                    {
+                        foreach (var node in _nodes)
+                        {
+                            if (node.relatedGameObject == rootGO)
+                            {
+                                var currentRootNode = node;
+                                var treeStructure = NodeTreePrinter.PrintTree(currentRootNode);
+                                Debug.Log(treeStructure);
+
+                                var connections = NodeTreePrinter.PrintConnections(currentRootNode);
+                                Debug.Log(connections);
+                            }
                         }
                     }
                 }
-                else
-                {
-                    Debug.Log(paths);
-                    var scriptNodes = FindScriptNodes(paths[0]);
-                    NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
+            }
 
-                    // Spawn a node for each node in scriptPaths
-                    foreach (var scriptNode in scriptNodes)
-                    {
-                        _relatedGameObjects.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
-                    }
-
-                    var connections = CalculateNodeConnections(scriptNodes, _allReferences);
-                    DrawNodeConnections(connections, _relatedGameObjects);
-                }
-            }else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
+            private void OnDestroy()
             {
                 Clear();
-            }else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
-            {
-                var visualizationRoot = new GameObject("Tree Visualization");
-                var sceneTree = new Tree("NewScene", _connectionManager);
-                VisualizeTree(sceneTree, visualizationRoot);
             }
         }
-
-        private void OnDestroy()
-        {
-            Clear();
-        }
     }
-}

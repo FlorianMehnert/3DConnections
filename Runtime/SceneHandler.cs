@@ -106,6 +106,24 @@ namespace _3DConnections.Runtime
 
             return null;
         }
+        
+        public static Scene? GetOverlayedScene(string sceneName)
+        {
+            string sceneNameToCheck = sceneName;
+            if (!IsSceneLoaded(sceneNameToCheck)) return null;
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+
+                // Check if the scene name matches
+                if (scene.name == sceneNameToCheck)
+                {
+                    return scene;
+                }
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// Iterating through all cameras and returns the first one rendering to the second display (display 1 since starting with 0)
@@ -158,6 +176,18 @@ namespace _3DConnections.Runtime
         public static Transform[] GetSceneRootObjects()
         {
             var scene = GetOverlayedScene();
+            if (scene != null)
+            {
+                return ((Scene) scene).GetRootGameObjects()
+                    .Select(go => go.transform)
+                    .ToArray();
+            }
+            return Array.Empty<Transform>();
+        }
+        
+        public static Transform[] GetSceneRootObjects(string sceneName)
+        {
+            var scene = GetOverlayedScene(sceneName);
             if (scene != null)
             {
                 return ((Scene) scene).GetRootGameObjects()

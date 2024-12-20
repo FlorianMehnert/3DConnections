@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Color = System.Drawing.Color;
@@ -8,7 +9,6 @@ namespace Runtime
     /// <summary>
     /// Internal representation of a Node used to compute layouts and keep track of all available nodes
     /// </summary>
-    [Serializable]
     public class Node
     {
         
@@ -18,7 +18,7 @@ namespace Runtime
         public float Width { get; set; }
         public float Height { get; set; }
         public Color Color { get; set; }
-        public Node[] Children { get; set; }
+        public List<Node> Children { get; set; }
         public GameObject relatedGameObject;
 
         public Node(string name, float x, float y, float width, float height)
@@ -37,7 +37,7 @@ namespace Runtime
             Width = 150;
             Height = 30;
             this.name = name;
-            Children = Array.Empty<Node>();
+            Children = new List<Node>();
             relatedGameObject = null;
         }
     }

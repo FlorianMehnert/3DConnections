@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using Runtime;
+using Object = UnityEngine.Object;
 
 namespace _3DConnections.Runtime
 {
@@ -49,7 +50,7 @@ namespace _3DConnections.Runtime
         private void BuildTreeFromScene(string sceneName)
         {
             // Find all root GameObjects in the scene
-            GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+            GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
             List<GameObject> rootObjects = new List<GameObject>();
 
             foreach (GameObject obj in allObjects)
@@ -62,7 +63,7 @@ namespace _3DConnections.Runtime
             }
 
             // Sort root objects by name for consistent ordering
-            rootObjects.Sort((a, b) => string.Compare(a.name, b.name));
+            rootObjects.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
 
             // Process each root object
             float xOffset = 0;
