@@ -208,14 +208,18 @@ namespace Runtime
         {
             // clear node objects
             _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
-            foreach (Transform child in _nodeGraph.transform)
+            if (_nodeGraph)
             {
-                if (child && child.parent)
+                foreach (Transform child in _nodeGraph.transform)
                 {
-                    Destroy(child.gameObject);
+                    if (child && child.parent)
+                    {
+                        Destroy(child.gameObject);
+                    }
                 }
             }
-            _nodes.Clear();
+            _nodes.Clear();                
+            
             
             // clear connections
             _connectionManager.ClearConnections();
@@ -296,6 +300,10 @@ namespace Runtime
             }else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
             {
                 Clear();
+            }else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
+            {
+               // find root elements
+               // - 
             }
         }
 
