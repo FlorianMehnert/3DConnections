@@ -64,3 +64,18 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 ## 12.December
 - fix linux installation of roslyn by manually installing the SQLitePCLRaw.bundle_green package form NuGet
 - fixing highlight/dragging interaction with nodes
+## 13.December
+- fix zoom with changing viewport size
+- way too much time invested into fixing selection logic to be able to handle multi select, dragging, single click deselect as well as highlighting
+
+## 18.December
+- use prefab as parent object for node spawning
+- added Clear method to clean up spawned nodes
+
+## 19.December
+- documentation in UnityConnections README
+- thinking about layouts for 3DConnections
+
+## 20.December
+- modified selection logic using RaycastAll
+- Started working on building a tree structure to display parent-child relationships
