@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -148,6 +149,22 @@ namespace _3DConnections.Runtime
             if (scene == null) return;
             var camera = GetCameraOfScene(scene.Value.name);
             camera.enabled = !camera.enabled;
+        }
+        
+        /// <summary>
+        /// Required for the tree spanning where all root transforms form the basis of the tree
+        /// </summary>
+        /// <returns></returns>
+        public static Transform[] GetSceneRootObjects()
+        {
+            var scene = GetOverlayedScene();
+            if (scene != null)
+            {
+                return ((Scene) scene).GetRootGameObjects()
+                    .Select(go => go.transform)
+                    .ToArray();
+            }
+            return Array.Empty<Transform>();
         }
         
         
