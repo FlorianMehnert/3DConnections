@@ -44,11 +44,6 @@ namespace _3DConnections.Runtime
         
             _nodeBuilder.Execute(20,90, path);
 
-            if (GUI.Button(new Rect(20, 150, 150, 30), "Print Scene Hierarchy"))
-            {
-                PrintHierarchy(rootTransform);
-
-            }
         }
     }
 }
