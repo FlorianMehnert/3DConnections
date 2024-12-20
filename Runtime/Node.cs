@@ -23,5 +23,14 @@ namespace Runtime
             Width = width;
             Height = height;
         }
+
+        public Node(string name)
+        {
+            X = 0;
+            Y = 0;
+            Width = 150;
+            Height = 30;
+            Name = name;
+        }
     }
 }
