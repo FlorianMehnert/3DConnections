@@ -57,13 +57,31 @@ namespace _3DConnections.Runtime
             HandleMouseInput();
         }
 
+        private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, Vector2 point)
+        {
+            var closestHit = hits[0];
+            var closestDistance = Vector2.Distance(point, hits[0].point);
+
+            for (var i = 1; i < hits.Length; i++)
+            {
+                var distance = Vector2.Distance(point, hits[i].point);
+                if (!(distance < closestDistance)) continue;
+                closestDistance = distance;
+                closestHit = hits[i];
+            }
+
+            return closestHit;
+        }
+
         private void HandleMouseInput()
         {
             if (!_displayCamera || _targetLayerMask == 0) return;
 
             // Cast a ray from the mouse position
             Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
-            var hit = Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+            var hits = Physics2D.RaycastAll(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+            var hit = hits.Length > 0 ? GetClosestHit(hits, mousePosition) : Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+
 
             // Left mouse button down
             if (Input.GetMouseButtonDown(0))
