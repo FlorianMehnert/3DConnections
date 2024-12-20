@@ -126,7 +126,6 @@ namespace _3DConnections.Runtime
 
         public static GameObject GetNodeGraph(string sceneName)
         {
-            Debug.Log("in get node graph");
             var scene = SceneManager.GetSceneByName(sceneName);
             if (!scene.IsValid()) return null;
             var rootObjects = scene.GetRootGameObjects();
@@ -135,7 +134,6 @@ namespace _3DConnections.Runtime
 
         public static GameObject GetCanvas(string sceneName)
         {
-            Debug.Log("in get canvas");
             var scene = SceneManager.GetSceneByName(sceneName);
             if (!scene.IsValid()) return null;
             var rootObjects = scene.GetRootGameObjects();
@@ -145,14 +143,10 @@ namespace _3DConnections.Runtime
 
         public static void ToggleOverlay()
         {
-            Debug.Log("in toggle overlay");
             if (!IsSceneLoaded("NewScene")) return;
-            Debug.Log("after scene is loaded");
             var scene = GetOverlayedScene();
-            Debug.Log("after get overlay scene: " + scene);
             if (scene == null) return;
             var camera = GetCameraOfScene(scene.Value.name);
-            Debug.Log("camera: " + camera);
             camera.enabled = !camera.enabled;
         }
         
