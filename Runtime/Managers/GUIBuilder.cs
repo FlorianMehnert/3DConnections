@@ -9,7 +9,7 @@ namespace _3DConnections.Runtime.Managers
     public class GUIBuilder : MonoBehaviour
     {
         private NodeBuilder _nodeBuilder;
-        private SceneHandler _sceneHandler;
+        [SerializeField] private SceneHandler sceneHandler;
         public string[] path;
         public Transform rootTransform;
 
@@ -20,7 +20,6 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.Log("The NodeBuilder component is missing on the manager");
             }
-            _sceneHandler = gameObject.AddComponent<SceneHandler>();
         }
     
         void PrintHierarchy(Transform root, int depth = 0) 
@@ -34,7 +33,7 @@ namespace _3DConnections.Runtime.Managers
     
         private void OnGUI()
         {
-            _sceneHandler.Execute(20, 30);
+            sceneHandler.Execute(20, 30);
             if (GUI.Button(new Rect(20, 60, 150, 30), "Open File"))
             {
                 path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);

@@ -1,8 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Runtime.ScriptableObjects;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -13,8 +17,14 @@ namespace _3DConnections.Runtime.Managers
     {
         private Camera _mainCamera;
         private Camera OverlayCamera { get; set; }
-        private GameObject NodeGraph {get; set;}
+        private GameObject NodeGraph { get; set; }
         private const string LayerOverlay = "OverlayScene";
+   
+        [SerializeField] private GameObject dropdownPrefab;
+        [SerializeField] private Transform canvasTransform; // Where to spawn the dropdown
+        private TMP_Dropdown _sceneDropdown;
+        private SceneManager _sceneManager;
+        [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
 
         private static bool IsSceneLoaded(string sceneName)
         {
@@ -60,7 +70,7 @@ namespace _3DConnections.Runtime.Managers
             // find a camera rendering to the second display (display 1) in a multi display else set to null
             _mainCamera = GetCameraOfSpecificDisplay(0);
             OverlayCamera = GetCameraOfScene("NewScene");
-            
+
             // disable culling Mask for the main camera and enable for overlay camera
             if (_mainCamera)
             {
@@ -69,6 +79,10 @@ namespace _3DConnections.Runtime.Managers
                 {
                     _mainCamera.cullingMask |= (1 << uiLayer);
                 }
+                
+                // update dropdown on scene Load
+                canvasTransform.gameObject.SetActive(true);
+                PopulateDropdown();
             }
             else
             {
@@ -106,17 +120,16 @@ namespace _3DConnections.Runtime.Managers
 
             return null;
         }
-        
-        public static Scene? GetOverlayedScene(string sceneName)
+
+        private static Scene? GetOverlayedScene(string sceneName)
         {
-            string sceneNameToCheck = sceneName;
-            if (!IsSceneLoaded(sceneNameToCheck)) return null;
+            if (!IsSceneLoaded(sceneName)) return null;
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
 
                 // Check if the scene name matches
-                if (scene.name == sceneNameToCheck)
+                if (scene.name == sceneName)
                 {
                     return scene;
                 }
@@ -158,7 +171,7 @@ namespace _3DConnections.Runtime.Managers
             var rootObjects = scene.GetRootGameObjects();
             return rootObjects.FirstOrDefault(obj => obj.name == "Canvas");
         }
-        
+
 
         public static void ToggleOverlay()
         {
@@ -168,7 +181,7 @@ namespace _3DConnections.Runtime.Managers
             var camera = GetCameraOfScene(scene.Value.name);
             camera.enabled = !camera.enabled;
         }
-        
+
         /// <summary>
         /// Required for the tree spanning where all root transforms form the basis of the tree
         /// </summary>
@@ -178,26 +191,27 @@ namespace _3DConnections.Runtime.Managers
             var scene = GetOverlayedScene();
             if (scene != null)
             {
-                return ((Scene) scene).GetRootGameObjects()
+                return ((Scene)scene).GetRootGameObjects()
                     .Select(go => go.transform)
                     .ToArray();
             }
+
             return Array.Empty<Transform>();
         }
-        
+
         public static Transform[] GetSceneRootObjects(string sceneName)
         {
             var scene = GetOverlayedScene(sceneName);
             if (scene != null)
             {
-                return ((Scene) scene).GetRootGameObjects()
+                return ((Scene)scene).GetRootGameObjects()
                     .Select(go => go.transform)
                     .ToArray();
             }
+
             return Array.Empty<Transform>();
         }
-        
-        
+
 
         /// <summary>
         /// Place a button in the GUI at the desired position that will load the predefined "NewScene" Scene in Additive Mode
@@ -218,6 +232,49 @@ namespace _3DConnections.Runtime.Managers
                 // Load new Scene in overlapping mode (additive)
                 LoadSceneAndWait("NewScene");
             }
+            
+            canvasTransform.gameObject.SetActive(true);
+            PopulateDropdown();
+        }
+
+        private void CreateDropdown()
+        {
+            // Instantiate the dropdown prefab
+            GameObject dropdownObj = Instantiate(dropdownPrefab, canvasTransform);
+            _sceneDropdown = dropdownObj.GetComponent<TMP_Dropdown>();
+        
+            // Add listener for value changes
+            _sceneDropdown.onValueChanged.AddListener(OnDropdownValueChanged);
+        }
+
+        private void PopulateDropdown()
+        {
+            if (!_sceneDropdown)
+            {
+                CreateDropdown();
+            }
+            _sceneDropdown.ClearOptions();
+            var sceneNames = new List<string>();
+
+            // Get all loaded scenes
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.isLoaded)
+                {
+                    sceneNames.Add(scene.name);
+                }
+            }
+
+            // Add options to dropdown
+            _sceneDropdown.AddOptions(sceneNames);
+        }
+
+        private void OnDropdownValueChanged(int index)
+        {
+            var selectedScene = _sceneDropdown.options[index].text;
+            // Write the selected scene to your scene manager
+            analyzeSceneConfig.scene = SceneManager.GetSceneByName(selectedScene);
         }
     }
 }
