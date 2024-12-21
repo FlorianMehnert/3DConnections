@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.ScriptableObjects
 {
     [CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/SpawnManagerScriptableObject", order = 1)]
     public class NodeColorsScriptableObject : ScriptableObject

@@ -1,7 +1,7 @@
 using Runtime;
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
     /// Manager Class to move the orthographic camera using middle mouse drag and zoom in/out using mouse wheel

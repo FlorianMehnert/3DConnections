@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using _3DConnections.Runtime.ScriptableObjects;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using Node = Runtime.Node;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     public class NodeLayoutManagerV2 : MonoBehaviour
     {

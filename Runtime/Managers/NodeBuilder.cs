@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Unity.VisualScripting;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
     /// Manager class responsible for the construction of the node-graph
@@ -299,23 +300,38 @@ namespace _3DConnections.Runtime
             TreeLayout.LayoutTree(rootNode);
         }
 
+        private readonly Dictionary<Node, GameObject> _spawnedNodes = new();
+
         private void SpawnNodesRecursive(Node node)
         {
-            // Spawn current node
-            Debug.Log("spawned " + node.name + " at " + node.X + " " + node.Y);
-            var currentNodeObject = SpawnCubeNodeUsingNodeObject(node);
+            // Check if node was already spawned
+            if (!_spawnedNodes.TryGetValue(node, out var currentNodeObject))
+            {
+                Debug.Log("spawned " + node.name + " at " + node.X + " " + node.Y);
+                currentNodeObject = SpawnCubeNodeUsingNodeObject(node);
+                _spawnedNodes[node] = currentNodeObject;
+            }
+    
             // Process children
             if (node.Children is not { Count: > 0 }) return;
+    
             foreach (var child in node.Children)
             {
-                // Spawn child and create connection
-                var childObject = SpawnCubeNodeUsingNodeObject(child);
+                // Get or create child node object
+                if (!_spawnedNodes.TryGetValue(child, out var childObject))
+                {
+                    childObject = SpawnCubeNodeUsingNodeObject(child);
+                    _spawnedNodes[child] = childObject;
+                }
+        
+                // Create connection to the child
                 _connectionManager.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
-                    
+        
                 // Recursively process child's children
                 SpawnNodesRecursive(child);
             }
         }
+
 
         /// <summary>
         /// Since a scene does have multiple root objects, define a single entry root node. Required for Tree node spawning

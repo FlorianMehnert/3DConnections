@@ -1,4 +1,5 @@
 using _3DConnections.Runtime;
+using _3DConnections.Runtime.Managers;
 using Runtime;
 using Runtime.ComputeShaders;
 using UnityEngine;
@@ -19,8 +20,5 @@ public class SecondMonitorGuiBuilder : MonoBehaviour
     {
         var overlayedScene = SceneHandler.GetOverlayedScene();
         if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-        // if (GUI.Button(new Rect(20, 120, 150, 30), "Spawn Nodes")){
-        //     _nodeSpawner.Execute();
-        // }
     }
 }

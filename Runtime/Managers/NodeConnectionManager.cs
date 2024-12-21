@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
     /// Manager that handles all the connections in the node graph

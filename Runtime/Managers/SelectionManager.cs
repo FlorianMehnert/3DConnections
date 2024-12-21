@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     public class CubeSelector : MonoBehaviour
     {

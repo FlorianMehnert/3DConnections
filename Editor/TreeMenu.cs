@@ -1,4 +1,5 @@
 using _3DConnections.Runtime;
+using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 

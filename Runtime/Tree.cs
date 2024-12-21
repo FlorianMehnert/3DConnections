@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using _3DConnections.Runtime.Managers;
 using Runtime;
 using Object = UnityEngine.Object;
 
@@ -30,9 +31,9 @@ namespace _3DConnections.Runtime
             }
         }
 
-        public TreeNode virtualRoot;
+        private TreeNode virtualRoot;
         private NodeConnectionManager _connectionManager;
-        public List<TreeNode> actualRoots;
+        private List<TreeNode> actualRoots;
 
         public Tree(string sceneName, NodeConnectionManager connectionManager)
         {

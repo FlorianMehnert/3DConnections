@@ -1,8 +1,9 @@
+using _3DConnections.Runtime.Managers;
 using Runtime;
 using SFB;
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managerse
 {
     /// <summary>
     /// Manager class responsible for the Layout of all Buttons in scene1/2

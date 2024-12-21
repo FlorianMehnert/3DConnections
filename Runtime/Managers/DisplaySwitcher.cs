@@ -1,7 +1,7 @@
 using Runtime;
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
     /// Manager responsible for display switching using shortcuts
