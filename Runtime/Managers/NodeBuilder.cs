@@ -30,6 +30,8 @@ namespace _3DConnections.Runtime.Managers
         private int _nodeCounter;
         private Camera _secondCamera;
         private GameObject _nodeGraph;
+        
+        [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
 
         private List<Node> _nodes = new();
         private readonly List<GameObject> _rootGameObjects = new();
@@ -42,7 +44,7 @@ namespace _3DConnections.Runtime.Managers
         private void Start()
         {
             _connectionManager = GetComponent<NodeConnectionManager>();
-            _nodeGraph = SceneHandler.GetNodeGraph("New Scene");
+            _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
         }
 
 
@@ -238,7 +240,7 @@ namespace _3DConnections.Runtime.Managers
         private void BuildTree()
         {
             var toExploreNodes = new List<Node>();
-            var rootTransforms = SceneHandler.GetSceneRootObjects("SampleScene");
+            var rootTransforms = SceneHandler.GetSceneRootObjects(toAnalyzeSceneScriptableObject.scene.name);
             foreach (var rootTransform in rootTransforms)
             {
                 _rootGameObjects.Add(rootTransform.gameObject);
@@ -353,7 +355,7 @@ namespace _3DConnections.Runtime.Managers
                 {
                     var overlayedScene = SceneHandler.GetOverlayedScene();
                     if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-                    _secondCamera = SceneHandler.GetCameraOfScene("NewScene");
+                    _secondCamera = SceneHandler.GetCameraOfScene();
                     if (!_secondCamera)
                     {
                         Debug.Log("The second camera is null please load the second Scene");

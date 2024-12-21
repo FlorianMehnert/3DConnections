@@ -24,7 +24,7 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            _cam = SceneHandler.GetCameraOfScene("NewScene");
+            _cam = SceneHandler.GetCameraOfScene();
         
             // Calculate world dimensions based on current orthographic size
             CalculateWorldDimensions();

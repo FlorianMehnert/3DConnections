@@ -32,7 +32,7 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            _displayCamera = SceneHandler.GetCameraOfScene("NewScene");
+            _displayCamera = SceneHandler.GetCameraOfScene();
 
             if (_displayCamera == null)
             {

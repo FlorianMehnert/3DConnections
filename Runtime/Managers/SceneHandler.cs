@@ -6,7 +6,6 @@ using _3DConnections.Runtime.ScriptableObjects;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -69,7 +68,7 @@ namespace _3DConnections.Runtime.Managers
 
             // find a camera rendering to the second display (display 1) in a multi display else set to null
             _mainCamera = GetCameraOfSpecificDisplay(0);
-            OverlayCamera = GetCameraOfScene("NewScene");
+            OverlayCamera = GetCameraOfScene();
 
             // disable culling Mask for the main camera and enable for overlay camera
             if (_mainCamera)
@@ -148,9 +147,9 @@ namespace _3DConnections.Runtime.Managers
             return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
         }
 
-        public static Camera GetCameraOfScene(string sceneName)
+        public static Camera GetCameraOfScene()
         {
-            var scene = SceneManager.GetSceneByName(sceneName);
+            var scene = SceneManager.GetSceneByName("NewScene");
             if (!scene.IsValid()) return null;
             var rootObjects = scene.GetRootGameObjects();
             return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(camera => camera);
@@ -178,7 +177,7 @@ namespace _3DConnections.Runtime.Managers
             if (!IsSceneLoaded("NewScene")) return;
             var scene = GetOverlayedScene();
             if (scene == null) return;
-            var camera = GetCameraOfScene(scene.Value.name);
+            var camera = GetCameraOfScene();
             camera.enabled = !camera.enabled;
         }
 
