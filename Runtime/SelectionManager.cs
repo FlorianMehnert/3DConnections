@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -151,7 +152,7 @@ namespace _3DConnections.Runtime
             {
                 RemoveOutlineCube(toBeUnselectedCube);
                 _selectedCubes.Remove(toBeUnselectedCube);
-                foreach(Transform child in toBeUnselectedCube.transform)
+                foreach (Transform child in toBeUnselectedCube.transform)
                 {
                     Destroy(child.gameObject);
                 }
@@ -203,6 +204,10 @@ namespace _3DConnections.Runtime
             }
 
             if (!_selectedCubes.Add(cube)) return;
+#if UNITY_EDITOR
+            EditorGUIUtility.PingObject(cube);
+            Selection.activeGameObject = cube;
+#endif
             CreateOutlineCube(cube);
         }
 
