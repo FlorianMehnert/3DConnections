@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
-using Color = System.Drawing.Color;
 
 namespace Runtime
 {
@@ -34,8 +31,8 @@ namespace Runtime
         {
             X = 0;
             Y = 0;
-            Width = 150;
-            Height = 30;
+            Width = 2;
+            Height = 1;
             this.name = name;
             Children = new List<Node>();
             relatedGameObject = null;

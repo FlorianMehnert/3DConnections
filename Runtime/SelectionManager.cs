@@ -9,7 +9,7 @@ namespace _3DConnections.Runtime
     {
         [SerializeField] private float outlineScale = 1.1f;
         [SerializeField] private string targetLayerName = "OverlayLayer";
-
+        [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
         private readonly HashSet<GameObject> _selectedCubes = new();
         private readonly Dictionary<GameObject, Vector3> _selectedCubesStartPositions = new();
         private readonly Dictionary<GameObject, GameObject> _outlineCubes = new();
@@ -51,7 +51,7 @@ namespace _3DConnections.Runtime
             // highlight currently dragging cube
             if (currentlyDraggedCube)
             {
-                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.red;
+                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
             }
 
             HandleMouseInput();
@@ -172,7 +172,7 @@ namespace _3DConnections.Runtime
                     _selectedCubes.Remove(currentlyDraggedCube);
                 }
 
-                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = Color.white;
+                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeDefaultColor;
                 currentlyDraggedCube = null;
             }
 

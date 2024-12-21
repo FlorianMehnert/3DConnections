@@ -21,7 +21,7 @@ namespace _3DConnections.Runtime
         private float nodeWidth = 2.0f;
 
         [SerializeField] private float nodeHeight = 1.0f;
-        [SerializeField] private Color nodeColor = Color.white;
+        [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
 
         private NodeConnectionManager _connectionManager;
         [SerializeField] private GameObject nodePrefab;
@@ -31,7 +31,11 @@ namespace _3DConnections.Runtime
         private GameObject _nodeGraph;
 
         private List<Node> _nodes = new();
-        private readonly List<GameObject> _rootNodes = new();
+        private readonly List<GameObject> _rootGameObjects = new();
+        private readonly List<Node> _rootNodes = new();
+        
+        private const float HorizontalSpacing = 3f; // Space between nodes horizontally
+        private const float VerticalSpacing = 2f;   // Space between levels vertically
 
 
         private void Start()
@@ -47,7 +51,7 @@ namespace _3DConnections.Runtime
         /// </summary>
         /// <param name="spawnPosition">Position of the node in worldSpace: Please invoke for this one <see cref="GetNodePositionRelativeToCamera"/></param>
         /// <param name="nodeExtend">Node dimension</param>
-        private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend)
+        private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, string nodeName="Node")
         {
             // spawn node prefab as child of this element
             if (!_nodeGraph)
@@ -64,7 +68,7 @@ namespace _3DConnections.Runtime
             // set name allowing to differentiate between them 
             nodeObject.transform.position = spawnPosition;
             nodeObject.transform.localScale = nodeExtend;
-            nodeObject.name = "Node";
+            nodeObject.name = nodeName;
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
             // nodeObject.AddComponent<NodeTextOverlay>();
             ConfigureNode(nodeObject);
@@ -77,7 +81,7 @@ namespace _3DConnections.Runtime
         /// <param name="node"></param>
         private GameObject SpawnCubeNodeUsingNodeObject(Node node)
         {
-            return !_secondCamera ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f));
+            return !_secondCamera ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f), node.name);
         }
 
         /// <summary>
@@ -185,7 +189,7 @@ namespace _3DConnections.Runtime
             var componentRenderer = nodeObject.GetComponent<Renderer>();
             if (componentRenderer)
             {
-                componentRenderer.material.color = nodeColor;
+                componentRenderer.material.color = nodeColorsScriptableObject.nodeDefaultColor;
             }
 
             // Set up text component
@@ -213,7 +217,8 @@ namespace _3DConnections.Runtime
 
             _relatedGameObjects.Clear();
             _nodes.Clear();
-
+            _rootGameObjects.Clear();
+            _rootNodes.Clear();
 
             // clear connections
             _connectionManager.ClearConnections();
@@ -226,52 +231,21 @@ namespace _3DConnections.Runtime
             }
         }
 
-        private void VisualizeSubtree(Tree tree, Tree.TreeNode node, GameObject visualizationRoot, Dictionary<Tree.TreeNode, GameObject> nodeVisuals)
-        {
-            // Create visual for current node
-            GameObject nodeVisual = SpawnCubeNodeUsingNodeObject(node.Data);
-            nodeVisual.transform.SetParent(visualizationRoot.transform);
-            nodeVisuals[node] = nodeVisual;
-
-            // Create connection to parent if it exists and isn't the virtual root
-            if (node.Parent != null && node.Parent != tree.virtualRoot && nodeVisuals.TryGetValue(node.Parent, out var visual))
-            {
-                _connectionManager.AddConnection(
-                    visual,
-                    nodeVisual,
-                    Color.HSVToRGB(0, 0.5f, 0.9f)
-                );
-            }
-
-            // Process children
-            foreach (var child in node.Children)
-            {
-                VisualizeSubtree(tree, child, visualizationRoot, nodeVisuals);
-            }
-        }
-
-        private void VisualizeTree(Tree tree, GameObject visualizationRoot)
-        {
-            var nodeVisuals = new Dictionary<Tree.TreeNode, GameObject>();
-
-            // Create visual nodes for actual roots first
-            foreach (var rootNode in tree.actualRoots)
-            {
-                VisualizeSubtree(tree, rootNode, visualizationRoot, nodeVisuals);
-            }
-        }
-
+        /// <summary>
+        /// Builds a parent-child tree for a given scene
+        /// </summary>
         private void BuildTree()
         {
             var toExploreNodes = new List<Node>();
             var rootTransforms = SceneHandler.GetSceneRootObjects("SampleScene");
             foreach (var rootTransform in rootTransforms)
             {
-                _rootNodes.Add(rootTransform.gameObject);
+                _rootGameObjects.Add(rootTransform.gameObject);
                 var newNode = new Node(rootTransform.name)
                 {
                     relatedGameObject = rootTransform.gameObject
                 };
+                _rootNodes.Add(newNode);
 
                 _nodes.Add(newNode);
                 _relatedGameObjects[newNode] = rootTransform.gameObject;
@@ -316,6 +290,45 @@ namespace _3DConnections.Runtime
                     }
                 }
             }
+        }
+
+        private void SpawnTreeFromNode(Node rootNode)
+        {
+            TreeLayout.LayoutTree(rootNode);
+            SpawnNodesRecursive(rootNode);
+            TreeLayout.LayoutTree(rootNode);
+        }
+
+        private void SpawnNodesRecursive(Node node)
+        {
+            // Spawn current node
+            Debug.Log("spawned " + node.name + " at " + node.X + " " + node.Y);
+            var currentNodeObject = SpawnCubeNodeUsingNodeObject(node);
+            // Process children
+            if (node.Children is not { Count: > 0 }) return;
+            foreach (var child in node.Children)
+            {
+                // Spawn child and create connection
+                var childObject = SpawnCubeNodeUsingNodeObject(child);
+                _connectionManager.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
+                    
+                // Recursively process child's children
+                SpawnNodesRecursive(child);
+            }
+        }
+
+        /// <summary>
+        /// Since a scene does have multiple root objects, define a single entry root node. Required for Tree node spawning
+        /// </summary>
+        /// <returns></returns>
+        private Node DefineRootNode()
+        {
+            
+            return new Node("ROOT")
+            {
+                Color = nodeColorsScriptableObject.nodeRootColor,
+                Children = _rootNodes
+            };
         }
 
         public void Execute(int x = 20, int y = 60, string[] paths = null)
@@ -391,21 +404,8 @@ namespace _3DConnections.Runtime
                 else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
                 {
                     BuildTree();
-                    foreach (var rootGO in _rootNodes)
-                    {
-                        foreach (var node in _nodes)
-                        {
-                            if (node.relatedGameObject == rootGO)
-                            {
-                                var currentRootNode = node;
-                                var treeStructure = NodeTreePrinter.PrintTree(currentRootNode);
-                                Debug.Log(treeStructure);
-
-                                var connections = NodeTreePrinter.PrintConnections(currentRootNode);
-                                Debug.Log(connections);
-                            }
-                        }
-                    }
+                    //PrintTree();
+                    SpawnTreeFromNode(DefineRootNode());
                 }
             }
 

@@ -31,14 +31,7 @@ namespace _3DConnections.Runtime
             }
 
             // Print node information
-            if (includePositionInfo)
-            {
-                result.AppendLine($"{node.name} (X:{node.X}, Y:{node.Y}, W:{node.Width}, H:{node.Height})");
-            }
-            else
-            {
-                result.AppendLine(node.name);
-            }
+            result.AppendLine(includePositionInfo ? $"{node.name} (X:{node.X}, Y:{node.Y}, W:{node.Width}, H:{node.Height})" : node.name);
 
             // Process children
             if (node.Children != null)
