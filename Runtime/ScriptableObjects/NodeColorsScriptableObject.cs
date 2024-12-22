@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/SpawnManagerScriptableObject", order = 1)]
+    [CreateAssetMenu(fileName = "Data", menuName = "3DConnections/ScriptableObjects/SpawnManager", order = 1)]
     public class NodeColorsScriptableObject : ScriptableObject
     {
         public Color nodeDefaultColor;

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "TreeNode", menuName = "3DConnections/TreeNode", order = 1)]
+    [CreateAssetMenu(fileName = "TreeNode", menuName = "3DConnections/ScriptableObjects/TreeNode", order = 1)]
 
     public class TreeNodeSO : ScriptableObject
     {
