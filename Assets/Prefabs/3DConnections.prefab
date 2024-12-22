@@ -970,6 +970,7 @@ MonoBehaviour:
   nodeHeight: 1
   nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
+  nodeGraphScriptableObject: {fileID: 11400000, guid: 8f45bb87962ec376492477f3a4293ce1, type: 2}
   toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
 --- !u!1 &8475659913102085464
 GameObject:

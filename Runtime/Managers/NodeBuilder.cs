@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.ScriptableObjects;
@@ -6,7 +5,6 @@ using Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
-using Unity.VisualScripting;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -15,8 +13,6 @@ namespace _3DConnections.Runtime.Managers
     /// </summary>
     public class NodeBuilder : MonoBehaviour
     {
-        private readonly Dictionary<Node, GameObject> _relatedGameObjects = new();
-        private Dictionary<string, ClassReferences> _allReferences = new();
 
         [Header("Node Configuration")] [SerializeField]
         private float nodeWidth = 2.0f;
@@ -30,15 +26,9 @@ namespace _3DConnections.Runtime.Managers
         private int _nodeCounter;
         private Camera _secondCamera;
         private GameObject _nodeGraph;
-        
-        [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
+        [SerializeField] private NodeGraphScriptableObject nodeGraphScriptableObject;
 
-        private List<Node> _nodes = new();
-        private readonly List<GameObject> _rootGameObjects = new();
-        private readonly List<Node> _rootNodes = new();
-        
-        private const float HorizontalSpacing = 3f; // Space between nodes horizontally
-        private const float VerticalSpacing = 2f;   // Space between levels vertically
+        [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
 
 
         private void Start()
@@ -54,7 +44,7 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         /// <param name="spawnPosition">Position of the node in worldSpace: Please invoke for this one <see cref="GetNodePositionRelativeToCamera"/></param>
         /// <param name="nodeExtend">Node dimension</param>
-        private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, string nodeName="Node")
+        private GameObject SpawnTestNodeOnSecondDisplay(Vector3 spawnPosition, Vector3 nodeExtend, string nodeName = "Node")
         {
             // spawn node prefab as child of this element
             if (!_nodeGraph)
@@ -104,31 +94,38 @@ namespace _3DConnections.Runtime.Managers
         /// Create a list of nodes that represent scripts that correspond to all scripts in the given location
         /// </summary>
         /// <param name="path">Location in which to look for scripts to display</param>
+        /// <param name="allReferences">Filled out string to string ClassReferences for the given path</param>
         /// <returns>List of nodes that were created for scripts in the given path</returns>
-        private List<Node> FindScriptNodes(string path)
+        private static List<Node> FindScriptNodes(string path, out Dictionary<string, ClassReferences> allReferences)
         {
             List<Node> nodes = new();
-            _allReferences = ClassParser.GetAllClassReferencesParallel(path);
+            allReferences = ClassParser.GetAllClassReferencesParallel(path);
 
-            foreach (var (scriptName, _) in _allReferences)
+            foreach (var (scriptName, _) in allReferences)
             {
-                var node = new Node(scriptName, 0, 0, nodeWidth, nodeHeight);
+                var node = new Node(scriptName);
                 nodes.Add(node);
             }
 
             return nodes;
         }
 
+        /// <summary>
+        /// Calculate Node Connections using InheritanceReferences, FieldReferences and MethodReferences
+        /// </summary>
+        /// <param name="nodes">List of nodes to analyze</param>
+        /// <param name="allReferences">Lookup for all connections using string lookup</param>
+        /// <returns></returns>
         private static Dictionary<Node, HashSet<Node>> CalculateNodeConnections(
             List<Node> nodes,
             Dictionary<string, ClassReferences> allReferences)
         {
             // Create a lookup dictionary to quickly find nodes by their script name
-            var nodesByScriptName = nodes
-                .ToDictionary(
-                    node => node.name,
-                    node => node
-                );
+            var nodesByScriptName = new Dictionary<string, Node>();
+            foreach (var node in nodes)
+            {
+                nodesByScriptName.TryAdd(node.name, node);
+            }
 
             // Dictionary to store node connections
             var nodeConnections = new Dictionary<Node, HashSet<Node>>();
@@ -161,23 +158,13 @@ namespace _3DConnections.Runtime.Managers
         }
 
         private void DrawNodeConnections(
-            Dictionary<Node, HashSet<Node>> nodeConnections,
-            Dictionary<Node, GameObject> nodeToGameObjectMap)
+            Dictionary<Node, HashSet<Node>> nodeConnections)
         {
             foreach (var (sourceNode, connectedNodes) in nodeConnections)
             {
-                // Skip if we can't find the source GameObject
-                if (!nodeToGameObjectMap.TryGetValue(sourceNode, out var sourceGameObject))
-                    continue;
-
                 foreach (var targetNode in connectedNodes)
                 {
-                    // Skip if we can't find the target GameObject
-                    if (!nodeToGameObjectMap.TryGetValue(targetNode, out GameObject targetGameObject))
-                        continue;
-
-                    // Draw connection between the two GameObjects
-                    _connectionManager.AddConnection(sourceGameObject, targetGameObject, Color.HSVToRGB(0, 0.5f, .9f));
+                    _connectionManager.AddConnection(sourceNode.relatedGameObject, targetNode.relatedGameObject, Color.HSVToRGB(0, 0.5f, .9f));
                 }
             }
         }
@@ -217,11 +204,7 @@ namespace _3DConnections.Runtime.Managers
                     }
                 }
             }
-
-            _relatedGameObjects.Clear();
-            _nodes.Clear();
-            _rootGameObjects.Clear();
-            _rootNodes.Clear();
+            nodeGraphScriptableObject.Clear();
 
             // clear connections
             _connectionManager.ClearConnections();
@@ -235,26 +218,24 @@ namespace _3DConnections.Runtime.Managers
         }
 
         /// <summary>
-        /// Builds a parent-child tree for a given scene
+        /// Fill children of root objects using in a while loop using transform parent-child relations.
+        /// Fill _rootNodes, _nodes
+        /// store references between GameObjects and Nodes in _relatedGameObjects
         /// </summary>
-        private void BuildTree()
+        private List<Node> BuildTree()
         {
             var toExploreNodes = new List<Node>();
             var rootTransforms = SceneHandler.GetSceneRootObjects(toAnalyzeSceneScriptableObject.scene.name);
+            var rootNodes = new List<Node>();
             foreach (var rootTransform in rootTransforms)
             {
-                _rootGameObjects.Add(rootTransform.gameObject);
-                var newNode = new Node(rootTransform.name)
-                {
-                    relatedGameObject = rootTransform.gameObject
-                };
-                _rootNodes.Add(newNode);
+                var nodeForRootGameObject = new Node(rootTransform);
+                rootNodes.Add(nodeForRootGameObject);
 
-                _nodes.Add(newNode);
-                _relatedGameObjects[newNode] = rootTransform.gameObject;
-                if (!toExploreNodes.Contains(newNode))
+                nodeGraphScriptableObject.Add(nodeForRootGameObject);
+                if (!toExploreNodes.Contains(nodeForRootGameObject))
                 {
-                    toExploreNodes.Add(newNode);
+                    toExploreNodes.Add(nodeForRootGameObject);
                 }
 
                 while (toExploreNodes.Count > 0)
@@ -264,35 +245,33 @@ namespace _3DConnections.Runtime.Managers
                     {
                         if (node.relatedGameObject.transform.childCount > 0)
                         {
+                            var children = new List<Node>();
                             foreach (Transform child in node.relatedGameObject.transform)
                             {
                                 // only create new Node object if this not already present
-                                if (!_relatedGameObjects.ContainsValue(child.gameObject))
+                                if (nodeGraphScriptableObject.Contains(child.gameObject)) continue;
+                                var childrenNode = new Node(child.gameObject.name)
                                 {
-                                    var childrenNode = new Node(child.gameObject.name)
-                                    {
-                                        relatedGameObject = child.gameObject
-                                    };
-                                    if (!_nodes.Contains(childrenNode))
-                                    {
-                                        _nodes.Add(newNode);
-                                    }
-
-                                    _relatedGameObjects[newNode] = child.gameObject;
-                                    if (!toExploreNodes.Contains(childrenNode))
-                                    {
-                                        toExploreNodes.Add(childrenNode);
-                                    }
-
-                                    node.Children.Add(childrenNode);
+                                    relatedGameObject = child.gameObject
+                                };
+                                nodeGraphScriptableObject.Add(childrenNode);
+                                children.Add(childrenNode);
+                                nodeForRootGameObject.relatedGameObject = child.gameObject;
+                                nodeGraphScriptableObject.Replace(nodeForRootGameObject);
+                                if (!toExploreNodes.Contains(childrenNode))
+                                {
+                                    toExploreNodes.Add(childrenNode);
                                 }
                             }
+
+                            node.Children = children;
                         }
 
                         toExploreNodes.Remove(node);
                     }
                 }
             }
+            return rootNodes;
         }
 
         private void SpawnTreeFromNode(Node rootNode)
@@ -304,32 +283,30 @@ namespace _3DConnections.Runtime.Managers
 
         private readonly Dictionary<Node, GameObject> _spawnedNodes = new();
 
+
+        /// <summary>
+        /// Spawn the entire tree until leaf nodes. Also works for cyclic graphs
+        /// </summary>
+        /// <param name="node"></param>
         private void SpawnNodesRecursive(Node node)
         {
-            // Check if node was already spawned
             if (!_spawnedNodes.TryGetValue(node, out var currentNodeObject))
             {
-                Debug.Log("spawned " + node.name + " at " + node.X + " " + node.Y);
                 currentNodeObject = SpawnCubeNodeUsingNodeObject(node);
                 _spawnedNodes[node] = currentNodeObject;
             }
-    
-            // Process children
+
             if (node.Children is not { Count: > 0 }) return;
-    
+
             foreach (var child in node.Children)
             {
-                // Get or create child node object
                 if (!_spawnedNodes.TryGetValue(child, out var childObject))
                 {
                     childObject = SpawnCubeNodeUsingNodeObject(child);
                     _spawnedNodes[child] = childObject;
                 }
-        
-                // Create connection to the child
+
                 _connectionManager.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
-        
-                // Recursively process child's children
                 SpawnNodesRecursive(child);
             }
         }
@@ -339,97 +316,68 @@ namespace _3DConnections.Runtime.Managers
         /// Since a scene does have multiple root objects, define a single entry root node. Required for Tree node spawning
         /// </summary>
         /// <returns></returns>
-        private Node DefineRootNode()
+        private Node DefineRootNode(List<Node> rootNodes)
         {
-            
             return new Node("ROOT")
             {
                 Color = nodeColorsScriptableObject.nodeRootColor,
-                Children = _rootNodes
+                Children = rootNodes
             };
         }
 
+        /// <summary>
+        /// Function called by the GUI-Manager
+        /// </summary>
+        /// <param name="x">x coordinate for the button</param>
+        /// <param name="y">y coordinate for the button</param>
+        /// <param name="paths">folder path to analyze which is passed from the GUI-Manager</param>
         public void Execute(int x = 20, int y = 60, string[] paths = null)
+        {
+            if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
             {
-                if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
+                var overlayedScene = SceneHandler.GetOverlayedScene();
+                if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+                _secondCamera = SceneHandler.GetCameraOfScene();
+                if (!_secondCamera)
                 {
-                    var overlayedScene = SceneHandler.GetOverlayedScene();
-                    if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-                    _secondCamera = SceneHandler.GetCameraOfScene();
-                    if (!_secondCamera)
-                    {
-                        Debug.Log("The second camera is null please load the second Scene");
-                        return;
-                    }
-
-                    if (paths!.Length == 0)
-                    {
-                        // var pos1 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(0, 0, 0));
-                        // var pos2 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(8, 8, 0));
-                        // var pos3 = GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(-8, 4, 0));
-                        //
-                        // var node1 = SpawnTestNodeOnSecondDisplay(pos1, new Vector3(nodeWidth, nodeHeight, 1f));
-                        // var node2 = SpawnTestNodeOnSecondDisplay(pos2, new Vector3(nodeWidth, nodeHeight, 1f));
-                        // var node3 = SpawnTestNodeOnSecondDisplay(pos3, new Vector3(nodeWidth, nodeHeight, 1f));
-                        //
-                        // _connectionManager.AddConnection(node1, node2, Color.red, 0.2f);
-                        // _connectionManager.AddConnection(node1, node3, Color.green, 0.2f);
-                        // _connectionManager.AddConnection(node2, node3, Color.blue, 0.2f);
-
-                        var connections = ParentChildConnections.CalculateNodeConnections();
-
-                        foreach (var nodeConnection in connections)
-                        {
-                            var currentNodeGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                            _relatedGameObjects.Add(nodeConnection.Key, currentNodeGameObject);
-                            foreach (var childNode in from childNode in nodeConnection.Value let currentNode = nodeConnection.Value select childNode)
-                            {
-                                GameObject childGameObject;
-                                if (!_relatedGameObjects.TryGetValue(childNode, out var node))
-                                {
-                                    childGameObject = SpawnCubeNodeUsingNodeObject(nodeConnection.Key);
-                                    _relatedGameObjects.Add(childNode, childGameObject);
-                                }
-                                else
-                                {
-                                    childGameObject = node;
-                                }
-
-                                _connectionManager.AddConnection(currentNodeGameObject, childGameObject, Color.HSVToRGB(0, 0.5f, .9f));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log(paths);
-                        var scriptNodes = FindScriptNodes(paths[0]);
-                        NodeLayoutManagerV2.CompactFixedAspectRatioLayout(scriptNodes);
-
-                        // Spawn a node for each node in scriptPaths
-                        foreach (var scriptNode in scriptNodes)
-                        {
-                            _relatedGameObjects.Add(scriptNode, SpawnCubeNodeUsingNodeObject(scriptNode));
-                        }
-
-                        var connections = CalculateNodeConnections(scriptNodes, _allReferences);
-                        DrawNodeConnections(connections, _relatedGameObjects);
-                    }
+                    Debug.Log("The second camera is null please load the second Scene");
+                    return;
                 }
-                else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
+
+                if (paths!.Length > 0)
                 {
-                    Clear();
+                    var scriptNodes = FindScriptNodes(paths[0], out var allReferences);
+                    NodeLayoutManagerV2.GridLayout(scriptNodes);
+                    
+                    foreach (var scriptNode in scriptNodes)
+                    {
+                        var nodeGameObject = SpawnCubeNodeUsingNodeObject(scriptNode);
+                        scriptNode.relatedGameObject = nodeGameObject;
+                        nodeGraphScriptableObject.Add(scriptNode);
+                    }
+
+                    var connections = CalculateNodeConnections(scriptNodes, allReferences);
+                    DrawNodeConnections(connections);
                 }
-                else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
+                else
                 {
-                    BuildTree();
-                    //PrintTree();
-                    SpawnTreeFromNode(DefineRootNode());
+                    Debug.Log("Path is empty");
                 }
             }
-
-            private void OnDestroy()
+            else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
             {
                 Clear();
             }
+            else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
+            {
+                var rootNodes = BuildTree();
+                SpawnTreeFromNode(DefineRootNode(rootNodes));
+            }
+        }
+
+        private void OnDestroy()
+        {
+            Clear();
         }
     }
+}

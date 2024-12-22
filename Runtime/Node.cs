@@ -37,5 +37,17 @@ namespace Runtime
             Children = new List<Node>();
             relatedGameObject = null;
         }
+
+        public Node(Transform relatedTransform)
+        {
+            X = 0;
+            Y = 0;
+            Width = 2;
+            Height = 1;
+            name = relatedTransform.name;
+            Children = new List<Node>();
+            relatedGameObject = relatedTransform.gameObject;
+            
+        }
     }
 }
