@@ -29,6 +29,11 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private Canvas parentCanvas;
         [SerializeField] private GameObject highlightPrefab;
         [SerializeField] private Material highlightMaterial;
+        
+        public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
+
+        private float timer = 0f; // Timer to track time between clicks
+        private int clickCount = 0; // Number of clicks
 
         private void Start()
         {
@@ -79,13 +84,23 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!_displayCamera || _targetLayerMask == 0) return;
 
+            if (clickCount > 0)
+            {
+                timer += Time.deltaTime;
+
+                // Reset click count and timer if threshold exceeded
+                if (timer > doubleClickThreshold)
+                {
+                    clickCount = 0;
+                    timer = 0f;
+                }
+            }
+            
             // Cast a ray from the mouse position
             Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
             var hits = Physics2D.RaycastAll(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
             var hit = hits.Length > 0 ? GetClosestHit(hits, mousePosition) : Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
-
-            // Left mouse button down
             if (Input.GetMouseButtonDown(0))
             {
                 _selectedCubesStartPositions.Clear();
@@ -93,6 +108,19 @@ namespace _3DConnections.Runtime.Managers
 
                 if (hit)
                 {
+                    clickCount++;
+
+                    if (clickCount == 1)
+                    {
+                        timer = 0f;
+                    }
+                    else if (clickCount == 2)
+                    {
+                        HandleDoubleClick(hit.collider.gameObject);
+                        clickCount = 0;
+                        return;
+                    }
+                    
                     // prepare drag vector estimation
                     _dragStart = mousePosition;
 
@@ -183,7 +211,16 @@ namespace _3DConnections.Runtime.Managers
             _dragEnd = null;
             _isDragging = false;
         }
-
+        
+        private void HandleDoubleClick(GameObject hitObject)
+        {
+            if (!hitObject) return;
+            // Change the state of the selected object
+            DeselectAllCubes();
+            CloseContextMenu();
+            SelectCube(hitObject);
+        }
+        
         private static Vector3 Only2D(Vector3 position, float z)
         {
             return new Vector3(position.x, position.y, z);
