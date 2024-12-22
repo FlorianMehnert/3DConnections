@@ -110,15 +110,15 @@ namespace _3DConnections.Runtime.Managers
                 {
                     clickCount++;
 
-                    if (clickCount == 1)
+                    switch (clickCount)
                     {
-                        timer = 0f;
-                    }
-                    else if (clickCount == 2)
-                    {
-                        HandleDoubleClick(hit.collider.gameObject);
-                        clickCount = 0;
-                        return;
+                        case 1:
+                            timer = 0f;
+                            break;
+                        case 2:
+                            HandleDoubleClick(hit.collider.gameObject);
+                            clickCount = 0;
+                            return;
                     }
                     
                     // prepare drag vector estimation
