@@ -1,0 +1,49 @@
+using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace _3DConnections.Runtime.ScriptableObjects
+{
+    /// <summary>
+    /// Kind of Singleton reference to the overlay scene - almost a SceneHandler
+    /// </summary>
+    [CreateAssetMenu(fileName = "OverlaySceneData", menuName = "3DConnections/ScriptableObjects/OverlaySceneData", order = 1)]
+    public class OverlaySceneScriptableObject : ScriptableObject
+    {
+        public SceneReference overlayScene;
+        public Camera camera;
+        public Canvas overlayCanvas;
+        public Canvas cubeInteractionCanvas;
+        
+        public Camera GetCameraOfScene()
+        {
+            if (overlayScene)
+            {
+                var rootObjects = overlayScene.scene.GetRootGameObjects();
+                return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(overlayCamera => overlayCamera);
+            }
+
+            Debug.Log("overlay scene is not properly configured");
+            return null;
+        }
+        
+        public void ToggleOverlay()
+        {
+            if (overlayScene == null || !overlayScene.scene.isLoaded) return;
+            var overlayCamera = GetCameraOfScene();
+            overlayCamera.enabled = !overlayCamera.enabled;
+        }
+        
+        public GameObject GetNodeGraph()
+        {
+            if (overlayScene && overlayScene.scene.IsValid())
+            {
+                var rootObjects = overlayScene.scene.GetRootGameObjects();
+                return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
+            }
+
+            Debug.Log("overlay scene is not properly configured");
+            return null;
+        }
+    }
+}

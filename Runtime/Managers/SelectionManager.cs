@@ -21,7 +21,7 @@ namespace _3DConnections.Runtime.Managers
         private Vector3? _dragStart;
         private Vector3? _dragEnd;
         private bool _isDragging;
-        public GameObject currentlyDraggedCube;
+        private GameObject _currentlyDraggedCube;
         private int _indexOfCurrentlyDraggedCube;
         private GameObject _toBeDeselectedCube;
         private GameObject _currentContextMenu;
@@ -29,6 +29,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private Canvas parentCanvas;
         [SerializeField] private GameObject highlightPrefab;
         [SerializeField] private Material highlightMaterial;
+        [SerializeField] private OverlaySceneScriptableObject overlay;
         
         public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
@@ -37,7 +38,7 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            _displayCamera = SceneHandler.GetCameraOfScene();
+            _displayCamera = overlay.GetCameraOfScene();
 
             if (_displayCamera == null)
             {
@@ -56,9 +57,9 @@ namespace _3DConnections.Runtime.Managers
         private void Update()
         {
             // highlight currently dragging cube
-            if (currentlyDraggedCube)
+            if (_currentlyDraggedCube)
             {
-                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
+                _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
             }
 
             HandleMouseInput();
@@ -125,7 +126,7 @@ namespace _3DConnections.Runtime.Managers
                     _dragStart = mousePosition;
 
                     var hitObject = hit.collider.gameObject;
-                    currentlyDraggedCube = hitObject;
+                    _currentlyDraggedCube = hitObject;
 
                     SelectCube(hitObject);
 
@@ -158,7 +159,7 @@ namespace _3DConnections.Runtime.Managers
                 {
                     _dragEnd = mousePosition;
                     _isDragging = true;
-                    if (currentlyDraggedCube)
+                    if (_currentlyDraggedCube)
                     {
                         if (_dragStart == null || _dragEnd == null) return;
                         var drag = _dragEnd - _dragStart;
@@ -172,7 +173,7 @@ namespace _3DConnections.Runtime.Managers
                             _markUnselect[toBeUnselectedCube] = false;
                         }
 
-                        currentlyDraggedCube.transform.position = Only2D(_selectedCubesStartPositions[currentlyDraggedCube] + (Vector3)drag, currentlyDraggedCube.transform.position.z);
+                        _currentlyDraggedCube.transform.position = Only2D(_selectedCubesStartPositions[_currentlyDraggedCube] + (Vector3)drag, _currentlyDraggedCube.transform.position.z);
                     }
                 }
             }
@@ -194,16 +195,16 @@ namespace _3DConnections.Runtime.Managers
 
             // Reset dragging when mouse button is released
             if (!Input.GetMouseButtonUp(0)) return;
-            if (currentlyDraggedCube)
+            if (_currentlyDraggedCube)
             {
                 if (_dragStart != null && _dragEnd != null && (Vector3)_dragEnd - (Vector3)_dragStart == Vector3.zero)
                 {
-                    RemoveOutlineCube(currentlyDraggedCube);
-                    _selectedCubes.Remove(currentlyDraggedCube);
+                    RemoveOutlineCube(_currentlyDraggedCube);
+                    _selectedCubes.Remove(_currentlyDraggedCube);
                 }
 
-                currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeDefaultColor;
-                currentlyDraggedCube = null;
+                _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeDefaultColor;
+                _currentlyDraggedCube = null;
             }
 
             _markUnselect.Clear();

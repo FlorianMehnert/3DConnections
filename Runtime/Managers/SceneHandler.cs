@@ -19,11 +19,10 @@ namespace _3DConnections.Runtime.Managers
         private GameObject NodeGraph { get; set; }
         private const string LayerOverlay = "OverlayScene";
    
-        [SerializeField] private GameObject dropdownPrefab;
-        [SerializeField] private Transform canvasTransform; // Where to spawn the dropdown
         private TMP_Dropdown _sceneDropdown;
         private SceneManager _sceneManager;
         [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
+        [SerializeField] private OverlaySceneScriptableObject overlay;
 
         private static bool IsSceneLoaded(string sceneName)
         {
@@ -68,7 +67,7 @@ namespace _3DConnections.Runtime.Managers
 
             // find a camera rendering to the second display (display 1) in a multi display else set to null
             _mainCamera = GetCameraOfSpecificDisplay(0);
-            OverlayCamera = GetCameraOfScene();
+            OverlayCamera = overlay.GetCameraOfScene();
 
             // disable culling Mask for the main camera and enable for overlay camera
             if (_mainCamera)
@@ -80,7 +79,7 @@ namespace _3DConnections.Runtime.Managers
                 }
                 
                 // update dropdown on scene Load
-                canvasTransform.gameObject.SetActive(true);
+                
                 PopulateDropdown();
             }
             else
@@ -147,21 +146,7 @@ namespace _3DConnections.Runtime.Managers
             return Camera.allCameras.FirstOrDefault(cam => cam.targetDisplay == display);
         }
 
-        public static Camera GetCameraOfScene()
-        {
-            var scene = SceneManager.GetSceneByName("NewScene");
-            if (!scene.IsValid()) return null;
-            var rootObjects = scene.GetRootGameObjects();
-            return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(camera => camera);
-        }
-
-        public static GameObject GetNodeGraph(string sceneName)
-        {
-            var scene = SceneManager.GetSceneByName(sceneName);
-            if (!scene.IsValid()) return null;
-            var rootObjects = scene.GetRootGameObjects();
-            return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
-        }
+        
 
         public static GameObject GetCanvas(string sceneName)
         {
@@ -172,14 +157,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
 
-        public static void ToggleOverlay()
-        {
-            if (!IsSceneLoaded("NewScene")) return;
-            var scene = GetOverlayedScene();
-            if (scene == null) return;
-            var camera = GetCameraOfScene();
-            camera.enabled = !camera.enabled;
-        }
+        
 
         /// <summary>
         /// Required for the tree spanning where all root transforms form the basis of the tree
@@ -232,15 +210,14 @@ namespace _3DConnections.Runtime.Managers
                 LoadSceneAndWait("NewScene");
             }
             
-            canvasTransform.gameObject.SetActive(true);
             PopulateDropdown();
         }
 
         private void CreateDropdown()
         {
             // Instantiate the dropdown prefab
-            GameObject dropdownObj = Instantiate(dropdownPrefab, canvasTransform);
-            _sceneDropdown = dropdownObj.GetComponent<TMP_Dropdown>();
+            // GameObject dropdownObj = Instantiate(dropdownPrefab, canvasTransform);
+            // _sceneDropdown = dropdownObj.GetComponent<TMP_Dropdown>();
         
             // Add listener for value changes
             _sceneDropdown.onValueChanged.AddListener(OnDropdownValueChanged);
@@ -272,8 +249,15 @@ namespace _3DConnections.Runtime.Managers
         private void OnDropdownValueChanged(int index)
         {
             var selectedScene = _sceneDropdown.options[index].text;
-            // Write the selected scene to your scene manager
-            analyzeSceneConfig.scene = SceneManager.GetSceneByName(selectedScene);
+            var scene = SceneManager.GetSceneByName(selectedScene);
+            
+            var newSceneRef = ScriptableObject.CreateInstance<SceneReference>();
+            newSceneRef.useStaticValues = false;
+            newSceneRef.scene = scene;
+            newSceneRef.sceneName = scene.name;
+            newSceneRef.scenePath = scene.path;
+            
+            analyzeSceneConfig.scene = newSceneRef;
         }
     }
 }

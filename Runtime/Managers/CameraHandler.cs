@@ -1,3 +1,4 @@
+using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
 
@@ -18,13 +19,11 @@ namespace _3DConnections.Runtime.Managers
         private float _worldWidth;
         private float _worldHeight;
 
-        public CameraController(float basePanSpeed)
-        {
-        }
+        [SerializeField] private OverlaySceneScriptableObject overlay;
 
         private void Start()
         {
-            _cam = SceneHandler.GetCameraOfScene();
+            _cam = overlay.GetCameraOfScene();
         
             // Calculate world dimensions based on current orthographic size
             CalculateWorldDimensions();

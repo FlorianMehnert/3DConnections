@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.ScriptableObjects;
@@ -29,12 +30,13 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private NodeGraphScriptableObject nodeGraphScriptableObject;
 
         [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
+        [SerializeField] private OverlaySceneScriptableObject overlay;
 
 
         private void Start()
         {
             _connectionManager = GetComponent<NodeConnectionManager>();
-            _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
+            _nodeGraph = overlay.GetNodeGraph();
         }
 
 
@@ -49,7 +51,7 @@ namespace _3DConnections.Runtime.Managers
             // spawn node prefab as child of this element
             if (!_nodeGraph)
             {
-                _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
+                _nodeGraph = overlay.GetNodeGraph();
                 if (!_nodeGraph)
                 {
                     Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
@@ -190,10 +192,10 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        private void Clear()
+        internal void Clear()
         {
             // clear node objects
-            _nodeGraph = SceneHandler.GetNodeGraph("NewScene");
+            _nodeGraph = overlay.GetNodeGraph();
             if (_nodeGraph)
             {
                 foreach (Transform child in _nodeGraph.transform)
@@ -217,6 +219,31 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
+        private Transform[] GetSceneRootObjects()
+        {
+            if (toAnalyzeSceneScriptableObject == null)
+            {
+                Debug.Log("to analyze scene config is empty");
+                return Array.Empty<Transform>();
+            }
+            if (toAnalyzeSceneScriptableObject.scene == null)
+            {
+                Debug.Log("scene of to analyze scene config is empty");
+                return Array.Empty<Transform>();
+            }
+
+            if (!toAnalyzeSceneScriptableObject.scene.scene.IsValid())
+            {
+                Debug.Log("selected scene is invalid probably because it is not loaded");
+                return Array.Empty<Transform>();
+            }
+
+            var scene = toAnalyzeSceneScriptableObject.scene.scene;
+            return scene.GetRootGameObjects()
+                .Select(go => go.transform)
+                .ToArray();
+        }
+
         /// <summary>
         /// Fill children of root objects using in a while loop using transform parent-child relations.
         /// Fill _rootNodes, _nodes
@@ -225,7 +252,7 @@ namespace _3DConnections.Runtime.Managers
         private List<Node> BuildTree()
         {
             var toExploreNodes = new List<Node>();
-            var rootTransforms = SceneHandler.GetSceneRootObjects(toAnalyzeSceneScriptableObject.scene.name);
+            var rootTransforms = GetSceneRootObjects();
             var rootNodes = new List<Node>();
             foreach (var rootTransform in rootTransforms)
             {
@@ -325,6 +352,41 @@ namespace _3DConnections.Runtime.Managers
             };
         }
 
+        internal void DrawGrid(string[] paths = null)
+        {
+            var overlayedScene = SceneHandler.GetOverlayedScene();
+            if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+            _secondCamera = overlay.GetCameraOfScene();
+            if (!_secondCamera)
+                return ;
+
+            if (paths!.Length > 0)
+            {
+                var scriptNodes = FindScriptNodes(paths[0], out var allReferences);
+                NodeLayoutManagerV2.GridLayout(scriptNodes);
+                    
+                foreach (var scriptNode in scriptNodes)
+                {
+                    var nodeGameObject = SpawnCubeNodeUsingNodeObject(scriptNode);
+                    scriptNode.relatedGameObject = nodeGameObject;
+                    nodeGraphScriptableObject.Add(scriptNode);
+                }
+
+                var connections = CalculateNodeConnections(scriptNodes, allReferences);
+                DrawNodeConnections(connections);
+            }
+            else
+            {
+                Debug.Log("Path is empty");
+            }
+        }
+
+        internal void DrawTree()
+        {
+            var rootNodes = BuildTree();
+            SpawnTreeFromNode(DefineRootNode(rootNodes));
+        }
+
         /// <summary>
         /// Function called by the GUI-Manager
         /// </summary>
@@ -337,12 +399,9 @@ namespace _3DConnections.Runtime.Managers
             {
                 var overlayedScene = SceneHandler.GetOverlayedScene();
                 if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-                _secondCamera = SceneHandler.GetCameraOfScene();
+                _secondCamera = overlay.GetCameraOfScene();
                 if (!_secondCamera)
-                {
-                    Debug.Log("The second camera is null please load the second Scene");
                     return;
-                }
 
                 if (paths!.Length > 0)
                 {

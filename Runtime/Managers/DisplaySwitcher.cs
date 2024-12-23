@@ -1,3 +1,4 @@
+using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
 
@@ -6,14 +7,16 @@ namespace _3DConnections.Runtime.Managers
     /// <summary>
     /// Manager responsible for display switching using shortcuts
     /// </summary>
+    
     public class DisplaySwitcher : MonoBehaviour
     {
+        [SerializeField] private OverlaySceneScriptableObject overlay;
         private void Update()
         {
             // Check if F1 is pressed to switch to Display 1
             if (!Input.GetKeyDown(KeyCode.F1)) return;
             Debug.Log("toggle display");
-            SceneHandler.ToggleOverlay();
+            overlay.ToggleOverlay();
         }
 
         /// <summary>
