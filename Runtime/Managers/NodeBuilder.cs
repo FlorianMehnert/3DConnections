@@ -276,8 +276,22 @@ namespace _3DConnections.Runtime.Managers
                             foreach (Transform child in node.relatedGameObject.transform)
                             {
                                 // only create new Node object if this not already present
-                                if (nodeGraphScriptableObject.Contains(child.gameObject)) continue;
-                                var childrenNode = new Node(child.gameObject.name)
+                                Node childrenNode;
+                                if (nodeGraphScriptableObject.Contains(child.gameObject))
+                                {
+                                    childrenNode = nodeGraphScriptableObject.GetRelations()[child.gameObject];
+                                    if (!children.Contains(childrenNode))
+                                    {
+                                        children.Add(childrenNode);
+                                    }
+
+                                    if (!toExploreNodes.Contains(childrenNode))
+                                    {
+                                        toExploreNodes.Add(childrenNode);
+                                    }
+                                    continue;
+                                }
+                                childrenNode = new Node(child.gameObject.name)
                                 {
                                     relatedGameObject = child.gameObject
                                 };
@@ -383,6 +397,8 @@ namespace _3DConnections.Runtime.Managers
 
         internal void DrawTree()
         {
+            Debug.Log(toAnalyzeSceneScriptableObject.scene);
+            
             var rootNodes = BuildTree();
             SpawnTreeFromNode(DefineRootNode(rootNodes));
         }

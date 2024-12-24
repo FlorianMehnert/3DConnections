@@ -14,11 +14,33 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
         public Scene scene
         {
-            get => _scene.IsValid() ? _scene : SceneManager.GetSceneByPath(scenePath);
+            get => _scene.IsValid() ? _scene : TryResolveScene();
             set => _scene = value;
         }
 
+        private Scene TryResolveScene()
+        {
+            var resolvedScene = SceneManager.GetSceneByPath(scenePath);
+            if (!resolvedScene.IsValid())
+            {
+                resolvedScene = SceneManager.GetSceneByName(sceneName);
+            }
+            if (!resolvedScene.IsValid())
+            {
+                Debug.Log("could not resolve scene by name or path");
+            }
+
+            return resolvedScene;
+        }
+
+        /// <summary>
+        /// considering UseStaticValues
+        /// </summary>
         public string Name => useStaticValues ? sceneName : scene.name;
+        
+        /// <summary>
+        /// considering UseStaticValues
+        /// </summary>
         public string Path => useStaticValues ? scenePath : scene.path;
     }
 }

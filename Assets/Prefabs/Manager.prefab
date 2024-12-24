@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7644496426939543078
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3451024132963029698}
+  - component: {fileID: 4986152009048628595}
+  - component: {fileID: 7871477783130218327}
+  - component: {fileID: 1677649614280440048}
+  - component: {fileID: 118189344272573009}
+  - component: {fileID: 5742035924882090109}
+  m_Layer: 6
+  m_Name: Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3451024132963029698
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.9663042, y: -0.94741213, z: 6.7811546}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4986152009048628595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00a94b1b9507453db21821e45a5016ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineScale: 1.1
+  targetLayerName: OverlayScene
+  nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
+  contextMenuPrefab: {fileID: 1286671522656961090, guid: c5403d3cbf929a73ab01b70bfcd5c3a8, type: 3}
+  parentCanvas: {fileID: 0}
+  highlightPrefab: {fileID: 3140014340197302825, guid: c4ccb7828916724bdb336649a11a34cf, type: 3}
+  highlightMaterial: {fileID: 2100000, guid: c97c0b6f87487e34ca122a2aeb0a9201, type: 2}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  doubleClickThreshold: 0.3
+--- !u!114 &7871477783130218327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b34c29a19ed435883a2fb72f01c6620c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneHandler: {fileID: 0}
+  path: []
+--- !u!114 &1677649614280440048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f884fc9e816e4bfdb912d2047bc80852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+--- !u!114 &118189344272573009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e997bb88bd44d52aa3000df1dc6965b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  connections: []
+  lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
+--- !u!114 &5742035924882090109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 961d1020e77bd83e2a71b8728ca824db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodeWidth: 2
+  nodeHeight: 1
+  nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
+  nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
+  nodeGraphScriptableObject: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}

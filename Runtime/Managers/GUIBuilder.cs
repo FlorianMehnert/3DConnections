@@ -77,6 +77,8 @@ namespace _3DConnections.Runtime.Managers
         
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = new Vector2(500, 400);
+            SceneReference sr = ScriptableObject.CreateInstance<SceneReference>();
+            //ToAnalyzeSceneScriptableObject.scene
             dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
         }
 
@@ -123,18 +125,6 @@ namespace _3DConnections.Runtime.Managers
         private void OnFileBrowserOpen()
         {
             path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);
-        }
-
-        private void OnGUI()
-        {
-            // sceneHandler.Execute(20, 30);
-            // if (GUI.Button(new Rect(20, 60, 150, 30), "Open File"))
-            // {
-            //     path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);
-            //     Debug.Log(path[0]);
-            // }
-            //
-            // _nodeBuilder.Execute(20,90, path);
         }
     }
 }
