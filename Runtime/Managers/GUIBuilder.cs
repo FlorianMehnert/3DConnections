@@ -77,8 +77,7 @@ namespace _3DConnections.Runtime.Managers
         
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = new Vector2(500, 400);
-            SceneReference sr = ScriptableObject.CreateInstance<SceneReference>();
-            //ToAnalyzeSceneScriptableObject.scene
+            ScriptableObject.CreateInstance<SceneReference>();
             dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
         }
 

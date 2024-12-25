@@ -76,7 +76,7 @@ namespace _3DConnections.Runtime.Managers
         /// <param name="node"></param>
         private GameObject SpawnCubeNodeUsingNodeObject(Node node)
         {
-            return !_secondCamera ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(_secondCamera.transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f), node.name);
+            return !overlay.GetCameraOfScene() ? null : SpawnTestNodeOnSecondDisplay(GetNodePositionRelativeToCamera(overlay.GetCameraOfScene().transform.position, new Vector3(node.X, node.Y, 0)), new Vector3(nodeWidth, nodeHeight, 1f), node.name);
         }
 
         /// <summary>
@@ -245,24 +245,26 @@ namespace _3DConnections.Runtime.Managers
         }
 
         /// <summary>
-        /// Fill children of root objects using in a while loop using transform parent-child relations.
-        /// Fill _rootNodes, _nodes
-        /// store references between GameObjects and Nodes in _relatedGameObjects
+        /// Create Tree structure using given transforms
         /// </summary>
-        private List<Node> BuildTree()
+        private List<Node> ConstructNodesWithChildrenUsingTransforms(Transform[] rootTransforms)
         {
-            var toExploreNodes = new List<Node>();
-            var rootTransforms = GetSceneRootObjects();
+            // Newly created Node objects list
             var rootNodes = new List<Node>();
+            
+            // Kind of flags for "not yet analyzed node"
+            var toExploreNodes = new List<Node>();
+            
             foreach (var rootTransform in rootTransforms)
             {
-                var nodeForRootGameObject = new Node(rootTransform);
-                rootNodes.Add(nodeForRootGameObject);
+                // Create new Node for each initially given Transform
+                var rootNode = new Node(rootTransform);
+                rootNodes.Add(rootNode);
 
-                nodeGraphScriptableObject.Add(nodeForRootGameObject);
-                if (!toExploreNodes.Contains(nodeForRootGameObject))
+                nodeGraphScriptableObject.Add(rootNode);
+                if (!toExploreNodes.Contains(rootNode))
                 {
-                    toExploreNodes.Add(nodeForRootGameObject);
+                    toExploreNodes.Add(rootNode);
                 }
 
                 while (toExploreNodes.Count > 0)
@@ -297,8 +299,8 @@ namespace _3DConnections.Runtime.Managers
                                 };
                                 nodeGraphScriptableObject.Add(childrenNode);
                                 children.Add(childrenNode);
-                                nodeForRootGameObject.relatedGameObject = child.gameObject;
-                                nodeGraphScriptableObject.Replace(nodeForRootGameObject);
+                                rootNode.relatedGameObject = child.gameObject;
+                                nodeGraphScriptableObject.Replace(rootNode);
                                 if (!toExploreNodes.Contains(childrenNode))
                                 {
                                     toExploreNodes.Add(childrenNode);
@@ -397,57 +399,16 @@ namespace _3DConnections.Runtime.Managers
 
         internal void DrawTree()
         {
-            Debug.Log(toAnalyzeSceneScriptableObject.scene);
+            Debug.Log("Starting to draw tree for scene " + toAnalyzeSceneScriptableObject.scene.Name);
             
-            var rootNodes = BuildTree();
+            Clear();
+            var overlayedScene = SceneHandler.GetOverlayedScene();
+            if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
+            _secondCamera = overlay.GetCameraOfScene();
+            // Find Root nodes in scene
+            var rootTransforms = GetSceneRootObjects();
+            var rootNodes = ConstructNodesWithChildrenUsingTransforms(rootTransforms);
             SpawnTreeFromNode(DefineRootNode(rootNodes));
-        }
-
-        /// <summary>
-        /// Function called by the GUI-Manager
-        /// </summary>
-        /// <param name="x">x coordinate for the button</param>
-        /// <param name="y">y coordinate for the button</param>
-        /// <param name="paths">folder path to analyze which is passed from the GUI-Manager</param>
-        public void Execute(int x = 20, int y = 60, string[] paths = null)
-        {
-            if (GUI.Button(new Rect(x, y, 150, 30), "Other Scene Additive"))
-            {
-                var overlayedScene = SceneHandler.GetOverlayedScene();
-                if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-                _secondCamera = overlay.GetCameraOfScene();
-                if (!_secondCamera)
-                    return;
-
-                if (paths!.Length > 0)
-                {
-                    var scriptNodes = FindScriptNodes(paths[0], out var allReferences);
-                    NodeLayoutManagerV2.GridLayout(scriptNodes);
-                    
-                    foreach (var scriptNode in scriptNodes)
-                    {
-                        var nodeGameObject = SpawnCubeNodeUsingNodeObject(scriptNode);
-                        scriptNode.relatedGameObject = nodeGameObject;
-                        nodeGraphScriptableObject.Add(scriptNode);
-                    }
-
-                    var connections = CalculateNodeConnections(scriptNodes, allReferences);
-                    DrawNodeConnections(connections);
-                }
-                else
-                {
-                    Debug.Log("Path is empty");
-                }
-            }
-            else if (GUI.Button(new Rect(x, y + 30, 150, 30), "Clear Nodes"))
-            {
-                Clear();
-            }
-            else if (GUI.Button(new Rect(x, y + 60, 150, 30), "Tree Layout"))
-            {
-                var rootNodes = BuildTree();
-                SpawnTreeFromNode(DefineRootNode(rootNodes));
-            }
         }
 
         private void OnDestroy()

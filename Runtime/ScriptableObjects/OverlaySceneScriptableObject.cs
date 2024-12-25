@@ -19,11 +19,15 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             if (overlayScene)
             {
+                if (camera) return camera;
                 var rootObjects = overlayScene.scene.GetRootGameObjects();
-                return rootObjects.Select(obj => obj.GetComponentInChildren<Camera>()).FirstOrDefault(overlayCamera => overlayCamera);
+                camera = rootObjects.Select(obj => obj.GetComponentInChildren<Camera>())
+                    .FirstOrDefault(overlayCamera => overlayCamera);
+                if (!camera) Debug.Log("You are missing a camera in the overlay scene");     
+                return camera;
             }
 
-            Debug.Log("overlay scene is not properly configured");
+            Debug.Log("Overlay scene is not properly configured");
             return null;
         }
         

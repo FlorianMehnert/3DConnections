@@ -6,7 +6,7 @@ using UnityEngine;
 namespace _3DConnections.Runtime.ScriptableObjects
 {
     /// <summary>
-    /// Represents all Nodes to gameObject data where only one to one relations exist
+    /// Represents all Nodes to gameObject data where only one-to-one relations exist
     /// </summary>
     
     [CreateAssetMenu(fileName = "Data", menuName = "3DConnections/ScriptableObjects/NodeGraph", order = 1)]
