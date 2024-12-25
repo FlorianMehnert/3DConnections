@@ -1,6 +1,5 @@
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
@@ -33,7 +32,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         
         public void ToggleOverlay()
         {
-            if (overlayScene == null || !overlayScene.scene.isLoaded) return;
+            if (overlayScene is null || !overlayScene.scene.isLoaded) return;
             var overlayCamera = GetCameraOfScene();
             overlayCamera.enabled = !overlayCamera.enabled;
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using _3DConnections.Runtime.Managers;
 using UnityEngine;
 
 namespace Runtime
@@ -48,6 +49,30 @@ namespace Runtime
             Children = new List<Node>();
             relatedGameObject = relatedTransform.gameObject;
             
+        }
+
+        public void AttachLagProfiler()
+        {
+            var profiler = relatedGameObject.GetComponent<LagProfiler>();
+            if (profiler == null)
+            {
+                relatedGameObject.AddComponent<LagProfiler>();
+            }
+        }
+
+        public void RemoveLagProfiler()
+        {
+            var profiler = relatedGameObject.GetComponent<LagProfiler>();
+            if (profiler != null)
+            {
+                Object.Destroy(profiler);
+            }
+        }
+
+        public void ToggleLagProfiler()
+        {
+            var profiler = relatedGameObject.GetComponent<LagProfiler>();
+            profiler?.ToggleIsMonitoring();
         }
     }
 }
