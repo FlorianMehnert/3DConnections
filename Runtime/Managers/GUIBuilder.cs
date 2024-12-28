@@ -65,6 +65,7 @@ namespace _3DConnections.Runtime.Managers
                 var sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
                 sceneOptions.Add(sceneName);
             }
+            
         
             if (tmpDropdown != null)
             {
@@ -74,6 +75,19 @@ namespace _3DConnections.Runtime.Managers
             {
                 standardDropdown.AddOptions(sceneOptions.Select(option => new Dropdown.OptionData(option)).ToList());
             }
+
+            if (sceneOptions.Count > 0)
+            {
+                var initialSceneRef = ScriptableObject.CreateInstance<SceneReference>();
+                initialSceneRef.useStaticValues = false;
+                var scene = SceneManager.GetSceneByName(sceneOptions.First());
+                initialSceneRef.scene = scene;
+                initialSceneRef.sceneName = scene.name;
+                initialSceneRef.scenePath = scene.path;
+            
+                analyzeSceneConfig.scene = initialSceneRef;
+            }
+            
         
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = new Vector2(500, 400);
