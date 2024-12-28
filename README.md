@@ -78,4 +78,28 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 
 ## 20.December
 - modified selection logic using RaycastAll
-- constructing a tree from scene transforms parent-child relationships 🌲 Merry Christmas
+- constructing a tree from scene transforms parent-child relationships 
+
+## 21.December
+- allow later configuring color of nodes using scriptable objects
+- add tree building algorithm using transforms
+- change node material to unlit
+- delete old sprites
+- add ping to object on double click
+- add folders for managers etc.
+- add dropdown prefab to only use GUIBuilder for Gui related
+- add a scriptable object for Scene selection
+- fix prefab dependencies
+
+## 22.December
+- Add scriptable object  for node graph data
+
+## 23.December
+- Extract SceneHandler Methods
+- remove unused prefabs
+
+## 24.December
+- 🌲 Merry Christmas
+
+## 25.December
+- packing files as unitypackage - resolved all dependency problems
