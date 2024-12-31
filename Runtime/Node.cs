@@ -1,78 +1,61 @@
+using System;
 using System.Collections.Generic;
-using _3DConnections.Runtime.Managers;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace Runtime
 {
     /// <summary>
     /// Internal representation of a Node used to compute layouts and keep track of all available nodes
     /// </summary>
-    public class Node
+    public abstract class Node
     {
         
-        public string name;
+        public readonly string Name;
         public float X { get; set; }
         public float Y { get; set; }
         public float Width { get; set; }
         public float Height { get; set; }
-        public Color Color { get; set; }
         public List<Node> Children { get; set; }
-        public GameObject relatedGameObject;
+        
+        // physical node
+        public GameObject RelatedGameObject;
+        
+        // the respective object in the analyzed scene
+        protected virtual Type NodeType { get; set; }
 
-        public Node(string name, float x, float y, float width, float height)
+        protected Node(string name, float x, float y, float width, float height)
         {
-            this.name = name;
+            Name = name;
             X = x;
             Y = y;
             Width = width;
             Height = height;
         }
 
-        public Node(string name)
+        protected Node(string name)
         {
             X = 0;
             Y = 0;
             Width = 2;
             Height = 1;
-            this.name = name;
+            Name = name;
             Children = new List<Node>();
-            relatedGameObject = null;
+            RelatedGameObject = null;
         }
 
-        public Node(Transform relatedTransform)
+        protected Node(Transform position)
         {
             X = 0;
             Y = 0;
             Width = 2;
             Height = 1;
-            name = relatedTransform.name;
+            Name = position.name;
             Children = new List<Node>();
-            relatedGameObject = relatedTransform.gameObject;
-            
+            RelatedGameObject = position.gameObject;
         }
 
-        public void AttachLagProfiler()
-        {
-            var profiler = relatedGameObject.GetComponent<LagProfiler>();
-            if (profiler == null)
-            {
-                relatedGameObject.AddComponent<LagProfiler>();
-            }
-        }
-
-        public void RemoveLagProfiler()
-        {
-            var profiler = relatedGameObject.GetComponent<LagProfiler>();
-            if (profiler != null)
-            {
-                Object.Destroy(profiler);
-            }
-        }
-
-        public void ToggleLagProfiler()
-        {
-            var profiler = relatedGameObject.GetComponent<LagProfiler>();
-            profiler?.ToggleIsMonitoring();
-        }
+        public Vector3 Position => new(X, Y, 0);
     }
 }

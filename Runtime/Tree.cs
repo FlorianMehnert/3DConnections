@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using _3DConnections.Runtime.Managers;
+using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using Object = UnityEngine.Object;
 
@@ -41,7 +42,7 @@ namespace _3DConnections.Runtime
             actualRoots = new List<TreeNode>();
 
             // Create a virtual root node
-            Node virtualRootData = new Node("VirtualRoot", 0, 0, 0, 0);
+            Node virtualRootData = new GameObjectNode("VirtualRoot", 0, 0, 0, 0, null);
             virtualRoot = new TreeNode(virtualRootData);
 
             // Build tree from all root objects in the scene
@@ -96,12 +97,13 @@ namespace _3DConnections.Runtime
                 height = rectTransform.rect.height;
             }
 
-            Node node = new Node(
+            Node node = new GameObjectNode(
                 gameObject.name,
                 gameObject.transform.position.x,
                 gameObject.transform.position.y,
                 width,
-                height
+                height,
+                gameObject
             );
 
             return new TreeNode(node, gameObject);

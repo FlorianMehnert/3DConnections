@@ -11,8 +11,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
     {
         public SceneReference overlayScene;
         public Camera camera;
-        public Canvas overlayCanvas;
-        public Canvas cubeInteractionCanvas;
+        // public Canvas overlayCanvas;
+        // public Canvas cubeInteractionCanvas;
         
         public Camera GetCameraOfScene()
         {

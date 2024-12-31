@@ -31,7 +31,7 @@ namespace _3DConnections.Runtime
             }
 
             // Print node information
-            result.AppendLine(includePositionInfo ? $"{node.name} (X:{node.X}, Y:{node.Y}, W:{node.Width}, H:{node.Height})" : node.name);
+            result.AppendLine(includePositionInfo ? $"{node.Name} (X:{node.X}, Y:{node.Y}, W:{node.Width}, H:{node.Height})" : node.Name);
 
             // Process children
             if (node.Children != null)
@@ -56,7 +56,7 @@ namespace _3DConnections.Runtime
             if (node.Children is not { Count: > 0 }) return;
             foreach (var child in node.Children)
             {
-                result.AppendLine($"{node.name} -> {child.name}");
+                result.AppendLine($"{node.Name} -> {child.Name}");
                 PrintConnectionsRecursive(child, result);
             }
         }

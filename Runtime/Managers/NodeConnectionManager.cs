@@ -33,7 +33,7 @@ namespace _3DConnections.Runtime.Managers
                 startNode = startNode,
                 endNode = endNode,
                 lineRenderer = lineRenderer,
-                connectionColor = color ?? Color.white,
+                connectionColor = color ?? Color.black,
                 lineWidth = lineWidth
             };
         

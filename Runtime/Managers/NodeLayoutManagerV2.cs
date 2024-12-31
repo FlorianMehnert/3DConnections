@@ -42,7 +42,7 @@ namespace _3DConnections.Runtime.Managers
                 var newWidth = Mathf.Sqrt(node.Width * node.Height * targetAspectRatio);
                 var newHeight = newWidth / targetAspectRatio;
 
-                return new Node(node.name, 0, 0, newWidth, newHeight);
+                return new GameObjectNode(node.Name, 0, 0, newWidth, newHeight, null);
             }).ToList();
 
             // Determine max node dimensions in the grid
@@ -115,11 +115,11 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         /// <param name="transform">The transform to convert</param>
         /// <returns>A TreeNodeSO representing this transform and its children</returns>
-        public static TreeNodeSO CreateNodeFromTransform(Transform transform)
+        private static TreeNodeSO CreateNodeFromTransform(Transform transform)
         {
             // Create a new ScriptableObject for this node
             var node = ScriptableObject.CreateInstance<TreeNodeSO>();
-            node.Initialize(new Node(transform.gameObject.name), transform.gameObject);
+            node.Initialize(new GameObjectNode(transform.gameObject.name, null), transform.gameObject);
 
             // Recursively create nodes for all children
             foreach (Transform child in transform)
@@ -217,31 +217,33 @@ namespace _3DConnections.Runtime.Managers
         /// <summary>
         /// Creates a Node from a GameObject
         /// </summary>
-        internal static Node CreateNodeFromGameObject(GameObject gameObject)
+        private static Node CreateNodeFromGameObject(GameObject gameObject)
         {
             var rect = GetGameObjectRect(gameObject);
-            return new Node(
+            return new GameObjectNode(
                 gameObject.name,
                 rect.x,
                 rect.y,
                 rect.width,
-                rect.height
+                rect.height,
+                gameObject
             );
         }
 
         /// <summary>
         /// Creates a Node from a Component
         /// </summary>
-        internal static Node CreateNodeFromComponent(Component component)
+        private static Node CreateNodeFromComponent(Component component)
         {
             // For components, use the parent GameObject's rect and append component type to name
             var rect = GetGameObjectRect(component.gameObject);
-            return new Node(
+            return new GameObjectNode(
                 $"{component.gameObject.name}_{component.GetType().Name}",
                 rect.x,
                 rect.y,
                 rect.width,
-                rect.height
+                rect.height,
+                component.gameObject
             );
         }
 

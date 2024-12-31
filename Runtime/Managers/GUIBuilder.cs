@@ -16,6 +16,7 @@ namespace _3DConnections.Runtime.Managers
     public class GUIBuilder : MonoBehaviour
     {
         private NodeBuilder _nodeBuilder;
+        private SceneSerializer _sceneSerializer;
         public string[] path;
         [SerializeField] private TMP_Dropdown dropdownPrefab;
         [SerializeField] private GameObject buttonPrefab;
@@ -28,6 +29,11 @@ namespace _3DConnections.Runtime.Managers
         {
             _nodeBuilder = GetComponent<NodeBuilder>();
             if (_nodeBuilder == null)
+            {
+                Debug.Log("The NodeBuilder component is missing on the manager");
+            }
+            _sceneSerializer = GetComponent<SceneSerializer>();
+            if (_sceneSerializer == null)
             {
                 Debug.Log("The NodeBuilder component is missing on the manager");
             }
@@ -100,7 +106,9 @@ namespace _3DConnections.Runtime.Managers
             CreateButton("Open File Browser", 14, new Vector2(500, 365), OnFileBrowserOpen);
             CreateButton("Draw Grid", 14, new Vector2(500, 330), () => _nodeBuilder.DrawGrid(path));
             CreateButton("Draw Tree", 14, new Vector2(500, 295), _nodeBuilder.DrawTree);
-            CreateButton("Clear", 14, new Vector2(500, 260), _nodeBuilder.Clear);
+            CreateButton("Draw Relations", 14, new Vector2(500, 260), _nodeBuilder.AnalyzeScene);
+            // CreateButton("Serialize Scene", 14, new Vector2(500, 225), () => Debug.Log(_sceneSerializer.GetHierarchyString(null)));
+            CreateButton("Clear", 14, new Vector2(500, 190), _nodeBuilder.Clear);
         }
 
         private void CreateButton(string text, int fontSize, Vector2 anchoredPosition, UnityAction onClick)

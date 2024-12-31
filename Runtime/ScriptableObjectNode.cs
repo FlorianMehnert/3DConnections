@@ -16,12 +16,12 @@ namespace _3DConnections.Runtime
             NodeType = typeof(ScriptableObject);
         }
 
-        public ScriptableObjectNode(string name) : base(name)
+        private ScriptableObjectNode(string name) : base(name)
         {
             NodeType = typeof(ScriptableObject);
         }
 
-        public ScriptableObjectNode(Transform relatedTransform) : base(relatedTransform)
+        public ScriptableObjectNode(Transform position) : base(position)
         {
             NodeType = typeof(ScriptableObject);
         }

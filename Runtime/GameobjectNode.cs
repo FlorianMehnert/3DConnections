@@ -1,5 +1,6 @@
 using System;
 using _3DConnections.Runtime.Managers;
+using JetBrains.Annotations;
 using Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -10,20 +11,27 @@ namespace _3DConnections.Runtime.ScriptableObjects
     {
         protected sealed override Type NodeType => base.NodeType;
 
-        public GameObjectNode(string name, float x, float y, float width, float height) : base(name, x, y, width, height)
+
+        public GameObjectNode(string name, float x, float y, float width, float height, [CanBeNull] GameObject go) : base(name, x, y, width, height)
         {
             NodeType = typeof(GameObject);
+            GameObject = go;
         }
 
-        public GameObjectNode(string name) : base(name)
+        public GameObjectNode(string name, [CanBeNull] GameObject go) : base(name)
         {
             NodeType = typeof(GameObject);
+            GameObject = go;
         }
 
-        public GameObjectNode(Transform relatedTransform) : base(relatedTransform)
+        public GameObjectNode(Transform position, [CanBeNull] GameObject go) : base(position)
         {
             NodeType = typeof(GameObject);
+            GameObject = go;
         }
+
+        public GameObject GameObject { get; }
+
 
         public void AttachLagProfiler()
         {

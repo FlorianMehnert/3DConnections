@@ -34,7 +34,7 @@ namespace _3DConnections.Runtime.Managers
             if (Time.time - startTime > monitoringDuration)
             {
                 isMonitoring = false;
-                Debug.Log($"{associatedNode.relatedGameObject.name} consumed {elapsedTime * 1000f:F2} ms during monitoring.");
+                Debug.Log($"{associatedNode.RelatedGameObject.name} consumed {elapsedTime * 1000f:F2} ms during monitoring.");
             }
         }
 
@@ -48,7 +48,7 @@ namespace _3DConnections.Runtime.Managers
             startTime = Time.time;
             isMonitoring = true;
             elapsedTime = 0f;
-            Debug.Log($"Started monitoring {associatedNode.relatedGameObject.name}...");
+            Debug.Log($"Started monitoring {associatedNode.RelatedGameObject.name}...");
         }
 
         public bool ToggleIsMonitoring()
