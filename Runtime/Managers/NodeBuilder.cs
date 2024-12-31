@@ -533,39 +533,34 @@ namespace _3DConnections.Runtime.Managers
 
         public void AnalyzeScene()
         {
+            // 1. Clean and setup overlay parameters
             Clear();
             var overlayedScene = SceneHandler.GetOverlayedScene();
-
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-
             _secondCamera = overlay.GetCameraOfScene();
 
-            // Get Root nodes for later
-            var rootTransforms = GetSceneRootTransforms();
-
-            // handle GameObjects
+            // 2a. Collect all GameObjects in the scene
             var serializedScene = SceneSerializer.SerializeSceneHierarchy(overlayedScene);
             foreach (var serializedGameObject in serializedScene.Select(go => new GameObjectNode(go.name, go)))
             {
                 SpawnNodeOnOverlay(serializedGameObject);
             }
 
-            // Gridlayout existing nodes
+            // 2b. Create Transform Hierarchy from GameObjectNodes
             nodegraph.FillChildrenForGameObjectNodes();
             var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.scene.scene.GetRootGameObjects());
-
-            // Decide on Layout Tree or Grid currently
             TreeLayout.LayoutTree(rootNode);
 
+            // 3. Add parent-child gamenode connections
             foreach (var node in rootNode.Children)
             {
                 foreach (var child in node.Children)
                 {
-                    _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, Color.green);
+                    _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, ParentChildConnection);
                 }
             }
 
-            // NodeLayoutManagerV2.GridLayout(nodes);
+            // 4. Finally, move all nodes where they belong
             nodegraph.ApplyNodePositions();
         }
 
