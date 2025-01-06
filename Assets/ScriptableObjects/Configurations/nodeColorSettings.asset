@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: nodeColorSettings
   m_EditorClassIdentifier: 
   nodeDefaultColor: {r: 0.078431375, g: 0.14923835, b: 0.24004811, a: 0}
-  nodeSelectedColor: {r: 1, g: 0, b: 0, a: 0}
+  nodeSelectedColor: {r: 0, g: 0.84648275, b: 1, a: 0}
   nodeRootColor: {r: 0, g: 1, b: 0, a: 0}

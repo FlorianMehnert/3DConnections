@@ -191,14 +191,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             }
         }
 
-        public void MoveNodesToZ(float z)
-        {
-            foreach (var go in _nodesByGameObject.Keys)
-            {
-                go.transform.position = new Vector3(go.transform.position.x, go.transform.position.y, z);
-            }
-        }
-
         private List<GameObjectNode> GetGameObjectNodes()
         {
             List<GameObjectNode> gameObjectNodes = new();

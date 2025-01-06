@@ -95,19 +95,6 @@ namespace _3DConnections.Runtime.Managers
         }
 
         /// <summary>
-        /// Based on the camera position, determine the node position so nodes will be spawned in front of the camera
-        /// </summary>
-        /// <param name="secondDisplayCameraPosition">Vector3 that should be the transform position of the camera</param>
-        /// <param name="spawnPosition">Spawn Position in the camera frame</param>
-        /// <returns></returns>
-        private static Vector3 GetNodePositionRelativeToCamera(Vector3 secondDisplayCameraPosition, Vector3 spawnPosition)
-        {
-            return secondDisplayCameraPosition
-                   + Vector3.forward * 5f
-                   + spawnPosition;
-        }
-
-        /// <summary>
         /// Create a list of nodes that represent scripts that correspond to all scripts in the given location
         /// </summary>
         /// <param name="path">Location in which to look for scripts to display</param>
