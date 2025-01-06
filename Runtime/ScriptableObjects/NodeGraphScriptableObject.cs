@@ -84,14 +84,14 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return _nodesByGameObject[gameObject];
         }
         
-        public Node GetNode(ScriptableObject scriptableObject)
+        public ScriptableObjectNode GetNode(ScriptableObject scriptableObject)
         {
-            return _nodesByGameObject.Values.FirstOrDefault(x => x.Name == scriptableObject.name);
+            return _nodesByGameObject.Values.OfType<ScriptableObjectNode>().FirstOrDefault(x => x.Name == scriptableObject.name);
         }
         
-        public Node GetNode(Component component)
+        public ComponentNode GetNode(Component component)
         {
-            return _nodesByGameObject.Values.FirstOrDefault(x => x.Name == component.name);
+            return _nodesByGameObject.Values.OfType<ComponentNode>().FirstOrDefault(x => x.Name == component.name);
         }
 
         private GameObject GetGameObject(Node node)
@@ -161,12 +161,12 @@ namespace _3DConnections.Runtime.ScriptableObjects
             // remove existing nodes and existing gameobjects
             foreach (var existingNode in GetNodes().Where(existingNode => existingNode.RelatedGameObject == node.RelatedGameObject))
             {
-                // tmp start
-                Debug.Log("to replace node: " + _nodesByGameObject[existingNode.RelatedGameObject]);
-                Debug.Log("new node" + node);
-                // tmp end
-                    
-                _nodesByGameObject[existingNode.RelatedGameObject] = node;
+                if (_nodesByGameObject.ContainsKey(existingNode.RelatedGameObject))
+                    _nodesByGameObject[existingNode.RelatedGameObject] = node;
+                else
+                {
+                    _nodesByGameObject.Add(existingNode.RelatedGameObject, node);
+                }
                 return true;
             }
 
@@ -187,7 +187,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             foreach (var node in GetNodes())
             {
-                GetGameObject(node).transform.localPosition = node.Position;
+                GetGameObject(node).transform.localPosition = node.GetPosition();
             }
         }
 
@@ -212,16 +212,20 @@ namespace _3DConnections.Runtime.ScriptableObjects
             foreach (var node in _nodesByGameObject.Values)
             {
                 if (node is not GameObjectNode gameObjectNode) continue;
-                foreach (Transform childTransform in gameObjectNode.GameObject.transform)
+                if (gameObjectNode.GameObject != null)
                 {
-                    var goNodes = GetGameObjectNodes();
-                    var knownChildNodes = goNodes.Where(goNode => goNode.GameObject == childTransform.gameObject);
-                    foreach (var goNode in knownChildNodes)
+                    foreach (Transform childTransform in gameObjectNode.GameObject.transform)
                     {
-                        node.Children.Add(_nodesByGameObject[goNode.RelatedGameObject]);
-                        break;
+                        var goNodes = GetGameObjectNodes();
+                        var knownChildNodes = goNodes.Where(goNode => goNode.GameObject == childTransform.gameObject);
+                        foreach (var goNode in knownChildNodes)
+                        {
+                            node.Children.Add(_nodesByGameObject[goNode.RelatedGameObject]);
+                            break;
+                        }
                     }
-                }
+                };
+                
             }
         }
 

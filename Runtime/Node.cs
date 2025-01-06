@@ -56,6 +56,9 @@ namespace Runtime
             RelatedGameObject = position.gameObject;
         }
 
-        public Vector3 Position => new(X, Y, 0);
+        public Vector3 GetPosition()
+        {
+            return new Vector3(X, Y, 0);
+        }
     }
 }

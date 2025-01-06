@@ -25,10 +25,10 @@ namespace _3DConnections.Runtime
             NodeType = typeof(ComponentNode);
         }
 
-        public static Node GetOrCreateNode(Component co, NodeGraphScriptableObject nodegraph)
+        public static ComponentNode GetOrCreateNode(Component component, NodeGraphScriptableObject nodegraph)
         {
             // also broken/null components need to return a node
-            if (co == null)
+            if (component == null)
             {
                 var nullCo = new ComponentNode("null");
                 nodegraph.Add(nullCo);
@@ -36,10 +36,15 @@ namespace _3DConnections.Runtime
             }
             
             // component exists with a name
-            var newCo = new ComponentNode(co.name);
-            if (nodegraph.Contains(co))
+            var newCo = new ComponentNode(component.name);
+            if (nodegraph.Contains(component))
             {
-                return nodegraph.GetNode(co);
+                var componentNode = nodegraph.GetNode(component);
+                if (componentNode == null)
+                {
+                    componentNode = newCo;
+                }
+                return componentNode;
             }
 
             nodegraph.Add(newCo);

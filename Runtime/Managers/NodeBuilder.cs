@@ -54,7 +54,7 @@ namespace _3DConnections.Runtime.Managers
 
 
         /// <summary>
-        /// Spawn a new game object for the given node and add to the nodegraph 
+        /// Spawn a new game object for the given node, sets its relatedGameObject and add to the nodegraph 
         /// <b>Requires</b> a second camera to be active with an existing and enabled overlayedScene :)
         /// </summary>
         /// <param name="node"></param>
@@ -74,9 +74,10 @@ namespace _3DConnections.Runtime.Managers
                     Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
                 }
             }
+            if (node == null) return;
 
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
-            nodeObject.transform.position = node.Position;
+            nodeObject.transform.localPosition = new Vector3(node.X, node.Y, 0);
             nodeObject.transform.localScale = new Vector3(node.Width, node.Height, 1f);
             nodeObject.name = node.Name;
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
@@ -411,6 +412,7 @@ namespace _3DConnections.Runtime.Managers
                 _ => null
             };
             if (referenceNode == null) return;
+            SpawnNodeOnOverlay(referenceNode);
             _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, ReferenceConnection);
         }
 
@@ -477,11 +479,13 @@ namespace _3DConnections.Runtime.Managers
 
             foreach (var component in components)
             {
-                var componentNode = ComponentNode.GetOrCreateNode(component, nodegraph);
-                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, componentNode.RelatedGameObject, color: ComponentConnection);
+                var node = ComponentNode.GetOrCreateNode(component, nodegraph);
+                SpawnNodeOnOverlay(node);
+                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: ComponentConnection);
                 
                 // Analyze serialized fields
-                AnalyzeSerializedFields(component, (ComponentNode) componentNode);
+                AnalyzeSerializedFields(component, node);
+                
             }
         }
 
@@ -495,9 +499,10 @@ namespace _3DConnections.Runtime.Managers
 
             // 2a. Collect all GameObjects in the scene
             var serializedScene = SceneSerializer.SerializeSceneHierarchy(overlayedScene);
-            foreach (var serializedGameObject in serializedScene.Select(go => new GameObjectNode(go.name, go)))
+            foreach (var gameObjectNode in serializedScene.Select(go => new GameObjectNode(go.name, go)))
             {
-                SpawnNodeOnOverlay(serializedGameObject);
+                SpawnNodeOnOverlay(gameObjectNode);
+                AnalyzeComponents(gameObjectNode);
             }
 
             // 2b. Create Transform Hierarchy from GameObjectNodes
@@ -505,7 +510,7 @@ namespace _3DConnections.Runtime.Managers
             var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.scene.scene.GetRootGameObjects());
             TreeLayout.LayoutTree(rootNode);
 
-            // 3. Add parent-child gamenode connections
+            // 3. Add parent-child gamenode connections TODO: draw all the connections
             foreach (var node in rootNode.Children)
             {
                 foreach (var child in node.Children)
