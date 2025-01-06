@@ -96,19 +96,18 @@ namespace _3DConnections.Runtime.Managers
             
         
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
-            rectTransform.anchoredPosition = new Vector2(500, 400);
+            rectTransform.anchoredPosition = new Vector2(300, 300);
             ScriptableObject.CreateInstance<SceneReference>();
             dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
         }
 
         private void CreateButtons()
         {
-            CreateButton("Open File Browser", 14, new Vector2(500, 365), OnFileBrowserOpen);
-            CreateButton("Draw Grid", 14, new Vector2(500, 330), () => _nodeBuilder.DrawGrid(path));
-            CreateButton("Draw Tree", 14, new Vector2(500, 295), _nodeBuilder.DrawTree);
-            CreateButton("Draw Relations", 14, new Vector2(500, 260), _nodeBuilder.AnalyzeScene);
-            // CreateButton("Serialize Scene", 14, new Vector2(500, 225), () => Debug.Log(_sceneSerializer.GetHierarchyString(null)));
-            CreateButton("Clear", 14, new Vector2(500, 190), _nodeBuilder.Clear);
+            CreateButton("Open File Browser", 14, new Vector2(300, 265), OnFileBrowserOpen);
+            CreateButton("Draw Grid", 14, new Vector2(300, 230), () => _nodeBuilder.DrawGrid(path));
+            CreateButton("Draw Tree", 14, new Vector2(300, 195), _nodeBuilder.DrawTree);
+            CreateButton("Draw Relations", 14, new Vector2(300, 160), _nodeBuilder.AnalyzeScene);
+            CreateButton("Clear", 14, new Vector2(300, 125), _nodeBuilder.Clear);
         }
 
         private void CreateButton(string text, int fontSize, Vector2 anchoredPosition, UnityAction onClick)

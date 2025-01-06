@@ -278,11 +278,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6741713482695017902, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_ReferenceResolution.x
-      value: 1000
+      value: 800
       objectReference: {fileID: 0}
     - target: {fileID: 6741713482695017902, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_ReferenceResolution.y
-      value: 900
+      value: 700
       objectReference: {fileID: 0}
     - target: {fileID: 7579628121259745900, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_Pivot.x
