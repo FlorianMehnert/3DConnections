@@ -103,3 +103,7 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 
 ## 25.December
 - packing files as unitypackage - resolved all dependency problems
+
+## 6.January
+- change button canvas to scale with screen size
+- add component nodes and connections
