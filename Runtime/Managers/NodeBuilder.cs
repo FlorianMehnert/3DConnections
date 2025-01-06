@@ -400,25 +400,26 @@ namespace _3DConnections.Runtime.Managers
             SpawnTreeFromNode(DefineRootNode(rootNodes));
         }
 
-        private void ProcessUnityObject(Object obj, Node parentNode)
+        private void ProcessUnityObject(Object reference, ComponentNode componentNode)
         {
-            if (nodegraph.Contains(obj)) return;
-            Debug.Log("processing unity object");
-            var referenceNode = obj switch
+            if (nodegraph.Contains(reference)) return;
+            var referenceNode = reference switch
             {
                 ScriptableObject so => ScriptableObjectNode.GetOrCreateNode(so, nodegraph),
                 GameObject go => GameObjectNode.GetOrCreateNode(go, nodegraph),
                 Component co => ComponentNode.GetOrCreateNode(co, nodegraph),
                 _ => null
             };
-
             if (referenceNode == null) return;
-            parentNode.Children.Add(referenceNode);
-            // Recursively analyze the referenced object
-            AnalyzeSerializedFields(obj, referenceNode);
+            _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, ReferenceConnection);
         }
 
-        private void AnalyzeSerializedFields(Object obj, Node parentNode)
+        /// <summary>
+        /// Wrapper function for <see cref="ProcessUnityObject"/> called by <see cref="AnalyzeComponents"/> 
+        /// </summary>
+        /// <param name="obj">A serialized field reference within the current component</param>
+        /// <param name="componentNode">node that represents the component to which this reference will be attached to</param>
+        private void AnalyzeSerializedFields(Object obj, ComponentNode componentNode)
         {
             if (obj == null || !processedObjects.Add(obj)) return;
             Debug.Log("analyzing serialized fields");
@@ -435,7 +436,7 @@ namespace _3DConnections.Runtime.Managers
                         continue;
                     // Handle Unity Object types
                     case Object unityObj:
-                        ProcessUnityObject(unityObj, parentNode);
+                        ProcessUnityObject(unityObj, componentNode);
                         break;
                     // Handle arrays and lists of Unity Objects
                     case IEnumerable<Object> objectList:
@@ -444,7 +445,7 @@ namespace _3DConnections.Runtime.Managers
                         {
                             if (listItem != null)
                             {
-                                ProcessUnityObject(listItem, parentNode);
+                                ProcessUnityObject(listItem, componentNode);
                             }
                         }
 
@@ -459,7 +460,7 @@ namespace _3DConnections.Runtime.Managers
                             {
                                 if (item != null)
                                 {
-                                    ProcessUnityObject(item, parentNode);
+                                    ProcessUnityObject(item, componentNode);
                                 }
                             }
                         }
@@ -470,51 +471,17 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        private void AnalyzeComponents(GameObject go, Node parentNode)
+        private void AnalyzeComponents(GameObjectNode gameObjectNode)
         {
-            var components = go.GetComponents<Component>();
+            var components = gameObjectNode.GameObject.GetComponents<Component>();
 
             foreach (var component in components)
             {
-                if (component == null) continue;
                 var componentNode = ComponentNode.GetOrCreateNode(component, nodegraph);
-                parentNode.Children.Add(componentNode);
-
+                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, componentNode.RelatedGameObject, color: ComponentConnection);
+                
                 // Analyze serialized fields
-                AnalyzeSerializedFields(component, componentNode);
-            }
-        }
-
-        private Node CreateNodeHierarchy(Transform tf, Node parentNode)
-        {
-            // Create or get existing node for GameObject
-            var node = GameObjectNode.GetOrCreateNode(tf.gameObject, nodegraph);
-
-            parentNode?.Children.Add(node);
-
-            // Process components
-            AnalyzeComponents(tf.gameObject, node);
-
-            // Process children
-            foreach (Transform child in tf)
-            {
-                CreateNodeHierarchy(child, node);
-            }
-
-            // Position and spawn the node
-            SpawnNodeOnOverlay(node);
-            return node;
-        }
-
-        private void DrawNodeConnections(Node node)
-        {
-            if (node.Children == null || node.RelatedGameObject == null) return;
-
-            foreach (var childNode in node.Children)
-            {
-                if (childNode.RelatedGameObject == null) continue;
-                var connectionColor = node.GetConnectionColor(childNode);
-                _connectionManager.AddConnection(node.RelatedGameObject, childNode.RelatedGameObject, connectionColor);
+                AnalyzeSerializedFields(component, (ComponentNode) componentNode);
             }
         }
 
