@@ -187,21 +187,13 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             foreach (var node in GetNodes())
             {
-                GetGameObject(node).transform.localPosition = node.GetPosition();
+                GetGameObject(node).transform.localPosition = node.position;
             }
         }
 
         private List<GameObjectNode> GetGameObjectNodes()
         {
-            List<GameObjectNode> gameObjectNodes = new();
-            foreach (var node in GetNodes())
-            {
-                if (node is GameObjectNode gameObjectNode)
-                {
-                    gameObjectNodes.Add(gameObjectNode);
-                }
-            }
-            return gameObjectNodes;
+            return _nodesByGameObject.Values.OfType<GameObjectNode>().ToList();
         }
 
         /// <summary>
@@ -209,23 +201,24 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// </summary>
         public void FillChildrenForGameObjectNodes()
         {
-            foreach (var node in _nodesByGameObject.Values)
+            var goNodes = GetGameObjectNodes();
+            foreach (var node in goNodes)
             {
-                if (node is not GameObjectNode gameObjectNode) continue;
-                if (gameObjectNode.GameObject != null)
+                if (node.GameObject == null)
                 {
-                    foreach (Transform childTransform in gameObjectNode.GameObject.transform)
+                    continue;
+                }
+
+                foreach (Transform childTransform in node.GameObject.transform)
+                {
+                    var childNode = goNodes.FirstOrDefault(goNode => goNode.GameObject == childTransform.gameObject);
+                    if (childNode != null)
                     {
-                        var goNodes = GetGameObjectNodes();
-                        var knownChildNodes = goNodes.Where(goNode => goNode.GameObject == childTransform.gameObject);
-                        foreach (var goNode in knownChildNodes)
-                        {
-                            node.Children.Add(_nodesByGameObject[goNode.RelatedGameObject]);
-                            break;
-                        }
+                        node.AddChild(childNode);
                     }
-                };
-                
+                }
+
+                Debug.Log("filling children " + node.GetChildren().Count);
             }
         }
 
@@ -254,10 +247,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
                     nodes.Add(newlyCreatedNode);
                 }
             }
-            return new GameObjectNode("TF Root", null)
-            {
-                Children = nodes
-            };
+
+            var tfroot = new GameObjectNode("TF Root", null);
+            tfroot.SetChildren(nodes);
+            return tfroot;
         }
     }
 }
