@@ -581,6 +581,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
     - target: {fileID: 4986152009048628595, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: nodegraph
+      value: 
+      objectReference: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+    - target: {fileID: 4986152009048628595, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: parentCanvas
       value: 
       objectReference: {fileID: 148513507}

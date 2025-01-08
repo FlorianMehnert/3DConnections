@@ -6,7 +6,6 @@ using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro;
 using Object = UnityEngine.Object;
 
 namespace _3DConnections.Runtime.Managers
@@ -26,7 +25,6 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
-        private Camera _secondCamera;
         private GameObject _parentNode;
         [SerializeField] private NodeGraphScriptableObject nodegraph;
 
@@ -89,6 +87,10 @@ namespace _3DConnections.Runtime.Managers
             // if (textComponent)
             //     textComponent.text = $"Node {_nodeCounter}";
             if (nodegraph.Add(node)) return;
+            if (nodegraph.ReplaceRelatedGo(node))
+                Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
+            else
+                Debug.Log("replaced ");if (nodegraph.Add(node)) return;
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
@@ -211,19 +213,19 @@ namespace _3DConnections.Runtime.Managers
                 return Array.Empty<Transform>();
             }
 
-            if (toAnalyzeSceneScriptableObject.scene == null)
+            if (toAnalyzeSceneScriptableObject.reference == null)
             {
                 Debug.Log("scene of to analyze scene config is empty");
                 return Array.Empty<Transform>();
             }
 
-            if (!toAnalyzeSceneScriptableObject.scene.scene.IsValid())
+            if (!toAnalyzeSceneScriptableObject.reference.scene.IsValid())
             {
                 Debug.Log("selected scene is invalid probably because it is not loaded");
                 return Array.Empty<Transform>();
             }
 
-            var scene = toAnalyzeSceneScriptableObject.scene.scene;
+            var scene = toAnalyzeSceneScriptableObject.reference.scene;
             return scene.GetRootGameObjects()
                 .Select(go => go.transform)
                 .ToArray();
@@ -295,7 +297,7 @@ namespace _3DConnections.Runtime.Managers
                                 }
                             }
 
-                            node.Children = children;
+                            node.SetChildren(children);
                         }
 
                         toExploreNodes.Remove(node);
@@ -328,9 +330,9 @@ namespace _3DConnections.Runtime.Managers
                 _spawnedNodes[node] = node.RelatedGameObject;
             }
 
-            if (node.Children is not { Count: > 0 }) return;
+            if (node.GetChildren() is not { Count: > 0 }) return;
 
-            foreach (var child in node.Children)
+            foreach (var child in node.GetChildren())
             {
                 if (!_spawnedNodes.TryGetValue(child, out var childObject))
                 {
@@ -348,21 +350,20 @@ namespace _3DConnections.Runtime.Managers
         /// Since a scene does have multiple root objects, define a single entry root node. Required for Tree node spawning
         /// </summary>
         /// <returns></returns>
-        private Node DefineRootNode(List<Node> rootNodes)
+        private static Node DefineRootNode(List<Node> rootNodes)
         {
-            return new GameObjectNode("ROOT", null)
+            var root = new GameObjectNode("ROOT", null);
+            foreach (var node in rootNodes)
             {
-                Children = rootNodes
-            };
+                root.AddChild(node);
+            }    
+            return root;
         }
 
         internal void DrawGrid(string[] paths = null)
         {
             var overlayedScene = SceneHandler.GetOverlayedScene();
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-            _secondCamera = overlay.GetCameraOfScene();
-            if (!_secondCamera)
-                return;
 
             if (paths!.Length > 0)
             {
@@ -386,12 +387,11 @@ namespace _3DConnections.Runtime.Managers
         // using Children attribute of nodes
         internal void DrawTree()
         {
-            Debug.Log("Starting to draw tree for scene " + toAnalyzeSceneScriptableObject.scene.Name);
+            Debug.Log("Starting to draw tree for scene " + toAnalyzeSceneScriptableObject.reference.Name);
 
             Clear();
             var overlayedScene = SceneHandler.GetOverlayedScene();
             if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-            _secondCamera = overlay.GetCameraOfScene();
 
             // Find Root nodes in the scene
             var rootTransforms = GetSceneRootTransforms();
@@ -475,10 +475,11 @@ namespace _3DConnections.Runtime.Managers
 
         private void AnalyzeComponents(GameObjectNode gameObjectNode)
         {
-            var components = gameObjectNode.GameObject.GetComponents<Component>();
-
+            var components = gameObjectNode.GameObject.GetComponents(typeof(Component));
+            
             foreach (var component in components)
             {
+                Debug.Log("component name: " + component.name);
                 var node = ComponentNode.GetOrCreateNode(component, nodegraph);
                 SpawnNodeOnOverlay(node);
                 _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: ComponentConnection);
@@ -493,12 +494,10 @@ namespace _3DConnections.Runtime.Managers
         {
             // 1. Clean and setup overlay parameters
             Clear();
-            var overlayedScene = SceneHandler.GetOverlayedScene();
-            if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-            _secondCamera = overlay.GetCameraOfScene();
+            SceneManager.SetActiveScene(overlay.overlayScene.scene);
 
             // 2a. Collect all GameObjects in the scene
-            var serializedScene = SceneSerializer.SerializeSceneHierarchy(overlayedScene);
+            var serializedScene = SceneSerializer.SerializeSceneHierarchy(toAnalyzeSceneScriptableObject.reference.scene);
             foreach (var gameObjectNode in serializedScene.Select(go => new GameObjectNode(go.name, go)))
             {
                 SpawnNodeOnOverlay(gameObjectNode);
@@ -506,14 +505,16 @@ namespace _3DConnections.Runtime.Managers
             }
 
             // 2b. Create Transform Hierarchy from GameObjectNodes
+            var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects());
+            SpawnNodeOnOverlay(rootNode);
             nodegraph.FillChildrenForGameObjectNodes();
-            var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.scene.scene.GetRootGameObjects());
             TreeLayout.LayoutTree(rootNode);
+            RadialLayout.LayoutChildrenRadially(rootNode, 0);
 
             // 3. Add parent-child gamenode connections TODO: draw all the connections
-            foreach (var node in rootNode.Children)
+            foreach (var node in rootNode.GetChildren())
             {
-                foreach (var child in node.Children)
+                foreach (var child in node.GetChildren())
                 {
                     _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, ParentChildConnection);
                 }
@@ -526,27 +527,6 @@ namespace _3DConnections.Runtime.Managers
         private void OnDestroy()
         {
             Clear();
-        }
-    }
-
-    public static class NodeExtensions
-    {
-        public static Color GetConnectionColor(this Node parentNode, Node childNode)
-        {
-            if (childNode.RelatedGameObject != null &&
-                parentNode.RelatedGameObject != null &&
-                childNode.RelatedGameObject.transform.parent == parentNode.RelatedGameObject.transform)
-            {
-                return NodeBuilder.ParentChildConnection;
-            }
-
-            if (childNode.RelatedGameObject != null &&
-                childNode.RelatedGameObject.GetComponents<Component>().Any(c => c.gameObject == parentNode.RelatedGameObject))
-            {
-                return NodeBuilder.ComponentConnection;
-            }
-
-            return NodeBuilder.ReferenceConnection;
         }
     }
 }

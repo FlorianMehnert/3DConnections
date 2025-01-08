@@ -41,8 +41,8 @@ namespace _3DConnections.Runtime
             if (!visited.Add(node)) return;
 
             node.Y = level * LevelSeparation;
-            if (node.Children == null) return;
-            foreach (var child in node.Children)
+            if (node.RelatedGameObject == null) return;
+            foreach (var child in node.GetChildren())
             {
                 AssignYCoordinates(child, level + 1, visited);
             }
@@ -52,7 +52,7 @@ namespace _3DConnections.Runtime
         {
             if (!visited.Add(node)) return node.X;
 
-            if (node.Children == null || node.Children.Count == 0)
+            if (node.GetChildren() == null || node.GetChildren().Count == 0)
             {
                 return 0;
             }
@@ -60,7 +60,7 @@ namespace _3DConnections.Runtime
             var leftmost = float.MaxValue;
             var rightmost = float.MinValue;
 
-            foreach (var childX in from child in node.Children where !visited.Contains(child) select CalculateInitialX(child, visited))
+            foreach (var childX in from child in node.GetChildren() where !visited.Contains(child) select CalculateInitialX(child, visited))
             {
                 leftmost = Math.Min(leftmost, childX);
                 rightmost = Math.Max(rightmost, childX);
@@ -86,13 +86,13 @@ namespace _3DConnections.Runtime
             var prevMod = modsums[level];
             modsums[level] = modsum;
 
-            if (node.Children == null || node.Children.Count == 0)
+            if (node.GetChildren() == null || node.GetChildren().Count == 0)
             {
                 return;
             }
 
             // Create a list of unvisited children
-            var unvisitedChildren = node.Children.Where(child => !visited.Contains(child)).ToList();
+            var unvisitedChildren = node.GetChildren().Where(child => !visited.Contains(child)).ToList();
 
             if (unvisitedChildren.Count > 0)
             {
@@ -136,8 +136,8 @@ namespace _3DConnections.Runtime
 
             node.X += modsum;
 
-            if (node.Children == null) return;
-            foreach (var child in node.Children)
+            if (node.GetChildren() == null) return;
+            foreach (var child in node.GetChildren())
             {
                 ApplyMods(child, modsum, visited);
             }
