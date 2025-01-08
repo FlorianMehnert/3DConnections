@@ -103,7 +103,7 @@ namespace _3DConnections.Runtime.Managers
         /// <returns></returns>
         public static Scene? GetOverlayedScene()
         {
-            const string sceneNameToCheck = "NewScene";
+            const string sceneNameToCheck = "OverlayScene";
             if (!IsSceneLoaded(sceneNameToCheck)) return null;
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -257,7 +257,7 @@ namespace _3DConnections.Runtime.Managers
             newSceneRef.sceneName = scene.name;
             newSceneRef.scenePath = scene.path;
             
-            analyzeSceneConfig.scene = newSceneRef;
+            analyzeSceneConfig.reference = newSceneRef;
         }
     }
 }
