@@ -18,6 +18,11 @@ namespace _3DConnections.Runtime.ScriptableObjects
             GameObject = go;
         }
 
+        /// <summary>
+        /// Construct a GameObjectNode
+        /// </summary>
+        /// <param name="name">Name of the GameObjectNode</param>
+        /// <param name="go">GameObject that will be represented by this GameObjectNode</param>
         public GameObjectNode(string name, [CanBeNull] GameObject go) : base(name)
         {
             NodeType = typeof(GameObject);

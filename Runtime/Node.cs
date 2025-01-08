@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using Object = UnityEngine.Object;
 
 namespace Runtime
 {
@@ -11,17 +9,20 @@ namespace Runtime
     /// </summary>
     public abstract class Node
     {
-        
         public readonly string Name;
         public float X { get; set; }
         public float Y { get; set; }
         public float Width { get; set; }
         public float Height { get; set; }
-        public List<Node> Children { get; set; }
-        
+
+        /// <summary>
+        /// Property for displaying hierarchy among nodes. Mostly influenced by transform hierarchies
+        /// </summary>
+        private List<Node> _children = new();
+
         // physical node
         public GameObject RelatedGameObject;
-        
+
         // the respective object in the analyzed scene
         protected virtual Type NodeType { get; set; }
 
@@ -41,7 +42,6 @@ namespace Runtime
             Width = 2;
             Height = 1;
             Name = name;
-            Children = new List<Node>();
             RelatedGameObject = null;
         }
 
@@ -52,13 +52,44 @@ namespace Runtime
             Width = 2;
             Height = 1;
             Name = position.name;
-            Children = new List<Node>();
             RelatedGameObject = position.gameObject;
         }
 
-        public Vector3 GetPosition()
+        public Vector3 position
         {
-            return new Vector3(X, Y, 0);
+            get { return new Vector3(X, Y, 0); }
+            set
+            {
+                X = value.x;
+                Y = value.y;
+            }
+        }
+
+        public override string ToString()
+        {
+            return "Name: " + Name + " NodeType: " + NodeType;
+        }
+
+        public bool AddChild(Node child)
+        {
+            if (_children.Contains(child)) return false;
+            _children.Add(child);
+            return true;
+        }
+
+        public bool RemoveChild(Node child)
+        {
+            return _children.Remove(child);
+        }
+
+        public List<Node> GetChildren()
+        {
+            return _children;
+        }
+
+        public void SetChildren(List<Node> children)
+        {
+            _children = children;
         }
     }
 }

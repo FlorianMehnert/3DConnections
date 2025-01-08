@@ -91,7 +91,7 @@ namespace _3DConnections.Runtime.Managers
                 initialSceneRef.sceneName = scene.name;
                 initialSceneRef.scenePath = scene.path;
             
-                analyzeSceneConfig.scene = initialSceneRef;
+                analyzeSceneConfig.reference = initialSceneRef;
             }
             
         
@@ -138,8 +138,8 @@ namespace _3DConnections.Runtime.Managers
             newSceneRef.sceneName = scene.name;
             newSceneRef.scenePath = scene.path;
 
-            analyzeSceneConfig.scene = newSceneRef;
-            Debug.Log("the new config scene is " + analyzeSceneConfig.scene.Name + " " + analyzeSceneConfig.scene.Path);
+            analyzeSceneConfig.reference = newSceneRef;
+            Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " " + analyzeSceneConfig.reference.Path);
         }
 
         private void OnFileBrowserOpen()

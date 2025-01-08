@@ -36,7 +36,7 @@ namespace _3DConnections.Runtime
             }
             
             // component exists with a name
-            var newCo = new ComponentNode(component.name);
+            var newCo = new ComponentNode(component.GetType().Name);
             if (nodegraph.Contains(component))
             {
                 var componentNode = nodegraph.GetNode(component);
