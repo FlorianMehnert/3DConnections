@@ -31,6 +31,8 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private Material highlightMaterial;
         [SerializeField] private OverlaySceneScriptableObject overlay;
         
+        [SerializeField] private NodeGraphScriptableObject nodegraph;
+        
         public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
         private float timer = 0f; // Timer to track time between clicks
