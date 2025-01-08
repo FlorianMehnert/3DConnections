@@ -8,7 +8,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
     public class ToAnalyzeSceneScriptableObject : ScriptableObject
     {
         // Scene which will be analyzed using tree config
-        public SceneReference scene;
+        public SceneReference reference;
         
         // nodes representing the scene
         public float nodeStandardWidth;
