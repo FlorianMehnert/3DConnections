@@ -41,7 +41,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] internal Color referenceColor = new(0.8f, 0.8f, 0.2f); // Yellow
         internal static Color ParentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
         internal static Color ComponentConnection = new(0.5f, 1f, 0.5f); // Light Green
-        internal static Color ReferenceConnection = new(1f, 1f, 0.5f); // Light Yellow
+        internal static Color ReferenceConnection = new(1f, 0f, 0.5f); // Light Yellow
 
 
         private void Start()
@@ -56,7 +56,8 @@ namespace _3DConnections.Runtime.Managers
         /// <b>Requires</b> a second camera to be active with an existing and enabled overlayedScene :)
         /// </summary>
         /// <param name="node"></param>
-        private void SpawnNodeOnOverlay(Node node)
+        /// <param name="color">Color of the node</param>
+        private void SpawnNodeOnOverlay(Node node, Color color)
         {
             if (!overlay.GetCameraOfScene())
             {
@@ -82,10 +83,7 @@ namespace _3DConnections.Runtime.Managers
             node.RelatedGameObject = nodeObject.gameObject;
             var componentRenderer = nodeObject.GetComponent<Renderer>();
             if (componentRenderer)
-                componentRenderer.material.color = nodeColorsScriptableObject.nodeDefaultColor;
-            // var textComponent = nodeObject.GetComponentInChildren<TextMeshProUGUI>();
-            // if (textComponent)
-            //     textComponent.text = $"Node {_nodeCounter}";
+                componentRenderer.material.color = color;
             if (nodegraph.Add(node)) return;
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
@@ -282,7 +280,6 @@ namespace _3DConnections.Runtime.Managers
                                     continue;
                                 }
 
-                                // TODO: go might be known here
                                 childrenNode = new GameObjectNode(child.gameObject.name, null)
                                 {
                                     RelatedGameObject = child.gameObject
@@ -326,7 +323,7 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!_spawnedNodes.TryGetValue(node, out var currentNodeObject))
             {
-                SpawnNodeOnOverlay(node);
+                SpawnNodeOnOverlay(node, gameobjectColor);
                 _spawnedNodes[node] = node.RelatedGameObject;
             }
 
@@ -336,7 +333,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 if (!_spawnedNodes.TryGetValue(child, out var childObject))
                 {
-                    SpawnNodeOnOverlay(child);
+                    SpawnNodeOnOverlay(child, gameobjectColor);
                     _spawnedNodes[child] = child.RelatedGameObject;
                 }
 
@@ -372,7 +369,7 @@ namespace _3DConnections.Runtime.Managers
 
                 foreach (var scriptNode in scriptNodes)
                 {
-                    SpawnNodeOnOverlay(scriptNode);
+                    SpawnNodeOnOverlay(scriptNode, gameobjectColor);
                 }
 
                 var connections = CalculateNodeConnections(scriptNodes, allReferences);
@@ -412,7 +409,7 @@ namespace _3DConnections.Runtime.Managers
                 _ => null
             };
             if (referenceNode == null) return;
-            SpawnNodeOnOverlay(referenceNode);
+            SpawnNodeOnOverlay(referenceNode, gameobjectColor);
             _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, ReferenceConnection);
         }
 
@@ -479,9 +476,9 @@ namespace _3DConnections.Runtime.Managers
             
             foreach (var component in components)
             {
-                Debug.Log("component name: " + component.name);
+                Debug.Log("component name: " + component.GetType().Name);
                 var node = ComponentNode.GetOrCreateNode(component, nodegraph);
-                SpawnNodeOnOverlay(node);
+                SpawnNodeOnOverlay(node, componentColor);
                 _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: ComponentConnection);
                 
                 // Analyze serialized fields
@@ -500,13 +497,13 @@ namespace _3DConnections.Runtime.Managers
             var serializedScene = SceneSerializer.SerializeSceneHierarchy(toAnalyzeSceneScriptableObject.reference.scene);
             foreach (var gameObjectNode in serializedScene.Select(go => new GameObjectNode(go.name, go)))
             {
-                SpawnNodeOnOverlay(gameObjectNode);
+                SpawnNodeOnOverlay(gameObjectNode, gameobjectColor);
                 AnalyzeComponents(gameObjectNode);
             }
 
             // 2b. Create Transform Hierarchy from GameObjectNodes
             var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects());
-            SpawnNodeOnOverlay(rootNode);
+            SpawnNodeOnOverlay(rootNode, gameobjectColor);
             nodegraph.FillChildrenForGameObjectNodes();
             TreeLayout.LayoutTree(rootNode);
             RadialLayout.LayoutChildrenRadially(rootNode, 0);
