@@ -526,6 +526,7 @@ namespace _3DConnections.Runtime.Managers
                 rootSpacing: 10f    // Space between root trees
             );
             forestManager.LayoutForest(rootNodes);
+            forestManager.FlattenToZPlane(rootNodes);
 
             // 4. Finally, move all nodes where they belong
             // nodegraph.ApplyNodePositions();

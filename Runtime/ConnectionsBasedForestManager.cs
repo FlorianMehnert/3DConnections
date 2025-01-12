@@ -68,8 +68,8 @@ namespace _3DConnections.Runtime
             {
                 var angle = (360f * i) / roots.Count;
                 var x = rootRadius * Mathf.Cos(angle * Mathf.Deg2Rad);
-                var z = rootRadius * Mathf.Sin(angle * Mathf.Deg2Rad);
-                var rootPosition = new Vector3(x, 0, z);
+                var y = rootRadius * Mathf.Sin(angle * Mathf.Deg2Rad);
+                var rootPosition = new Vector3(x, y, -1);
 
                 LayoutSingleTree(roots[i], rootPosition);
             }
@@ -104,23 +104,41 @@ namespace _3DConnections.Runtime
             if (node == null || node.Children.Count == 0 || !visited.Add(node)) return;
 
             var radius = _startingRadius + (level * _radiusIncrement);
-            var childAngleRange = angleRange / node.Children.Count;
-            var currentAngle = startAngle;
+            var childCount = node.Children.Count;
+            var angleStep = angleRange / childCount;
+            
+            // Calculate minimum angle based on the minimum distance between nodes at this radius
             var minAngleForLevel = CalculateMinimumAngle(radius);
-            var actualAngleRange = Mathf.Max(childAngleRange, minAngleForLevel);
+            
+            // Ensure we're using an angle step that won't place nodes too close together
+            angleStep = Mathf.Max(angleStep, minAngleForLevel);
+            
+            // Calculate the total angle needed for all children
+            var totalAngleNeeded = angleStep * childCount;
+            
+            // Adjust the starting angle to center the children within the available angle range
+            var adjustedStartAngle = startAngle + ((angleRange - totalAngleNeeded) / 2f);
 
-            foreach (var child in node.Children)
+            for (var i = 0; i < childCount; i++)
             {
-                var childAngle = currentAngle + (actualAngleRange / 2f);
-                var x = radius * Mathf.Cos(childAngle * Mathf.Deg2Rad);
-                var z = radius * Mathf.Sin(childAngle * Mathf.Deg2Rad);
+                var child = node.Children[i];
+                // Calculate the absolute angle for this child
+                var childAngle = adjustedStartAngle + (i * angleStep);
+                
+                // Convert angle to radians for the trigonometric calculations
+                var angleRadians = childAngle * Mathf.Deg2Rad;
+                
+                // Calculate position using polar coordinates
+                var x = radius * Mathf.Cos(angleRadians);
+                var y = radius * Mathf.Sin(angleRadians);
 
-                // Position relative to the node's position
+                // Position relative to the parent node's position
                 var nodePosition = node.GameObject.transform.position;
-                child.GameObject.transform.position = nodePosition + new Vector3(x, 0, z);
+                var childPosition = nodePosition + new Vector3(x, y, 0);
+                child.GameObject.transform.position = childPosition;
 
-                LayoutChildren(child, level + 1, currentAngle, actualAngleRange, levelCounts, visited);
-                currentAngle += actualAngleRange;
+                // Recursively layout this child's children, using the same angle range as calculated for even spacing
+                LayoutChildren(child, level + 1, childAngle - (angleStep / 2f), angleStep, levelCounts, visited);
             }
         }
 
@@ -185,8 +203,38 @@ namespace _3DConnections.Runtime
             return rootNodes;
         }
 
-        
+        /// <summary>
+        /// Flattens all nodes to the Z=0 plane while maintaining their X and Y positions
+        /// </summary>
+        /// <param name="roots">List of root nodes to process</param>
+        public void FlattenToZPlane(List<TreeNode> roots)
+        {
+            if (roots == null || roots.Count == 0) return;
 
-        
+            var processedNodes = new HashSet<TreeNode>();
+            foreach (var root in roots)
+            {
+                FlattenNodeAndChildren(root, processedNodes);
+            }
+        }
+
+        private static void FlattenNodeAndChildren(TreeNode node, HashSet<TreeNode> processedNodes)
+        {
+            if (node == null || !processedNodes.Add(node)) return;
+
+            // Keep X and Y, set Z to 0
+            var currentPos = node.GameObject.transform.position;
+            node.GameObject.transform.localPosition = new Vector3(currentPos.x, currentPos.y, 0f);
+
+            // Process all children
+            foreach (var child in node.Children)
+            {
+                FlattenNodeAndChildren(child, processedNodes);
+            }
+        }
+
+
+
+
     }
 }
