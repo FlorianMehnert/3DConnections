@@ -35,8 +35,8 @@ namespace _3DConnections.Runtime.Managers
         
         public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
-        private float timer = 0f; // Timer to track time between clicks
-        private int clickCount = 0; // Number of clicks
+        private float _timer; // Timer to track time between clicks
+        private int _clickCount; // Number of clicks
 
         private void Start()
         {
@@ -87,15 +87,15 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!_displayCamera || _targetLayerMask == 0) return;
 
-            if (clickCount > 0)
+            if (_clickCount > 0)
             {
-                timer += Time.deltaTime;
+                _timer += Time.deltaTime;
 
                 // Reset click count and timer if threshold exceeded
-                if (timer > doubleClickThreshold)
+                if (_timer > doubleClickThreshold)
                 {
-                    clickCount = 0;
-                    timer = 0f;
+                    _clickCount = 0;
+                    _timer = 0f;
                 }
             }
             
@@ -111,16 +111,16 @@ namespace _3DConnections.Runtime.Managers
 
                 if (hit)
                 {
-                    clickCount++;
+                    _clickCount++;
 
-                    switch (clickCount)
+                    switch (_clickCount)
                     {
                         case 1:
-                            timer = 0f;
+                            _timer = 0f;
                             break;
                         case 2:
                             HandleDoubleClick(hit.collider.gameObject);
-                            clickCount = 0;
+                            _clickCount = 0;
                             return;
                     }
                     
@@ -184,6 +184,8 @@ namespace _3DConnections.Runtime.Managers
             {
                 RemoveOutlineCube(toBeUnselectedCube);
                 _selectedCubes.Remove(toBeUnselectedCube);
+                var selectable = toBeUnselectedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
+                selectable.SetToOriginalColor();
                 foreach (Transform child in toBeUnselectedCube.transform)
                 {
                     Destroy(child.gameObject);
@@ -203,9 +205,10 @@ namespace _3DConnections.Runtime.Managers
                 {
                     RemoveOutlineCube(_currentlyDraggedCube);
                     _selectedCubes.Remove(_currentlyDraggedCube);
+                    var selectable = _currentlyDraggedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
+                    selectable.SetToOriginalColor();
                 }
 
-                _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeDefaultColor;
                 _currentlyDraggedCube = null;
             }
 
@@ -258,6 +261,8 @@ namespace _3DConnections.Runtime.Managers
             foreach (var cube in _selectedCubes)
             {
                 RemoveOutlineCube(cube);
+                var selectable = cube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
+                selectable.SetToOriginalColor();
             }
 
             _selectedCubes.Clear();
@@ -316,6 +321,8 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!_outlineCubes.TryGetValue(originalCube, out var outlineCube)) return;
             Destroy(outlineCube);
+            var selectable = originalCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
+            selectable.SetToOriginalColor();
             _outlineCubes.Remove(originalCube);
         }
     }

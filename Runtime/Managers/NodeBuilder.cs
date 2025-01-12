@@ -39,9 +39,9 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
         [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
         [SerializeField] internal Color referenceColor = new(0.8f, 0.8f, 0.2f); // Yellow
-        internal static Color ParentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
-        internal static Color ComponentConnection = new(0.5f, 1f, 0.5f); // Light Green
-        internal static Color ReferenceConnection = new(1f, 0f, 0.5f); // Light Yellow
+        [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
+        [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
+        [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
 
 
         private void Start()
@@ -410,7 +410,7 @@ namespace _3DConnections.Runtime.Managers
             };
             if (referenceNode == null) return;
             SpawnNodeOnOverlay(referenceNode, gameobjectColor);
-            _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, ReferenceConnection);
+            _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, referenceConnection);
         }
 
         /// <summary>
@@ -479,7 +479,7 @@ namespace _3DConnections.Runtime.Managers
                 Debug.Log("component name: " + component.GetType().Name);
                 var node = ComponentNode.GetOrCreateNode(component, nodegraph);
                 SpawnNodeOnOverlay(node, componentColor);
-                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: ComponentConnection);
+                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: componentConnection);
                 
                 // Analyze serialized fields
                 AnalyzeSerializedFields(component, node);
@@ -513,7 +513,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 foreach (var child in node.GetChildren())
                 {
-                    _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, ParentChildConnection);
+                    _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, parentChildConnection);
                 }
             }
 
