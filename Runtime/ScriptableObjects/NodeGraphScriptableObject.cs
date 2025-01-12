@@ -79,6 +79,11 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
         }
 
+        /// <summary>
+        /// Get the node using the 1 to 1 mapping 
+        /// </summary>
+        /// <param name="gameObject">GameObject that is on the OverlayScene representing a gameobject, component, etc.</param>
+        /// <returns>Node that is representing the given gameObject which is on the overlay</returns>
         public Node GetNode(GameObject gameObject)
         {
             return _nodesByGameObject[gameObject];

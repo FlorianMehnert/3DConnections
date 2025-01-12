@@ -505,8 +505,8 @@ namespace _3DConnections.Runtime.Managers
             var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects());
             SpawnNodeOnOverlay(rootNode, gameobjectColor);
             nodegraph.FillChildrenForGameObjectNodes();
-            TreeLayout.LayoutTree(rootNode);
-            RadialLayout.LayoutChildrenRadially(rootNode, 0);
+            // TreeLayout.LayoutTree(rootNode);
+            // RadialLayout.LayoutChildrenRadially(rootNode, 0);
 
             // 3. Add parent-child gamenode connections TODO: draw all the connections
             foreach (var node in rootNode.GetChildren())
@@ -517,8 +517,18 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
 
+            var rootNodes = ConnectionsBasedForestManager.BuildForest(_connectionManager.connections);
+            var forestManager = new ConnectionsBasedForestManager();
+            forestManager.SetLayoutParameters(
+                minDistance: 2f,    // Minimum distance between nodes
+                startRadius: 3f,    // Initial radius for first level
+                radiusInc: 4f,      // Radius increase per level
+                rootSpacing: 10f    // Space between root trees
+            );
+            forestManager.LayoutForest(rootNodes);
+
             // 4. Finally, move all nodes where they belong
-            nodegraph.ApplyNodePositions();
+            // nodegraph.ApplyNodePositions();
         }
 
         private void OnDestroy()

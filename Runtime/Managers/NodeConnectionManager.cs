@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Runtime.ScriptableObjects;
+using Runtime;
 using UnityEngine;
 
 namespace _3DConnections.Runtime.Managers
@@ -9,15 +11,7 @@ namespace _3DConnections.Runtime.Managers
     /// </summary>
     public class NodeConnectionManager : MonoBehaviour
     {
-        [System.Serializable]
-        public class NodeConnection
-        {
-            public GameObject startNode;
-            public GameObject endNode;
-            public LineRenderer lineRenderer;
-            public Color connectionColor = new(1,255,50);
-            public float lineWidth = 0.1f;
-        }
+        
 
         public List<NodeConnection> connections = new();
         public GameObject lineRendererPrefab;
