@@ -1,5 +1,6 @@
 using System;
 using _3DConnections.Runtime.ScriptableObjects;
+using JetBrains.Annotations;
 using Runtime;
 using UnityEngine;
 using UnityEngine.TextCore;
@@ -10,33 +11,31 @@ namespace _3DConnections.Runtime
     {
         protected sealed override Type NodeType => base.NodeType;
         
-        public ComponentNode(string name, float x, float y, float width, float height) : base(name, x, y, width, height)
+        public Component Component { get; }
+        
+        public ComponentNode(string name, float x, float y, float width, float height, [CanBeNull] Component co) : base(name, x, y, width, height)
+        {
+            NodeType = typeof(ComponentNode);
+            Component = co;
+        }
+
+        public ComponentNode(string name, [CanBeNull] Component co) : base(name)
         {
             NodeType = typeof(ComponentNode);
         }
 
-        public ComponentNode(string name) : base(name)
-        {
-            NodeType = typeof(ComponentNode);
-        }
-
-        public ComponentNode(Transform position) : base(position)
+        public ComponentNode(Transform position, [CanBeNull] Component co) : base(position)
         {
             NodeType = typeof(ComponentNode);
         }
 
         public static ComponentNode GetOrCreateNode(Component component, NodeGraphScriptableObject nodegraph)
         {
-            // also broken/null components need to return a node
             if (component == null)
-            {
-                var nullCo = new ComponentNode("null");
-                nodegraph.Add(nullCo);
-                return nullCo;
-            }
+                return null;
             
             // component exists with a name
-            var newCo = new ComponentNode(component.GetType().Name);
+            var newCo = new ComponentNode(component.GetType().Name, component);
             if (nodegraph.Contains(component))
             {
                 var componentNode = nodegraph.GetNode(component);

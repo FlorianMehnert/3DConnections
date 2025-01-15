@@ -21,13 +21,15 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private float nodeHeight = 1.0f;
         [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
 
-        private NodeConnectionManager _connectionManager;
         [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
+        
+        // parent for all nodes to be spawned
         private GameObject _parentNode;
+        
+        // ScriptableObjects to keep track of Nodes
         [SerializeField] private NodeGraphScriptableObject nodegraph;
-
         [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
@@ -46,7 +48,6 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            _connectionManager = GetComponent<NodeConnectionManager>();
             _parentNode = overlay.GetNodeGraph();
         }
 
@@ -73,13 +74,53 @@ namespace _3DConnections.Runtime.Managers
                     Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
                 }
             }
-            if (node == null) return;
+
+            switch (node)
+            {
+                case null:
+                    return;
+                case GameObjectNode goNode when goNode.GameObject != null:
+                {
+                    if (nodegraph.ContainsGameObjectNodeByID(goNode.GameObject.GetInstanceID()) != null)
+                    {
+                        Debug.Log("goNode is already present");
+                        return;
+                    }
+
+                    break;
+                }
+                case GameObjectNode goNode:
+                    Debug.Log("trying to spawn a goNode without a game object with Name being: " + goNode.Name);
+                    return;
+            }
 
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
             nodeObject.transform.localPosition = new Vector3(node.X, node.Y, 0);
             nodeObject.transform.localScale = new Vector3(node.Width, node.Height, 1f);
             nodeObject.name = node.Name;
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
+            
+            // set nodeType
+            var type = nodeObject.GetComponent<NodeType>();
+            if (type != null)
+            {
+                type.nodeTypeName = node switch
+                {
+                    GameObjectNode => "GameObject",
+                    ComponentNode => "Component",
+                    ScriptableObjectNode => "ScriptableObject",
+                    _ => type.nodeTypeName
+                };
+                type.reference = node switch
+                {
+                    GameObjectNode gameObjectNode => gameObjectNode.GameObject,
+                    ComponentNode componentNode => componentNode.Component.gameObject,
+                    ScriptableObjectNode => null,
+                    _ => null
+                };
+            }
+            
+            
             node.RelatedGameObject = nodeObject.gameObject;
             var componentRenderer = nodeObject.GetComponent<Renderer>();
             if (componentRenderer)
@@ -88,7 +129,8 @@ namespace _3DConnections.Runtime.Managers
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
-                Debug.Log("replaced ");if (nodegraph.Add(node)) return;
+                Debug.Log("replaced ");
+            if (nodegraph.Add(node)) return;
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
@@ -169,7 +211,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 foreach (var targetNode in connectedNodes)
                 {
-                    _connectionManager.AddConnection(sourceNode.RelatedGameObject, targetNode.RelatedGameObject, Color.HSVToRGB(0, 0.5f, .9f));
+                    NodeConnectionManager.Instance.AddConnection(sourceNode.RelatedGameObject, targetNode.RelatedGameObject, Color.HSVToRGB(0, 0.5f, .9f));
                 }
             }
         }
@@ -193,7 +235,7 @@ namespace _3DConnections.Runtime.Managers
             processedObjects.Clear();
 
             // clear connections
-            _connectionManager.ClearConnections();
+            NodeConnectionManager.Instance.ClearConnections();
 
             // clear text
             var textManager = GetComponent<NodeTextOverlay>();
@@ -337,7 +379,7 @@ namespace _3DConnections.Runtime.Managers
                     _spawnedNodes[child] = child.RelatedGameObject;
                 }
 
-                _connectionManager.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
+                NodeConnectionManager.Instance.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
                 SpawnNodesRecursive(child);
             }
         }
@@ -353,7 +395,8 @@ namespace _3DConnections.Runtime.Managers
             foreach (var node in rootNodes)
             {
                 root.AddChild(node);
-            }    
+            }
+
             return root;
         }
 
@@ -410,7 +453,7 @@ namespace _3DConnections.Runtime.Managers
             };
             if (referenceNode == null) return;
             SpawnNodeOnOverlay(referenceNode, gameobjectColor);
-            _connectionManager.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, referenceConnection);
+            NodeConnectionManager.Instance.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, referenceConnection);
         }
 
         /// <summary>
@@ -421,8 +464,8 @@ namespace _3DConnections.Runtime.Managers
         private void AnalyzeSerializedFields(Object obj, ComponentNode componentNode)
         {
             if (obj == null || !processedObjects.Add(obj)) return;
-            Debug.Log("analyzing serialized fields");
             var type = obj.GetType();
+            
             var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .Where(field => field.IsDefined(typeof(SerializeField), true) || field.IsPublic);
 
@@ -473,17 +516,15 @@ namespace _3DConnections.Runtime.Managers
         private void AnalyzeComponents(GameObjectNode gameObjectNode)
         {
             var components = gameObjectNode.GameObject.GetComponents(typeof(Component));
-            
+
             foreach (var component in components)
             {
-                Debug.Log("component name: " + component.GetType().Name);
                 var node = ComponentNode.GetOrCreateNode(component, nodegraph);
                 SpawnNodeOnOverlay(node, componentColor);
-                _connectionManager.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: componentConnection);
-                
+                NodeConnectionManager.Instance.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: componentConnection);
+
                 // Analyze serialized fields
                 AnalyzeSerializedFields(component, node);
-                
             }
         }
 
@@ -513,24 +554,12 @@ namespace _3DConnections.Runtime.Managers
             {
                 foreach (var child in node.GetChildren())
                 {
-                    _connectionManager.AddConnection(node.RelatedGameObject, child.RelatedGameObject, parentChildConnection);
+                    NodeConnectionManager.Instance.AddConnection(node.RelatedGameObject, child.RelatedGameObject, parentChildConnection);
                 }
             }
-
-            var rootNodes = ConnectionsBasedForestManager.BuildForest(_connectionManager.connections);
-            var forestManager = new ConnectionsBasedForestManager();
-            forestManager.SetLayoutParameters(
-                minDistance: 2f,    // Minimum distance between nodes
-                startRadius: 3f,    // Initial radius for first level
-                radiusInc: 4f,      // Radius increase per level
-                rootSpacing: 10f    // Space between root trees
-            );
-            forestManager.LayoutForest(rootNodes);
-            forestManager.FlattenToZPlane(rootNodes);
-
-            // 4. Finally, move all nodes where they belong
-            // nodegraph.ApplyNodePositions();
         }
+
+        
 
         private void OnDestroy()
         {
