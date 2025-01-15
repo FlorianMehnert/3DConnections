@@ -16,6 +16,7 @@ namespace _3DConnections.Runtime.Managers
     public class GUIBuilder : MonoBehaviour
     {
         private NodeBuilder _nodeBuilder;
+        private SceneAnalyzer _sceneAnalyzer;
         private SceneSerializer _sceneSerializer;
         public string[] path;
         [SerializeField] private TMP_Dropdown dropdownPrefab;
@@ -24,6 +25,8 @@ namespace _3DConnections.Runtime.Managers
         private TMP_Dropdown _dropdownInstance;
         [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
         [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
+        
+        private int _currentYCoordinate = 300;
 
         private void Start()
         {
@@ -37,8 +40,26 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.Log("The NodeBuilder component is missing on the manager");
             }
+
+            _sceneAnalyzer = GetComponent<SceneAnalyzer>();
+            if (_sceneAnalyzer == null)
+            {
+                Debug.Log("The SceneAnalyzer component is missing on the manager");
+            }
             CreateSceneDropdown();
             CreateButtons();
+        }
+
+        private int NextYPosition()
+        {
+            var currentY = _currentYCoordinate;
+            _currentYCoordinate -= 35;
+            return currentY;
+        }
+
+        private Vector2 GetButtonPosition()
+        {
+            return new Vector2(300, NextYPosition());
         }
 
         private void CreateSceneDropdown()
@@ -96,18 +117,27 @@ namespace _3DConnections.Runtime.Managers
             
         
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
-            rectTransform.anchoredPosition = new Vector2(300, 300);
+            rectTransform.anchoredPosition = GetButtonPosition();
             ScriptableObject.CreateInstance<SceneReference>();
             dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
         }
 
+        
         private void CreateButtons()
         {
-            CreateButton("Open File Browser", 14, new Vector2(300, 265), OnFileBrowserOpen);
-            CreateButton("Draw Grid", 14, new Vector2(300, 230), () => _nodeBuilder.DrawGrid(path));
-            CreateButton("Draw Tree", 14, new Vector2(300, 195), _nodeBuilder.DrawTree);
-            CreateButton("Draw Relations", 14, new Vector2(300, 160), _nodeBuilder.AnalyzeScene);
-            CreateButton("Clear", 14, new Vector2(300, 125), _nodeBuilder.Clear);
+            CreateButton("File Browser for Grid", 8, GetButtonPosition(), OnFileBrowserOpen);
+            CreateButton("Draw Grid from Path", 14, GetButtonPosition(), () => _nodeBuilder.DrawGrid(path));
+            
+            CreateButton("Analyze Scene and create node connections", 8, GetButtonPosition(), _sceneAnalyzer.AnalyzeScene);
+            CreateButton("Layout based on Connections", 14, GetButtonPosition(), NodeLayoutManagerV2.LayoutForest);
+            
+            
+            var sceneAnalyzer = GetComponent<SceneAnalyzer>();
+            if (sceneAnalyzer != null)
+            {
+                CreateButton("Clear", 8, GetButtonPosition(), sceneAnalyzer.ClearNodes);                
+            }
+            
         }
 
         private void CreateButton(string text, int fontSize, Vector2 anchoredPosition, UnityAction onClick)
