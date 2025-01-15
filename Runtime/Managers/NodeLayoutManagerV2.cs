@@ -164,7 +164,7 @@ namespace _3DConnections.Runtime.Managers
             var rootTransforms = SceneHandler.GetSceneRootObjects();
             foreach (var rootTransform in rootTransforms)
             {
-                var childNode = NodeLayoutManagerV2.CreateNodeFromTransform(rootTransform);
+                var childNode = CreateNodeFromTransform(rootTransform);
                 rootNode.children.Add(childNode);
             }
 
@@ -267,6 +267,23 @@ namespace _3DConnections.Runtime.Managers
 
             // Fallback to zero rect if no renderer
             return new Rect(0, 0, 0, 0);
+        }
+        
+        /// <summary>
+        /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
+        /// </summary>
+        public static void LayoutForest()
+        {
+            var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.connections);
+            var forestManager = new ConnectionsBasedForestManager();
+            forestManager.SetLayoutParameters(
+                minDistance: 2f, // Minimum distance between nodes
+                startRadius: 3f, // Initial radius for first level
+                radiusInc: 4f, // Radius increase per level
+                rootSpacing: 10f // Space between root trees
+            );
+            forestManager.LayoutForest(rootNodes);
+            forestManager.FlattenToZPlane(rootNodes);
         }
     }
 }
