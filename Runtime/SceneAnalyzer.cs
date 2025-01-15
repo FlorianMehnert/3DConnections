@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
@@ -28,6 +27,8 @@ namespace _3DConnections.Runtime
         [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
         [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
         [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
+        [SerializeField] private int maxNodes = 10000;
+        private int _currentNodes;
 
         // TODO: add some editor only shading/monoBehaviour to visualize prefab
         [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
@@ -64,6 +65,7 @@ namespace _3DConnections.Runtime
             }
 
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
+            _currentNodes++;
             nodeObject.transform.localPosition = new Vector3(0, 0, 0);
             nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
             
@@ -184,7 +186,7 @@ namespace _3DConnections.Runtime
         /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
         private void TraverseGameObject(GameObject gameObject, GameObject parentNodeObject = null, bool isReference = false)
         {
-            if (gameObject == null) return;
+            if (gameObject == null || _currentNodes > maxNodes) return;
 
             var instanceId = gameObject.GetInstanceID();
 
@@ -242,7 +244,7 @@ namespace _3DConnections.Runtime
         /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
         private void TraverseComponent(Component component, GameObject parentNodeObject = null)
         {
-            if (component == null) return;
+            if (component == null || _currentNodes > maxNodes) return;
 
             var instanceId = component.GetInstanceID();
 
