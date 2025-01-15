@@ -391,6 +391,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ef524e4a0df4a10a70f64b88fe61b70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1907291040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907291032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702cadbe1636451c9adb2df4177c1c5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
+  nodeWidth: 2
+  nodeHeight: 1
+  gameobjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  componentColor: {r: 0.4, g: 0.8, b: 0.4, a: 1}
+  scriptableObjectColor: {r: 0.8, g: 0.4, b: 0.8, a: 1}
+  parentChildConnection: {r: 0.5, g: 0.5, b: 1, a: 1}
+  componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
+  referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
+  prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
 --- !u!1 &2004851988
 GameObject:
   m_ObjectHideFlags: 0
@@ -647,6 +671,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7644496426939543078, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1907291039}
+    - targetCorrespondingSourceObject: {fileID: 7644496426939543078, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1907291040}
   m_SourcePrefab: {fileID: 100100000, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
