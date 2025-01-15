@@ -7,12 +7,43 @@ using UnityEngine;
 namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
-    /// Manager that handles all the connections in the node graph
+    /// Singleton Manager that handles all the connections in the node graph. Singleton because connections are only important for the overlay scene
     /// </summary>
     public class NodeConnectionManager : MonoBehaviour
     {
         
 
+        private static NodeConnectionManager _instance;
+
+        public static NodeConnectionManager Instance
+        {
+            get
+            {
+                if (_instance != null) return _instance;
+                // Find an existing instance in the scene
+                _instance = FindFirstObjectByType<NodeConnectionManager>();
+
+                // If no instance exists, create a new GameObject with the component
+                if (_instance != null) return _instance;
+                var singletonObject = new GameObject("NodeConnectionManager");
+                _instance = singletonObject.AddComponent<NodeConnectionManager>();
+                return _instance;
+            }
+        }
+
+        // Ensure the instance is not destroyed between scenes
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject); // Destroy duplicate
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        
         public List<NodeConnection> connections = new();
         public GameObject lineRendererPrefab;
 
