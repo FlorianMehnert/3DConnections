@@ -107,3 +107,19 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 ## 6.January
 - change button canvas to scale with screen size
 - add component nodes and connections
+
+## 8.January
+- added radial layout
+- added ping in selection manager to select node in the editor
+- fix children field in nodes (got confused with to analyze gameObjects and node gameObjects)
+
+## 12.January
+- add manager to layout gameObjects for nodes using existing connections in the connection manager
+- update radial layout to work with the new manager
+- fix color is set to default color when selecting node using a new nodeColor component on nodes
+
+## 15.January
+- **added nodeType and nodeConnections to node gameObjects to move away from a separate node data structure**
+- added new SceneAnalyzer doing the job of AnalyzeScene from NodeBuilder tracking all gameObjects while also following components while spawning nodes without duplicates
+- improve the demo scene to contain more cross-references
+- automatically calculate button positions in the GUI-Manager now
