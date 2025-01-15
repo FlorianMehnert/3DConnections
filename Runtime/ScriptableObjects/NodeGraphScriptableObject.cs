@@ -1,12 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Runtime;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using WhereClauseSyntax = Microsoft.CodeAnalysis.VisualBasic.Syntax.WhereClauseSyntax;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
@@ -129,7 +125,15 @@ namespace _3DConnections.Runtime.ScriptableObjects
         // Contains using Component name
         public bool Contains(Component component)
         {
-            return component != null && _nodesByGameObject.Keys.Any(go => go.name == component.name);
+            foreach (var node in _nodesByGameObject.Values)
+            {
+                if (node is not ComponentNode componentNode) continue;
+                if (componentNode.Component && componentNode.Component == component)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
         
         // Try to resolve Object
@@ -202,6 +206,15 @@ namespace _3DConnections.Runtime.ScriptableObjects
         }
 
         /// <summary>
+        /// Get all GameObjectNodes but also check for existing GameObject
+        /// </summary>
+        /// <returns></returns>
+        private List<GameObjectNode> GetGameObjectNodesWithGameObject()
+        {
+            return GetGameObjectNodes().Where(gameObjectNode => gameObjectNode.GameObject != null).ToList();
+        }
+
+        /// <summary>
         /// Fill Children Attribute for GameObjectNodes using .GameObject.transform => children
         /// </summary>
         public void FillChildrenForGameObjectNodes()
@@ -256,6 +269,16 @@ namespace _3DConnections.Runtime.ScriptableObjects
             var tfroot = new GameObjectNode("TF Root", null);
             tfroot.SetChildren(nodes);
             return tfroot;
+        }
+
+        /// <summary>
+        /// Returns the first gameobject node that has the gameobject with the given id
+        /// </summary>
+        /// <param name="id">id of the searched gameObject</param>
+        /// <returns></returns>
+        public GameObjectNode ContainsGameObjectNodeByID(int id)
+        {
+            return GetGameObjectNodesWithGameObject().FirstOrDefault(goNode => goNode.GameObject.GetInstanceID() == id);
         }
     }
 }
