@@ -66,7 +66,7 @@ namespace _3DConnections.Runtime
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
             nodeObject.transform.localPosition = new Vector3(0, 0, 0);
             nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
-            nodeObject.name = obj.name;
+            
 
             // TODO: try to make this more dynamic
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
@@ -78,6 +78,17 @@ namespace _3DConnections.Runtime
                 SetNodeType(type, obj);
                 type.reference = obj;
             }
+
+            
+            var prefixNode = "" + type.nodeTypeName switch
+            {
+                "GameObject" => "go_",
+                "Component" => "co_",
+                "ScriptableObject" => "so_",
+                _ => ""
+            };
+            var postfixNode = prefixNode != "go_" ? "_" + type.reference.GetType().Name : string.Empty;
+            nodeObject.name = prefixNode + obj.name + postfixNode;
 
             SetNodeColor(nodeObject, obj);
             return nodeObject;
