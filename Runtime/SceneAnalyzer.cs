@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
@@ -13,7 +14,7 @@ namespace _3DConnections.Runtime
         private readonly HashSet<Object> _processingObjects = new();
         private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
         [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
-
+        [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
         // required for node spawning
         [SerializeField] private OverlaySceneScriptableObject overlay;
@@ -45,6 +46,8 @@ namespace _3DConnections.Runtime
             {
                 TraverseGameObject(rootObject);
             }
+            if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes != null)
+                nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
         }
 
         private GameObject SpawnNode(Object obj)
@@ -298,6 +301,12 @@ namespace _3DConnections.Runtime
         /// </summary>
         public void ClearNodes()
         {
+            if (!_parentNode) return;
+            _parentNode = overlay.GetNodeGraph();
+            if (!_parentNode)
+            {
+                Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
+            }
             foreach (Transform child in _parentNode.transform)
             {
                 Destroy(child.gameObject);

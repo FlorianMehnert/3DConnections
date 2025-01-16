@@ -18,6 +18,9 @@ namespace _3DConnections.Runtime.Managers
         private float _screenHeight;
         private float _worldWidth;
         private float _worldHeight;
+        [SerializeField] private float padding = 1.1f;     // Extra space when centering on selection
+        [SerializeField] private NodeGraphScriptableObject nodeGraph;
+        [SerializeField] private GameObject parentObject;
 
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
@@ -36,6 +39,14 @@ namespace _3DConnections.Runtime.Managers
         
             HandleZoom();
             HandlePan();
+            
+            if (Input.GetKeyDown(KeyCode.F) && nodeGraph.currentlySelectedGameObject)
+            {
+                CenterOnTarget(nodeGraph.currentlySelectedGameObject);
+            }else if (Input.GetKeyDown(KeyCode.G) && parentObject)
+            {
+                AdjustCameraToViewChildren();
+            }
         }
 
         private void CalculateWorldDimensions()
@@ -78,6 +89,64 @@ namespace _3DConnections.Runtime.Managers
             _cam.transform.position += move;
 
             _lastMousePosition = Input.mousePosition;
+        }
+
+        private void CenterOnTarget(GameObject targetObject)
+        {
+            if (!targetObject) return;
+            // Get target position
+            var targetPosition = targetObject.transform.position;
+            
+            // Keep camera's z position (depth) and only update x and y
+            var newPosition = new Vector3(
+                targetPosition.x,
+                targetPosition.y,
+                _cam.transform.position.z
+            );
+            _cam.orthographicSize = 3;
+            _cam.transform.position = newPosition;
+        }
+
+        private void AdjustCameraToViewChildren()
+        {
+            if (!_cam || !parentObject)
+            {
+                Debug.LogWarning("Camera or Parent Object is not assigned.");
+                return;
+            }
+
+            // Calculate the combined bounds of all children
+            var combinedBounds = new Bounds(parentObject.transform.position, Vector3.zero);
+            var hasBounds = false;
+
+            foreach (Transform child in parentObject.transform)
+            {
+                var childRenderer = child.GetComponent<Renderer>();
+                if (!childRenderer) continue;
+                if (hasBounds)
+                {
+                    combinedBounds.Encapsulate(childRenderer.bounds);
+                }
+                else
+                {
+                    combinedBounds = childRenderer.bounds;
+                    hasBounds = true;
+                }
+            }
+
+            if (!hasBounds)
+            {
+                Debug.LogWarning("No child objects with renderers found under the parent.");
+                return;
+            }
+
+            // Center the camera on the bounds
+            var center = combinedBounds.center;
+            _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+
+            // Adjust orthographic size
+            var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
+            _cam.orthographicSize = size * padding;
         }
     }
 }

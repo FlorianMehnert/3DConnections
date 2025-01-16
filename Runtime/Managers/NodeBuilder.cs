@@ -3,7 +3,6 @@ using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -78,8 +77,8 @@ namespace _3DConnections.Runtime.Managers
                     break;
                 }
                 case GameObjectNode goNode:
-                    Debug.Log("trying to spawn a goNode without a game object with Name being: " + goNode.Name);
-                    return;
+                    // this branch is entered using draw grid
+                    break;
             }
 
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);

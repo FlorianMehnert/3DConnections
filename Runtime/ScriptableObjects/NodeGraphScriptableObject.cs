@@ -15,6 +15,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
     {
         // connections of Node objects and their visually representing GameObjects
         private readonly Dictionary<GameObject, Node> _nodesByGameObject = new();
+        public GameObject currentlySelectedGameObject;
+        public List<GameObject> allNodes = new();
         public void Clear()
         {
             _nodesByGameObject.Clear();

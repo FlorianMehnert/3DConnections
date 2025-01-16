@@ -79,6 +79,7 @@ namespace _3DConnections.Runtime.Managers
             if (_currentlyDraggedCube)
             {
                 _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
+                nodegraph.currentlySelectedGameObject = _currentlyDraggedCube;
             }
             
             var image = selectionRectangle.GetComponent<Image>();
