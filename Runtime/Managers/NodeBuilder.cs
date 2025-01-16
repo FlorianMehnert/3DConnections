@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
@@ -34,16 +31,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
         // new stuffs from relationanalyzer
-        private HashSet<Object> processedObjects = new();
-
         [SerializeField] internal Color gameobjectColor = new(0.2f, 0.6f, 1f); // Blue
-        [SerializeField] internal Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
-        [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
-        [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
-        [SerializeField] internal Color referenceColor = new(0.8f, 0.8f, 0.2f); // Yellow
-        [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
-        [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-        [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
 
 
         private void Start()
@@ -119,7 +107,6 @@ namespace _3DConnections.Runtime.Managers
                     _ => null
                 };
             }
-            
             
             node.RelatedGameObject = nodeObject.gameObject;
             var componentRenderer = nodeObject.GetComponent<Renderer>();
@@ -204,7 +191,7 @@ namespace _3DConnections.Runtime.Managers
             return nodeConnections;
         }
 
-        private void DrawNodeConnections(
+        private static void DrawNodeConnections(
             Dictionary<Node, HashSet<Node>> nodeConnections)
         {
             foreach (var (sourceNode, connectedNodes) in nodeConnections)
@@ -216,7 +203,7 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        internal void Clear()
+        private void Clear()
         {
             // clear node objects
             _parentNode = overlay.GetNodeGraph();
@@ -232,173 +219,12 @@ namespace _3DConnections.Runtime.Managers
             }
 
             nodegraph.Clear();
-            processedObjects.Clear();
 
             // clear connections
             NodeConnectionManager.Instance.ClearConnections();
 
-            // clear text
-            var textManager = GetComponent<NodeTextOverlay>();
-            if (textManager)
-            {
-                textManager.ClearText();
-            }
         }
 
-        private Transform[] GetSceneRootTransforms()
-        {
-            if (toAnalyzeSceneScriptableObject == null)
-            {
-                Debug.Log("to analyze scene config is empty");
-                return Array.Empty<Transform>();
-            }
-
-            if (toAnalyzeSceneScriptableObject.reference == null)
-            {
-                Debug.Log("scene of to analyze scene config is empty");
-                return Array.Empty<Transform>();
-            }
-
-            if (!toAnalyzeSceneScriptableObject.reference.scene.IsValid())
-            {
-                Debug.Log("selected scene is invalid probably because it is not loaded");
-                return Array.Empty<Transform>();
-            }
-
-            var scene = toAnalyzeSceneScriptableObject.reference.scene;
-            return scene.GetRootGameObjects()
-                .Select(go => go.transform)
-                .ToArray();
-        }
-
-        /// <summary>
-        /// Create Tree structure using given transforms
-        /// </summary>
-        private List<Node> ConstructNodesWithChildrenUsingTransforms(Transform[] rootTransforms)
-        {
-            // Newly created Node objects list
-            var rootNodes = new List<Node>();
-
-            // Kind of flags for "not yet analyzed node"
-            var toExploreNodes = new List<Node>();
-
-            foreach (var rootTransform in rootTransforms)
-            {
-                // Create new Node for each initially given Transform
-                var rootNode = new GameObjectNode(rootTransform, null);
-                rootNodes.Add(rootNode);
-
-                nodegraph.Add(rootNode);
-                if (!toExploreNodes.Contains(rootNode))
-                {
-                    toExploreNodes.Add(rootNode);
-                }
-
-                while (toExploreNodes.Count > 0)
-                {
-                    var currentNodes = toExploreNodes.ToList();
-                    foreach (var node in currentNodes)
-                    {
-                        if (node.RelatedGameObject.transform.childCount > 0)
-                        {
-                            var children = new List<Node>();
-                            foreach (Transform child in node.RelatedGameObject.transform)
-                            {
-                                // only create new Node object if this not already present
-                                Node childrenNode;
-                                if (nodegraph.Contains(child.gameObject))
-                                {
-                                    childrenNode = nodegraph.GetRelations()[child.gameObject];
-                                    if (!children.Contains(childrenNode))
-                                    {
-                                        children.Add(childrenNode);
-                                    }
-
-                                    if (!toExploreNodes.Contains(childrenNode))
-                                    {
-                                        toExploreNodes.Add(childrenNode);
-                                    }
-
-                                    continue;
-                                }
-
-                                childrenNode = new GameObjectNode(child.gameObject.name, null)
-                                {
-                                    RelatedGameObject = child.gameObject
-                                };
-                                nodegraph.Add(childrenNode);
-                                children.Add(childrenNode);
-                                rootNode.RelatedGameObject = child.gameObject;
-                                nodegraph.ReplaceRelatedGo(rootNode);
-                                if (!toExploreNodes.Contains(childrenNode))
-                                {
-                                    toExploreNodes.Add(childrenNode);
-                                }
-                            }
-
-                            node.SetChildren(children);
-                        }
-
-                        toExploreNodes.Remove(node);
-                    }
-                }
-            }
-
-            return rootNodes;
-        }
-
-        private void SpawnTreeFromNode(Node rootNode)
-        {
-            TreeLayout.LayoutTree(rootNode);
-            SpawnNodesRecursive(rootNode);
-            TreeLayout.LayoutTree(rootNode);
-        }
-
-        private readonly Dictionary<Node, GameObject> _spawnedNodes = new();
-
-
-        /// <summary>
-        /// Spawn the entire tree until leaf nodes. Also works for cyclic graphs
-        /// </summary>
-        /// <param name="node"></param>
-        private void SpawnNodesRecursive(Node node)
-        {
-            if (!_spawnedNodes.TryGetValue(node, out var currentNodeObject))
-            {
-                SpawnNodeOnOverlay(node, gameobjectColor);
-                _spawnedNodes[node] = node.RelatedGameObject;
-            }
-
-            if (node.GetChildren() is not { Count: > 0 }) return;
-
-            foreach (var child in node.GetChildren())
-            {
-                if (!_spawnedNodes.TryGetValue(child, out var childObject))
-                {
-                    SpawnNodeOnOverlay(child, gameobjectColor);
-                    _spawnedNodes[child] = child.RelatedGameObject;
-                }
-
-                NodeConnectionManager.Instance.AddConnection(currentNodeObject, childObject, Color.HSVToRGB(0, 0.5f, 0.9f));
-                SpawnNodesRecursive(child);
-            }
-        }
-
-
-        /// <summary>
-        /// Since a scene does have multiple root objects, define a single entry root node. Required for Tree node spawning
-        /// </summary>
-        /// <returns></returns>
-        private static Node DefineRootNode(List<Node> rootNodes)
-        {
-            var root = new GameObjectNode("ROOT", null);
-            foreach (var node in rootNodes)
-            {
-                root.AddChild(node);
-            }
-
-            return root;
-        }
 
         internal void DrawGrid(string[] paths = null)
         {
@@ -424,142 +250,6 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        // using Children attribute of nodes
-        internal void DrawTree()
-        {
-            Debug.Log("Starting to draw tree for scene " + toAnalyzeSceneScriptableObject.reference.Name);
-
-            Clear();
-            var overlayedScene = SceneHandler.GetOverlayedScene();
-            if (overlayedScene != null) SceneManager.SetActiveScene((Scene)overlayedScene);
-
-            // Find Root nodes in the scene
-            var rootTransforms = GetSceneRootTransforms();
-
-            // Populating Children
-            var rootNodes = ConstructNodesWithChildrenUsingTransforms(rootTransforms);
-            SpawnTreeFromNode(DefineRootNode(rootNodes));
-        }
-
-        private void ProcessUnityObject(Object reference, ComponentNode componentNode)
-        {
-            if (nodegraph.Contains(reference)) return;
-            var referenceNode = reference switch
-            {
-                ScriptableObject so => ScriptableObjectNode.GetOrCreateNode(so, nodegraph),
-                GameObject go => GameObjectNode.GetOrCreateNode(go, nodegraph),
-                Component co => ComponentNode.GetOrCreateNode(co, nodegraph),
-                _ => null
-            };
-            if (referenceNode == null) return;
-            SpawnNodeOnOverlay(referenceNode, gameobjectColor);
-            NodeConnectionManager.Instance.AddConnection(componentNode.RelatedGameObject, referenceNode.RelatedGameObject, referenceConnection);
-        }
-
-        /// <summary>
-        /// Wrapper function for <see cref="ProcessUnityObject"/> called by <see cref="AnalyzeComponents"/> 
-        /// </summary>
-        /// <param name="obj">A serialized field reference within the current component</param>
-        /// <param name="componentNode">node that represents the component to which this reference will be attached to</param>
-        private void AnalyzeSerializedFields(Object obj, ComponentNode componentNode)
-        {
-            if (obj == null || !processedObjects.Add(obj)) return;
-            var type = obj.GetType();
-            
-            var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                .Where(field => field.IsDefined(typeof(SerializeField), true) || field.IsPublic);
-
-            foreach (var field in fields)
-            {
-                var value = field.GetValue(obj);
-                switch (value)
-                {
-                    case null:
-                        continue;
-                    // Handle Unity Object types
-                    case Object unityObj:
-                        ProcessUnityObject(unityObj, componentNode);
-                        break;
-                    // Handle arrays and lists of Unity Objects
-                    case IEnumerable<Object> objectList:
-                    {
-                        foreach (var listItem in objectList)
-                        {
-                            if (listItem != null)
-                            {
-                                ProcessUnityObject(listItem, componentNode);
-                            }
-                        }
-
-                        break;
-                    }
-                    default:
-                    {
-                        if (value.GetType().IsArray && value.GetType().GetElementType()!.IsSubclassOf(typeof(Object)))
-                        {
-                            var array = (Object[])value;
-                            foreach (var item in array)
-                            {
-                                if (item != null)
-                                {
-                                    ProcessUnityObject(item, componentNode);
-                                }
-                            }
-                        }
-
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void AnalyzeComponents(GameObjectNode gameObjectNode)
-        {
-            var components = gameObjectNode.GameObject.GetComponents(typeof(Component));
-
-            foreach (var component in components)
-            {
-                var node = ComponentNode.GetOrCreateNode(component, nodegraph);
-                SpawnNodeOnOverlay(node, componentColor);
-                NodeConnectionManager.Instance.AddConnection(gameObjectNode.RelatedGameObject, node.RelatedGameObject, color: componentConnection);
-
-                // Analyze serialized fields
-                AnalyzeSerializedFields(component, node);
-            }
-        }
-
-        public void AnalyzeScene()
-        {
-            // 1. Clean and setup overlay parameters
-            Clear();
-            SceneManager.SetActiveScene(overlay.overlayScene.scene);
-
-            // 2a. Collect all GameObjects in the scene
-            var serializedScene = SceneSerializer.SerializeSceneHierarchy(toAnalyzeSceneScriptableObject.reference.scene);
-            foreach (var gameObjectNode in serializedScene.Select(go => new GameObjectNode(go.name, go)))
-            {
-                SpawnNodeOnOverlay(gameObjectNode, gameobjectColor);
-                AnalyzeComponents(gameObjectNode);
-            }
-
-            // 2b. Create Transform Hierarchy from GameObjectNodes
-            var rootNode = nodegraph.GetRootNode(toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects());
-            SpawnNodeOnOverlay(rootNode, gameobjectColor);
-            nodegraph.FillChildrenForGameObjectNodes();
-            // TreeLayout.LayoutTree(rootNode);
-            // RadialLayout.LayoutChildrenRadially(rootNode, 0);
-
-            // 3. Add parent-child gamenode connections TODO: draw all the connections
-            foreach (var node in rootNode.GetChildren())
-            {
-                foreach (var child in node.GetChildren())
-                {
-                    NodeConnectionManager.Instance.AddConnection(node.RelatedGameObject, child.RelatedGameObject, parentChildConnection);
-                }
-            }
-        }
-
-        
 
         private void OnDestroy()
         {

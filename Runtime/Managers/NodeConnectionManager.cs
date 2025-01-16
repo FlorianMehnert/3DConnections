@@ -20,10 +20,7 @@ namespace _3DConnections.Runtime.Managers
             get
             {
                 if (_instance != null) return _instance;
-                // Find an existing instance in the scene
                 _instance = FindFirstObjectByType<NodeConnectionManager>();
-
-                // If no instance exists, create a new GameObject with the component
                 if (_instance != null) return _instance;
                 var singletonObject = new GameObject("NodeConnectionManager");
                 _instance = singletonObject.AddComponent<NodeConnectionManager>();
@@ -31,17 +28,34 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        // Ensure the instance is not destroyed between scenes
         private void Awake()
         {
             if (_instance != null && _instance != this)
             {
-                Destroy(gameObject); // Destroy duplicate
+                Debug.LogWarning($"Multiple {nameof(NodeConnectionManager)} instances detected. Destroying duplicate.");
+                Destroy(gameObject);
                 return;
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+        }
+
+        
+        private void OnApplicationQuit()
+        {
+            _instance = null;
+            
+        }
+
+        
+
+        private void OnDestroy()
+        {
+            // Only clear the static instance if we're the current instance
+            if (_instance == this)
+            {
+                _instance = null;
+            }
         }
         
         public List<NodeConnection> connections = new();
@@ -83,21 +97,6 @@ namespace _3DConnections.Runtime.Managers
             {
                 connection.lineRenderer.SetPosition(0, connection.startNode.transform.position);
                 connection.lineRenderer.SetPosition(1, connection.endNode.transform.position);
-            }
-        }
-
-        public void RemoveConnection(GameObject startNode, GameObject endNode)
-        {
-            for (var i = connections.Count - 1; i >= 0; i--)
-            {
-                var conn = connections[i];
-                if (conn.startNode != startNode || conn.endNode != endNode) continue;
-                // Destroy line renderer
-                if (conn.lineRenderer != null)
-                    Destroy(conn.lineRenderer.gameObject);
-                
-                // Remove from the list
-                connections.RemoveAt(i);
             }
         }
 

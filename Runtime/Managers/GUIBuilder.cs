@@ -162,13 +162,13 @@ namespace _3DConnections.Runtime.Managers
             var selectedScene = _dropdownInstance.options[index].text;
             var scene = SceneManager.GetSceneByName(selectedScene);
 
-            var newSceneRef = ScriptableObject.CreateInstance<SceneReference>();
-            newSceneRef.useStaticValues = false;
-            newSceneRef.scene = scene;
-            newSceneRef.sceneName = scene.name;
-            newSceneRef.scenePath = scene.path;
+            var overlayScene = ScriptableObject.CreateInstance<SceneReference>();
+            overlayScene.useStaticValues = false;
+            overlayScene.scene = scene;
+            overlayScene.sceneName = scene.name;
+            overlayScene.scenePath = scene.path;
 
-            analyzeSceneConfig.reference = newSceneRef;
+            analyzeSceneConfig.reference = overlayScene;
             Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " " + analyzeSceneConfig.reference.Path);
         }
 
