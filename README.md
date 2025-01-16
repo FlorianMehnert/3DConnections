@@ -123,3 +123,7 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 - added new SceneAnalyzer doing the job of AnalyzeScene from NodeBuilder tracking all gameObjects while also following components while spawning nodes without duplicates
 - improve the demo scene to contain more cross-references
 - automatically calculate button positions in the GUI-Manager now
+
+## 16.January
+- added selection box
+- added camera focus on node-graph via hotkey
