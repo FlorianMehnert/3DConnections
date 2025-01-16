@@ -72,21 +72,22 @@ namespace _3DConnections.Runtime.Managers
             // Initialize selection rectangle
             if (selectionRectangle == null) return;
             selectionRectangle.gameObject.SetActive(false);
-            var image = selectionRectangle.GetComponent<Image>();
-            if (image != null)
-            {
-                image.color = selectionRectColor;
-            }
         }
 
         private void Update()
         {
-            // highlight currently dragging cube
             if (_currentlyDraggedCube)
             {
                 _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
             }
-
+            
+            var image = selectionRectangle.GetComponent<Image>();
+            if (image)
+            {
+                image.color = selectionRectColor;
+                highlightMaterial.color =  new Color(selectionRectColor.r, selectionRectColor.g, selectionRectColor.b, 255);
+            }
+            
             HandleMouseInput();
         }
 
