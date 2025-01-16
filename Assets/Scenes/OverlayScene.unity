@@ -581,6 +581,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
   nodeWidth: 2
@@ -591,7 +592,7 @@ MonoBehaviour:
   parentChildConnection: {r: 0.5, g: 0.5, b: 1, a: 1}
   componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
   referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
-  maxNodes: 10000
+  maxNodes: 5000
   prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
 --- !u!1 &2004851988
 GameObject:
@@ -677,6 +678,14 @@ PrefabInstance:
       propertyPath: orthographic size
       value: 20
       objectReference: {fileID: 0}
+    - target: {fileID: 7865857877723611101, guid: 2b2b661cb949c24c59513e20ee435977, type: 3}
+      propertyPath: nodeGraph
+      value: 
+      objectReference: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+    - target: {fileID: 7865857877723611101, guid: 2b2b661cb949c24c59513e20ee435977, type: 3}
+      propertyPath: parentObject
+      value: 
+      objectReference: {fileID: 419851663}
     - target: {fileID: 8344862309535660441, guid: 2b2b661cb949c24c59513e20ee435977, type: 3}
       propertyPath: m_LocalPosition.x
       value: 10
