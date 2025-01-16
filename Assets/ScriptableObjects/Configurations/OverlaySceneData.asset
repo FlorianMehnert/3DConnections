@@ -14,5 +14,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   overlayScene: {fileID: 11400000, guid: 498c25605b2310187b119768b59b5296, type: 2}
   camera: {fileID: 0}
-  overlayCanvas: {fileID: 0}
-  cubeInteractionCanvas: {fileID: 0}
