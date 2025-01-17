@@ -90,6 +90,17 @@ namespace _3DConnections.Runtime.Managers
             }
             
             HandleMouseInput();
+            HandleOtherHotkeys();
+        }
+
+        private void HandleOtherHotkeys()
+        {
+            if (!Input.GetKey(KeyCode.LeftControl) || !Input.GetKeyDown(KeyCode.I)) return;
+            var selectedCubes = _selectedCubes.ToList();
+            foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<NodeConnections>()).Where(connections => connections != null).Select(connections => connections.outConnections).SelectMany(outConnections => outConnections))
+            {
+                SelectCube(outgoingNode, false, false);
+            }
         }
 
         private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, Vector2 point)
@@ -342,10 +353,11 @@ namespace _3DConnections.Runtime.Managers
         /// Marking cubes for deselection that will cause deselection/removal of the outline if not dragged
         /// </summary>
         /// <param name="cube"></param>
-        private void SelectCube(GameObject cube)
+        /// <param name="unselect">this parameter is required to be true for cubes to be unselected</param>
+        private void SelectCube(GameObject cube, bool pingObject=true, bool unselect=true)
         {
             // If shift is pressed, add to selection without deselecting others
-            if ((!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && !_isDrawingSelectionRect))
+            if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && !_isDrawingSelectionRect && unselect)
             {
                 foreach (var highlightedCube in _selectedCubes)
                 {
@@ -355,7 +367,7 @@ namespace _3DConnections.Runtime.Managers
 
             if (!_selectedCubes.Add(cube)) return;
 #if UNITY_EDITOR
-            if (pingObjectInEditor && !_isDrawingSelectionRect)
+            if (pingObjectInEditor && !_isDrawingSelectionRect && pingObject)
             {
                 EditorGUIUtility.PingObject(cube);
                 Selection.activeGameObject = cube;
