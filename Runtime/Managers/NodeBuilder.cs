@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using _3DConnections.Runtime.ScriptableObjects;
 using Runtime;
 using UnityEngine;
@@ -45,12 +46,12 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         /// <param name="node"></param>
         /// <param name="color">Color of the node</param>
-        private void SpawnNodeOnOverlay(Node node, Color color)
+        private GameObject SpawnNodeOnOverlay(Node node, Color color)
         {
             if (!overlay.GetCameraOfScene())
             {
                 Debug.Log("no camera while trying to spawn a node in NodeBuilder");
-                return;
+                return null;
             }
 
             if (!_parentNode)
@@ -65,13 +66,13 @@ namespace _3DConnections.Runtime.Managers
             switch (node)
             {
                 case null:
-                    return;
+                    return null;
                 case GameObjectNode goNode when goNode.GameObject != null:
                 {
                     if (nodegraph.ContainsGameObjectNodeByID(goNode.GameObject.GetInstanceID()) != null)
                     {
                         Debug.Log("goNode is already present");
-                        return;
+                        return null;
                     }
 
                     break;
@@ -111,16 +112,17 @@ namespace _3DConnections.Runtime.Managers
             var componentRenderer = nodeObject.GetComponent<Renderer>();
             if (componentRenderer)
                 componentRenderer.material.color = color;
-            if (nodegraph.Add(node)) return;
+            if (nodegraph.Add(node)) return nodeObject.gameObject;
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
                 Debug.Log("replaced ");
-            if (nodegraph.Add(node)) return;
+            if (nodegraph.Add(node)) return nodeObject.gameObject;
             if (nodegraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
                 Debug.Log("replaced ");
+            return nodeObject.gameObject;
         }
 
         /// <summary>
@@ -231,9 +233,9 @@ namespace _3DConnections.Runtime.Managers
                 var scriptNodes = FindScriptNodes(paths[0], out var allReferences);
                 NodeLayoutManagerV2.GridLayout(scriptNodes);
 
-                foreach (var scriptNode in scriptNodes)
+                foreach (var go in scriptNodes.Select(scriptNode => SpawnNodeOnOverlay(scriptNode, gameobjectColor)))
                 {
-                    SpawnNodeOnOverlay(scriptNode, gameobjectColor);
+                    nodegraph.allNodes.Add(go);
                 }
 
                 var connections = CalculateNodeConnections(scriptNodes, allReferences);
