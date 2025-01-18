@@ -37,10 +37,15 @@ namespace _3DConnections.Runtime
 
         public void AnalyzeScene()
         {
+            _currentNodes = 0;
             _visitedObjects.Clear();
             _processingObjects.Clear();
-            _instanceIdToNode.Clear(); // Clear node mapping
+            _instanceIdToNode.Clear();
             var rootGameObjects = toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects();
+            if (rootGameObjects.Length == 0)
+            {
+                Debug.Log("There are no gameObjects in the selected scene");
+            }
 
             foreach (var rootObject in rootGameObjects)
             {
@@ -54,7 +59,7 @@ namespace _3DConnections.Runtime
         {
             if (!overlay.GetCameraOfScene())
             {
-                Debug.Log("no camera while trying to spawn a node in NodeBuilder");
+                Debug.Log("No camera while trying to spawn a node in NodeBuilder");
                 return null;
             }
 
@@ -301,11 +306,16 @@ namespace _3DConnections.Runtime
         /// </summary>
         public void ClearNodes()
         {
-            if (!_parentNode) return;
+            if (!_parentNode)
+            {
+                Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
+            }
+
+            
             _parentNode = overlay.GetNodeGraph();
             if (!_parentNode)
             {
-                Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
+                Debug.Log("Even after asking the overlay SO for the nodeGraph gameObject it could not be found");
             }
             foreach (Transform child in _parentNode.transform)
             {
@@ -316,6 +326,7 @@ namespace _3DConnections.Runtime
             _instanceIdToNode.Clear();
             _visitedObjects.Clear();
             _processingObjects.Clear();
+            _currentNodes = 0;
         }
 
         private static IEnumerable<Object> GetComponentReferences(Component component)
