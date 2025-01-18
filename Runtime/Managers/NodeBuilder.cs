@@ -218,10 +218,6 @@ namespace _3DConnections.Runtime.Managers
             }
 
             nodegraph.Clear();
-
-            // clear connections
-            NodeConnectionManager.Instance.ClearConnections();
-
         }
 
 

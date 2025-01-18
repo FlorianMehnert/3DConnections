@@ -1,69 +1,77 @@
 using System.Collections.Generic;
 using System.Linq;
-using _3DConnections.Runtime.ScriptableObjects;
-using Runtime;
 using UnityEngine;
 
 namespace _3DConnections.Runtime.Managers
 {
     /// <summary>
-    /// Singleton Manager that handles all the connections in the node graph. Singleton because connections are only important for the overlay scene
+    /// Singleton Manager that handles all the connections in the node graph. Singleton because connections are only important for the overlay scene.
     /// </summary>
     public class NodeConnectionManager : MonoBehaviour
     {
-        
-
         private static NodeConnectionManager _instance;
 
         public static NodeConnectionManager Instance
         {
             get
             {
+                if (_isShuttingDown)
+                {
+                    return null;
+                }
+
                 if (_instance != null) return _instance;
+
                 _instance = FindFirstObjectByType<NodeConnectionManager>();
                 if (_instance != null) return _instance;
+
                 var singletonObject = new GameObject("NodeConnectionManager");
                 _instance = singletonObject.AddComponent<NodeConnectionManager>();
                 return _instance;
             }
         }
 
+        private static bool _isShuttingDown;
+
+        public List<NodeConnection> connections = new();
+        public GameObject lineRendererPrefab;
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
             {
-                Debug.LogWarning($"Multiple {nameof(NodeConnectionManager)} instances detected. Destroying duplicate.");
                 Destroy(gameObject);
                 return;
             }
-
             _instance = this;
         }
 
-        
         private void OnApplicationQuit()
         {
-            _instance = null;
-            
+            _isShuttingDown = true;
         }
-
-        
 
         private void OnDestroy()
         {
-            // Only clear the static instance if we're the current instance
             if (_instance == this)
             {
+                ClearConnections();
                 _instance = null;
             }
         }
-        
-        public List<NodeConnection> connections = new();
-        public GameObject lineRendererPrefab;
+
+        private void OnDisable()
+        {
+            if (_instance == this)
+            {
+                ClearConnections();
+            }
+        }
 
         public void AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 0.1f)
         {
-            // Create line renderer
+            if (_isShuttingDown) return;
+
             var lineObj = Instantiate(lineRendererPrefab, transform);
             var lineRenderer = lineObj.GetComponent<LineRenderer>();
 
@@ -75,7 +83,7 @@ namespace _3DConnections.Runtime.Managers
                 connectionColor = color ?? Color.black,
                 lineWidth = lineWidth
             };
-        
+
             // Configure line renderer
             lineRenderer.startColor = newConnection.connectionColor;
             lineRenderer.endColor = newConnection.connectionColor;
@@ -102,9 +110,9 @@ namespace _3DConnections.Runtime.Managers
 
         public void ClearConnections()
         {
-            foreach (var conn in connections.Where(conn => conn.lineRenderer != null))
+            foreach (var connection in connections.Where(connection => connection.lineRenderer != null))
             {
-                Destroy(conn.lineRenderer.gameObject);
+                Destroy(connection.lineRenderer.gameObject);
             }
 
             connections.Clear();
