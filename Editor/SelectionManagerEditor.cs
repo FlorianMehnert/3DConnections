@@ -1,6 +1,5 @@
 using _3DConnections.Runtime.Managers;
 using UnityEditor;
-using UnityEngine;
 
 namespace _3DConnections.Editor
 {
@@ -19,9 +18,8 @@ namespace _3DConnections.Editor
             // Custom display logic
             EditorGUILayout.LabelField("Selected Nodes", script.GetSelectionCount().ToString());
             var selection = script.GetSelectionRectangle();
-            EditorGUILayout.LabelField("starting position", $"x: {selection.x}, y: {selection.y}");
-            EditorGUILayout.LabelField("extend", $"width: {selection.width}, height: {selection.height}");
-            
+            EditorGUILayout.LabelField("Starting Position", $"x: {selection.x}, y: {selection.y}");
+            EditorGUILayout.LabelField("Extend", $"width: {selection.width}, height: {selection.height}");
             // Apply changes and repaint
             serializedObject.ApplyModifiedProperties();
             Repaint();

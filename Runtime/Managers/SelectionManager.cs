@@ -50,6 +50,7 @@ namespace _3DConnections.Runtime.Managers
         private bool _isDrawingSelectionRect;
         private int _selectedCubesCount;
         [UsedImplicitly] private Rect _selectionRect;
+        public Color selectionColor;
 
 
         private void Start()
@@ -81,25 +82,36 @@ namespace _3DConnections.Runtime.Managers
                 _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
                 nodegraph.currentlySelectedGameObject = _currentlyDraggedCube;
             }
-            
+
             var image = selectionRectangle.GetComponent<Image>();
             if (image)
             {
                 image.color = selectionRectColor;
-                highlightMaterial.color =  new Color(selectionRectColor.r, selectionRectColor.g, selectionRectColor.b, 255);
+                highlightMaterial.color = new Color(selectionRectColor.r, selectionRectColor.g, selectionRectColor.b, 255);
             }
-            
+
             HandleMouseInput();
             HandleOtherHotkeys();
         }
 
         private void HandleOtherHotkeys()
         {
-            if (!Input.GetKey(KeyCode.LeftControl) || !Input.GetKeyDown(KeyCode.I)) return;
-            var selectedCubes = _selectedCubes.ToList();
-            foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<NodeConnections>()).Where(connections => connections != null).Select(connections => connections.outConnections).SelectMany(outConnections => outConnections))
+            // check for keydown first
+            if (Input.GetKeyDown(KeyCode.I) && Input.GetKey(KeyCode.LeftControl))
             {
-                SelectCube(outgoingNode, false, false);
+                var selectedCubes = _selectedCubes.ToList();
+                foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<NodeConnections>()).Where(connections => connections != null).Select(connections => connections.outConnections).SelectMany(outConnections => outConnections))
+                {
+                    SelectCube(outgoingNode, false, false);
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.M))
+            {
+#if UNITY_EDITOR
+                if (!pingObjectInEditor || _isDrawingSelectionRect || !pingObjectInEditor) return;
+                EditorGUIUtility.PingObject(gameObject);
+                Selection.activeGameObject = gameObject;
+#endif
             }
         }
 
@@ -232,7 +244,7 @@ namespace _3DConnections.Runtime.Managers
 
             foreach (var toBeUnselectedCube in _markUnselect.Keys.Where(toBeUnselectedCube => _markUnselect[toBeUnselectedCube]))
             {
-                RemoveOutlineCube(toBeUnselectedCube);
+                // RemoveOutlineCube(toBeUnselectedCube);
                 _selectedCubes.Remove(toBeUnselectedCube);
                 if (!toBeUnselectedCube || !toBeUnselectedCube.GetComponent<Collider2D>()) continue;
                 var selectable = toBeUnselectedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
@@ -354,7 +366,7 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         /// <param name="cube"></param>
         /// <param name="unselect">this parameter is required to be true for cubes to be unselected</param>
-        private void SelectCube(GameObject cube, bool pingObject=true, bool unselect=true)
+        private void SelectCube(GameObject cube, bool pingObject = true, bool unselect = true)
         {
             // If shift is pressed, add to selection without deselecting others
             if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && !_isDrawingSelectionRect && unselect)
@@ -373,7 +385,8 @@ namespace _3DConnections.Runtime.Managers
                 Selection.activeGameObject = cube;
             }
 #endif
-            CreateOutlineCube(cube);
+            SetColorToInvertedSelectionColor(cube);
+            // CreateOutlineCube(cube);
         }
 
         private void DeselectAllCubes()
@@ -381,7 +394,7 @@ namespace _3DConnections.Runtime.Managers
             // Deselect all cubes
             foreach (var cube in _selectedCubes)
             {
-                RemoveOutlineCube(cube);
+                // RemoveOutlineCube(cube);
                 if (!cube.GetComponent<Collider2D>()) continue;
                 var selectable = cube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
                 selectable.SetToOriginalColor();
@@ -422,6 +435,16 @@ namespace _3DConnections.Runtime.Managers
             {
                 Destroy(_currentContextMenu);
             }
+        }
+
+        private void SetColorToInvertedSelectionColor(GameObject cube)
+        {
+            var meshRenderer = cube.GetComponent<MeshRenderer>();
+            if (!meshRenderer) return;
+            Color.RGBToHSV(selectionRectColor, out var h, out var s, out var v);
+            var invertedColor = Color.HSVToRGB((h + .5f) % 1f, 1f, 1f);
+            meshRenderer.material.color = invertedColor;
+            selectionColor = invertedColor;
         }
 
         /// <summary>

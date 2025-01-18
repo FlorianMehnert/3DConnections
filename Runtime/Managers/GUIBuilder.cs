@@ -25,7 +25,8 @@ namespace _3DConnections.Runtime.Managers
         private TMP_Dropdown _dropdownInstance;
         [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
         [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
-        
+        [SerializeField] private NodeGraphScriptableObject nodeGraph;
+
         private int _currentYCoordinate = 300;
 
         private void Start()
@@ -35,6 +36,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.Log("The NodeBuilder component is missing on the manager");
             }
+
             _sceneSerializer = GetComponent<SceneSerializer>();
             if (_sceneSerializer == null)
             {
@@ -46,6 +48,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.Log("The SceneAnalyzer component is missing on the manager");
             }
+
             CreateSceneDropdown();
             CreateButtons();
         }
@@ -67,11 +70,11 @@ namespace _3DConnections.Runtime.Managers
             // Instantiate the dropdown prefab as child of canvas
             var dropdownInstance = Instantiate(dropdownPrefab, uiCanvas.transform);
             _dropdownInstance = dropdownInstance;
-        
+
             // Get the dropdown component (works with both standard and TMP dropdowns)
             var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
             var standardDropdown = dropdownInstance.GetComponent<Dropdown>();
-        
+
             // Clear existing options
             if (tmpDropdown != null)
             {
@@ -81,19 +84,19 @@ namespace _3DConnections.Runtime.Managers
             {
                 standardDropdown.ClearOptions();
             }
-        
+
             // Get all scenes in build settings
             var sceneCount = SceneManager.sceneCountInBuildSettings;
             var sceneOptions = new List<string>();
-        
+
             for (var i = 0; i < sceneCount; i++)
             {
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                 var sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
                 sceneOptions.Add(sceneName);
             }
-            
-        
+
+
             if (tmpDropdown != null)
             {
                 tmpDropdown.AddOptions(sceneOptions);
@@ -111,33 +114,33 @@ namespace _3DConnections.Runtime.Managers
                 initialSceneRef.scene = scene;
                 initialSceneRef.sceneName = scene.name;
                 initialSceneRef.scenePath = scene.path;
-            
+
                 analyzeSceneConfig.reference = initialSceneRef;
             }
-            
-        
+
+
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = GetButtonPosition();
             ScriptableObject.CreateInstance<SceneReference>();
             dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
         }
 
-        
+
         private void CreateButtons()
         {
-            CreateButton("File Browser for Grid", 8, GetButtonPosition(), OnFileBrowserOpen);
+            CreateButton("File Browser for Grid", 10, GetButtonPosition(), OnFileBrowserOpen);
             CreateButton("Draw Grid from Path", 14, GetButtonPosition(), () => _nodeBuilder.DrawGrid(path));
-            
-            CreateButton("Analyze Scene and create node connections", 8, GetButtonPosition(), _sceneAnalyzer.AnalyzeScene);
-            CreateButton("Layout based on Connections", 14, GetButtonPosition(), NodeLayoutManagerV2.LayoutForest);
-            
-            
+
+            CreateButton("Analyze Scene and create node connections", 7, GetButtonPosition(), _sceneAnalyzer.AnalyzeScene);
+            CreateButton("Layout based on Connections", 10, GetButtonPosition(), NodeLayoutManagerV2.LayoutForest);
+            CreateButton("Simulate Physics", 14, GetButtonPosition(), () => nodeGraph.NodesAddComponent(typeof(Rigidbody2D)));
+            CreateButton("Remove Physics", 14, GetButtonPosition(), () => nodeGraph.NodesRemoveComponent(typeof(Rigidbody2D)));
+
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();
             if (sceneAnalyzer != null)
             {
-                CreateButton("Clear", 8, GetButtonPosition(), sceneAnalyzer.ClearNodes);                
+                CreateButton("Clear", 8, GetButtonPosition(), sceneAnalyzer.ClearNodes);
             }
-            
         }
 
         private void CreateButton(string text, int fontSize, Vector2 anchoredPosition, UnityAction onClick)
@@ -145,7 +148,7 @@ namespace _3DConnections.Runtime.Managers
             var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
             var buttonComponent = browserButtonInstance.GetComponent<Button>();
             var rectTransform = browserButtonInstance.GetComponent<RectTransform>();
-            
+
             rectTransform.anchoredPosition = anchoredPosition;
             var buttonText = browserButtonInstance.GetComponentInChildren<TextMeshProUGUI>();
             if (buttonText != null)

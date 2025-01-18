@@ -9,7 +9,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
     /// <summary>
     /// Manager for Node class containing utilities and data to keep track of nodes and their game object counterpart
     /// </summary>
-    
     [CreateAssetMenu(fileName = "Data", menuName = "3DConnections/ScriptableObjects/NodeGraph", order = 1)]
     public class NodeGraphScriptableObject : ScriptableObject
     {
@@ -17,6 +16,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private readonly Dictionary<GameObject, Node> _nodesByGameObject = new();
         public GameObject currentlySelectedGameObject;
         public List<GameObject> allNodes = new();
+
         public void Clear()
         {
             _nodesByGameObject.Clear();
@@ -32,7 +32,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
             if (node.RelatedGameObject == null && node is GameObjectNode)
             {
                 Debug.Log("trying to add node that has no game object attached");
-                return false;                
+                return false;
             }
 
             if (!Contains(node))
@@ -41,10 +41,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 {
                     var success = _nodesByGameObject.TryAdd(node.RelatedGameObject, node);
                     if (!success)
-                        Debug.Log("TryingToAdd Gameobject node " + node.Name + " with GameObject" + node.RelatedGameObject + " which was not successfully created");
+                        Debug.Log("TryingToAdd GameObject node " + node.Name + " with GameObject" + node.RelatedGameObject + " which was not successfully created");
                     return success;
                 }
-                
+
                 // handling other node types
                 var go = new GameObject(node.GetType() + " " + node.Name);
                 return _nodesByGameObject.TryAdd(go, node) ? go : null;
@@ -52,7 +52,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
             if (!Contains(node.RelatedGameObject) && Contains(node))
             {
-                Debug.Log("trying to add a node that was already present but has a different gameobject now: skipping");
+                Debug.Log("trying to add a node that was already present but has a different gameObject now: skipping");
             }
 
             return false;
@@ -62,36 +62,36 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             if (gameObject == null)
             {
-                Debug.Log("trying to add empty gameobject to node graph");
-                return null;                
+                Debug.Log("trying to add empty gameObject to node graph");
+                return null;
             }
 
             var newNode = new GameObjectNode(gameObject.name, null) { RelatedGameObject = gameObject };
             if (Contains(gameObject)) return _nodesByGameObject[gameObject];
-            
+
             if (!_nodesByGameObject.TryAdd(gameObject, newNode))
             {
-                Debug.Log("tried to add a gameobject to nodegraph which was not present before but also could not be added");               
+                Debug.Log("tried to add a gameObject to nodeGraph which was not present before but also could not be added");
             }
-            return newNode;
 
+            return newNode;
         }
 
         /// <summary>
         /// Get the node using the 1 to 1 mapping 
         /// </summary>
-        /// <param name="gameObject">GameObject that is on the OverlayScene representing a gameobject, component, etc.</param>
+        /// <param name="gameObject">GameObject that is on the OverlayScene representing a gameObject, component, etc.</param>
         /// <returns>Node that is representing the given gameObject which is on the overlay</returns>
         public Node GetNode(GameObject gameObject)
         {
             return _nodesByGameObject[gameObject];
         }
-        
+
         public ScriptableObjectNode GetNode(ScriptableObject scriptableObject)
         {
             return _nodesByGameObject.Values.OfType<ScriptableObjectNode>().FirstOrDefault(x => x.Name == scriptableObject.name);
         }
-        
+
         public ComponentNode GetNode(Component component)
         {
             return _nodesByGameObject.Values.OfType<ComponentNode>().FirstOrDefault(x => x.Name == component.name);
@@ -101,17 +101,16 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             return _nodesByGameObject.FirstOrDefault(x => x.Value == node).Key;
         }
-        
-        
-        
+
+
         // Contains using node as value
         private bool Contains(Node node)
         {
             return _nodesByGameObject.ContainsValue(node);
         }
-        
-        
-        // Contains using the go as key
+
+
+        // Contains using the go as a key
         public bool Contains(GameObject gameObject)
         {
             return gameObject != null && _nodesByGameObject.ContainsKey(gameObject);
@@ -122,8 +121,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             return scriptableObject != null && _nodesByGameObject.Keys.Any(go => go.name == scriptableObject.name);
         }
-        
-        
+
+
         // Contains using Component name
         public bool Contains(Component component)
         {
@@ -135,9 +134,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
                     return true;
                 }
             }
+
             return false;
         }
-        
+
         // Try to resolve Object
         public bool Contains(Object obj)
         {
@@ -148,14 +148,12 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 GameObject go => Contains(go) ? 1 : 0,
                 _ => 2
             };
-            
-            // cheap way to log whenever there is the wrong type passed
+
+            // some way to log whenever there is the wrong type passed
             if (isContained != 2) return isContained == 1;
-            Debug.Log("executed nodegraph Contains on type of " + obj.GetType().Name);
+            Debug.Log("executed nodeGraph Contains on type of " + obj.GetType().Name);
             return false;
-
         }
-
 
 
         public void Remove(GameObject gameObject)
@@ -169,15 +167,11 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// <param name="node"></param>
         public bool ReplaceRelatedGo(Node node)
         {
-            // remove existing nodes and existing gameobjects
+            // remove existing nodes and existing gameObjects
             foreach (var existingNode in GetNodes().Where(existingNode => existingNode.RelatedGameObject == node.RelatedGameObject))
             {
-                if (_nodesByGameObject.ContainsKey(existingNode.RelatedGameObject))
-                    _nodesByGameObject[existingNode.RelatedGameObject] = node;
-                else
-                {
-                    _nodesByGameObject.Add(existingNode.RelatedGameObject, node);
-                }
+                _nodesByGameObject[existingNode.RelatedGameObject] = node;
+
                 return true;
             }
 
@@ -251,7 +245,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         public Node GetRootNode(GameObject[] gameObjects)
         {
             var nodes = new List<Node>();
-            
+
             // lookup node
             foreach (var toCheckGameObject in gameObjects)
             {
@@ -268,19 +262,51 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 }
             }
 
-            var tfroot = new GameObjectNode("TF Root", null);
-            tfroot.SetChildren(nodes);
-            return tfroot;
+            var tfRoot = new GameObjectNode("TF Root", null);
+            tfRoot.SetChildren(nodes);
+            return tfRoot;
         }
 
         /// <summary>
-        /// Returns the first gameobject node that has the gameobject with the given id
+        /// Returns the first gameObject node that has the gameObject with the given id
         /// </summary>
         /// <param name="id">id of the searched gameObject</param>
         /// <returns></returns>
         public GameObjectNode ContainsGameObjectNodeByID(int id)
         {
             return GetGameObjectNodesWithGameObject().FirstOrDefault(goNode => goNode.GameObject.GetInstanceID() == id);
+        }
+
+        /// <summary>
+        /// Add the given Component to all nodes. Sets the gravityScale to 0 and freezeRotation if set to Rigidbody2D
+        /// </summary>
+        /// <param name="componentType">Type of Component to be added to all nodes</param>
+        public void NodesAddComponent(System.Type componentType)
+        {
+            foreach (var node in from node in allNodes
+                     let existingComponent = node.GetComponent(componentType)
+                     where existingComponent == null
+                     select node)
+            {
+                var newComponent = node.AddComponent(componentType);
+                if (newComponent is not Rigidbody2D rigidbody2D) continue;
+                rigidbody2D.gravityScale = 0;
+                rigidbody2D.freezeRotation = true;
+            }
+        }
+
+
+        /// <summary>
+        /// Remove component of a given type from all nodes
+        /// </summary>
+        /// <param name="componentType">Component type to remove</param>
+        public void NodesRemoveComponent(System.Type componentType)
+        {
+            // Check if the target object already has the component
+            foreach (var existingComponent in from node in allNodes where node != null && componentType != null select node.GetComponent(componentType) into existingComponent where existingComponent != null select existingComponent)
+            {
+                Destroy(existingComponent);
+            }
         }
     }
 }
