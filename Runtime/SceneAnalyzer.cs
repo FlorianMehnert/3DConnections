@@ -1,7 +1,7 @@
-using System;
 using System.Linq;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
+using UnityEditor;
 
 namespace _3DConnections.Runtime
 {
@@ -51,6 +51,7 @@ namespace _3DConnections.Runtime
             {
                 TraverseGameObject(rootObject);
             }
+
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes != null)
                 nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
         }
@@ -76,7 +77,7 @@ namespace _3DConnections.Runtime
             _currentNodes++;
             nodeObject.transform.localPosition = new Vector3(0, 0, 0);
             nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
-            
+
 
             // TODO: try to make this more dynamic
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
@@ -89,7 +90,7 @@ namespace _3DConnections.Runtime
                 type.reference = obj;
             }
 
-            
+
             var prefixNode = "" + type.nodeTypeName switch
             {
                 "GameObject" => "go_",
@@ -245,6 +246,48 @@ namespace _3DConnections.Runtime
             }
         }
 
+        private void FindReferencesInScriptableObject(ScriptableObject scriptableObject, GameObject parentNodeObject)
+        {
+            if (scriptableObject == null || _currentNodes > maxNodes) return;
+            var instanceId = scriptableObject.GetInstanceID();
+            if (_processingObjects.Contains(scriptableObject))
+            {
+                if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
+                {
+                    ConnectNodes(parentNodeObject, existingNode, referenceConnection);
+                }
+
+                return;
+            }
+            
+            var needsTraversal = !_visitedObjects.Contains(scriptableObject);
+            _processingObjects.Add(scriptableObject);
+            try
+            {
+                var nodeObject = GetOrSpawnNode(scriptableObject, parentNodeObject);
+                if (!needsTraversal) return;
+                _visitedObjects.Add(scriptableObject);
+                
+                
+#if UNITY_EDITOR
+                var serializedObject = new SerializedObject(scriptableObject);
+                var property = serializedObject.GetIterator();
+                while (property.NextVisible(true))
+                {
+                    if (property.propertyType != SerializedPropertyType.ObjectReference || property.objectReferenceValue == null) continue;
+                    Debug.Log($"'{scriptableObject.name}' references '{property.objectReferenceValue}' in field '{property.name}'");
+                    TraverseGameObject(property.objectReferenceValue as GameObject, nodeObject);
+                }
+#endif
+                
+            }
+            finally
+            {
+                _processingObjects.Remove(scriptableObject);
+            }
+            
+        }
+
         /// <summary>
         /// Recursive function to Spawn a node for the given Component and Traverse References of the given Component which might be GameObjects or ScriptableObjects
         /// </summary>
@@ -292,6 +335,9 @@ namespace _3DConnections.Runtime
                         case Component comp when comp != null:
                             TraverseComponent(comp, nodeObject);
                             break;
+                        case ScriptableObject so when so != null:
+                            FindReferencesInScriptableObject(so, nodeObject);
+                            break;
                     }
                 }
             }
@@ -311,7 +357,7 @@ namespace _3DConnections.Runtime
                 Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
             }
 
-            
+
             _parentNode = overlay.GetNodeGraph();
             if (!_parentNode)
             {
