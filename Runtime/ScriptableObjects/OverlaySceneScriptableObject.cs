@@ -11,9 +11,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
     {
         public SceneReference overlayScene;
         public Camera camera;
-        // public Canvas overlayCanvas;
-        // public Canvas cubeInteractionCanvas;
-        
+
         public Camera GetCameraOfScene()
         {
             if (overlayScene)
@@ -22,21 +20,26 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 var rootObjects = overlayScene.scene.GetRootGameObjects();
                 camera = rootObjects.Select(obj => obj.GetComponentInChildren<Camera>())
                     .FirstOrDefault(overlayCamera => overlayCamera);
-                if (!camera) Debug.Log("You are missing a camera in the overlay scene");     
+                if (!camera) Debug.Log("You are missing a camera in the overlay scene");
                 return camera;
             }
 
             Debug.Log("Overlay scene is not properly configured");
             return null;
         }
-        
+
+        public bool OverlayIsActive()
+        {
+            return overlayScene && camera.enabled;
+        }
+
         public void ToggleOverlay()
         {
             if (overlayScene is null || !overlayScene.scene.isLoaded) return;
             var overlayCamera = GetCameraOfScene();
             overlayCamera.enabled = !overlayCamera.enabled;
         }
-        
+
         public GameObject GetNodeGraph()
         {
             if (overlayScene && overlayScene.scene.IsValid())
