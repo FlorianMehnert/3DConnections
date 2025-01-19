@@ -74,6 +74,7 @@ namespace _3DConnections.Runtime.Managers
 
             var lineObj = Instantiate(lineRendererPrefab, transform);
             var lineRenderer = lineObj.GetComponent<LineRenderer>();
+            lineRenderer.name = startNode.name + "-" + endNode.name;
 
             var newConnection = new NodeConnection
             {
