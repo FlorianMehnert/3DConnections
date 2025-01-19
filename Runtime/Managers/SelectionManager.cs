@@ -80,7 +80,6 @@ namespace _3DConnections.Runtime.Managers
             if (_currentlyDraggedCube)
             {
                 _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color = nodeColorsScriptableObject.nodeSelectedColor;
-                nodegraph.currentlySelectedGameObject = _currentlyDraggedCube;
             }
 
             var image = selectionRectangle.GetComponent<Image>();
@@ -177,6 +176,9 @@ namespace _3DConnections.Runtime.Managers
 
                     var hitObject = hit.collider.gameObject;
                     _currentlyDraggedCube = hitObject;
+                    
+                    // this is used in the camera handler later to focus on this object
+                    nodegraph.currentlySelectedGameObject = hitObject;
 
                     SelectCube(hitObject);
 
@@ -187,6 +189,7 @@ namespace _3DConnections.Runtime.Managers
                 }
                 else
                 {
+                    // Selection rectangle
                     _isDrawingSelectionRect = true;
                     _selectionStartPos = Input.mousePosition;
                     if (selectionRectangle)
@@ -199,6 +202,9 @@ namespace _3DConnections.Runtime.Managers
                     if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                     {
                         DeselectAllCubes();
+                        
+                        // unset currentlySelectedGO for camera handler to allow for editor selection
+                        nodegraph.currentlySelectedGameObject = null;
                         CloseContextMenu();
                     }
                 }

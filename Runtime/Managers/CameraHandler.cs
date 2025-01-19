@@ -1,5 +1,6 @@
 using _3DConnections.Runtime.ScriptableObjects;
-using Runtime;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 namespace _3DConnections.Runtime.Managers
@@ -9,8 +10,7 @@ namespace _3DConnections.Runtime.Managers
     /// </summary>
     public class CameraController : MonoBehaviour
     {
-        [Header("Zoom Settings")]
-        public float zoomSpeed = 10f;
+        [Header("Zoom Settings")] public float zoomSpeed = 10f;
 
         private Camera _cam;
         private Vector3 _lastMousePosition;
@@ -18,7 +18,7 @@ namespace _3DConnections.Runtime.Managers
         private float _screenHeight;
         private float _worldWidth;
         private float _worldHeight;
-        [SerializeField] private float padding = 1.1f;     // Extra space when centering on selection
+        [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
         [SerializeField] private GameObject parentObject;
 
@@ -27,7 +27,7 @@ namespace _3DConnections.Runtime.Managers
         private void Start()
         {
             _cam = overlay.GetCameraOfScene();
-        
+
             // Calculate world dimensions based on current orthographic size
             CalculateWorldDimensions();
         }
@@ -36,14 +36,19 @@ namespace _3DConnections.Runtime.Managers
         {
             // Recalculate world dimensions if zoom changes
             CalculateWorldDimensions();
-        
+
             HandleZoom();
             HandlePan();
-            
+
             if (Input.GetKeyDown(KeyCode.F) && nodeGraph.currentlySelectedGameObject)
             {
                 CenterOnTarget(nodeGraph.currentlySelectedGameObject);
-            }else if (Input.GetKeyDown(KeyCode.G) && parentObject)
+            }
+            else if (Input.GetKeyDown(KeyCode.F) && !nodeGraph.currentlySelectedGameObject)
+            {
+                CenterOnTarget(nodeGraph.currentlySelectedGameObject, true);
+            }
+            else if (Input.GetKeyDown(KeyCode.G) && parentObject)
             {
                 AdjustCameraToViewChildren();
             }
@@ -85,26 +90,54 @@ namespace _3DConnections.Runtime.Managers
             var verticalWorldMovement = (delta.y / _screenHeight) * _worldHeight;
 
             var move = new Vector3(-horizontalWorldMovement, -verticalWorldMovement, 0);
-        
+
             _cam.transform.position += move;
 
             _lastMousePosition = Input.mousePosition;
         }
 
-        private void CenterOnTarget(GameObject targetObject)
+        private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
         {
+#if UNITY_EDITOR
+            switch (useEditorSelection)
+            {
+                case true when Selection.activeGameObject:
+                    targetObject = Selection.activeTransform.gameObject;
+                    break;
+                case true when !Selection.activeTransform.gameObject:
+                    return;
+            }
+#else
             if (!targetObject) return;
+#endif
+            // TODO: check for is line Renderer, if true take the bounding box
             // Get target position
-            var targetPosition = targetObject.transform.position;
-            
-            // Keep camera's z position (depth) and only update x and y
-            var newPosition = new Vector3(
-                targetPosition.x,
-                targetPosition.y,
-                _cam.transform.position.z
-            );
-            _cam.orthographicSize = 3;
-            _cam.transform.position = newPosition;
+            var lineRenderer = targetObject.GetComponent<LineRenderer>();
+            if (lineRenderer && lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
+            {
+                var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
+                highlight.Highlight(Color.red, 2f);
+
+                var bounds = new Bounds(lineRenderer.transform.position, Vector3.zero);
+                bounds.Encapsulate(lineRenderer.bounds);
+                var center = bounds.center;
+                _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+                var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
+                _cam.orthographicSize = size * padding;
+            }
+            else // normal gameObject
+            {
+                var targetPosition = targetObject.transform.position;
+
+                // Keep camera's z position (depth) and only update x and y
+                var newPosition = new Vector3(
+                    targetPosition.x,
+                    targetPosition.y,
+                    _cam.transform.position.z
+                );
+                _cam.orthographicSize = 3;
+                _cam.transform.position = newPosition;
+            }
         }
 
         private void AdjustCameraToViewChildren()
