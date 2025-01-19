@@ -47,9 +47,10 @@ namespace _3DConnections.Runtime
                 Debug.Log("There are no gameObjects in the selected scene");
             }
 
+            var rootNode = SpawnNode(null);
             foreach (var rootObject in rootGameObjects)
             {
-                TraverseGameObject(rootObject);
+                TraverseGameObject(rootObject, rootNode);
             }
 
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes != null)
@@ -90,7 +91,6 @@ namespace _3DConnections.Runtime
                 type.reference = obj;
             }
 
-
             var prefixNode = "" + type.nodeTypeName switch
             {
                 "GameObject" => "go_",
@@ -98,9 +98,16 @@ namespace _3DConnections.Runtime
                 "ScriptableObject" => "so_",
                 _ => ""
             };
-            var postfixNode = prefixNode != "go_" ? "_" + type.reference.GetType().Name : string.Empty;
-            nodeObject.name = prefixNode + obj.name + postfixNode;
-
+            if (type.reference == null)
+            {
+                nodeObject.name = "tfRoot";
+            }
+            else
+            {
+                var postfixNode = prefixNode != "go_" ? "_" + type.reference.GetType().Name : string.Empty;
+                nodeObject.name = prefixNode + obj.name + postfixNode;    
+            }
+            
             SetNodeColor(nodeObject, obj);
             return nodeObject;
         }
