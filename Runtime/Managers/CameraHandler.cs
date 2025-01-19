@@ -110,8 +110,6 @@ namespace _3DConnections.Runtime.Managers
 #else
             if (!targetObject) return;
 #endif
-            // TODO: check for is line Renderer, if true take the bounding box
-            // Get target position
             var lineRenderer = targetObject.GetComponent<LineRenderer>();
             if (lineRenderer && lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
             {
