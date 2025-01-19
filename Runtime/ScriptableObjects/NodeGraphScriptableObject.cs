@@ -309,5 +309,13 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 Destroy(existingComponent);
             }
         }
+
+        public void NodesRemoveComponents(List<System.Type> componentTypes)
+        {
+            foreach (var componentType in componentTypes)
+            {
+                NodesRemoveComponent(componentType);
+            }
+        }
     }
 }

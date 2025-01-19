@@ -134,7 +134,14 @@ namespace _3DConnections.Runtime.Managers
             CreateButton("Analyze Scene and create node connections", 7, GetButtonPosition(), _sceneAnalyzer.AnalyzeScene);
             CreateButton("Layout based on Connections", 10, GetButtonPosition(), NodeLayoutManagerV2.LayoutForest);
             CreateButton("Simulate Physics", 14, GetButtonPosition(), () => nodeGraph.NodesAddComponent(typeof(Rigidbody2D)));
-            CreateButton("Remove Physics", 14, GetButtonPosition(), () => nodeGraph.NodesRemoveComponent(typeof(Rigidbody2D)));
+            var types = new List<System.Type>
+            {
+                typeof(SpringJoint2D),
+                typeof(Rigidbody2D)
+            };
+            CreateButton("Remove Physics", 14, GetButtonPosition(), () => nodeGraph.NodesRemoveComponents(types));
+            CreateButton("Add Springs Joints", 14, GetButtonPosition(), NodeConnectionManager.Instance.AddSpringsToConnections);
+            CreateButton("Update Spring parameters", 14, GetButtonPosition(), NodeConnectionManager.Instance.UpdateSpringParameters);
 
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();
             if (sceneAnalyzer != null)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace _3DConnections.Runtime.Managers
@@ -10,6 +11,9 @@ namespace _3DConnections.Runtime.Managers
     public class NodeConnectionManager : MonoBehaviour
     {
         private static NodeConnectionManager _instance;
+        public float springFrequency = 2.0f;
+        public float springDamping = 0.5f;
+        public float distance = 1f;
 
         public static NodeConnectionManager Instance
         {
@@ -117,6 +121,28 @@ namespace _3DConnections.Runtime.Managers
             }
 
             connections.Clear();
+        }
+
+        public void AddSpringsToConnections()
+        {
+            foreach (var connection in connections)
+            {
+                var spring = connection.startNode.AddComponent<SpringJoint2D>();
+                spring.connectedBody = connection.endNode.GetComponent<Rigidbody2D>();
+                spring.frequency = springFrequency;
+                spring.dampingRatio = springDamping;
+                spring.distance = distance;
+            }
+        }
+
+        public void UpdateSpringParameters()
+        {
+            foreach (var spring in connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>()).SelectMany(springComponents => springComponents))
+            {
+                spring.dampingRatio = springDamping;
+                spring.frequency = springFrequency;
+                spring.distance = distance;
+            }
         }
     }
 }
