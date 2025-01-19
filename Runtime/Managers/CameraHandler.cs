@@ -116,8 +116,7 @@ namespace _3DConnections.Runtime.Managers
                 var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
                 highlight.Highlight(Color.red, 2f);
 
-                var bounds = new Bounds(lineRenderer.transform.position, Vector3.zero);
-                bounds.Encapsulate(lineRenderer.bounds);
+                var bounds = lineRenderer.bounds;
                 var center = bounds.center;
                 _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
                 var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
