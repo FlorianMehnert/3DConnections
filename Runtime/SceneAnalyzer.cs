@@ -317,6 +317,8 @@ namespace _3DConnections.Runtime
             {
                 Debug.Log("Even after asking the overlay SO for the nodeGraph gameObject it could not be found");
             }
+
+            Debug.Log("about to delete " + _parentNode.transform.childCount + " nodes");
             foreach (Transform child in _parentNode.transform)
             {
                 Destroy(child.gameObject);
@@ -327,6 +329,7 @@ namespace _3DConnections.Runtime
             _visitedObjects.Clear();
             _processingObjects.Clear();
             _currentNodes = 0;
+            nodeGraph.allNodes.Clear();
         }
 
         private static IEnumerable<Object> GetComponentReferences(Component component)

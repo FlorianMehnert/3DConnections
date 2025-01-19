@@ -283,6 +283,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// <param name="componentType">Type of Component to be added to all nodes</param>
         public void NodesAddComponent(System.Type componentType)
         {
+            if (allNodes.Count == 0) return;
             foreach (var node in from node in allNodes
                      let existingComponent = node.GetComponent(componentType)
                      where existingComponent == null

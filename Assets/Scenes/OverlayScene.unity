@@ -546,6 +546,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
+--- !u!1 &1896426173 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1525873507628586088, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
+  m_PrefabInstance: {fileID: 1896426172}
+  m_PrefabAsset: {fileID: 0}
 --- !u!223 &1896426176 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 5985118532246660421, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
@@ -747,6 +752,10 @@ PrefabInstance:
       propertyPath: overlay
       value: 
       objectReference: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+    - target: {fileID: 1677649614280440048, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: buttonCanvas
+      value: 
+      objectReference: {fileID: 1896426173}
     - target: {fileID: 1677649614280440048, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: overlayEvent
       value: 
