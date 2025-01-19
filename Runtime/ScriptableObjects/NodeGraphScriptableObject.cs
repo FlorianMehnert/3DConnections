@@ -301,18 +301,32 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// Remove component of a given type from all nodes
         /// </summary>
         /// <param name="componentType">Component type to remove</param>
-        public void NodesRemoveComponent(System.Type componentType)
+        private void NodesRemoveComponent(System.Type componentType)
         {
             // Check if the target object already has the component
-            foreach (var existingComponent in from node in allNodes where node != null && componentType != null select node.GetComponent(componentType) into existingComponent where existingComponent != null select existingComponent)
+            foreach (var node in allNodes)
             {
-                Destroy(existingComponent);
+                if (node != null && componentType != null)
+                {
+                    var components = node.GetComponents(componentType);
+                    foreach (var component in components)
+                    {
+                        DestroyImmediate(component);
+                    }
+                }
             }
+
         }
 
         public void NodesRemoveComponents(List<System.Type> componentTypes)
         {
-            foreach (var componentType in componentTypes)
+            var orderedTypes = componentTypes.OrderBy(t => t != typeof(SpringJoint2D)).ToList();
+            foreach (var orderedType in orderedTypes)
+            {
+                Debug.Log(orderedType);
+            }
+
+            foreach (var componentType in orderedTypes)
             {
                 NodesRemoveComponent(componentType);
             }
