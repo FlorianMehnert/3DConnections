@@ -44,4 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d8b6428bfbb41029e71774a58b79401, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  toAnalyzeScene: {fileID: 0}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  overlayEvent: {fileID: 11400000, guid: 09b7fd6cf00581438b91b35f20ecbea4, type: 2}
