@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Runtime.BurstPhysics;
 using _3DConnections.Runtime.ScriptableObjects;
 using SFB;
 using TMPro;
@@ -128,28 +129,53 @@ namespace _3DConnections.Runtime.Managers
 
         private void CreateButtons()
         {
-            CreateButton("File Browser for Grid", 10, OnFileBrowserOpen);
-            CreateButton("Draw Grid from Path", 14, () => _nodeBuilder.DrawGrid(path));
+            //CreateButton("File Browser for Grid", 10, OnFileBrowserOpen);
+            //CreateButton("Draw Grid from Path", 14, () => _nodeBuilder.DrawGrid(path));
 
-            CreateButton("Analyze Scene and create node connections", 7, _sceneAnalyzer.AnalyzeScene);
-            CreateButton("Layout based on Connections", 10, NodeLayoutManagerV2.LayoutForest);
-            CreateButton("Simulate Physics", 14, () => nodeGraph.NodesAddComponent(typeof(Rigidbody2D)));
+            // CreateButton("Analyze Scene and create node connections", 7, _sceneAnalyzer.AnalyzeScene);
+            // CreateButton("Layout based on Connections", 10, NodeLayoutManagerV2.LayoutForest);
+            CreateButton("Native Physics Sim", 14, () =>
+            {
+                _sceneAnalyzer.AnalyzeScene();
+                NodeLayoutManagerV2.LayoutForest();
+                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                NodeConnectionManager.Instance.AddSpringsToConnections();
+            });
             var types = new List<System.Type>
             {
                 typeof(SpringJoint2D),
                 typeof(Rigidbody2D)
             };
-            CreateButton("Remove Physics", 14, () => nodeGraph.NodesRemoveComponents(types));
-            CreateButton("Add Springs Joints", 14, NodeConnectionManager.Instance.AddSpringsToConnections);
-            CreateButton("Update Spring parameters", 14, NodeConnectionManager.Instance.UpdateSpringParameters);
+            var springSimulation = GetComponent<SpringSimulation>();
+            
             var physicsConverter = gameObject.GetComponent<PhysicsEcsConverter>();
             if (physicsConverter != null)
                 CreateButton("Convert to ECS", 14, physicsConverter.ConvertNodesToEcs);
             
+            if (springSimulation != null)
+            {
+                
+                CreateButton("Burst Sim", 14, () =>
+                {
+                    _sceneAnalyzer.AnalyzeScene();
+                    NodeLayoutManagerV2.LayoutForest();
+                    nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                    NodeConnectionManager.Instance.AddSpringsToConnections();
+                    springSimulation.Simulate();
+                });
+            }
+            
+            CreateButton("Remove Physics", 14, () =>
+            {
+                nodeGraph.NodesRemoveComponents(types);
+                if (springSimulation != null)
+                    springSimulation.CleanupNativeArrays();
+            });
+            
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();
             if (sceneAnalyzer != null)
             {
-                CreateButton("Clear", 8, sceneAnalyzer.ClearNodes);
+                CreateButton("Clear", 14, sceneAnalyzer.ClearNodes);
             }
         }
 

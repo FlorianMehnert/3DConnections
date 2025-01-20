@@ -1,4 +1,5 @@
 using System.Linq;
+using _3DConnections.Runtime.BurstPhysics;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
@@ -55,6 +56,8 @@ namespace _3DConnections.Runtime
 
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes != null)
                 nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
+            if (nodeGraph.allNodes is { Count: > 0 })
+                nodeGraph.allNodes.Add(rootNode);
         }
 
         private GameObject SpawnNode(Object obj)
@@ -378,6 +381,11 @@ namespace _3DConnections.Runtime
             }
 
             NodeConnectionManager.Instance.ClearConnections();
+            var springSimulation = GetComponent<SpringSimulation>();
+            if (springSimulation != null)
+            {
+                springSimulation.CleanupNativeArrays();
+            }
             _instanceIdToNode.Clear();
             _visitedObjects.Clear();
             _processingObjects.Clear();
