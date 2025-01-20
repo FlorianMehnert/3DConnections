@@ -47,6 +47,7 @@ namespace _3DConnections.Runtime.Managers
                 Destroy(gameObject);
                 return;
             }
+
             _instance = this;
         }
 

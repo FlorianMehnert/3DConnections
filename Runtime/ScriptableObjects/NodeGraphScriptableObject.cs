@@ -22,6 +22,14 @@ namespace _3DConnections.Runtime.ScriptableObjects
             _nodesByGameObject.Clear();
         }
 
+        public Transform[] AllNodeTransforms2D
+        {
+            get
+            {
+                return allNodes.Select(n => n.transform).ToArray();
+            }
+        }
+
         /// <summary>
         /// Try to register node to internal tracking but only if not already present - in this case use <see cref="ReplaceRelatedGo"/>
         /// </summary>
@@ -97,11 +105,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return _nodesByGameObject.Values.OfType<ComponentNode>().FirstOrDefault(x => x.Name == component.name);
         }
 
-        private GameObject GetGameObject(Node node)
-        {
-            return _nodesByGameObject.FirstOrDefault(x => x.Value == node).Key;
-        }
-
 
         // Contains using node as value
         private bool Contains(Node node)
@@ -138,29 +141,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return false;
         }
 
-        // Try to resolve Object
-        public bool Contains(Object obj)
-        {
-            var isContained = obj switch
-            {
-                ScriptableObject so => Contains(so) ? 1 : 0,
-                Component co => Contains(co) ? 1 : 0,
-                GameObject go => Contains(go) ? 1 : 0,
-                _ => 2
-            };
-
-            // some way to log whenever there is the wrong type passed
-            if (isContained != 2) return isContained == 1;
-            Debug.Log("executed nodeGraph Contains on type of " + obj.GetType().Name);
-            return false;
-        }
-
-
-        public void Remove(GameObject gameObject)
-        {
-            _nodesByGameObject.Remove(gameObject);
-        }
-
         /// <summary>
         /// Smarter Add which deletes node/go if the matching node has the same name and location to ensure 1 to 1
         /// </summary>
@@ -183,19 +163,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return _nodesByGameObject.Values;
         }
 
-        public Dictionary<GameObject, Node> GetRelations()
-        {
-            return _nodesByGameObject;
-        }
-
-        public void ApplyNodePositions()
-        {
-            foreach (var node in GetNodes())
-            {
-                GetGameObject(node).transform.localPosition = node.position;
-            }
-        }
-
         private List<GameObjectNode> GetGameObjectNodes()
         {
             return _nodesByGameObject.Values.OfType<GameObjectNode>().ToList();
@@ -210,61 +177,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return GetGameObjectNodes().Where(gameObjectNode => gameObjectNode.GameObject != null).ToList();
         }
 
-        /// <summary>
-        /// Fill Children Attribute for GameObjectNodes using .GameObject.transform => children
-        /// </summary>
-        public void FillChildrenForGameObjectNodes()
-        {
-            var goNodes = GetGameObjectNodes();
-            foreach (var node in goNodes)
-            {
-                if (node.GameObject == null)
-                {
-                    continue;
-                }
-
-                foreach (Transform childTransform in node.GameObject.transform)
-                {
-                    var childNode = goNodes.FirstOrDefault(goNode => goNode.GameObject == childTransform.gameObject);
-                    if (childNode != null)
-                    {
-                        node.AddChild(childNode);
-                    }
-                }
-
-                Debug.Log("filling children " + node.GetChildren().Count);
-            }
-        }
-
         [CanBeNull]
         private GameObjectNode TryGetGameObjectNodeByGameObject(GameObject gameObject)
         {
             return GetGameObjectNodes().FirstOrDefault(node => node.GameObject == gameObject);
-        }
-
-        public Node GetRootNode(GameObject[] gameObjects)
-        {
-            var nodes = new List<Node>();
-
-            // lookup node
-            foreach (var toCheckGameObject in gameObjects)
-            {
-                var node = TryGetGameObjectNodeByGameObject(toCheckGameObject);
-                if (node != null)
-                {
-                    nodes.Add(node);
-                }
-                else
-                {
-                    // add to internal storage and also output
-                    var newlyCreatedNode = Add(toCheckGameObject);
-                    nodes.Add(newlyCreatedNode);
-                }
-            }
-
-            var tfRoot = new GameObjectNode("TF Root", null);
-            tfRoot.SetChildren(nodes);
-            return tfRoot;
         }
 
         /// <summary>

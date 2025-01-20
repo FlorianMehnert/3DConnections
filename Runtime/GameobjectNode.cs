@@ -1,9 +1,7 @@
 using System;
-using _3DConnections.Runtime.Managers;
 using JetBrains.Annotations;
 using Runtime;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
@@ -29,42 +27,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             GameObject = go;
         }
 
-        public GameObjectNode(Transform position, [CanBeNull] GameObject go) : base(position)
-        {
-            NodeType = typeof(GameObject);
-            GameObject = go;
-        }
-
         public GameObject GameObject { get; }
-
-
-        public void AttachLagProfiler()
-        {
-            var profiler = RelatedGameObject.GetComponent<LagProfiler>();
-            if (profiler == null)
-            {
-                RelatedGameObject.AddComponent<LagProfiler>();
-            }
-        }
-
-        public void RemoveLagProfiler()
-        {
-            var profiler = RelatedGameObject.GetComponent<LagProfiler>();
-            if (profiler != null)
-            {
-                Object.Destroy(profiler);
-            }
-        }
-
-        public void ToggleLagProfiler()
-        {
-            var profiler = RelatedGameObject.GetComponent<LagProfiler>();
-            profiler?.ToggleIsMonitoring();
-        }
-
-        public static Node GetOrCreateNode(GameObject go, NodeGraphScriptableObject nodegraph)
-        {
-            return nodegraph.Contains(go) ? nodegraph.GetNode(go) : nodegraph.Add(go);
-        }
     }
 }

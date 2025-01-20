@@ -128,30 +128,37 @@ namespace _3DConnections.Runtime.Managers
 
         private void CreateButtons()
         {
-            CreateButton("File Browser for Grid", 10, GetButtonPosition(), OnFileBrowserOpen);
-            CreateButton("Draw Grid from Path", 14, GetButtonPosition(), () => _nodeBuilder.DrawGrid(path));
+            CreateButton("File Browser for Grid", 10, OnFileBrowserOpen);
+            CreateButton("Draw Grid from Path", 14, () => _nodeBuilder.DrawGrid(path));
 
-            CreateButton("Analyze Scene and create node connections", 7, GetButtonPosition(), _sceneAnalyzer.AnalyzeScene);
-            CreateButton("Layout based on Connections", 10, GetButtonPosition(), NodeLayoutManagerV2.LayoutForest);
-            CreateButton("Simulate Physics", 14, GetButtonPosition(), () => nodeGraph.NodesAddComponent(typeof(Rigidbody2D)));
+            CreateButton("Analyze Scene and create node connections", 7, _sceneAnalyzer.AnalyzeScene);
+            CreateButton("Layout based on Connections", 10, NodeLayoutManagerV2.LayoutForest);
+            CreateButton("Simulate Physics", 14, () => nodeGraph.NodesAddComponent(typeof(Rigidbody2D)));
             var types = new List<System.Type>
             {
                 typeof(SpringJoint2D),
                 typeof(Rigidbody2D)
             };
-            CreateButton("Remove Physics", 14, GetButtonPosition(), () => nodeGraph.NodesRemoveComponents(types));
-            CreateButton("Add Springs Joints", 14, GetButtonPosition(), NodeConnectionManager.Instance.AddSpringsToConnections);
-            CreateButton("Update Spring parameters", 14, GetButtonPosition(), NodeConnectionManager.Instance.UpdateSpringParameters);
-
+            CreateButton("Remove Physics", 14, () => nodeGraph.NodesRemoveComponents(types));
+            CreateButton("Add Springs Joints", 14, NodeConnectionManager.Instance.AddSpringsToConnections);
+            CreateButton("Update Spring parameters", 14, NodeConnectionManager.Instance.UpdateSpringParameters);
+            var physicsConverter = gameObject.GetComponent<PhysicsEcsConverter>();
+            if (physicsConverter != null)
+                CreateButton("Convert to ECS", 14, physicsConverter.ConvertNodesToEcs);
+            
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();
             if (sceneAnalyzer != null)
             {
-                CreateButton("Clear", 8, GetButtonPosition(), sceneAnalyzer.ClearNodes);
+                CreateButton("Clear", 8, sceneAnalyzer.ClearNodes);
             }
         }
 
-        private void CreateButton(string text, int fontSize, Vector2 anchoredPosition, UnityAction onClick)
+        private void CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition=default)
         {
+            if (anchoredPosition == default)
+            {
+                anchoredPosition = GetButtonPosition();
+            }
             var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
             var buttonComponent = browserButtonInstance.GetComponent<Button>();
             var rectTransform = browserButtonInstance.GetComponent<RectTransform>();
