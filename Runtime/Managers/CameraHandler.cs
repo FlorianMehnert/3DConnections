@@ -1,5 +1,4 @@
 using _3DConnections.Runtime.ScriptableObjects;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -113,7 +112,7 @@ namespace _3DConnections.Runtime.Managers
             var lineRenderer = targetObject.GetComponent<LineRenderer>();
             if (lineRenderer && lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
             {
-                var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
+                var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.gameObject.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
                 highlight.Highlight(Color.red, 2f);
 
                 var bounds = lineRenderer.bounds;

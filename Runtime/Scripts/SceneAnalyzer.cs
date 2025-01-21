@@ -4,7 +4,7 @@ using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 
-namespace _3DConnections.Runtime
+namespace _3DConnections.Runtime.Scripts
 {
     using System.Collections.Generic;
     using UnityEngine;

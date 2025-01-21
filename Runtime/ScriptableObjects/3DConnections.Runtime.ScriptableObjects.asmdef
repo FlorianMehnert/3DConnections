@@ -1,0 +1,16 @@
+{
+    "name": "3DConnections.Runtime.ScriptableObjects",
+    "rootNamespace": "",
+    "references": [
+        "GUID:68990cf58c0248f2ae7aaa38040ef8a9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

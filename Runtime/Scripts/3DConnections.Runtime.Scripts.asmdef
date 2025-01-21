@@ -1,0 +1,4 @@
+{
+  "name": "3DConnections.Runtime.Scripts",
+  "references":[ "GUID:f373597d47624f6d907847f70cac6b71", "GUID:407d9f5d313b4d20b83d06c1f10def66", "GUID:40b69349343e4adbbbce2ca25f9f4998" ]
+}

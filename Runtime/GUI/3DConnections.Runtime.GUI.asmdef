@@ -1,0 +1,23 @@
+{
+    "name": "3DConnections.Runtime.GUI",
+    "rootNamespace": "",
+    "references": [
+        "GUID:40b69349343e4adbbbce2ca25f9f4998",
+        "GUID:407d9f5d313b4d20b83d06c1f10def66",
+        "GUID:5f4232b03ae34ec982cf4da3976cf8ce",
+        "GUID:f373597d47624f6d907847f70cac6b71",
+        "GUID:dfacdb1b6e7e41e09e9e7bf10c1af09c",
+        "GUID:56d16c4e5bd74b3e81439d09a9b966ca",
+        "GUID:a85b5bc6d92248cfa0f74cabfd18bd69",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

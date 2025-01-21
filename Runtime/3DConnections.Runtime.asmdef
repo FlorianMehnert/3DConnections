@@ -1,0 +1,17 @@
+{
+    "name": "3DConnections.Runtime",
+    "rootNamespace": "_3DConnections.Runtime",
+    "references": ["GUID:68990cf58c0248f2ae7aaa38040ef8a9"],
+    "includePlatforms": [],
+    "excludePlatforms": [
+        "LinuxStandalone64",
+        "WindowsStandalone32"
+    ],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

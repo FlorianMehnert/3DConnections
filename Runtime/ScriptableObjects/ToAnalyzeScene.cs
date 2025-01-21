@@ -1,6 +1,4 @@
-using _3DConnections.Runtime.Managers;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {

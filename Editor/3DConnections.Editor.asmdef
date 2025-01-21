@@ -1,0 +1,20 @@
+{
+    "name": "3DConnections.Editor",
+    "rootNamespace": "_3DConnections.Editor",
+    "references": [
+        "GUID:56d16c4e5bd74b3e81439d09a9b966ca",
+        "GUID:407d9f5d313b4d20b83d06c1f10def66",
+        "GUID:f373597d47624f6d907847f70cac6b71"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

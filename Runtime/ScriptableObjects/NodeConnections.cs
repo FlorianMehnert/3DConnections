@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using _3DConnections.Runtime.ScriptableObjects;
 using UnityEngine;
 
 namespace _3DConnections.Runtime
