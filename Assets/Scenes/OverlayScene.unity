@@ -686,7 +686,7 @@ PrefabInstance:
     - target: {fileID: 1677649614280440048, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: overlayEvent
       value: 
-      objectReference: {fileID: 11400000, guid: 09b7fd6cf00581438b91b35f20ecbea4, type: 2}
+      objectReference: {fileID: 11400000, guid: a14b0cbe87a18aac6864ed7379809ee3, type: 2}
     - target: {fileID: 3451024132963029698, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.9663042
