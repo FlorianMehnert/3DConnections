@@ -3,11 +3,11 @@ using _3DConnections.Runtime.BurstPhysics;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
+using UnityEngine;
+using System.Collections.Generic;
 
 namespace _3DConnections.Runtime.Scripts
 {
-    using System.Collections.Generic;
-    using UnityEngine;
 
     public class SceneAnalyzer : MonoBehaviour
     {

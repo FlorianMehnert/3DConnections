@@ -1,7 +1,10 @@
 {
     "name": "3DConnections.Runtime",
     "rootNamespace": "_3DConnections.Runtime",
-    "references": ["GUID:68990cf58c0248f2ae7aaa38040ef8a9"],
+    "references": [
+        "3DConnections.Runtime.ScriptableObjects",
+        "3DConnections.Runtime.Nodes"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [
         "LinuxStandalone64",
