@@ -18,7 +18,10 @@ namespace _3DConnections.Runtime
 
         public void SetToOriginalColor()
         {
-            _objectRenderer.material.color = _originalColor;
+            if (_objectRenderer  != null && _objectRenderer.material != null)
+            {
+                _objectRenderer.material.color = _originalColor;
+            }
         }
     }
 }
