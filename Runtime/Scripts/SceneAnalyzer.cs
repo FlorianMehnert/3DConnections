@@ -24,7 +24,7 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private int nodeWidth = 2;
         [SerializeField] private int nodeHeight = 1;
-        [SerializeField] internal Color gameobjectColor = new(0.2f, 0.6f, 1f); // Blue
+        [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
         [SerializeField] internal Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
         [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
         [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
@@ -53,12 +53,25 @@ namespace _3DConnections.Runtime.Scripts
                 Debug.Log(toAnalyzeSceneScriptableObject.reference.Name);
                 SceneManager.LoadScene(sceneName: toAnalyzeSceneScriptableObject.reference.sceneName, mode: LoadSceneMode.Additive);
             }
-            if (rootGameObjects != null && rootGameObjects.Length == 0)
+            if (rootGameObjects is { Length: 0 })
             {
                 Debug.Log("There are no gameObjects in the selected scene");
+                return;
             }
 
             var rootNode = SpawnNode(null);
+            if (rootGameObjects == null)
+            {
+                Debug.Log("GetRootGameObjects did return null");
+                return;
+            }
+            if (rootNode == null)
+            {
+                Debug.Log("Root Node could not be spawned");
+                return;
+            }
+            
+            
             foreach (var rootObject in rootGameObjects)
             {
                 TraverseGameObject(rootObject, rootNode);
@@ -147,10 +160,10 @@ namespace _3DConnections.Runtime.Scripts
             if (componentRenderer)
                 componentRenderer.material.color = obj switch
                 {
-                    GameObject => gameobjectColor,
+                    GameObject => gameObjectColor,
                     Component => componentColor,
                     ScriptableObject => scriptableObjectColor,
-                    _ => Color.black,
+                    _ => Color.black
                 };
         }
 
@@ -210,17 +223,17 @@ namespace _3DConnections.Runtime.Scripts
         /// <summary>
         /// Recursive function to Spawn a node for the given GameObject and Traverse Components/Children of the given gameObject
         /// </summary>
-        /// <param name="gameObject">To Traverse gameObject</param>
+        /// <param name="toTraverseGameObject">To Traverse gameObject</param>
         /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
         /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
-        private void TraverseGameObject(GameObject gameObject, GameObject parentNodeObject = null, bool isReference = false)
+        private void TraverseGameObject(GameObject toTraverseGameObject, GameObject parentNodeObject = null, bool isReference = false)
         {
-            if (gameObject == null || _currentNodes > maxNodes) return;
+            if (toTraverseGameObject == null || _currentNodes > maxNodes) return;
 
-            var instanceId = gameObject.GetInstanceID();
+            var instanceId = toTraverseGameObject.GetInstanceID();
 
             // Check if we're already processing this object (circular reference)
-            if (_processingObjects.Contains(gameObject))
+            if (_processingObjects.Contains(toTraverseGameObject))
             {
                 // If we're in a cycle, connect to the existing node if we have one
                 if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
@@ -231,19 +244,19 @@ namespace _3DConnections.Runtime.Scripts
                 return;
             }
 
-            var needsTraversal = !_visitedObjects.Contains(gameObject);
-            _processingObjects.Add(gameObject);
+            var needsTraversal = !_visitedObjects.Contains(toTraverseGameObject);
+            _processingObjects.Add(toTraverseGameObject);
 
             try
             {
-                var nodeObject = GetOrSpawnNode(gameObject, parentNodeObject);
+                var nodeObject = GetOrSpawnNode(toTraverseGameObject, parentNodeObject);
 
                 // Only traverse children and components if we haven't visited this object before
                 if (!needsTraversal) return;
-                _visitedObjects.Add(gameObject);
+                _visitedObjects.Add(toTraverseGameObject);
 
                 // Traverse its components
-                foreach (var component in gameObject.GetComponents<Component>())
+                foreach (var component in toTraverseGameObject.GetComponents<Component>())
                 {
                     if (component != null)
                     {
@@ -252,7 +265,7 @@ namespace _3DConnections.Runtime.Scripts
                 }
 
                 // Traverse its children
-                foreach (Transform child in gameObject.transform)
+                foreach (Transform child in toTraverseGameObject.transform)
                 {
                     if (child != null && child.gameObject != null)
                     {
@@ -262,7 +275,7 @@ namespace _3DConnections.Runtime.Scripts
             }
             finally
             {
-                _processingObjects.Remove(gameObject);
+                _processingObjects.Remove(toTraverseGameObject);
             }
         }
 
