@@ -24,7 +24,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
-        // new stuffs from relationanalyzer
+        // new stuffs from relation analyzer
         [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
 
 
@@ -35,7 +35,7 @@ namespace _3DConnections.Runtime.Managers
 
 
         /// <summary>
-        /// Spawn a new game object for the given node, sets its relatedGameObject and add to the nodegraph 
+        /// Spawn a new game object for the given node, sets its relatedGameObject and add to the node graph 
         /// <b>Requires</b> a second camera to be active with an existing and enabled overlayedScene :)
         /// </summary>
         /// <param name="node"></param>
@@ -106,12 +106,12 @@ namespace _3DConnections.Runtime.Managers
                 componentRenderer.material.color = color;
             if (nodeGraph.Add(node)) return nodeObject.gameObject;
             if (nodeGraph.ReplaceRelatedGo(node))
-                Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
+                Debug.Log("no successful Add nor successful Replace in nodeGraph with node" + node);
             else
                 Debug.Log("replaced ");
             if (nodeGraph.Add(node)) return nodeObject.gameObject;
             if (nodeGraph.ReplaceRelatedGo(node))
-                Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
+                Debug.Log("no successful Add nor successful Replace in nodeGraph with node" + node);
             else
                 Debug.Log("replaced ");
             return nodeObject.gameObject;
