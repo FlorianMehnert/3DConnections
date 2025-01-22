@@ -45,4 +45,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  overlayEvent: {fileID: 11400000, guid: 09b7fd6cf00581438b91b35f20ecbea4, type: 2}
+  overlayEvent: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
+  disableSceneOnOverlay: 1
