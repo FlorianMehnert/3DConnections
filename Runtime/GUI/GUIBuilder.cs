@@ -155,6 +155,7 @@ namespace _3DConnections.Runtime.GUI
                 CreateButton("Burst Sim", 14, () =>
                 {
                     _sceneAnalyzer.AnalyzeScene();
+                    NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
                     NodeLayoutManagerV2.LayoutForest();
                     nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
                     NodeConnectionManager.Instance.AddSpringsToConnections();

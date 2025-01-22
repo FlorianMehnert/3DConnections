@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace _3DConnections.Runtime.Managers
@@ -8,14 +9,19 @@ namespace _3DConnections.Runtime.Managers
     /// <summary>
     /// Singleton Manager that handles all the connections in the node graph. Singleton because connections are only important for the overlay scene.
     /// </summary>
-    public class NodeConnectionManager : MonoBehaviour
+    public sealed class NodeConnectionManager : MonoBehaviour
     {
         private static NodeConnectionManager _instance;
-        
+
         [Header("Component based physics sim")]
         public float springFrequency = 2.0f;
+
         public float springDamping = 0.5f;
         public float distance = 1f;
+
+        private NativeArray<float3> _nativeConnections;
+        private bool _usingNativeArray;
+        private int _currentConnectionCount;
 
         public static NodeConnectionManager Instance
         {
@@ -52,19 +58,35 @@ namespace _3DConnections.Runtime.Managers
 
             _instance = this;
         }
+        
+        private void Update()
+        {
+            if (_usingNativeArray)
+            {
+                UpdateConnectionPositionsNative();
+            }
+            else
+            {
+                UpdateConnectionPositions();
+            }
+        }
 
         private void OnApplicationQuit()
         {
             _isShuttingDown = true;
         }
 
+        // Make sure to clean up the native array when the component is destroyed
         private void OnDestroy()
         {
-            if (_instance == this)
+            if (_usingNativeArray && _nativeConnections.IsCreated)
             {
-                ClearConnections();
-                _instance = null;
+                _nativeConnections.Dispose();
             }
+
+            if (_instance != this) return;
+            ClearConnections();
+            _instance = null;
         }
 
         private void OnDisable()
@@ -102,11 +124,6 @@ namespace _3DConnections.Runtime.Managers
             connections.Add(newConnection);
         }
 
-        private void Update()
-        {
-            UpdateConnectionPositions();
-        }
-
         private void UpdateConnectionPositions()
         {
             foreach (var connection in connections.Where(connection => connection.startNode && connection.endNode && connection.lineRenderer))
@@ -118,12 +135,19 @@ namespace _3DConnections.Runtime.Managers
 
         public void ClearConnections()
         {
+            if (_usingNativeArray && _nativeConnections.IsCreated)
+            {
+                _nativeConnections.Dispose();
+                _usingNativeArray = false;
+            }
+
             foreach (var connection in connections.Where(connection => connection.lineRenderer != null))
             {
                 Destroy(connection.lineRenderer.gameObject);
             }
 
             connections.Clear();
+            _currentConnectionCount = 0;
         }
 
         public void AddSpringsToConnections()
@@ -148,6 +172,79 @@ namespace _3DConnections.Runtime.Managers
                 spring.dampingRatio = springDamping;
                 spring.frequency = springFrequency;
                 spring.distance = distance;
+            }
+        }
+
+        public void ConvertToNativeArray()
+        {
+            if (_usingNativeArray)
+            {
+                if (_nativeConnections.IsCreated)
+                {
+                    _nativeConnections.Dispose();
+                }
+            }
+
+            _currentConnectionCount = connections.Count;
+            if (_currentConnectionCount == 0) return;
+
+            // Create a new native array with the exact size needed
+            _nativeConnections = new NativeArray<float3>(_currentConnectionCount * 2, Allocator.Persistent);
+
+            // Copy existing connections to the native array
+            for (var i = 0; i < _currentConnectionCount; i++)
+            {
+                if (!connections[i].startNode || !connections[i].endNode) continue;
+                _nativeConnections[i * 2] = connections[i].startNode.transform.position;
+                _nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+            }
+
+            _usingNativeArray = true;
+        }
+
+        // Call this when you want to resize the native array (e.g., when connections are added/removed)
+        public void ResizeNativeArray()
+        {
+            if (!_usingNativeArray) return;
+
+            var newConnectionCount = connections.Count;
+            if (newConnectionCount == _currentConnectionCount) return;
+
+            var newArray = new NativeArray<float3>(newConnectionCount * 2, Allocator.Persistent);
+
+            // Copy existing data up to the smaller of the two sizes
+            var copyCount = math.min(_currentConnectionCount, newConnectionCount) * 2;
+            for (var i = 0; i < copyCount; i++)
+            {
+                newArray[i] = _nativeConnections[i];
+            }
+
+            // Dispose old array and assign new one
+            if (_nativeConnections.IsCreated)
+            {
+                _nativeConnections.Dispose();
+            }
+
+            _nativeConnections = newArray;
+            _currentConnectionCount = newConnectionCount;
+        }
+
+        
+
+        private void UpdateConnectionPositionsNative()
+        {
+            if (!_usingNativeArray || !_nativeConnections.IsCreated) return;
+
+            for (var i = 0; i < _currentConnectionCount; i++)
+            {
+                if (!connections[i].startNode || !connections[i].endNode || !connections[i].lineRenderer) continue;
+                // Update the native array
+                _nativeConnections[i * 2] = connections[i].startNode.transform.position;
+                _nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+
+                // Update line renderer
+                connections[i].lineRenderer.SetPosition(0, _nativeConnections[i * 2]);
+                connections[i].lineRenderer.SetPosition(1, _nativeConnections[i * 2 + 1]);
             }
         }
     }
