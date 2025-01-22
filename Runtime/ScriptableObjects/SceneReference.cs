@@ -11,7 +11,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
         public string sceneName;
         public string scenePath; 
         private Scene _scene;
-
         public Scene scene
         {
             get => _scene.IsValid() ? _scene : TryResolveScene();

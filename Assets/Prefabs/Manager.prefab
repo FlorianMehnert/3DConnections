@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  overlayEvent: {fileID: 11400000, guid: a14b0cbe87a18aac6864ed7379809ee3, type: 2}
+  overlayEvent: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
 --- !u!114 &118189344272573009
 MonoBehaviour:
   m_ObjectHideFlags: 0

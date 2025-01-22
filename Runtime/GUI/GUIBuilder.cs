@@ -20,7 +20,6 @@ namespace _3DConnections.Runtime.GUI
     {
         private NodeBuilder _nodeBuilder;
         private SceneAnalyzer _sceneAnalyzer;
-        private SceneSerializer _sceneSerializer;
         public string[] path;
         [SerializeField] private TMP_Dropdown dropdownPrefab;
         [SerializeField] private GameObject buttonPrefab;
@@ -36,12 +35,6 @@ namespace _3DConnections.Runtime.GUI
         {
             _nodeBuilder = GetComponent<NodeBuilder>();
             if (_nodeBuilder == null)
-            {
-                Debug.Log("The NodeBuilder component is missing on the manager");
-            }
-
-            _sceneSerializer = GetComponent<SceneSerializer>();
-            if (_sceneSerializer == null)
             {
                 Debug.Log("The NodeBuilder component is missing on the manager");
             }
@@ -102,10 +95,12 @@ namespace _3DConnections.Runtime.GUI
 
             if (tmpDropdown != null)
             {
+                tmpDropdown.enabled = true;
                 tmpDropdown.AddOptions(sceneOptions);
             }
             else if (standardDropdown != null)
             {
+                standardDropdown.enabled = true;
                 standardDropdown.AddOptions(sceneOptions.Select(option => new Dropdown.OptionData(option)).ToList());
             }
 

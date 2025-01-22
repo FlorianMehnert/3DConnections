@@ -319,6 +319,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasDropdown
       objectReference: {fileID: 0}
+    - target: {fileID: 2912296795345058206, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6741713482695017902, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_UiScaleMode
       value: 1
@@ -646,22 +650,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 118189344272573009, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: distance
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 118189344272573009, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: springDamping
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 118189344272573009, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: springFrequency
-      value: 0.1
-      objectReference: {fileID: 0}
     - target: {fileID: 1677649614280440048, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: overlayEvent
       value: 
-      objectReference: {fileID: 11400000, guid: a14b0cbe87a18aac6864ed7379809ee3, type: 2}
+      objectReference: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
     - target: {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: uiCanvas
       value: 

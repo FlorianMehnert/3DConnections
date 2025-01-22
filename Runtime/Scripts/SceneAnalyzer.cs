@@ -5,6 +5,7 @@ using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.Scripts
 {
@@ -42,8 +43,16 @@ namespace _3DConnections.Runtime.Scripts
             _visitedObjects.Clear();
             _processingObjects.Clear();
             _instanceIdToNode.Clear();
-            var rootGameObjects = toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects();
-            if (rootGameObjects.Length == 0)
+            GameObject[] rootGameObjects = null;
+            if (toAnalyzeSceneScriptableObject.reference.scene != null && toAnalyzeSceneScriptableObject.reference.scene.IsValid())
+                rootGameObjects = toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects();
+            else
+            {
+                // try to load the scene
+                Debug.Log(toAnalyzeSceneScriptableObject.reference.Name);
+                SceneManager.LoadScene(sceneName: toAnalyzeSceneScriptableObject.reference.sceneName, mode: LoadSceneMode.Additive);
+            }
+            if (rootGameObjects != null && rootGameObjects.Length == 0)
             {
                 Debug.Log("There are no gameObjects in the selected scene");
             }
