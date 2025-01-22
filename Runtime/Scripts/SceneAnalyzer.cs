@@ -24,7 +24,6 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private int nodeWidth = 2;
         [SerializeField] private int nodeHeight = 1;
-        [SerializeField] private Material bloomMaterial;
         [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
         [SerializeField] internal Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
         [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
@@ -32,6 +31,7 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
         [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
         [SerializeField] private int maxNodes = 1000;
+        [SerializeField] private bool ignoreTransforms;
         private int _currentNodes;
 
         // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -354,7 +354,7 @@ namespace _3DConnections.Runtime.Scripts
         /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
         private void TraverseComponent(Component component, GameObject parentNodeObject = null)
         {
-            if (component == null || _currentNodes > maxNodes) return;
+            if (component == null || _currentNodes > maxNodes || ignoreTransforms && component.GetType() == typeof(Transform)) return;
 
             var instanceId = component.GetInstanceID();
 
