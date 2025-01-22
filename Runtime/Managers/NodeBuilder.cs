@@ -12,26 +12,20 @@ namespace _3DConnections.Runtime.Managers
     /// </summary>
     public class NodeBuilder : MonoBehaviour
     {
-        [Header("Node Configuration")] [SerializeField]
-        private float nodeWidth = 2.0f;
-
-        [SerializeField] private float nodeHeight = 1.0f;
+        [Header("Node Configuration")]
         [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
-
         [SerializeField] private GameObject nodePrefab;
 
         private int _nodeCounter;
-        
-        // parent for all nodes to be spawned
         private GameObject _parentNode;
         
         // ScriptableObjects to keep track of Nodes
-        [SerializeField] private NodeGraphScriptableObject nodegraph;
+        [SerializeField] private NodeGraphScriptableObject nodeGraph;
         [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
         // new stuffs from relationanalyzer
-        [SerializeField] internal Color gameobjectColor = new(0.2f, 0.6f, 1f); // Blue
+        [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
 
 
         private void Start()
@@ -69,7 +63,7 @@ namespace _3DConnections.Runtime.Managers
                     return null;
                 case GameObjectNode goNode when goNode.GameObject != null:
                 {
-                    if (nodegraph.ContainsGameObjectNodeByID(goNode.GameObject.GetInstanceID()) != null)
+                    if (nodeGraph.ContainsGameObjectNodeByID(goNode.GameObject.GetInstanceID()) != null)
                     {
                         Debug.Log("goNode is already present");
                         return null;
@@ -112,13 +106,13 @@ namespace _3DConnections.Runtime.Managers
             var componentRenderer = nodeObject.GetComponent<Renderer>();
             if (componentRenderer)
                 componentRenderer.material.color = color;
-            if (nodegraph.Add(node)) return nodeObject.gameObject;
-            if (nodegraph.ReplaceRelatedGo(node))
+            if (nodeGraph.Add(node)) return nodeObject.gameObject;
+            if (nodeGraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
                 Debug.Log("replaced ");
-            if (nodegraph.Add(node)) return nodeObject.gameObject;
-            if (nodegraph.ReplaceRelatedGo(node))
+            if (nodeGraph.Add(node)) return nodeObject.gameObject;
+            if (nodeGraph.ReplaceRelatedGo(node))
                 Debug.Log("no successful Add nor successful Replace in nodegraph with node" + node);
             else
                 Debug.Log("replaced ");
@@ -219,7 +213,7 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
 
-            nodegraph.Clear();
+            nodeGraph.Clear();
         }
 
 
@@ -233,9 +227,9 @@ namespace _3DConnections.Runtime.Managers
                 var scriptNodes = FindScriptNodes(paths[0], out var allReferences);
                 NodeLayoutManagerV2.GridLayout(scriptNodes);
 
-                foreach (var go in scriptNodes.Select(scriptNode => SpawnNodeOnOverlay(scriptNode, gameobjectColor)))
+                foreach (var go in scriptNodes.Select(scriptNode => SpawnNodeOnOverlay(scriptNode, gameObjectColor)))
                 {
-                    nodegraph.allNodes.Add(go);
+                    nodeGraph.allNodes.Add(go);
                 }
 
                 var connections = CalculateNodeConnections(scriptNodes, allReferences);

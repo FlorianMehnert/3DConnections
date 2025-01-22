@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -17,7 +18,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
             if (overlayScene)
             {
                 if (camera) return camera;
-                var rootObjects = overlayScene.scene.GetRootGameObjects();
+                var scene = overlayScene.scene;
+                var rootObjects = scene.HasValue ? scene.Value.GetRootGameObjects() : Array.Empty<GameObject>();
                 camera = rootObjects.Select(obj => obj.GetComponentInChildren<Camera>())
                     .FirstOrDefault(overlayCamera => overlayCamera);
                 if (!camera) Debug.Log("You are missing a camera in the overlay scene");
@@ -35,16 +37,16 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
         public void ToggleOverlay()
         {
-            if (overlayScene is null || !overlayScene.scene.isLoaded) return;
+            if (overlayScene?.scene is not { isLoaded: true } ) return;
             var overlayCamera = GetCameraOfScene();
             overlayCamera.enabled = !overlayCamera.enabled;
         }
 
         public GameObject GetNodeGraph()
         {
-            if (overlayScene && overlayScene.scene.IsValid())
+            if (overlayScene && overlayScene.scene.HasValue)
             {
-                var rootObjects = overlayScene.scene.GetRootGameObjects();
+                var rootObjects = overlayScene.scene.Value.GetRootGameObjects();
                 return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
             }
 

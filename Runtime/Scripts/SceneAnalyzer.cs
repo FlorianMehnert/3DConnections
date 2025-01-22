@@ -44,8 +44,9 @@ namespace _3DConnections.Runtime.Scripts
             _processingObjects.Clear();
             _instanceIdToNode.Clear();
             GameObject[] rootGameObjects = null;
-            if (toAnalyzeSceneScriptableObject.reference.scene != null && toAnalyzeSceneScriptableObject.reference.scene.IsValid())
-                rootGameObjects = toAnalyzeSceneScriptableObject.reference.scene.GetRootGameObjects();
+            var scene = toAnalyzeSceneScriptableObject.reference.scene;
+            if (toAnalyzeSceneScriptableObject.reference.scene != null && scene.HasValue)
+                rootGameObjects = scene.Value.GetRootGameObjects();
             else
             {
                 // try to load the scene
