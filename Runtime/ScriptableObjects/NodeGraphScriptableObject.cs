@@ -95,11 +95,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             return _nodesByGameObject[gameObject];
         }
 
-        public ScriptableObjectNode GetNode(ScriptableObject scriptableObject)
-        {
-            return _nodesByGameObject.Values.OfType<ScriptableObjectNode>().FirstOrDefault(x => x.Name == scriptableObject.name);
-        }
-
         public ComponentNode GetNode(Component component)
         {
             return _nodesByGameObject.Values.OfType<ComponentNode>().FirstOrDefault(x => x.Name == component.name);

@@ -9,9 +9,9 @@ using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.Scripts
 {
-
     public class SceneAnalyzer : MonoBehaviour
     {
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         private readonly HashSet<Object> _visitedObjects = new();
         private readonly HashSet<Object> _processingObjects = new();
         private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
@@ -24,13 +24,14 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private int nodeWidth = 2;
         [SerializeField] private int nodeHeight = 1;
+        [SerializeField] private Material bloomMaterial;
         [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
         [SerializeField] internal Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
         [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
         [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
         [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
         [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
-        [SerializeField] private int maxNodes = 10000;
+        [SerializeField] private int maxNodes = 1000;
         private int _currentNodes;
 
         // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -53,6 +54,7 @@ namespace _3DConnections.Runtime.Scripts
                 Debug.Log(toAnalyzeSceneScriptableObject.reference.Name);
                 SceneManager.LoadScene(sceneName: toAnalyzeSceneScriptableObject.reference.sceneName, mode: LoadSceneMode.Additive);
             }
+
             if (rootGameObjects is { Length: 0 })
             {
                 Debug.Log("There are no gameObjects in the selected scene");
@@ -65,13 +67,14 @@ namespace _3DConnections.Runtime.Scripts
                 Debug.Log("GetRootGameObjects did return null");
                 return;
             }
+
             if (rootNode == null)
             {
                 Debug.Log("Root Node could not be spawned");
                 return;
             }
-            
-            
+
+
             foreach (var rootObject in rootGameObjects)
             {
                 TraverseGameObject(rootObject, rootNode);
@@ -131,12 +134,38 @@ namespace _3DConnections.Runtime.Scripts
             else
             {
                 var postfixNode = prefixNode != "go_" ? "_" + type.reference.GetType().Name : string.Empty;
-                nodeObject.name = prefixNode + obj.name + postfixNode;    
+                nodeObject.name = prefixNode + obj.name + postfixNode;
             }
-            
-            SetNodeColor(nodeObject, obj);
+
+            if (!IsPrefab(obj))
+            {
+                SetNodeColor(nodeObject, obj);
+                return nodeObject;
+            }
+            var renderer = nodeObject.GetComponent<Renderer>();
+            if (!renderer) return nodeObject;
+            renderer.material.EnableKeyword("_EMISSION");
+            var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;  // White with intensity
+            renderer.material.SetColor(EmissionColor, emissionColor);
             return nodeObject;
         }
+
+        /// <summary>
+        /// Checks whether the object has anything to do with prefabs.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        private static bool IsPrefab(Object obj)
+        {
+#if UNITY_2018_3_OR_NEWER
+            if (obj == null) return false;
+            Debug.Log(obj.GetType());
+            return PrefabUtility.IsPartOfAnyPrefab(obj);
+#else
+	        return PrefabUtility.GetPrefabType(go) != PrefabType.None;
+#endif
+        }
+
 
         private static void SetNodeType(NodeType type, Object obj)
         {
@@ -292,7 +321,7 @@ namespace _3DConnections.Runtime.Scripts
 
                 return;
             }
-            
+
             var needsTraversal = !_visitedObjects.Contains(scriptableObject);
             _processingObjects.Add(scriptableObject);
             try
@@ -300,25 +329,22 @@ namespace _3DConnections.Runtime.Scripts
                 var nodeObject = GetOrSpawnNode(scriptableObject, parentNodeObject);
                 if (!needsTraversal) return;
                 _visitedObjects.Add(scriptableObject);
-                
-                
+
+
 #if UNITY_EDITOR
                 var serializedObject = new SerializedObject(scriptableObject);
                 var property = serializedObject.GetIterator();
                 while (property.NextVisible(true))
                 {
                     if (property.propertyType != SerializedPropertyType.ObjectReference || property.objectReferenceValue == null) continue;
-                    Debug.Log($"'{scriptableObject.name}' references '{property.objectReferenceValue}' in field '{property.name}'");
                     TraverseGameObject(property.objectReferenceValue as GameObject, nodeObject);
                 }
 #endif
-                
             }
             finally
             {
                 _processingObjects.Remove(scriptableObject);
             }
-            
         }
 
         /// <summary>
@@ -409,6 +435,7 @@ namespace _3DConnections.Runtime.Scripts
             {
                 springSimulation.CleanupNativeArrays();
             }
+
             _instanceIdToNode.Clear();
             _visitedObjects.Clear();
             _processingObjects.Clear();

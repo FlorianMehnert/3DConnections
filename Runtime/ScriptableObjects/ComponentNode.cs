@@ -3,7 +3,6 @@ using _3DConnections.Runtime.ScriptableObjects;
 using JetBrains.Annotations;
 using Runtime;
 using UnityEngine;
-using UnityEngine.TextCore;
 
 namespace _3DConnections.Runtime
 {

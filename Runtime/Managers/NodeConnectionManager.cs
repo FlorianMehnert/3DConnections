@@ -11,6 +11,8 @@ namespace _3DConnections.Runtime.Managers
     public class NodeConnectionManager : MonoBehaviour
     {
         private static NodeConnectionManager _instance;
+        
+        [Header("Component based physics sim")]
         public float springFrequency = 2.0f;
         public float springDamping = 0.5f;
         public float distance = 1f;
@@ -136,6 +138,9 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
+        /// <summary>
+        /// DO NOT CLEAR, MIGHT BE USEFUL LATER WHEN READDING ITS BUTTON
+        /// </summary>
         public void UpdateSpringParameters()
         {
             foreach (var spring in connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>()).SelectMany(springComponents => springComponents))

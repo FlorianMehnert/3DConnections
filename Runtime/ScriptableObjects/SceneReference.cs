@@ -24,22 +24,20 @@ namespace _3DConnections.Runtime.ScriptableObjects
         [CanBeNull]
         private Scene? TryResolveScene()
         {
-            var resolvedScene = SceneManager.GetSceneByPath(scenePath);
-            if (!resolvedScene.IsValid())
+            var resolvedScene = SceneManager.GetSceneByName(sceneName);
+            bool found = false;
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
             {
-                resolvedScene = SceneManager.GetSceneByName(sceneName);
+                if (!SceneManager.GetSceneAt(i).IsValid() || SceneManager.GetSceneAt(i).name != sceneName) continue;
+                resolvedScene = SceneManager.GetSceneAt(i);
+                found = true;
+                break;
             }
-            if (!resolvedScene.IsValid())
-            {
-                Debug.Log("could not resolve scene by name or path");
-            }
-
-            if (!resolvedScene.IsValid())
-            {
-                return null;
-            }
-            
-            return resolvedScene;
+            if (!found || resolvedScene.IsValid()) return resolvedScene;
+            Debug.Log("trying to resolve the following sceneName: " + sceneName);
+            Debug.Log("path of invalid scene is: " + resolvedScene.path +  " resolvedScene.name is: " + resolvedScene.name);
+            Debug.Log("could not resolve scene by name or path");
+            return null;
         }
 
         /// <summary>

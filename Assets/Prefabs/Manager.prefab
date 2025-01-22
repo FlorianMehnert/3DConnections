@@ -51,15 +51,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00a94b1b9507453db21821e45a5016ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  outlineScale: 1.1
   targetLayerName: OverlayScene
   nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
-  contextMenuPrefab: {fileID: 1286671522656961090, guid: c5403d3cbf929a73ab01b70bfcd5c3a8, type: 3}
   parentCanvas: {fileID: 0}
-  highlightPrefab: {fileID: 3140014340197302825, guid: c4ccb7828916724bdb336649a11a34cf, type: 3}
   highlightMaterial: {fileID: 2100000, guid: c97c0b6f87487e34ca122a2aeb0a9201, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  nodegraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   doubleClickThreshold: 0.3
   pingObjectInEditor: 1
   selectionRectangle: {fileID: 0}
@@ -108,14 +105,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 961d1020e77bd83e2a71b8728ca824db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeWidth: 2
-  nodeHeight: 1
   nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
-  nodegraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  gameobjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
 --- !u!114 &1687708456964858736
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,14 +159,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 961d1020e77bd83e2a71b8728ca824db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeWidth: 2
-  nodeHeight: 1
   nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
-  nodegraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   toAnalyzeSceneScriptableObject: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  gameobjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
 --- !u!114 &8876743746579018258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190,7 +183,7 @@ MonoBehaviour:
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
   nodeWidth: 2
   nodeHeight: 1
-  gameobjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
   componentColor: {r: 0.4, g: 0.8, b: 0.4, a: 1}
   scriptableObjectColor: {r: 0.8, g: 0.4, b: 0.8, a: 1}
   parentChildConnection: {r: 0.5, g: 0.5, b: 1, a: 1}

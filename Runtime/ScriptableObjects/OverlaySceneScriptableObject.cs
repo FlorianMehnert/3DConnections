@@ -12,6 +12,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
     {
         public SceneReference overlayScene;
         public Camera camera;
+        [SerializeField] private GameObject parentNodeObject;
 
         public Camera GetCameraOfScene()
         {
@@ -46,8 +47,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             if (overlayScene && overlayScene.scene.HasValue)
             {
+                if (parentNodeObject != null)
+                    return parentNodeObject;
                 var rootObjects = overlayScene.scene.Value.GetRootGameObjects();
-                return rootObjects.FirstOrDefault(obj => obj.name == "node_graph");
+                return rootObjects.FirstOrDefault(obj => obj.name == "ParentNodesObject");
             }
 
             Debug.Log("overlay scene is not properly configured");

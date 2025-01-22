@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.ScriptableObjects;
@@ -11,12 +12,19 @@ namespace _3DConnections.Runtime.Managers
 {
     public class CubeSelector : MonoBehaviour
     {
-        [SerializeField] private float outlineScale = 1.1f;
+        [Header("Layer settings")]
         [SerializeField] private string targetLayerName = "OverlayLayer";
+        [SerializeField] private OverlaySceneScriptableObject overlay;
+        
+        [Header("Node specific settings")]
+        [SerializeField] private NodeGraphScriptableObject nodeGraph;
+        [SerializeField] private Canvas parentCanvas;
+        
+        [Header("highlight settings")]
         [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
+        [SerializeField] private Material highlightMaterial;
         private readonly HashSet<GameObject> _selectedCubes = new();
         private readonly Dictionary<GameObject, Vector3> _selectedCubesStartPositions = new();
-        private readonly Dictionary<GameObject, GameObject> _outlineCubes = new();
         private readonly Dictionary<GameObject, bool> _markUnselect = new();
         private Camera _displayCamera;
         private int _targetLayerMask;
@@ -27,13 +35,8 @@ namespace _3DConnections.Runtime.Managers
         private int _indexOfCurrentlyDraggedCube;
         private GameObject _toBeDeselectedCube;
         private GameObject _currentContextMenu;
-        [SerializeField] private GameObject contextMenuPrefab;
-        [SerializeField] private Canvas parentCanvas;
-        [SerializeField] private GameObject highlightPrefab;
-        [SerializeField] private Material highlightMaterial;
-        [SerializeField] private OverlaySceneScriptableObject overlay;
 
-        [SerializeField] private NodeGraphScriptableObject nodegraph;
+        
 
         public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
@@ -178,7 +181,7 @@ namespace _3DConnections.Runtime.Managers
                     _currentlyDraggedCube = hitObject;
                     
                     // this is used in the camera handler later to focus on this object
-                    nodegraph.currentlySelectedGameObject = hitObject;
+                    nodeGraph.currentlySelectedGameObject = hitObject;
 
                     SelectCube(hitObject);
 
@@ -204,7 +207,7 @@ namespace _3DConnections.Runtime.Managers
                         DeselectAllCubes();
                         
                         // unset currentlySelectedGO for camera handler to allow for editor selection
-                        nodegraph.currentlySelectedGameObject = null;
+                        nodeGraph.currentlySelectedGameObject = null;
                         CloseContextMenu();
                     }
                 }
@@ -214,11 +217,6 @@ namespace _3DConnections.Runtime.Managers
             {
                 UpdateSelectionRectangle();
                 SelectObjectsInRectangle();
-            }
-
-            if (Input.GetMouseButtonDown(1) && hit.collider)
-            {
-                ShowContextMenu(hit.collider.gameObject);
             }
 
 
@@ -284,7 +282,6 @@ namespace _3DConnections.Runtime.Managers
             {
                 if (_dragStart != null && _dragEnd != null && (Vector3)_dragEnd - (Vector3)_dragStart == Vector3.zero)
                 {
-                    RemoveOutlineCube(_currentlyDraggedCube);
                     _selectedCubes.Remove(_currentlyDraggedCube);
                     if (_currentlyDraggedCube.GetComponent<Collider2D>())
                     {
@@ -391,6 +388,19 @@ namespace _3DConnections.Runtime.Managers
                 Selection.activeGameObject = cube;
             }
 #endif
+            var coRenderer = cube.GetComponent<Renderer>();
+            
+            if (coRenderer)
+            {
+                Debug.Log("has coRenderer");
+                var coloredObject = cube.GetComponent<ColoredObject>();
+                if (!coloredObject)
+                {
+                    Debug.Log("has no coloredObject");
+                    var coColoredObject = cube.AddComponent<ColoredObject>();
+                    coColoredObject.SetOriginalColor(coRenderer.sharedMaterial.color);
+                }
+            }
             SetColorToInvertedSelectionColor(cube);
             // CreateOutlineCube(cube);
         }
@@ -402,36 +412,12 @@ namespace _3DConnections.Runtime.Managers
             {
                 // RemoveOutlineCube(cube);
                 if (!cube.GetComponent<Collider2D>()) continue;
+                if (!cube.GetComponent<ColoredObject>()) continue;
                 var selectable = cube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
                 selectable.SetToOriginalColor();
             }
 
             _selectedCubes.Clear();
-        }
-
-        private void ShowContextMenu(GameObject hitObject)
-        {
-            if (_currentContextMenu)
-            {
-                Destroy(_currentContextMenu);
-            }
-
-            _currentContextMenu = Instantiate(contextMenuPrefab, parentCanvas.transform);
-            _currentContextMenu.SetActive(true);
-            var col = hitObject.GetComponent<Collider2D>();
-            if (!col)
-            {
-                return;
-            }
-
-            var worldCenter = col
-                ? col.bounds.center
-                : // Get the exact center of the object (more accurate)
-                hitObject.transform.position; // Fallback to the transform's position
-            var rectTransform = _currentContextMenu.GetComponent<RectTransform>();
-            rectTransform.position = worldCenter;
-            var pos = _currentContextMenu.transform.localPosition;
-            _currentContextMenu.GetComponent<RectTransform>().localPosition = new Vector3(pos.x, pos.y, 1);
         }
 
 
@@ -451,36 +437,6 @@ namespace _3DConnections.Runtime.Managers
             var invertedColor = Color.HSVToRGB((h + .5f) % 1f, 1f, 1f);
             meshRenderer.material.color = invertedColor;
             selectionColor = invertedColor;
-        }
-
-        /// <summary>
-        /// Spawn Highlight prefab and scale to fit the cube currently selected
-        /// </summary>
-        /// <param name="originalCube"></param>
-        private void CreateOutlineCube(GameObject originalCube)
-        {
-            // Destroy any existing outline for this cube
-            RemoveOutlineCube(originalCube);
-            var highlight = Instantiate(highlightPrefab, originalCube.transform);
-            DestroyImmediate(highlight.gameObject.GetComponent<Collider2D>());
-            highlight.transform.SetParent(originalCube.transform, false);
-            highlight.transform.localScale = new Vector3(outlineScale, outlineScale, .8f);
-            highlight.GetComponent<MeshRenderer>().sharedMaterial = highlightMaterial;
-            highlight.transform.localPosition = Vector3.zero;
-
-            highlight.layer = originalCube.layer;
-
-            _outlineCubes[originalCube] = highlight;
-        }
-
-        private void RemoveOutlineCube(GameObject originalCube)
-        {
-            if (!_outlineCubes.TryGetValue(originalCube, out var outlineCube)) return;
-            Destroy(outlineCube);
-            if (!originalCube || !originalCube.GetComponent<ColoredObject>()) return;
-            var selectable = originalCube.GetComponent<ColoredObject>();
-            selectable.SetToOriginalColor();
-            _outlineCubes.Remove(originalCube);
         }
 
         public int GetSelectionCount()

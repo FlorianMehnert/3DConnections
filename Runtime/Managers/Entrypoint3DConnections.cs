@@ -13,7 +13,8 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            SceneManager.LoadScene(sceneName: overlay.overlayScene.Name, mode: LoadSceneMode.Additive);
+            var sceneName = overlay.overlayScene.Name;
+            SceneManager.LoadScene(sceneName: sceneName, mode: LoadSceneMode.Additive);
             if (disableSceneOnOverlay)
                 ToggleRootObjectsInSceneWhileOverlay();
         }

@@ -1,3 +1,14 @@
 fileFormatVersion: 2
 guid: 9749693cc26247438a4390f757a1e808
-timeCreated: 1734954856
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - overlayScene: {fileID: 11400000, guid: 498c25605b2310187b119768b59b5296, type: 2}
+  - camera: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+  - parentNodeObject: {fileID: 2780830166327212902, guid: 3e161113278a9733abadbdaffcbd588e, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

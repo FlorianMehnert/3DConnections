@@ -90,14 +90,12 @@ namespace _3DConnections.Runtime.Managers
                 {
                     GameObjectNode => "GameObject",
                     ComponentNode => "Component",
-                    ScriptableObjectNode => "ScriptableObject",
                     _ => type.nodeTypeName
                 };
                 type.reference = node switch
                 {
                     GameObjectNode gameObjectNode => gameObjectNode.GameObject,
                     ComponentNode componentNode => componentNode.Component.gameObject,
-                    ScriptableObjectNode => null,
                     _ => null
                 };
             }
