@@ -129,6 +129,7 @@ MonoBehaviour:
   damping: 0.02
   colliderRadius: 5
   collisionResponseStrength: 0.1
+  removePhysicsEvent: {fileID: 11400000, guid: 0abdd5b64a6d550e29bde2213c4f3105, type: 2}
 --- !u!114 &1748416101785934847
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -147,6 +148,7 @@ MonoBehaviour:
   uiCanvas: {fileID: 0}
   overlaySceneConfig: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  removePhysicsEvent: {fileID: 11400000, guid: 0abdd5b64a6d550e29bde2213c4f3105, type: 2}
 --- !u!114 &2761152558827232600
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,6 +180,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  parentNode: {fileID: 0}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
   nodeWidth: 2
   nodeHeight: 1
@@ -202,6 +205,7 @@ MonoBehaviour:
   damping: 0.02
   colliderRadius: 5
   collisionResponseStrength: 0.1
+  removePhysicsEvent: {fileID: 11400000, guid: 0abdd5b64a6d550e29bde2213c4f3105, type: 2}
 --- !u!114 &3086584372877910348
 MonoBehaviour:
   m_ObjectHideFlags: 0
