@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 1748416101785934847}
   - component: {fileID: 2761152558827232600}
   - component: {fileID: 8876743746579018258}
+  - component: {fileID: 438415427359241478}
+  - component: {fileID: 3086584372877910348}
   m_Layer: 6
   m_Name: Manager
   m_TagString: Untagged
@@ -52,11 +54,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetLayerName: OverlayScene
-  nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
-  parentCanvas: {fileID: 0}
-  highlightMaterial: {fileID: 2100000, guid: c97c0b6f87487e34ca122a2aeb0a9201, type: 2}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  parentCanvas: {fileID: 0}
+  nodeColorsScriptableObject: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
+  highlightMaterial: {fileID: 2100000, guid: c97c0b6f87487e34ca122a2aeb0a9201, type: 2}
   doubleClickThreshold: 0.3
   pingObjectInEditor: 1
   selectionRectangle: {fileID: 0}
@@ -190,4 +192,37 @@ MonoBehaviour:
   componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
   referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
   maxNodes: 1000
+  ignoreTransforms: 1
   prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+--- !u!114 &438415427359241478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616c5a49057043998273191feea20a1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  computeShader: {fileID: 7200000, guid: dae5f5e648014affb9e80da422bf6545, type: 3}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  stiffness: 0.1
+  damping: 0.02
+  colliderRadius: 5
+  collisionResponseStrength: 0.1
+--- !u!114 &3086584372877910348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e84c1b199ec7f3b9dd7304f9b0a89e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  analyzeSceneConfig: {fileID: 11400000, guid: 06e6d946569f263da9e4331731efb6c9, type: 2}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}

@@ -12,3 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acb794676b99680029ad560e09081a63, type: 3}
   m_Name: NodeGraph
   m_EditorClassIdentifier: 
+  currentlySelectedGameObject: {fileID: 0}
+  currentlySelectedBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  allNodes: []
