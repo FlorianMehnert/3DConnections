@@ -12,16 +12,19 @@ namespace _3DConnections.Runtime.Managers
 {
     public class CubeSelector : MonoBehaviour
     {
-        [Header("Layer settings")]
-        [SerializeField] private string targetLayerName = "OverlayLayer";
+        [Header("Layer settings")] [SerializeField]
+        private string targetLayerName = "OverlayLayer";
+
         [SerializeField] private OverlaySceneScriptableObject overlay;
-        
-        [Header("Node specific settings")]
-        [SerializeField] private NodeGraphScriptableObject nodeGraph;
+
+        [Header("Node specific settings")] [SerializeField]
+        private NodeGraphScriptableObject nodeGraph;
+
         [SerializeField] private Canvas parentCanvas;
-        
-        [Header("highlight settings")]
-        [SerializeField] private NodeColorsScriptableObject nodeColorsScriptableObject;
+
+        [Header("highlight settings")] [SerializeField]
+        private NodeColorsScriptableObject nodeColorsScriptableObject;
+
         [SerializeField] private Material highlightMaterial;
         private readonly HashSet<GameObject> _selectedCubes = new();
         private readonly Dictionary<GameObject, Vector3> _selectedCubesStartPositions = new();
@@ -36,7 +39,6 @@ namespace _3DConnections.Runtime.Managers
         private GameObject _toBeDeselectedCube;
         private GameObject _currentContextMenu;
 
-        
 
         public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
@@ -179,7 +181,7 @@ namespace _3DConnections.Runtime.Managers
 
                     var hitObject = hit.collider.gameObject;
                     _currentlyDraggedCube = hitObject;
-                    
+
                     // this is used in the camera handler later to focus on this object
                     nodeGraph.currentlySelectedGameObject = hitObject;
 
@@ -205,7 +207,7 @@ namespace _3DConnections.Runtime.Managers
                     if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
                     {
                         DeselectAllCubes();
-                        
+
                         // unset currentlySelectedGO for camera handler to allow for editor selection
                         nodeGraph.currentlySelectedGameObject = null;
                         CloseContextMenu();
@@ -274,6 +276,7 @@ namespace _3DConnections.Runtime.Managers
                     {
                         selectionRectangle.gameObject.SetActive(false);
                     }
+                    nodeGraph.currentlySelectedBounds = GetSelectionBounds();
                 }
             }
 
@@ -389,7 +392,7 @@ namespace _3DConnections.Runtime.Managers
             }
 #endif
             var coRenderer = cube.GetComponent<Renderer>();
-            
+
             if (coRenderer)
             {
                 Debug.Log("has coRenderer");
@@ -401,23 +404,38 @@ namespace _3DConnections.Runtime.Managers
                     coColoredObject.SetOriginalColor(coRenderer.sharedMaterial.color);
                 }
             }
+
             SetColorToInvertedSelectionColor(cube);
             // CreateOutlineCube(cube);
         }
 
         private void DeselectAllCubes()
         {
-            // Deselect all cubes
-            foreach (var cube in _selectedCubes)
+            foreach (var selectable in from cube in _selectedCubes where cube.GetComponent<Collider2D>() where cube.GetComponent<ColoredObject>() select cube.GetComponent<Collider2D>().GetComponent<ColoredObject>())
             {
-                // RemoveOutlineCube(cube);
-                if (!cube.GetComponent<Collider2D>()) continue;
-                if (!cube.GetComponent<ColoredObject>()) continue;
-                var selectable = cube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
                 selectable.SetToOriginalColor();
             }
 
             _selectedCubes.Clear();
+        }
+
+        public Bounds GetSelectionBounds()
+        {
+            if (_selectedCubes.Count == 0) return new Bounds();
+            var selectedCubesArray = _selectedCubes.ToArray();
+            var selectionBounds = selectedCubesArray[0].GetComponent<Collider2D>().bounds;
+
+            for (var i = 1; i < _selectedCubes.Count; i++)
+            {
+                var currentCollider2D = selectedCubesArray[i].GetComponent<Collider2D>();
+                if (currentCollider2D)
+                {
+                    selectionBounds.Encapsulate(currentCollider2D.bounds);
+                }
+            }
+
+            return selectionBounds;
+
         }
 
 
