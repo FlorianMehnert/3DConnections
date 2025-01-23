@@ -96,8 +96,6 @@ namespace _3DConnections.Runtime.ComputePhysics
                 typeof(Rigidbody2D)
             };
             nodeGraph.NodesRemoveComponents(types);
-
-            ConvertCollidersToTriggers();
         }
 
         private void Update()
@@ -135,18 +133,6 @@ namespace _3DConnections.Runtime.ComputePhysics
                         nodeData[i].Position.y,
                         _nodes[i].position.z
                     );
-                }
-            }
-        }
-
-        private void ConvertCollidersToTriggers()
-        {
-            foreach (var node in nodeGraph.AllNodeTransforms2D)
-            {
-                var col = node.GetComponent<Collider2D>();
-                if (col != null)
-                {
-                    col.isTrigger = true;
                 }
             }
         }

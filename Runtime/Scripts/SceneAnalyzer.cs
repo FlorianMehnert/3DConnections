@@ -1,6 +1,5 @@
 using System.Linq;
 using _3DConnections.Runtime.BurstPhysics;
-using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;

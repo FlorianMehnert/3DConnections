@@ -1,8 +1,5 @@
-using _3DConnections.Runtime.Managers;
-using _3DConnections.Runtime.ScriptableObjects;
 using _3DConnections.Runtime.Scripts;
 using UnityEditor;
-using UnityEngine;
 
 namespace _3DConnections.Editor
 {
@@ -14,7 +11,6 @@ namespace _3DConnections.Editor
             DrawDefaultInspector();
 
             var controller = (SceneAnalyzer)target;
-            
         }
     }
 }

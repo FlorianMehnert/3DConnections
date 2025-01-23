@@ -6,8 +6,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace _3DConnections.Runtime.Managers
-{
     /// <summary>
     /// Manager for SceneSwitching and interacting with the second display
     /// </summary>
@@ -106,4 +104,3 @@ namespace _3DConnections.Runtime.Managers
             StartCoroutine(LoadSceneCoroutine(sceneName, onComplete));
         }
     }
-}
