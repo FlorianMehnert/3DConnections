@@ -16,7 +16,6 @@ namespace _3DConnections.Runtime.Scripts
         private readonly HashSet<Object> _visitedObjects = new();
         private readonly HashSet<Object> _processingObjects = new();
         private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
-        [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
         // required for node spawning
@@ -46,31 +45,17 @@ namespace _3DConnections.Runtime.Scripts
             _visitedObjects.Clear();
             _processingObjects.Clear();
             _instanceIdToNode.Clear();
-            GameObject[] rootGameObjects = null;
-            var scene = toAnalyzeSceneScriptableObject.reference.scene;
-            if (toAnalyzeSceneScriptableObject.reference.scene != null && scene.HasValue && scene.Value.IsValid())
+            var sceneHandler = GetComponent<SceneHandler>();
+            Scene scene = default;
+            if (sceneHandler != null)
             {
-                rootGameObjects = scene.Value.GetRootGameObjects();
-                FinishAnalyzeScene(rootGameObjects);
+                scene = sceneHandler.analyzeScene;
             }
-            else
+            
+            if (scene.IsValid())
             {
-                // try to load the scene
-                Debug.Log("load scene by name: " + toAnalyzeSceneScriptableObject.reference.sceneName);
-                var sceneHandler = gameObject.GetComponent<SceneHandler>();
-                if (sceneHandler != null)
-                {
-                    sceneHandler.LoadSceneWithCallback(toAnalyzeSceneScriptableObject.reference.sceneName, () =>
-                    {
-                        var sceneByName = SceneManager.GetSceneByName(toAnalyzeSceneScriptableObject.reference.sceneName);
-                        LoadSceneCallback(sceneByName, out var afterLoadGameObjects);
-                        FinishAnalyzeScene(afterLoadGameObjects);
-                    });
-                }
-                else
-                {
-                    Debug.Log("sceneHandler is missing while trying to load scene in analyzeScene");
-                }
+                var rootGameObjects = scene.GetRootGameObjects();
+                FinishAnalyzeScene(rootGameObjects);
             }
         }
 
@@ -84,16 +69,17 @@ namespace _3DConnections.Runtime.Scripts
             }
 
             rootGameObjects = sceneByName.GetRootGameObjects();
+            Debug.Log("there are " + rootGameObjects.Length + " root gameObjects during the callback of load scene");
         }
 
         private void FinishAnalyzeScene(GameObject[] rootGameObjects)
         {
-            var rootNode = SpawnNode(null);
             if (rootGameObjects == null)
             {
-                Debug.Log("GetRootGameObjects did return null");
+                Debug.Log("Trying to finalize analyzeScene with not root gameobjects");
                 return;
             }
+            var rootNode = SpawnNode(null);
 
             if (rootNode == null)
             {
@@ -109,10 +95,6 @@ namespace _3DConnections.Runtime.Scripts
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes is { Count: 0 })
             {
                 nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
-                if (nodeGraph.allNodes == null || nodeGraph.allNodes.Count == 0)
-                {
-                    nodeGraph.allNodes = new List<GameObject>();
-                }
             }
                 
             if (nodeGraph.allNodes is { Count: > 0 })

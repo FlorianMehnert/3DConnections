@@ -21,7 +21,6 @@ namespace _3DConnections.Runtime.Managers
         
         // ScriptableObjects to keep track of Nodes
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
-        [SerializeField] private ToAnalyzeSceneScriptableObject toAnalyzeSceneScriptableObject;
         [SerializeField] private OverlaySceneScriptableObject overlay;
 
         // new stuffs from relation analyzer

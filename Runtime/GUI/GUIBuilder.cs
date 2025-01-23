@@ -26,7 +26,6 @@ namespace _3DConnections.Runtime.GUI
         [SerializeField] private GameObject buttonPrefab;
         [SerializeField] private Canvas uiCanvas;
         private TMP_Dropdown _dropdownInstance;
-        [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
         [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
@@ -67,8 +66,7 @@ namespace _3DConnections.Runtime.GUI
             // Instantiate the dropdown prefab as child of canvas
             var dropdownInstance = Instantiate(dropdownPrefab, uiCanvas.transform);
             _dropdownInstance = dropdownInstance;
-            _dropdownInstance.enabled = false;
-            dropdownInstance.enabled = true;
+            _dropdownInstance.enabled = true;
 
             // Get the dropdown component (works with both standard and TMP dropdowns)
             var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
@@ -109,17 +107,13 @@ namespace _3DConnections.Runtime.GUI
 
             if (sceneOptions.Count > 0)
             {
-                var initialSceneRef = ScriptableObject.CreateInstance<SceneReference>();
-                initialSceneRef.useStaticValues = false;
+                   
                 var scene = SceneManager.GetSceneByName(sceneOptions.First());
-                initialSceneRef.scene = scene;
-                initialSceneRef.sceneName = scene.name;
-                initialSceneRef.scenePath = scene.path;
-
-                analyzeSceneConfig.reference = initialSceneRef;
+                var sceneHandler = GetComponent<SceneHandler>();
+                if (sceneHandler)
+                    sceneHandler.analyzeScene = scene;
             }
-
-
+            
             var rectTransform = dropdownInstance.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = GetButtonPosition();
             ScriptableObject.CreateInstance<SceneReference>();
@@ -158,12 +152,21 @@ namespace _3DConnections.Runtime.GUI
                 CreateButton("Burst Sim", 14, () =>
                 {
                     OnDropdownValueChanged(_dropdownInstance.value);
+                    Debug.Log("starting to analyze scene using " + _dropdownInstance.options[_dropdownInstance.value].text);
                     _sceneAnalyzer.AnalyzeScene();
                     NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
                     NodeLayoutManagerV2.LayoutForest();
-                    nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                    springSimulation.Simulate();
+                    if (nodeGraph.allNodes != null)
+                    {
+                        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                        NodeConnectionManager.Instance.AddSpringsToConnections();
+                        springSimulation.Simulate();                        
+                    }
+                    else
+                    {
+                        Debug.Log("allNodes is null");
+                    }
+                    
                 });
             }
 
@@ -225,20 +228,12 @@ namespace _3DConnections.Runtime.GUI
             var selectedScene = _dropdownInstance.options[index].text;
             var scene = SceneManager.GetSceneByName(selectedScene);
 
-            if (scene.IsValid())
+            var sceneHandler = GetComponent<SceneHandler>();
+            if (sceneHandler != null)
             {
-                analyzeSceneConfig.reference.scene = scene;
-                analyzeSceneConfig.reference.useStaticValues = false;
+                sceneHandler.analyzeScene = scene;
             }
-            else
-            {
-                analyzeSceneConfig.reference.useStaticValues = true;
-            }
-            analyzeSceneConfig.reference.sceneName = _dropdownInstance.options[index].text;
-            analyzeSceneConfig.reference.scenePath = scene.path;
-            var sceneByName = SceneManager.GetSceneByName(analyzeSceneConfig.reference.Name);
-            SetButtonsEnabled(sceneByName.IsValid() && sceneByName.isLoaded);
-            Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " with path: " + analyzeSceneConfig.reference.Path);
+            SetButtonsEnabled(sceneHandler.analyzeScene.IsValid());
         }
 
         private void SetButtonsEnabled(bool buttonEnabled = false)

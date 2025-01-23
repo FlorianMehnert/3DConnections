@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -213,20 +214,53 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// Add the given Component to all nodes. Sets the gravityScale to 0 and freezeRotation if set to Rigidbody2D
         /// </summary>
         /// <param name="componentType">Type of Component to be added to all nodes</param>
-        public void NodesAddComponent(System.Type componentType)
+        // public void NodesAddComponent(Type componentType)
+        // {
+        //     _workingOnAllNodes = true;
+        //     if (allNodes == null || allNodes.Count == 0) return;
+        //     var copy = new GameObject[allNodes.Count];
+        //     allNodes.CopyTo(copy);
+        //     foreach (var node in from node in copy
+        //              let existingComponent = node.GetComponent(componentType)
+        //              where existingComponent == null
+        //              select node)
+        //     {
+        //         var newComponent = node.AddComponent(componentType);
+        //         if (newComponent is not Rigidbody2D rigidbody2D) continue;
+        //         rigidbody2D.gravityScale = 0;
+        //         rigidbody2D.freezeRotation = true;
+        //     }
+        // }
+        
+        public void NodesAddComponent(Type componentType)
         {
-            _workingOnAllNodes = true;
-            if (allNodes.Count == 0) return;
-            var copy = allNodes.ToArray();
-            foreach (var node in from node in copy
-                     let existingComponent = node.GetComponent(componentType)
-                     where existingComponent == null
-                     select node)
+            if (componentType == null)
+                throw new ArgumentNullException(nameof(componentType));
+
+            if (allNodes?.Count == 0)
+                return;
+            try
             {
-                var newComponent = node.AddComponent(componentType);
-                if (newComponent is not Rigidbody2D rigidbody2D) continue;
-                rigidbody2D.gravityScale = 0;
-                rigidbody2D.freezeRotation = true;
+                if (allNodes == null) return;
+                var nodeCopy = allNodes.ToArray();
+
+                foreach (var node in nodeCopy)
+                {
+                    if (node == null) continue;
+                    if (node.GetComponent(componentType) != null) continue;
+                    var newComponent = node.AddComponent(componentType);
+                    if (newComponent is not Rigidbody2D rigidbody2D) continue;
+                    rigidbody2D.gravityScale = 0;
+                    rigidbody2D.freezeRotation = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error adding component {componentType.Name}: {ex.Message}");
+            }
+            finally 
+            {
+                _workingOnAllNodes = false;
             }
         }
 
@@ -255,11 +289,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
         public void NodesRemoveComponents(List<System.Type> componentTypes)
         {
             var orderedTypes = componentTypes.OrderBy(t => t != typeof(SpringJoint2D)).ToList();
-            foreach (var orderedType in orderedTypes)
-            {
-                Debug.Log(orderedType);
-            }
-
             foreach (var componentType in orderedTypes)
             {
                 NodesRemoveComponent(componentType);

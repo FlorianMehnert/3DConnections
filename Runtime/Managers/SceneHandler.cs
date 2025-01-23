@@ -18,8 +18,9 @@ namespace _3DConnections.Runtime.Managers
 
         private TMP_Dropdown _sceneDropdown;
         private SceneManager _sceneManager;
-        [SerializeField] private ToAnalyzeSceneScriptableObject analyzeSceneConfig;
         [SerializeField] private OverlaySceneScriptableObject overlay;
+        [SerializeField] public Scene analyzeScene;
+        [SerializeField] public Scene overlayScene;
 
 
         private static bool IsSceneLoaded(string sceneName)

@@ -54,8 +54,6 @@ namespace _3DConnections.Runtime
         public void LayoutForest(List<TreeNode> roots)
         {
             if (roots == null || roots.Count == 0) return;
-            Debug.Log("in layoutforest " + roots.Count);
-            // For single root, use center position
             if (roots.Count == 1)
             {
                 LayoutSingleTree(roots[0], Vector3.zero);
