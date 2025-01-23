@@ -5,6 +5,7 @@ using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.Scripts
@@ -46,7 +47,7 @@ namespace _3DConnections.Runtime.Scripts
             _instanceIdToNode.Clear();
             GameObject[] rootGameObjects = null;
             var scene = toAnalyzeSceneScriptableObject.reference.scene;
-            if (toAnalyzeSceneScriptableObject.reference.scene != null && scene.HasValue)
+            if (toAnalyzeSceneScriptableObject.reference.scene != null && scene.HasValue && scene.Value.IsValid())
                 rootGameObjects = scene.Value.GetRootGameObjects();
             else
             {
@@ -108,7 +109,6 @@ namespace _3DConnections.Runtime.Scripts
             nodeObject.transform.localPosition = new Vector3(0, 0, 0);
             nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
 
-
             // TODO: try to make this more dynamic
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
 
@@ -120,6 +120,35 @@ namespace _3DConnections.Runtime.Scripts
                 type.reference = obj;
             }
 
+            // add text
+            var textObj = new GameObject("Text");
+            textObj.transform.SetParent(nodeObject.transform);
+            textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
+
+            var text = textObj.AddComponent<TextMeshPro>();
+            text.text = obj != null ? obj.name : "null object";
+            text.alignment = TextAlignmentOptions.Center;
+            text.fontSize = 1.5f;
+
+#if UNITY_EDITOR
+            if (obj is Component componentObject)
+            {
+                var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
+                var iconObj = new GameObject("Icon");
+                if (componentIcon != null)
+                {
+                    // Create an icon object and set the sprite dynamically
+                    iconObj.transform.SetParent(nodeObject.transform);
+                    iconObj.transform.localPosition = new Vector3(0, 0, -1f);
+
+                    var iconRenderer = iconObj.AddComponent<SpriteRenderer>();
+                    iconRenderer.sprite = TextureToSprite(componentIcon);
+                    iconRenderer.sortingOrder = 1;
+                }
+            }
+#endif
+
+            // set name
             var prefixNode = "" + type.nodeTypeName switch
             {
                 "GameObject" => "go_",
@@ -127,6 +156,8 @@ namespace _3DConnections.Runtime.Scripts
                 "ScriptableObject" => "so_",
                 _ => ""
             };
+
+            // handle initial node
             if (type.reference == null)
             {
                 nodeObject.name = "tfRoot";
@@ -137,17 +168,24 @@ namespace _3DConnections.Runtime.Scripts
                 nodeObject.name = prefixNode + obj.name + postfixNode;
             }
 
+            // handle prefabs
             if (!IsPrefab(obj))
             {
                 SetNodeColor(nodeObject, obj);
                 return nodeObject;
             }
+
             var renderer = nodeObject.GetComponent<Renderer>();
             if (!renderer) return nodeObject;
             renderer.material.EnableKeyword("_EMISSION");
-            var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;  // White with intensity
+            var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
             renderer.material.SetColor(EmissionColor, emissionColor);
             return nodeObject;
+        }
+
+        private Sprite TextureToSprite(Texture2D texture)
+        {
+            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
         }
 
         /// <summary>
@@ -257,7 +295,7 @@ namespace _3DConnections.Runtime.Scripts
         /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
         private void TraverseGameObject(GameObject toTraverseGameObject, GameObject parentNodeObject = null, bool isReference = false)
         {
-            if (toTraverseGameObject == null || _currentNodes > maxNodes) return;
+            if (toTraverseGameObject == null || _currentNodes >= maxNodes) return;
 
             var instanceId = toTraverseGameObject.GetInstanceID();
 
