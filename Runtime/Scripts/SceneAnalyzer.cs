@@ -33,6 +33,7 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
         [SerializeField] private int maxNodes = 1000;
         [SerializeField] private bool ignoreTransforms;
+        [SerializeField] private bool searchForPrefabsUsingNames;
         private int _currentNodes;
 
         // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -107,7 +108,11 @@ namespace _3DConnections.Runtime.Scripts
             
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes is { Count: 0 })
             {
-                nodeGraph.allNodes = _instanceIdToNode.Values.ToList();                    
+                nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
+                if (nodeGraph.allNodes == null || nodeGraph.allNodes.Count == 0)
+                {
+                    nodeGraph.allNodes = new List<GameObject>();
+                }
             }
                 
             if (nodeGraph.allNodes is { Count: > 0 })
@@ -122,6 +127,7 @@ namespace _3DConnections.Runtime.Scripts
                 return null;
             }
 
+            // try to resolve parent gameObject
             if (!_parentNode)
             {
                 _parentNode = overlay.GetNodeGraph();
@@ -131,6 +137,7 @@ namespace _3DConnections.Runtime.Scripts
                 }
             }
 
+            // create node object
             var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
             _currentNodes++;
             nodeObject.transform.localPosition = new Vector3(0, 0, 0);
@@ -151,20 +158,19 @@ namespace _3DConnections.Runtime.Scripts
             var textObj = new GameObject("Text");
             textObj.transform.SetParent(nodeObject.transform);
             textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
-
             var text = textObj.AddComponent<TextMeshPro>();
             text.text = obj != null ? obj.name : "null object";
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 1.5f;
 
 #if UNITY_EDITOR
+            // set icons
             if (obj is Component componentObject)
             {
                 var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
                 var iconObj = new GameObject("Icon");
                 if (componentIcon != null)
                 {
-                    // Create an icon object and set the sprite dynamically
                     iconObj.transform.SetParent(nodeObject.transform);
                     iconObj.transform.localPosition = new Vector3(0, 0, -1f);
 
@@ -220,12 +226,46 @@ namespace _3DConnections.Runtime.Scripts
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        private static bool IsPrefab(Object obj)
+        private bool IsPrefab(Object obj)
         {
 #if UNITY_2018_3_OR_NEWER
             if (obj == null) return false;
-            Debug.Log(obj.GetType());
-            return PrefabUtility.IsPartOfAnyPrefab(obj);
+
+            // Check if it's a prefab instance in the scene (root or child)
+            var status = PrefabUtility.GetPrefabInstanceStatus(obj);
+            if (status is PrefabInstanceStatus.Connected or PrefabInstanceStatus.MissingAsset)
+                return true;
+
+            // Check if part of any prefab
+            if (PrefabUtility.IsPartOfPrefabInstance(obj) || PrefabUtility.IsPartOfAnyPrefab(obj))
+                return true;
+
+            // Additional checks for GameObjects
+            if (obj is GameObject go)
+            {
+                // Check root object's prefab status
+                var root = go.transform.root.gameObject;
+                if (root != null && PrefabUtility.GetPrefabInstanceStatus(root) == PrefabInstanceStatus.Connected)
+                    return true;
+
+                // Check for prefab asset path
+                var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(go);
+                if (!string.IsNullOrEmpty(path))
+                    return true;
+            }
+
+            if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
+            var gameObjectName = obj.name;
+
+            var prefabPaths = AssetDatabase.FindAssets("t:Prefab");
+
+            if (prefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>).Any(prefab => prefab != null && prefab.name == gameObjectName))
+            {
+                return true;
+            }
+
+            return false;
+
 #else
 	        return PrefabUtility.GetPrefabType(go) != PrefabType.None;
 #endif
