@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.BurstPhysics;
+using _3DConnections.Runtime.ComputePhysics;
 using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using _3DConnections.Runtime.Scripts;
@@ -144,14 +145,13 @@ namespace _3DConnections.Runtime.GUI
                 typeof(Rigidbody2D)
             };
             var springSimulation = GetComponent<SpringSimulation>();
-            
+
             var physicsConverter = gameObject.GetComponent<PhysicsEcsConverter>();
             if (physicsConverter != null)
                 CreateButton("Convert to ECS", 14, physicsConverter.ConvertNodesToEcs);
-            
+
             if (springSimulation != null)
             {
-                
                 CreateButton("Burst Sim", 14, () =>
                 {
                     _sceneAnalyzer.AnalyzeScene();
@@ -162,14 +162,30 @@ namespace _3DConnections.Runtime.GUI
                     springSimulation.Simulate();
                 });
             }
-            
+
+            var gpuSpringSim = gameObject.GetComponent<ComputeSpringSimulation>();
+            if (gpuSpringSim != null)
+            {
+                CreateButton("GPU Sim", 14, (() =>
+                        {
+                            _sceneAnalyzer.AnalyzeScene();
+                            NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
+                            NodeLayoutManagerV2.LayoutForest();
+                            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                            NodeConnectionManager.Instance.AddSpringsToConnections();
+                            gpuSpringSim.Initialize();
+                        }
+                    )
+                );
+            }
+
             CreateButton("Remove Physics", 14, () =>
             {
                 nodeGraph.NodesRemoveComponents(types);
                 if (springSimulation != null)
                     springSimulation.CleanupNativeArrays();
             });
-            
+
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();
             if (sceneAnalyzer != null)
             {
@@ -177,12 +193,13 @@ namespace _3DConnections.Runtime.GUI
             }
         }
 
-        private void CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition=default)
+        private void CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default)
         {
             if (anchoredPosition == default)
             {
                 anchoredPosition = GetButtonPosition();
             }
+
             var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
             var buttonComponent = browserButtonInstance.GetComponent<Button>();
             var rectTransform = browserButtonInstance.GetComponent<RectTransform>();

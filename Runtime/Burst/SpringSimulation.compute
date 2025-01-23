@@ -1,0 +1,83 @@
+#pragma kernel SpringForces
+#pragma kernel CollisionResponse
+#pragma kernel IntegrateForces
+
+struct NodeData
+{
+    float2 position;
+    float2 velocity;
+    float2 force;
+};
+
+RWStructuredBuffer<NodeData> nodes;
+int nodeCount;
+float deltaTime;
+float stiffness;
+float damping;
+float colliderRadius;
+float collisionResponseStrength;
+
+[numthreads(64,1,1)]
+void SpringForces (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)nodeCount) return;
+    
+    // Calculate spring forces
+    float2 targetPosition = float2(0, 0);
+    float2 displacement = targetPosition - nodes[id.x].position;
+    float2 springForce = stiffness * displacement;
+    float2 dampingForce = -damping * nodes[id.x].velocity;
+    
+    nodes[id.x].force = springForce + dampingForce;
+}
+
+[numthreads(64,1,1)]
+void CollisionResponse (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)nodeCount) return;
+    
+    float2 position = nodes[id.x].position;
+    float2 velocity = nodes[id.x].velocity;
+    
+    for (int j = 0; j < nodeCount; j++)
+    {
+        if (id.x == j) continue;
+        
+        float2 delta = position - nodes[j].position;
+        float distance = length(delta);
+        float minDist = colliderRadius * 2;
+        
+        if (distance < minDist && distance > 0.0001f)
+        {
+            float2 direction = delta / distance;
+            float overlap = minDist - distance;
+            
+            position += direction * (overlap * 0.5f);
+            
+            float2 relativeVelocity = velocity - nodes[j].velocity;
+            float velocityAlongNormal = dot(relativeVelocity, direction);
+            
+            if (velocityAlongNormal < 0)
+            {
+                float restitution = 0.5f;
+                float j_scalar = -(1 + restitution) * velocityAlongNormal;
+                j_scalar *= collisionResponseStrength;
+                
+                velocity += direction * j_scalar;
+            }
+        }
+    }
+    
+    nodes[id.x].position = position;
+    nodes[id.x].velocity = velocity;
+}
+
+[numthreads(64,1,1)]
+void IntegrateForces (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)nodeCount) return;
+    
+    // Semi-implicit Euler integration
+    nodes[id.x].velocity += nodes[id.x].force * deltaTime;
+    nodes[id.x].position += nodes[id.x].velocity * deltaTime;
+}
