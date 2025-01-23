@@ -19,7 +19,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     // required for node spawning
     [SerializeField] private OverlaySceneScriptableObject overlay;
-    private GameObject _parentNode;
+    [SerializeField] private GameObject parentNode;
     [SerializeField] private GameObject nodePrefab;
     [SerializeField] private int nodeWidth = 2;
     [SerializeField] private int nodeHeight = 1;
@@ -32,7 +32,6 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
     [ReadOnly] private bool _searchForPrefabsUsingNames;
-    [FormerlySerializedAs("clearNodesEvent")] [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     private int _currentNodes;
 
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -122,17 +121,17 @@ public class SceneAnalyzer : MonoBehaviour
         }
 
         // try to resolve parent gameObject
-        if (!_parentNode)
+        if (!parentNode)
         {
-            _parentNode = overlay.GetNodeGraph();
-            if (!_parentNode)
+            parentNode = overlay.GetNodeGraph();
+            if (!parentNode)
             {
                 Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
             }
         }
 
         // create node object
-        var nodeObject = Instantiate(nodePrefab, _parentNode.transform);
+        var nodeObject = Instantiate(nodePrefab, parentNode.transform);
         _currentNodes++;
         nodeObject.transform.localPosition = new Vector3(0, 0, 0);
         nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
@@ -519,19 +518,19 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     public void ClearNodes()
     {
-        if (!_parentNode)
+        if (!parentNode)
         {
             Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
         }
         
-        _parentNode = overlay.GetNodeGraph();
-        if (!_parentNode)
+        parentNode = overlay.GetNodeGraph();
+        if (!parentNode)
         {
             Debug.Log("Even after asking the overlay SO for the nodeGraph gameObject it could not be found");
         }
 
-        Debug.Log("about to delete " + _parentNode.transform.childCount + " nodes");
-        foreach (Transform child in _parentNode.transform)
+        Debug.Log("about to delete " + parentNode.transform.childCount + " nodes");
+        foreach (Transform child in parentNode.transform)
         {
             Destroy(child.gameObject);
         }

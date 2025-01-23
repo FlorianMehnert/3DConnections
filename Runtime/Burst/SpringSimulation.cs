@@ -19,9 +19,9 @@ public class SpringSimulation : MonoBehaviour
     private NativeArray<float2> _newVelocities;
     private NativeArray<float2> _forces;
     private Transform[] _nodes;
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
-
     private bool _isSetUp;
+    
+    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
 
     private void OnDisable()
     {

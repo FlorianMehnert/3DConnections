@@ -24,6 +24,7 @@ namespace _3DConnections.Runtime.GUI
         [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
         [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+        private bool _hasSpawnedNodes = false;
 
         private int _currentYCoordinate = 300;
 

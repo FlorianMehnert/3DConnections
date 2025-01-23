@@ -24,18 +24,26 @@ public class ComputeSpringSimulation : MonoBehaviour
     private int _integrationKernel;
 
     private bool _isShuttingDown;
+    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+
+    private void OnDisable()
+    {
+        _isShuttingDown = true;
+        if (removePhysicsEvent != null)
+            removePhysicsEvent.OnEventTriggered -= HandleEvent;
+    }
+
+    private void OnEnable()
+    {
+        if (removePhysicsEvent != null)
+            removePhysicsEvent.OnEventTriggered += HandleEvent;
+    }
 
     private struct NodeData
     {
         public float2 Position;
         public float2 Velocity;
         public float2 Force;
-    }
-
-    private void OnDisable()
-    {
-        _isShuttingDown = true;
-        CleanupBuffers();
     }
 
     private void OnDestroy()
@@ -133,5 +141,10 @@ public class ComputeSpringSimulation : MonoBehaviour
                 );
             }
         }
+    }
+
+    private void HandleEvent()
+    {
+        CleanupBuffers();
     }
 }
