@@ -1,4 +1,5 @@
 # 3D Connections
+![nodegraph](./images/nodegraph.png)
 - this is a Unity Asset required to be symlinked into the Packages folder of the project you want to use it in
 - add an empty and add the GUIBuilder Script to it
 ```bash
