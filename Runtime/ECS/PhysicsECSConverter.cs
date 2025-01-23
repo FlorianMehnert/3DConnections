@@ -17,7 +17,7 @@ public class PhysicsEcsConverter : MonoBehaviour
 
     public void ConvertNodesToEcs()
     {
-        foreach (var node in nodeGraph.allNodes)
+        foreach (var node in nodeGraph.AllNodes)
         {
             if (node == null) continue;
 

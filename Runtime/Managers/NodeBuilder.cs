@@ -226,7 +226,7 @@ public class NodeBuilder : MonoBehaviour
 
             foreach (var go in scriptNodes.Select(scriptNode => SpawnNodeOnOverlay(scriptNode, gameObjectColor)))
             {
-                nodeGraph.allNodes.Add(go);
+                nodeGraph.AllNodes.Add(go);
             }
 
             var connections = CalculateNodeConnections(scriptNodes, allReferences);

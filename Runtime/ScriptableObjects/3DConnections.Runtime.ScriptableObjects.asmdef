@@ -2,7 +2,8 @@
     "name": "3DConnections.Runtime.ScriptableObjects",
     "rootNamespace": "3DConnections.Runtime.ScriptableObjects",
     "references": [
-        "GUID:68990cf58c0248f2ae7aaa38040ef8a9"
+        "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
+        "GUID:776e09b4de4a427fba7608d3c91be466"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

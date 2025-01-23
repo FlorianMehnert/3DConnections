@@ -7,7 +7,6 @@ using _3DConnections.Runtime.Utils;
 using TMPro;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 
 public class SceneAnalyzer : MonoBehaviour
 {
@@ -103,13 +102,13 @@ public class SceneAnalyzer : MonoBehaviour
             TraverseGameObject(rootObject, rootNode);
         }
 
-        if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes is { Count: 0 })
+        if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.AllNodes is { Count: 0 })
         {
-            nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
+            nodeGraph.AllNodes = _instanceIdToNode.Values.ToList();
         }
 
-        if (nodeGraph.allNodes is { Count: > 0 })
-            nodeGraph.allNodes.Add(rootNode);
+        if (nodeGraph.AllNodes is { Count: > 0 })
+            nodeGraph.AllNodes.Add(rootNode);
     }
 
     private GameObject SpawnNode(Object obj)
@@ -546,7 +545,7 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _currentNodes = 0;
-        nodeGraph.allNodes.Clear();
+        nodeGraph.AllNodes.Clear();
     }
 
     private static IEnumerable<Object> GetComponentReferences(Component component)

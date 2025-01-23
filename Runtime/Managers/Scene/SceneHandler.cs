@@ -15,7 +15,6 @@ using UnityEngine.SceneManagement;
 
         private TMP_Dropdown _sceneDropdown;
         private SceneManager _sceneManager;
-        [SerializeField] private OverlaySceneScriptableObject overlay;
         [SerializeField] public Scene analyzeScene;
         [SerializeField] public Scene overlayScene;
 
@@ -101,5 +100,10 @@ using UnityEngine.SceneManagement;
         public void LoadSceneWithCallback(string sceneName, Action onComplete)
         {
             StartCoroutine(LoadSceneCoroutine(sceneName, onComplete));
+        }
+
+        public static GameObject GetParentObject()
+        {
+            return GameObject.Find("ParentNodeObject");
         }
     }

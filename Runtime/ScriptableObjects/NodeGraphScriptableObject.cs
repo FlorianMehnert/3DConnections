@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using UnityEngine;
 
 /// <summary>
@@ -16,23 +15,45 @@ public class NodeGraphScriptableObject : ScriptableObject
     public Bounds currentlySelectedBounds;
     private List<GameObject> _allNodes = new();
     private bool _workingOnAllNodes;
+    private GameObject _parentObject;
 
-    public List<GameObject> allNodes
+    private readonly object _lock = new();
+
+    public List<GameObject> AllNodes
     {
-        get => _allNodes;
+        get
+        {
+            lock (_lock)
+            {
+                if (_allNodes == null)
+                {
+                    _parentObject ??= SceneHandler.GetParentObject();
+                    if (_parentObject == null) 
+                        return new List<GameObject>();
+
+                    _allNodes = _parentObject.transform.Cast<Transform>()
+                        .Select(child => child.gameObject)
+                        .ToList();
+                }
+                return _allNodes;
+            }
+        }
         set
         {
-            _allNodes = value;
-            // if (!_workingOnAllNodes)
-            // {
-            //     _allNodes = value;                    
-            // }
-            // else
-            // {
-            //     Debug.Log("trying to alter allNodes while some other function is iterating it");
-            // }
+            lock (_lock)
+            {
+                if (!_workingOnAllNodes)
+                {
+                    _allNodes = value;
+                }
+                else
+                {
+                    Debug.LogWarning("Trying to alter allNodes while some other function is iterating it.");
+                }
+            }
         }
     }
+
 
     public void Clear()
     {
@@ -41,7 +62,13 @@ public class NodeGraphScriptableObject : ScriptableObject
 
     public Transform[] AllNodeTransforms2D
     {
-        get { return allNodes.Select(n => n.transform).ToArray(); }
+        get
+        {
+            _workingOnAllNodes = true;
+            var tf2d = AllNodes.Select(n => n.transform).ToArray();
+            _workingOnAllNodes = false;
+            return tf2d;
+        }
     }
 
     /// <summary>
@@ -189,12 +216,6 @@ public class NodeGraphScriptableObject : ScriptableObject
         return GetGameObjectNodes().Where(gameObjectNode => gameObjectNode.GameObject != null).ToList();
     }
 
-    [CanBeNull]
-    private GameObjectNode TryGetGameObjectNodeByGameObject(GameObject gameObject)
-    {
-        return GetGameObjectNodes().FirstOrDefault(node => node.GameObject == gameObject);
-    }
-
     /// <summary>
     /// Returns the first gameObject node that has the gameObject with the given id
     /// </summary>
@@ -231,12 +252,12 @@ public class NodeGraphScriptableObject : ScriptableObject
         if (componentType == null)
             throw new ArgumentNullException(nameof(componentType));
 
-        if (allNodes?.Count == 0)
+        if (AllNodes?.Count == 0)
             return;
         try
         {
-            if (allNodes == null) return;
-            var nodeCopy = allNodes.ToArray();
+            if (AllNodes == null) return;
+            var nodeCopy = AllNodes.ToArray();
 
             foreach (var node in nodeCopy)
             {
@@ -263,10 +284,10 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// Remove component of a given type from all nodes
     /// </summary>
     /// <param name="componentType">Component type to remove</param>
-    private void NodesRemoveComponent(System.Type componentType)
+    private void NodesRemoveComponent(Type componentType)
     {
         // Check if the target object already has the component
-        foreach (var node in allNodes)
+        foreach (var node in AllNodes)
         {
             if (node != null && componentType != null)
             {
@@ -279,7 +300,7 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
 
-    public void NodesRemoveComponents(List<System.Type> componentTypes)
+    public void NodesRemoveComponents(List<Type> componentTypes)
     {
         var orderedTypes = componentTypes.OrderBy(t => t != typeof(SpringJoint2D)).ToList();
         foreach (var componentType in orderedTypes)
