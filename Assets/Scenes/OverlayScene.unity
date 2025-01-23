@@ -689,11 +689,41 @@ PrefabInstance:
       propertyPath: m_Name
       value: Manager
       objectReference: {fileID: 0}
+    - target: {fileID: 8876743746579018258, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: ignoreTransforms
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7644496426939543078, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8045642725482905525}
   m_SourcePrefab: {fileID: 100100000, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+--- !u!1 &8045642725482905524 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7644496426939543078, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+  m_PrefabInstance: {fileID: 8045642725482905523}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8045642725482905525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8045642725482905524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616c5a49057043998273191feea20a1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  computeShader: {fileID: 7200000, guid: dae5f5e648014affb9e80da422bf6545, type: 3}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  stiffness: 0.1
+  damping: 0.02
+  colliderRadius: 5
+  collisionResponseStrength: 0.1
 --- !u!1001 &8199000087258087944
 PrefabInstance:
   m_ObjectHideFlags: 0
