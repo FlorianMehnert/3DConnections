@@ -1,4 +1,19 @@
 {
-  "name": "3DConnections.Runtime.Scripts",
-  "references":[ "3DConnections.Runtime.ScriptableObjects", "3DConnections.Runtime.Managers", "3DConnections.Runtime.Burst" ]
+    "name": "3DConnections.Runtime.Scripts",
+    "rootNamespace": "",
+    "references": [
+        "3DConnections.Runtime.ScriptableObjects",
+        "3DConnections.Runtime.Managers",
+        "3DConnections.Runtime.Burst",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

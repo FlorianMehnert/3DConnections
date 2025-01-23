@@ -1,6 +1,6 @@
 {
     "name": "3DConnections.Editor",
-    "rootNamespace": "_3DConnections.Editor",
+    "rootNamespace": "",
     "references": [
         "GUID:56d16c4e5bd74b3e81439d09a9b966ca",
         "GUID:407d9f5d313b4d20b83d06c1f10def66",
