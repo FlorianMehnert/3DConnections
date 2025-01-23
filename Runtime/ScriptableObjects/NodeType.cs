@@ -1,10 +1,7 @@
 using UnityEngine;
 
-namespace _3DConnections.Runtime
+public class NodeType : MonoBehaviour
 {
-    public class NodeType : MonoBehaviour
-    {
-        [SerializeField] public string nodeTypeName;
-        [SerializeField] public Object reference;
-    }
+    [SerializeField] public string nodeTypeName;
+    [SerializeField] public Object reference;
 }

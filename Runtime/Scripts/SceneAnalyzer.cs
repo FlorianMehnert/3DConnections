@@ -1,15 +1,13 @@
 using System.Linq;
-using _3DConnections.Runtime.BurstPhysics;
-using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using _3DConnections.Editor.CustomTags;
-using _3DConnections.Runtime;
 using _3DConnections.Runtime.Utils;
 using TMPro;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class SceneAnalyzer : MonoBehaviour
 {
@@ -34,7 +32,7 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
     [ReadOnly] private bool _searchForPrefabsUsingNames;
-    [SerializeField] private ClearNodesEvent clearNodesEvent;
+    [FormerlySerializedAs("clearNodesEvent")] [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     private int _currentNodes;
 
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -525,8 +523,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
         }
-
-
+        
         _parentNode = overlay.GetNodeGraph();
         if (!_parentNode)
         {

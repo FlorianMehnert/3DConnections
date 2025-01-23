@@ -1,8 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using _3DConnections.Runtime.BurstPhysics;
-using _3DConnections.Runtime.ComputePhysics;
-using _3DConnections.Runtime.ScriptableObjects;
 using SFB;
 using TMPro;
 using UnityEngine;
@@ -26,6 +23,7 @@ namespace _3DConnections.Runtime.GUI
         private TMP_Dropdown _dropdownInstance;
         [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
         [SerializeField] private NodeGraphScriptableObject nodeGraph;
+        [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
 
         private int _currentYCoordinate = 300;
 
@@ -188,8 +186,7 @@ namespace _3DConnections.Runtime.GUI
             CreateButton("Remove Physics", 14, () =>
             {
                 nodeGraph.NodesRemoveComponents(types);
-                if (springSimulation != null)
-                    springSimulation.CleanupNativeArrays();
+                removePhysicsEvent.TriggerEvent();
             });
 
             var sceneAnalyzer = GetComponent<SceneAnalyzer>();

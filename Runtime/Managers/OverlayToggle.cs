@@ -1,4 +1,3 @@
-using _3DConnections.Runtime.ScriptableObjects;
 using UnityEngine;
 
 /// <summary>

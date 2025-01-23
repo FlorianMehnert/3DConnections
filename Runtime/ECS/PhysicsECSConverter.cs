@@ -1,4 +1,3 @@
-using _3DConnections.Runtime.ScriptableObjects;
 
 namespace _3DConnections.Runtime
 {

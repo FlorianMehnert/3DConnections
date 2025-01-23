@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using _3DConnections.Runtime;
-using _3DConnections.Runtime.ScriptableObjects;
 using UnityEngine;
-using Node = Runtime.Node;
 
 public class NodeLayoutManagerV2 : MonoBehaviour
 {

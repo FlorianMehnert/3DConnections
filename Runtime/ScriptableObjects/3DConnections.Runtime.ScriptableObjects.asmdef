@@ -1,6 +1,6 @@
 {
     "name": "3DConnections.Runtime.ScriptableObjects",
-    "rootNamespace": "",
+    "rootNamespace": "3DConnections.Runtime.ScriptableObjects",
     "references": [
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9"
     ],

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime;
-using _3DConnections.Runtime.ScriptableObjects;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
