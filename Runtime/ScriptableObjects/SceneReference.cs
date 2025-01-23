@@ -48,6 +48,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
             get
             {
                 if (scene != null) return useStaticValues ? sceneName : scene.HasValue ? scene.Value.name : sceneName;
+                if (scene == null && sceneName != null) return sceneName; 
                 return "";
             }
         }
