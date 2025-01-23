@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.ScriptableObjects;
 using TMPro;
@@ -74,6 +75,34 @@ namespace _3DConnections.Runtime.Managers
             }
 
             return Array.Empty<Transform>();
+        }
+
+        private static IEnumerator<AsyncOperation> LoadSceneCoroutine(string sceneName, Action onComplete)
+        {
+            var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+    
+            if (asyncLoad == null)
+            {
+                Debug.LogError($"Failed to start loading scene: {sceneName}");
+                yield break;
+            }
+
+            while (!asyncLoad.isDone)
+            {
+                if (asyncLoad.progress >= 0.9f)
+                {
+                    asyncLoad.allowSceneActivation = true;  // Activate the scene
+                }
+        
+                yield return null;
+            }
+            
+            Debug.Log($"Scene {sceneName} loaded successfully.");
+            onComplete?.Invoke();
+        }
+        public void LoadSceneWithCallback(string sceneName, Action onComplete)
+        {
+            StartCoroutine(LoadSceneCoroutine(sceneName, onComplete));
         }
     }
 }

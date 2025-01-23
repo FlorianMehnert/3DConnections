@@ -39,11 +39,7 @@ namespace _3DConnections.Runtime.Managers
             HandleZoom();
             HandlePan();
 
-            if (Input.GetKeyDown(KeyCode.F) && nodeGraph.currentlySelectedGameObject)
-            {
-                CenterOnTarget(nodeGraph.currentlySelectedGameObject);
-            }
-            else if (Input.GetKeyDown(KeyCode.F) && !nodeGraph.currentlySelectedGameObject)
+            if (Input.GetKeyDown(KeyCode.F))
             {
                 CenterOnTarget(nodeGraph.currentlySelectedGameObject, true);
             }
@@ -95,15 +91,28 @@ namespace _3DConnections.Runtime.Managers
             _lastMousePosition = Input.mousePosition;
         }
 
-        private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
+        public void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
         {
+            if (!targetObject && nodeGraph.currentlySelectedBounds.size != Vector3.zero) return;
+            Debug.Log("did not return immediately");
 #if UNITY_EDITOR
             switch (useEditorSelection)
             {
                 case true when Selection.activeGameObject:
+                    Debug.Log("editor Selection is active");
                     targetObject = Selection.activeTransform.gameObject;
                     break;
-                case true when !Selection.activeTransform.gameObject:
+                
+                // center on bounds of orange highlighted nodes
+                case true when nodeGraph.currentlySelectedBounds.size != Vector3.zero:
+                    Debug.Log("selected bounds encapsulate something");
+                    break;
+                
+                // when no selection bounds nor an editor selection is available
+                case true when !Selection.activeTransform || !Selection.activeTransform.gameObject:
+                    Debug.Log("bounds are: " + nodeGraph.currentlySelectedBounds);
+                    Debug.Log("bounds size is: " + nodeGraph.currentlySelectedBounds.size);
+                    Debug.Log("there is no active selection");
                     return;
             }
 #else
@@ -112,20 +121,33 @@ namespace _3DConnections.Runtime.Managers
             var lineRenderer = targetObject.GetComponent<LineRenderer>();
             if (lineRenderer && lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
             {
+                Debug.Log("is connection");
                 var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.gameObject.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
                 highlight.Highlight(Color.red, 2f);
 
                 var bounds = lineRenderer.bounds;
-                var center = bounds.center;
-                _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
-                var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
-                _cam.orthographicSize = size * padding;
+                if (nodeGraph.currentlySelectedBounds.size != Vector3.zero)
+                {
+                    bounds.Encapsulate(nodeGraph.currentlySelectedBounds);
+                }
+                SetCameraToBounds(bounds);
             }
-            else // normal gameObject
+            else if (targetObject.GetComponent<Collider2D>() != null)
             {
+                Debug.Log("has no collider");
+                var bounds = nodeGraph.currentlySelectedBounds;
+                if (nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
+                bounds.Encapsulate(nodeGraph.currentlySelectedBounds);
+                SetCameraToBounds(bounds);
+            }else if (targetObject == null)
+            {
+                Debug.Log("no target object setting to currentlySelectedBounds");
+                SetCameraToBounds(nodeGraph.currentlySelectedBounds);
+            }
+            else // catch gameObjects without collider2D
+            {
+                Debug.Log("default case for target object");
                 var targetPosition = targetObject.transform.position;
-
-                // Keep camera's z position (depth) and only update x and y
                 var newPosition = new Vector3(
                     targetPosition.x,
                     targetPosition.y,
@@ -134,6 +156,14 @@ namespace _3DConnections.Runtime.Managers
                 _cam.orthographicSize = 3;
                 _cam.transform.position = newPosition;
             }
+        }
+
+        private void SetCameraToBounds(Bounds bounds)
+        {
+            var center = bounds.center;
+            _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+            var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
+            _cam.orthographicSize = size * padding;
         }
 
         private void AdjustCameraToViewChildren()

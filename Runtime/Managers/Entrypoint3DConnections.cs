@@ -14,6 +14,10 @@ namespace _3DConnections.Runtime.Managers
         private void Start()
         {
             var sceneName = overlay.overlayScene.Name;
+            if (SceneManager.GetSceneByName(sceneName).isLoaded)
+            {
+                return;
+            }
             SceneManager.LoadScene(sceneName: sceneName, mode: LoadSceneMode.Additive);
             if (disableSceneOnOverlay)
                 ToggleRootObjectsInSceneWhileOverlay();

@@ -134,6 +134,7 @@ namespace _3DConnections.Runtime.GUI
             // CreateButton("Layout based on Connections", 10, NodeLayoutManagerV2.LayoutForest);
             CreateButton("Native Physics Sim", 14, () =>
             {
+                OnDropdownValueChanged(_dropdownInstance.value);
                 _sceneAnalyzer.AnalyzeScene();
                 NodeLayoutManagerV2.LayoutForest();
                 nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
@@ -154,6 +155,7 @@ namespace _3DConnections.Runtime.GUI
             {
                 CreateButton("Burst Sim", 14, () =>
                 {
+                    OnDropdownValueChanged(_dropdownInstance.value);
                     _sceneAnalyzer.AnalyzeScene();
                     NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
                     NodeLayoutManagerV2.LayoutForest();
@@ -168,6 +170,7 @@ namespace _3DConnections.Runtime.GUI
             {
                 CreateButton("GPU Sim", 14, (() =>
                         {
+                            OnDropdownValueChanged(_dropdownInstance.value);
                             _sceneAnalyzer.AnalyzeScene();
                             NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
                             NodeLayoutManagerV2.LayoutForest();
@@ -220,14 +223,18 @@ namespace _3DConnections.Runtime.GUI
             var selectedScene = _dropdownInstance.options[index].text;
             var scene = SceneManager.GetSceneByName(selectedScene);
 
-            var overlayScene = ScriptableObject.CreateInstance<SceneReference>();
-            overlayScene.useStaticValues = false;
-            overlayScene.scene = scene;
-            overlayScene.sceneName = scene.name;
-            overlayScene.scenePath = scene.path;
-
-            analyzeSceneConfig.reference = overlayScene;
-            Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " " + analyzeSceneConfig.reference.Path);
+            if (scene.IsValid())
+            {
+                analyzeSceneConfig.reference.scene = scene;
+                analyzeSceneConfig.reference.useStaticValues = false;
+            }
+            else
+            {
+                analyzeSceneConfig.reference.useStaticValues = true;
+            }
+            analyzeSceneConfig.reference.sceneName = _dropdownInstance.options[index].text;
+            analyzeSceneConfig.reference.scenePath = scene.path;
+            Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " with path: " + analyzeSceneConfig.reference.Path);
         }
 
         private void OnFileBrowserOpen()
