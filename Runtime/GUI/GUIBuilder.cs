@@ -3,7 +3,6 @@ using System.Linq;
 using _3DConnections.Runtime.BurstPhysics;
 using _3DConnections.Runtime.ComputePhysics;
 using _3DConnections.Runtime.ScriptableObjects;
-using _3DConnections.Runtime.Scripts;
 using SFB;
 using TMPro;
 using UnityEngine;

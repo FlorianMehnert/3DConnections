@@ -1,16 +1,13 @@
-namespace _3DConnections.Runtime.Events
+using UnityEngine;
+using UnityEngine.Events;
+
+[CreateAssetMenu(fileName = "ToggleOverlayEvent", menuName = "3DConnections/Events/ToggleOverlayEvent")]
+public class ToggleOverlayEvent : ScriptableObject
 {
-    using UnityEngine;
-    using UnityEngine.Events;
+    public UnityAction OnEventTriggered;
 
-    [CreateAssetMenu(fileName = "ToggleOverlayEvent", menuName = "3DConnections/Events/ToggleOverlayEvent")]
-    public class ToggleOverlayEvent : ScriptableObject
+    public void TriggerEvent()
     {
-        public UnityAction OnEventTriggered;
-
-        public void TriggerEvent()
-        {
-            OnEventTriggered?.Invoke();
-        }
+        OnEventTriggered?.Invoke();
     }
 }

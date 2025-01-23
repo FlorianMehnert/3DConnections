@@ -1,4 +1,3 @@
-using _3DConnections.Runtime.Events;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEngine;
 using UnityEngine.SceneManagement;

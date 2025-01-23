@@ -1,4 +1,3 @@
-using _3DConnections.Runtime.Scripts;
 using UnityEditor;
 
 namespace _3DConnections.Editor
