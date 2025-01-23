@@ -5,7 +5,10 @@ using _3DConnections.Runtime.ScriptableObjects;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using _3DConnections.Editor.CustomTags;
+using _3DConnections.Runtime.Utils;
 using TMPro;
+using Unity.Collections;
 using UnityEngine.SceneManagement;
 
 namespace _3DConnections.Runtime.Scripts
@@ -25,14 +28,14 @@ namespace _3DConnections.Runtime.Scripts
         [SerializeField] private int nodeWidth = 2;
         [SerializeField] private int nodeHeight = 1;
         [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
-        [SerializeField] internal Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
-        [SerializeField] internal Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
-        [SerializeField] internal Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
-        [SerializeField] internal Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-        [SerializeField] internal Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
+        [ReadonlyColor] private Color _componentColor = new(0.4f, 0.8f, 0.4f); // Green
+        [ReadonlyColor] private Color _scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
+        [ReadonlyColor] private Color _parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
+        [ReadonlyColor] private Color _componentConnection = new(0.5f, 1f, 0.5f); // Light Green
+        [ReadonlyColor] private Color _referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
         [SerializeField] private int maxNodes = 1000;
-        [SerializeField] private bool ignoreTransforms;
-        [SerializeField] private bool searchForPrefabsUsingNames;
+        [ReadOnly] private bool _ignoreTransforms;
+        [ReadOnly] private bool _searchForPrefabsUsingNames;
         private int _currentNodes;
 
         // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -57,6 +60,16 @@ namespace _3DConnections.Runtime.Scripts
                 var rootGameObjects = scene.GetRootGameObjects();
                 FinishAnalyzeScene(rootGameObjects);
             }
+        }
+
+        private void OnValidate() {
+            var palette = Colorpalette.GeneratePaletteFromBaseColor(gameObjectColor);
+            gameObjectColor = palette[0];
+            _componentColor = palette[1];
+            _scriptableObjectColor = palette[2];
+            _parentChildConnection = palette[3];
+            _componentConnection = palette[4];
+            _referenceConnection = palette[5];
         }
 
         private static void LoadSceneCallback(Scene sceneByName, out GameObject[] rootGameObjects)
@@ -91,7 +104,7 @@ namespace _3DConnections.Runtime.Scripts
             {
                 TraverseGameObject(rootObject, rootNode);
             }
-            
+
             if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.allNodes is { Count: 0 })
             {
                 nodeGraph.allNodes = _instanceIdToNode.Values.ToList();
@@ -236,7 +249,7 @@ namespace _3DConnections.Runtime.Scripts
                     return true;
             }
 
-            if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
+            if (!_searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
             var gameObjectName = obj.name;
 
             var prefabPaths = AssetDatabase.FindAssets("t:Prefab");
@@ -277,8 +290,8 @@ namespace _3DConnections.Runtime.Scripts
                 componentRenderer.material.color = obj switch
                 {
                     GameObject => gameObjectColor,
-                    Component => componentColor,
-                    ScriptableObject => scriptableObjectColor,
+                    Component => _componentColor,
+                    ScriptableObject => _scriptableObjectColor,
                     _ => Color.black
                 };
         }
@@ -307,9 +320,9 @@ namespace _3DConnections.Runtime.Scripts
                     ConnectNodes(parentNodeObject, existingNode,
                         obj switch
                         {
-                            GameObject => parentChildConnection,
-                            Component => componentConnection,
-                            _ => referenceConnection
+                            GameObject => new Color(_parentChildConnection.r, _parentChildConnection.g, _parentChildConnection.b, 0.5f),
+                            Component => new Color(_componentConnection.r, _componentConnection.g, _componentConnection.b, 0.5f),
+                            _ => new Color(_referenceConnection.r, _referenceConnection.g, _referenceConnection.b, 0.5f)
                         });
                 }
 
@@ -326,9 +339,9 @@ namespace _3DConnections.Runtime.Scripts
                 ConnectNodes(parentNodeObject, newNode,
                     obj switch
                     {
-                        GameObject => parentChildConnection,
-                        Component => componentConnection,
-                        _ => referenceConnection
+                        GameObject => new Color(_parentChildConnection.r, _parentChildConnection.g, _parentChildConnection.b, 0.5f),
+                        Component => new Color(_componentConnection.r, _componentConnection.g, _componentConnection.b, 0.5f),
+                        _ => new Color(_referenceConnection.r, _referenceConnection.g, _referenceConnection.b, 0.5f)
                     });
             }
 
@@ -354,7 +367,7 @@ namespace _3DConnections.Runtime.Scripts
                 // If we're in a cycle, connect to the existing node if we have one
                 if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
                 {
-                    ConnectNodes(parentNodeObject, existingNode, isReference ? referenceConnection : parentChildConnection);
+                    ConnectNodes(parentNodeObject, existingNode, isReference ? _referenceConnection : _parentChildConnection);
                 }
 
                 return;
@@ -403,7 +416,7 @@ namespace _3DConnections.Runtime.Scripts
             {
                 if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
                 {
-                    ConnectNodes(parentNodeObject, existingNode, referenceConnection);
+                    ConnectNodes(parentNodeObject, existingNode, _referenceConnection);
                 }
 
                 return;
@@ -441,7 +454,7 @@ namespace _3DConnections.Runtime.Scripts
         /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
         private void TraverseComponent(Component component, GameObject parentNodeObject = null)
         {
-            if (component == null || _currentNodes > maxNodes || ignoreTransforms && component.GetType() == typeof(Transform)) return;
+            if (component == null || _currentNodes > maxNodes || _ignoreTransforms && component.GetType() == typeof(Transform)) return;
 
             var instanceId = component.GetInstanceID();
 
@@ -451,7 +464,7 @@ namespace _3DConnections.Runtime.Scripts
                 // If we're in a cycle, connect to the existing node if we have one
                 if (_instanceIdToNode.TryGetValue(instanceId, out GameObject existingNode) && parentNodeObject != null)
                 {
-                    ConnectNodes(parentNodeObject, existingNode, componentConnection);
+                    ConnectNodes(parentNodeObject, existingNode, _componentConnection);
                 }
 
                 return;

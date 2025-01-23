@@ -5,7 +5,9 @@
         "3DConnections.Runtime.ScriptableObjects",
         "3DConnections.Runtime.Managers",
         "3DConnections.Runtime.Burst",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "3DConnections.Runtime.Utils",
+        "3DConnections.Editor.CustomTags"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

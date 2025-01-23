@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c773b639812e4c87989029cd4386a748, type: 3}
   m_Name: sceneAnalyzationConfig
   m_EditorClassIdentifier: 
-  scene: {fileID: 11400000, guid: 5543bad9dd44afbd6aea4de41798f8dc, type: 2}
+  reference: {fileID: 11400000, guid: 5543bad9dd44afbd6aea4de41798f8dc, type: 2}
   nodeStandardWidth: 2
   nodeStandardHeight: 1

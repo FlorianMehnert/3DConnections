@@ -18,7 +18,7 @@ namespace _3DConnections.Runtime.Managers
         private float _worldWidth;
         private float _worldHeight;
         [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
-        [SerializeField] private NodeGraphScriptableObject nodeGraph;
+        [SerializeField] public NodeGraphScriptableObject nodeGraph;
         [SerializeField] private GameObject parentObject;
 
         [SerializeField] private OverlaySceneScriptableObject overlay;
