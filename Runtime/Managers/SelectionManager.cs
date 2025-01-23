@@ -319,7 +319,7 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!selectionRectangle) return;
 
-            DeselectAllCubes();
+            //DeselectAllCubes();
 
             var screenHeight = Screen.height;
 

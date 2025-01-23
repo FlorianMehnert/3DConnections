@@ -36,17 +36,22 @@ namespace _3DConnections.Runtime.Managers
             // Recalculate world dimensions if zoom changes
             CalculateWorldDimensions();
 
-            HandleZoom();
-            HandlePan();
-
             if (Input.GetKeyDown(KeyCode.F))
             {
                 CenterOnTarget(nodeGraph.currentlySelectedGameObject, true);
+                return;
             }
-            else if (Input.GetKeyDown(KeyCode.G) && parentObject)
+
+            if (Input.GetKeyDown(KeyCode.G) && parentObject)
             {
                 AdjustCameraToViewChildren();
+                return;
             }
+
+            HandleZoom();
+            HandlePan();
+
+            
         }
 
         private void CalculateWorldDimensions()
@@ -93,35 +98,30 @@ namespace _3DConnections.Runtime.Managers
 
         public void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
         {
-            if (!targetObject && nodeGraph.currentlySelectedBounds.size != Vector3.zero) return;
-            Debug.Log("did not return immediately");
+            if (!targetObject && nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
 #if UNITY_EDITOR
             switch (useEditorSelection)
             {
                 case true when Selection.activeGameObject:
-                    Debug.Log("editor Selection is active");
                     targetObject = Selection.activeTransform.gameObject;
                     break;
                 
                 // center on bounds of orange highlighted nodes
                 case true when nodeGraph.currentlySelectedBounds.size != Vector3.zero:
-                    Debug.Log("selected bounds encapsulate something");
                     break;
                 
                 // when no selection bounds nor an editor selection is available
                 case true when !Selection.activeTransform || !Selection.activeTransform.gameObject:
-                    Debug.Log("bounds are: " + nodeGraph.currentlySelectedBounds);
-                    Debug.Log("bounds size is: " + nodeGraph.currentlySelectedBounds.size);
-                    Debug.Log("there is no active selection");
                     return;
             }
 #else
             if (!targetObject) return;
 #endif
-            var lineRenderer = targetObject.GetComponent<LineRenderer>();
+            LineRenderer lineRenderer = null;
+            if (targetObject != null)
+                lineRenderer = targetObject.GetComponent<LineRenderer>();
             if (lineRenderer && lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
             {
-                Debug.Log("is connection");
                 var highlight = !lineRenderer.GetComponent<HighlightConnection>() ? lineRenderer.gameObject.AddComponent<HighlightConnection>() : lineRenderer.GetComponent<HighlightConnection>();
                 highlight.Highlight(Color.red, 2f);
 
@@ -132,21 +132,18 @@ namespace _3DConnections.Runtime.Managers
                 }
                 SetCameraToBounds(bounds);
             }
-            else if (targetObject.GetComponent<Collider2D>() != null)
+            else if (targetObject != null && targetObject.GetComponent<Collider2D>() != null)
             {
-                Debug.Log("has no collider");
                 var bounds = nodeGraph.currentlySelectedBounds;
                 if (nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
                 bounds.Encapsulate(nodeGraph.currentlySelectedBounds);
                 SetCameraToBounds(bounds);
-            }else if (targetObject == null)
+            }else if (nodeGraph.currentlySelectedBounds.size != Vector3.zero)
             {
-                Debug.Log("no target object setting to currentlySelectedBounds");
                 SetCameraToBounds(nodeGraph.currentlySelectedBounds);
             }
             else // catch gameObjects without collider2D
             {
-                Debug.Log("default case for target object");
                 var targetPosition = targetObject.transform.position;
                 var newPosition = new Vector3(
                     targetPosition.x,
