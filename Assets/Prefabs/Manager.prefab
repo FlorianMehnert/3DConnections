@@ -218,7 +218,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09e84c1b199ec7f3b9dd7304f9b0a89e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   analyzeScene:
     m_Handle: 0
   overlayScene:
