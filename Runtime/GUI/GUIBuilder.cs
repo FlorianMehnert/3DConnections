@@ -67,6 +67,8 @@ namespace _3DConnections.Runtime.GUI
             // Instantiate the dropdown prefab as child of canvas
             var dropdownInstance = Instantiate(dropdownPrefab, uiCanvas.transform);
             _dropdownInstance = dropdownInstance;
+            _dropdownInstance.enabled = false;
+            dropdownInstance.enabled = true;
 
             // Get the dropdown component (works with both standard and TMP dropdowns)
             var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
@@ -234,7 +236,22 @@ namespace _3DConnections.Runtime.GUI
             }
             analyzeSceneConfig.reference.sceneName = _dropdownInstance.options[index].text;
             analyzeSceneConfig.reference.scenePath = scene.path;
+            var sceneByName = SceneManager.GetSceneByName(analyzeSceneConfig.reference.Name);
+            SetButtonsEnabled(sceneByName.IsValid() && sceneByName.isLoaded);
             Debug.Log("the new config scene is " + analyzeSceneConfig.reference.Name + " with path: " + analyzeSceneConfig.reference.Path);
+        }
+
+        private void SetButtonsEnabled(bool buttonEnabled = false)
+        {
+            foreach (Transform uiElement in uiCanvas.transform)
+            {
+                if (uiElement.gameObject.ToString() != "GUIButton(Clone)") continue;
+                var button = uiElement.gameObject.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.enabled = buttonEnabled;
+                }
+            }
         }
 
         private void OnFileBrowserOpen()

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using NUnit.Framework.Constraints;
 using Runtime;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 namespace _3DConnections.Runtime.ScriptableObjects
 {
@@ -16,7 +18,25 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private readonly Dictionary<GameObject, Node> _nodesByGameObject = new();
         public GameObject currentlySelectedGameObject;
         public Bounds currentlySelectedBounds;
-        public List<GameObject> allNodes = new();
+        private List<GameObject> _allNodes = new();
+        private bool _workingOnAllNodes; 
+        
+        public List<GameObject> allNodes
+        {
+            get => _allNodes;
+            set
+            {
+                _allNodes = value;
+                // if (!_workingOnAllNodes)
+                // {
+                //     _allNodes = value;                    
+                // }
+                // else
+                // {
+                //     Debug.Log("trying to alter allNodes while some other function is iterating it");
+                // }
+            }
+        }
 
         public void Clear()
         {
@@ -110,7 +130,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
 
         // Contains using the go as a key
-        public bool Contains(GameObject gameObject)
+        private bool Contains(GameObject gameObject)
         {
             return gameObject != null && _nodesByGameObject.ContainsKey(gameObject);
         }
@@ -195,8 +215,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
         /// <param name="componentType">Type of Component to be added to all nodes</param>
         public void NodesAddComponent(System.Type componentType)
         {
+            _workingOnAllNodes = true;
             if (allNodes.Count == 0) return;
-            foreach (var node in from node in allNodes
+            var copy = allNodes.ToArray();
+            foreach (var node in from node in copy
                      let existingComponent = node.GetComponent(componentType)
                      where existingComponent == null
                      select node)

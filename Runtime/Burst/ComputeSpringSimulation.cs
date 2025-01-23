@@ -59,6 +59,11 @@ namespace _3DConnections.Runtime.ComputePhysics
             CleanupBuffers();
 
             _nodes = nodeGraph.AllNodeTransforms2D;
+            if (_nodes.Length == 0)
+            {
+                Debug.Log("no nodes while trying to create compute buffer");
+                return;
+            }
             
             // Get kernel IDs
             _springKernel = computeShader.FindKernel("SpringForces");
