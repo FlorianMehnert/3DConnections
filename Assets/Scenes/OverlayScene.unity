@@ -484,6 +484,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4654813872808827996, guid: 5d5f88b76cde890c6beac15fee7c215c, type: 3}
+      propertyPath: sharedProfile
+      value: 
+      objectReference: {fileID: 11400000, guid: d4d21c61818eed9918723e7d6d3a0034, type: 2}
     - target: {fileID: 8099731814826070043, guid: 5d5f88b76cde890c6beac15fee7c215c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12.050312
@@ -695,14 +699,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 438415427359241478, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: removePhysicsEvent
-      value: 
-      objectReference: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
-    - target: {fileID: 1687708456964858736, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: removePhysicsEvent
-      value: 
-      objectReference: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
     - target: {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: uiCanvas
       value: 
@@ -711,10 +707,6 @@ PrefabInstance:
       propertyPath: dropdownPrefab
       value: 
       objectReference: {fileID: 1746867408}
-    - target: {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: removePhysicsEvent
-      value: 
-      objectReference: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
     - target: {fileID: 3451024132963029698, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.9663042
@@ -771,6 +763,10 @@ PrefabInstance:
       propertyPath: parentNode
       value: 
       objectReference: {fileID: 108217077}
+    - target: {fileID: 8876743746579018258, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: searchForPrefabsUsingNames
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

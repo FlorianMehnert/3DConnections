@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -7,6 +8,7 @@ using _3DConnections.Runtime.Utils;
 using TMPro;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 public class SceneAnalyzer : MonoBehaviour
 {
@@ -31,11 +33,17 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
     [SerializeField] private bool searchForPrefabsUsingNames;
+    private List<string> _cachedPrefabPaths = new();
     private int _currentNodes;
 
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
     [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
 
+
+    private void Start()
+    {
+        _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+    }
 
     public void AnalyzeScene()
     {
@@ -43,6 +51,7 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _instanceIdToNode.Clear();
+        _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
         var sceneHandler = GetComponent<SceneHandler>();
         Scene scene = default;
         if (sceneHandler != null)
@@ -50,11 +59,10 @@ public class SceneAnalyzer : MonoBehaviour
             scene = sceneHandler.analyzeScene;
         }
 
-        if (scene.IsValid())
-        {
-            var rootGameObjects = scene.GetRootGameObjects();
-            FinishAnalyzeScene(rootGameObjects);
-        }
+        if (!scene.IsValid()) return;
+        _cachedPrefabPaths.Clear();
+        var rootGameObjects = scene.GetRootGameObjects();
+        FinishAnalyzeScene(rootGameObjects);
     }
 
     private void OnValidate()
@@ -249,15 +257,8 @@ public class SceneAnalyzer : MonoBehaviour
         if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
         var gameObjectName = obj.name;
 
-        var prefabPaths = AssetDatabase.FindAssets("t:Prefab");
-
-        if (prefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>)
-            .Any(prefab => prefab != null && prefab.name == gameObjectName))
-        {
-            return true;
-        }
-
-        return false;
+        return _cachedPrefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>)
+            .Any(prefab => prefab != null && prefab.name == gameObjectName);
 
 #else
 	        return PrefabUtility.GetPrefabType(go) != PrefabType.None;
