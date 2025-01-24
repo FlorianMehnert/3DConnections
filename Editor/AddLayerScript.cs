@@ -7,25 +7,20 @@ public class AddLayerScript : Editor
     [MenuItem("Tools/Add OverlayScene Layer")]
     public static void AddPredefinedLayer()
     {
-        // Call the method to add the predefined layer
         AddLayer("OverlayScene");
     }
 
-    public static void AddLayer(string layerName)
+    private static void AddLayer(string layerName)
     {
-        // Check if the layer already exists
-        SerializedObject tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
-        SerializedProperty layersProp = tagManager.FindProperty("layers");
-        string[] layers = Enumerable.Range(0, 32).Select(index => LayerMask.LayerToName(index)).Where(l => !string.IsNullOrEmpty(l)).ToArray();
-        // Check if the layer already exists
-        foreach (var layer in layers) // Layers start from index 8
+        var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+        var layersProp = tagManager.FindProperty("layers");
+        var layers = Enumerable.Range(0, 32).Select(LayerMask.LayerToName).Where(l => !string.IsNullOrEmpty(l)).ToArray();
+        if (layers.Any(layer => layer == layerName))
         {
-            if (layer != layerName) continue;
             Debug.Log("Layer already exists: " + layerName);
             return;
         }
 
-        // Add new layer if there's an empty slot
         for (var i = 16; i < layersProp.arraySize; i++)
         {
             var layer = layersProp.GetArrayElementAtIndex(i);
