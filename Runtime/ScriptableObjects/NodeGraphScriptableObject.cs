@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -10,7 +11,7 @@ using UnityEngine;
 public class NodeGraphScriptableObject : ScriptableObject
 {
     // connections of Node objects and their visually representing GameObjects
-    private readonly Dictionary<GameObject, Node> _nodesByGameObject = new();
+    private Dictionary<GameObject, Node> _nodesByGameObject = new();
     public GameObject currentlySelectedGameObject;
     public Bounds currentlySelectedBounds;
     private List<GameObject> _allNodes = new();
@@ -28,13 +29,14 @@ public class NodeGraphScriptableObject : ScriptableObject
                 if (_allNodes == null)
                 {
                     _parentObject ??= SceneHandler.GetParentObject();
-                    if (_parentObject == null) 
+                    if (_parentObject == null)
                         return new List<GameObject>();
 
                     _allNodes = _parentObject.transform.Cast<Transform>()
                         .Select(child => child.gameObject)
                         .ToList();
                 }
+
                 return _allNodes;
             }
         }
@@ -307,5 +309,15 @@ public class NodeGraphScriptableObject : ScriptableObject
         {
             NodesRemoveComponent(componentType);
         }
+    }
+
+    public void Initialize()
+    {
+        _nodesByGameObject = new Dictionary<GameObject, Node>();
+        currentlySelectedGameObject = null;
+        currentlySelectedBounds = new Bounds();
+        _allNodes = new List<GameObject>();
+        _workingOnAllNodes = false;
+        _parentObject = null;
     }
 }

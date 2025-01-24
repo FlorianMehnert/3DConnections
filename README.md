@@ -128,3 +128,12 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 ## 16.January
 - added selection box
 - added camera focus on node-graph via hotkey
+
+# 17.January
+- follow node connections using increment shortcut ctrl+i
+
+# 18.January
+- fix drawGrid not filling allNodes
+- fix max node count is never reset
+- add physics sim to resolve overlapping nodes
+- fix node connection manager errors on unloading

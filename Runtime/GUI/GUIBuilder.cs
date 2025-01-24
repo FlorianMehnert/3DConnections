@@ -117,11 +117,7 @@ public class GUIBuilder : MonoBehaviour
 
     private void CreateButtons()
     {
-        //CreateButton("File Browser for Grid", 10, OnFileBrowserOpen);
-        //CreateButton("Draw Grid from Path", 14, () => _nodeBuilder.DrawGrid(path));
-
-        // CreateButton("Analyze Scene and create node connections", 7, _sceneAnalyzer.AnalyzeScene);
-        // CreateButton("Layout based on Connections", 10, NodeLayoutManagerV2.LayoutForest);
+        nodeGraph.Initialize();
         CreateButton("Native Physics Sim", 14, () =>
         {
             OnDropdownValueChanged(_dropdownInstance.value);
@@ -189,7 +185,11 @@ public class GUIBuilder : MonoBehaviour
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
         if (sceneAnalyzer != null)
         {
-            CreateButton("Clear", 14, sceneAnalyzer.ClearNodes);
+            CreateButton("Clear", 14, () =>
+            {
+                sceneAnalyzer.ClearNodes();
+                nodeGraph.Initialize();
+            });
         }
     }
 
