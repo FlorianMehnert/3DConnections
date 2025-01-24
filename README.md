@@ -137,3 +137,41 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 - fix max node count is never reset
 - add physics sim to resolve overlapping nodes
 - fix node connection manager errors on unloading
+
+# 19.January
+- add naming to connections
+- add editor selection to highlight
+- disable scene with entrypoint using overlayEvent
+- add springjoints
+
+# 20.January
+- tried and discarded ECS for physics sim due to lacking performance increase
+- allow to convert physics sim to burst
+
+# 21.January
+- add package.json to this package
+- add standaloneFileBrowser to this package
+- fix and update dependencies
+
+# 22.January
+- fixing more bugs
+
+# 23.January
+- cleanup
+- allow to ignore transforms on creating the nodegraph
+- add compute shader implementation of the physics sim
+- correct asmdefs and csproj files
+- add custom editor to execute camera functions
+- add bounds to nodegraph to foucs on
+- allow shift rectangle selection
+- improve recall for prefab identification using name matching
+- add bloom using urp
+- improve the color palette
+
+# 24.January
+- fix package to allow shipping without errors
+- add scripts to copy the scene to the assets folder to allow opening from readlony package
+- script to add the overlay scene to the build index
+- right click context to add entrypoint prefab to your scene
+- add license
+- remove roslyn dependency
