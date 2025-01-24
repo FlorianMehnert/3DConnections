@@ -114,6 +114,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SelectSceneDropdown
       objectReference: {fileID: 0}
+    - target: {fileID: 314557949768589607, guid: 09fec709c8005ad89895ddf18c2f0e7a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3151957225991671981, guid: 09fec709c8005ad89895ddf18c2f0e7a, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
