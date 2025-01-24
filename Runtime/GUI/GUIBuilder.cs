@@ -19,7 +19,11 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private TMP_Dropdown dropdownPrefab;
     [SerializeField] private GameObject buttonPrefab;
     [SerializeField] private Canvas uiCanvas;
-    private TMP_Dropdown _dropdownInstance;
+    private TMP_Dropdown _sceneDropdownInstance;
+    private TMP_Dropdown _nodeGraphDropdownInstance;
+    private GameObject _clearButton;
+    private GameObject _removePhysicsButton;
+    private UnityAction _toExecute;
     [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
@@ -41,6 +45,7 @@ public class GUIBuilder : MonoBehaviour
         }
 
         CreateSceneDropdown();
+        CreateNodeGraphDropdown();
         CreateButtons();
     }
 
@@ -60,21 +65,16 @@ public class GUIBuilder : MonoBehaviour
     {
         // Instantiate the dropdown prefab as child of canvas
         var dropdownInstance = Instantiate(dropdownPrefab, uiCanvas.transform);
-        _dropdownInstance = dropdownInstance;
-        _dropdownInstance.gameObject.SetActive(true);
+        _sceneDropdownInstance = dropdownInstance;
+        _sceneDropdownInstance.gameObject.SetActive(true);
 
         // Get the dropdown component (works with both standard and TMP dropdowns)
         var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
-        var standardDropdown = dropdownInstance.GetComponent<Dropdown>();
 
         // Clear existing options
         if (tmpDropdown != null)
         {
             tmpDropdown.ClearOptions();
-        }
-        else if (standardDropdown != null)
-        {
-            standardDropdown.ClearOptions();
         }
 
         // Get all scenes in build settings
@@ -94,15 +94,11 @@ public class GUIBuilder : MonoBehaviour
             tmpDropdown.enabled = true;
             tmpDropdown.AddOptions(sceneOptions);
         }
-        else if (standardDropdown != null)
-        {
-            standardDropdown.enabled = true;
-            standardDropdown.AddOptions(sceneOptions.Select(option => new Dropdown.OptionData(option)).ToList());
-        }
 
         if (sceneOptions.Count > 0)
         {
             var scene = SceneManager.GetSceneByName(sceneOptions.First());
+            Debug.Log(scene.name + " is set to be analyzed");
             var sceneHandler = GetComponent<SceneHandler>();
             if (sceneHandler)
                 sceneHandler.analyzeScene = scene;
@@ -111,72 +107,77 @@ public class GUIBuilder : MonoBehaviour
         var rectTransform = dropdownInstance.GetComponent<RectTransform>();
         rectTransform.anchoredPosition = GetButtonPosition();
         ScriptableObject.CreateInstance<SceneReference>();
-        dropdownInstance.onValueChanged.AddListener(OnDropdownValueChanged);
+        dropdownInstance.onValueChanged.AddListener(OnSceneDropdownValueChanged);
+    }
+
+    private void CreateNodeGraphDropdown()
+    {
+        var dropdownInstance = Instantiate(dropdownPrefab, uiCanvas.transform);
+        _nodeGraphDropdownInstance = dropdownInstance;
+        _nodeGraphDropdownInstance.gameObject.SetActive(true);
+        var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
+        if (tmpDropdown != null)
+        {
+            tmpDropdown.ClearOptions();
+        }
+
+        if (tmpDropdown != null)
+        {
+            tmpDropdown.enabled = true;
+            var dropdownOptions = new List<string>()
+            {
+                "Static Layout",
+                "Native Physics Sim",
+                "Burst Physics Sim",
+                "GPU Physics Sim"
+            };
+            tmpDropdown.AddOptions(dropdownOptions);
+        }
+
+        var rectTransform = dropdownInstance.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = GetButtonPosition();
+        ScriptableObject.CreateInstance<SceneReference>();
+        dropdownInstance.onValueChanged.AddListener(OnNodeGraphDropdownChanged);
+    }
+
+    private void StaticLayout()
+    {
+        OnSceneDropdownValueChanged(_sceneDropdownInstance.value);
+        _sceneAnalyzer.AnalyzeScene();
+        NodeLayoutManagerV2.LayoutForest();
     }
 
 
     private void CreateButtons()
     {
         nodeGraph.Initialize();
-        CreateButton("Native Physics Sim", 14, () =>
+        CreateButton("Execute Action", 14, () =>
         {
-            OnDropdownValueChanged(_dropdownInstance.value);
-            _sceneAnalyzer.AnalyzeScene();
-            NodeLayoutManagerV2.LayoutForest();
-            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
-            NodeConnectionManager.Instance.AddSpringsToConnections();
+            _toExecute?.Invoke();
+            _nodeGraphDropdownInstance.enabled = false;
+            _nodeGraphDropdownInstance.image.color = Color.gray;
+            if (_removePhysicsButton != null)
+            {
+                var button = _removePhysicsButton.GetComponent<Image>();
+                button.color = Color.white;
+                button.enabled = true;
+            }
+
+            if (_clearButton == null) return;
+            {
+                var button = _clearButton.GetComponent<Image>();
+                button.color = Color.white;
+                button.enabled = true;
+            }
+
         });
+        _toExecute = StaticLayout;
         var types = new List<System.Type>
         {
             typeof(SpringJoint2D),
             typeof(Rigidbody2D)
         };
-        var springSimulation = GetComponent<SpringSimulation>();
-
-        var physicsConverter = gameObject.GetComponent<PhysicsEcsConverter>();
-        if (physicsConverter != null)
-            CreateButton("Convert to ECS", 14, physicsConverter.ConvertNodesToEcs);
-
-        if (springSimulation != null)
-        {
-            CreateButton("Burst Sim", 14, () =>
-            {
-                OnDropdownValueChanged(_dropdownInstance.value);
-                Debug.Log("starting to analyze scene using " + _dropdownInstance.options[_dropdownInstance.value].text);
-                _sceneAnalyzer.AnalyzeScene();
-                NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
-                NodeLayoutManagerV2.LayoutForest();
-                if (nodeGraph.AllNodes != null)
-                {
-                    nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                    springSimulation.Simulate();
-                }
-                else
-                {
-                    Debug.Log("allNodes is null");
-                }
-            });
-        }
-
-        var gpuSpringSim = gameObject.GetComponent<ComputeSpringSimulation>();
-        if (gpuSpringSim != null)
-        {
-            CreateButton("GPU Sim", 14, (() =>
-                    {
-                        OnDropdownValueChanged(_dropdownInstance.value);
-                        _sceneAnalyzer.AnalyzeScene();
-                        NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
-                        NodeLayoutManagerV2.LayoutForest();
-                        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
-                        NodeConnectionManager.Instance.AddSpringsToConnections();
-                        gpuSpringSim.Initialize();
-                    }
-                )
-            );
-        }
-
-        CreateButton("Remove Physics", 14, () =>
+        _removePhysicsButton = CreateButton("Remove Physics", 14, () =>
         {
             nodeGraph.NodesRemoveComponents(types);
             removePhysicsEvent.TriggerEvent();
@@ -185,15 +186,17 @@ public class GUIBuilder : MonoBehaviour
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
         if (sceneAnalyzer != null)
         {
-            CreateButton("Clear", 14, () =>
+            _clearButton = CreateButton("Clear", 14, () =>
             {
                 sceneAnalyzer.ClearNodes();
                 nodeGraph.Initialize();
+                _nodeGraphDropdownInstance.enabled = true;
+                _nodeGraphDropdownInstance.image.color = Color.white;
             });
         }
     }
 
-    private void CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default)
+    private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true)
     {
         if (anchoredPosition == default)
         {
@@ -202,6 +205,8 @@ public class GUIBuilder : MonoBehaviour
 
         var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
         var buttonComponent = browserButtonInstance.GetComponent<Button>();
+        buttonComponent.enabled = isEnabled;
+        buttonComponent.image.color = isEnabled ? Color.white : Color.gray;
         var rectTransform = browserButtonInstance.GetComponent<RectTransform>();
 
         rectTransform.anchoredPosition = anchoredPosition;
@@ -211,13 +216,54 @@ public class GUIBuilder : MonoBehaviour
             buttonText.text = text;
             buttonText.fontSize = fontSize;
         }
-
         if (buttonComponent != null) buttonComponent.onClick.AddListener(onClick);
+        return browserButtonInstance;
     }
 
-    private void OnDropdownValueChanged(int index)
+    private void OnNodeGraphDropdownChanged(int index)
     {
-        var selectedScene = _dropdownInstance.options[index].text;
+        var actions = new UnityAction[]
+        {
+            StaticLayout,
+            () =>
+            {
+                StaticLayout();
+                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                NodeConnectionManager.Instance.AddSpringsToConnections();
+            },
+            () =>
+            {
+                StaticLayout();
+                NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to bursrt array
+                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                NodeConnectionManager.Instance.AddSpringsToConnections();
+                var springSimulation = GetComponent<SpringSimulation>();
+                if (springSimulation != null)
+                {
+                    springSimulation.Simulate();
+                }
+                else
+                {
+                    Debug.Log("missing springSimulation Script on the Manager");
+                }
+            },
+            () =>
+            {
+                var gpuSpringSim = gameObject.GetComponent<ComputeSpringSimulation>();
+                if (gpuSpringSim == null) return;
+                StaticLayout();
+                NodeConnectionManager.Instance.ConvertToNativeArray();
+                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                NodeConnectionManager.Instance.AddSpringsToConnections();
+                gpuSpringSim.Initialize();
+            }
+        };
+        _toExecute = actions[index];
+    }
+
+    private void OnSceneDropdownValueChanged(int index)
+    {
+        var selectedScene = _sceneDropdownInstance.options[index].text;
         var scene = SceneManager.GetSceneByName(selectedScene);
 
         var sceneHandler = GetComponent<SceneHandler>();
