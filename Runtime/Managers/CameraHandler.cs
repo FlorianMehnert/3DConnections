@@ -24,9 +24,29 @@ public class CameraController : MonoBehaviour
     private void Start()
     {
         _cam = overlay.GetCameraOfScene();
+        AddLayerToCamera("OverlayScene");
 
         // Calculate world dimensions based on current orthographic size
         CalculateWorldDimensions();
+    }
+
+    private void AddLayerToCamera(string layerName)
+    {
+        var layerToAdd = LayerMask.GetMask(layerName);
+        if (layerToAdd == 0)
+        {
+            Debug.LogWarning($"In AddLayerToCamera, layer '{layerName}' does not exist!");
+            return;
+        }
+
+        var cameraComponent = gameObject.GetComponent<Camera>();
+        if (cameraComponent == null)
+        {
+            Debug.Log("Please only attach the CameraController to a Camera");
+            return;
+        }
+
+        cameraComponent.cullingMask |= layerToAdd;
     }
 
     private void Update()
@@ -92,7 +112,7 @@ public class CameraController : MonoBehaviour
         _lastMousePosition = Input.mousePosition;
     }
 
-    public void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
+    private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
     {
         if (!targetObject && nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
 #if UNITY_EDITOR
