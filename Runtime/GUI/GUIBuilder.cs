@@ -181,7 +181,7 @@ public class GUIBuilder : MonoBehaviour
         {
             nodeGraph.NodesRemoveComponents(types);
             removePhysicsEvent.TriggerEvent();
-        });
+        }, isEnabled:false);
 
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
         if (sceneAnalyzer != null)
@@ -192,7 +192,7 @@ public class GUIBuilder : MonoBehaviour
                 nodeGraph.Initialize();
                 _nodeGraphDropdownInstance.enabled = true;
                 _nodeGraphDropdownInstance.image.color = Color.white;
-            });
+            }, isEnabled:false);
         }
     }
 
