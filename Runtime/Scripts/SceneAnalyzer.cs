@@ -30,7 +30,7 @@ public class SceneAnalyzer : MonoBehaviour
     [ReadonlyColor] private Color _referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
-    [ReadOnly] private bool _searchForPrefabsUsingNames;
+    [SerializeField] private bool searchForPrefabsUsingNames;
     private int _currentNodes;
 
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
@@ -246,7 +246,7 @@ public class SceneAnalyzer : MonoBehaviour
                 return true;
         }
 
-        if (!_searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
+        if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
         var gameObjectName = obj.name;
 
         var prefabPaths = AssetDatabase.FindAssets("t:Prefab");
