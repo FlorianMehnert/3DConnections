@@ -39,9 +39,9 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
     float2 position = nodes[id.x].position;
     float2 velocity = nodes[id.x].velocity;
     
-    for (int j = 0; j < nodeCount; j++)
+    for (int j = 0; (uint)j < nodeCount; j++)
     {
-        if (id.x == j) continue;
+        if (id.x == (uint)j) continue;
         
         float2 delta = position - nodes[j].position;
         float distance = length(delta);
