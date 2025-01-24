@@ -158,15 +158,17 @@ public class GUIBuilder : MonoBehaviour
             _nodeGraphDropdownInstance.image.color = Color.gray;
             if (_removePhysicsButton != null)
             {
+                var image = _removePhysicsButton.GetComponent<Image>();
                 var button = _removePhysicsButton.GetComponent<Image>();
-                button.color = Color.white;
+                image.color = Color.white;
                 button.enabled = true;
             }
 
             if (_clearButton == null) return;
             {
-                var button = _clearButton.GetComponent<Image>();
-                button.color = Color.white;
+                var image = _removePhysicsButton.GetComponent<Image>();
+                var button = _removePhysicsButton.GetComponent<Image>();
+                image.color = Color.white;
                 button.enabled = true;
             }
 
