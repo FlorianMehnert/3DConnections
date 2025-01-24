@@ -10,7 +10,7 @@ struct NodeData
 };
 
 RWStructuredBuffer<NodeData> nodes;
-int nodeCount;
+uint nodeCount;
 float deltaTime;
 float stiffness;
 float damping;
@@ -20,7 +20,7 @@ float collisionResponseStrength;
 [numthreads(64,1,1)]
 void SpringForces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)nodeCount) return;
+    if (id.x >= nodeCount) return;
     
     // Calculate spring forces
     float2 targetPosition = float2(0, 0);
@@ -34,7 +34,7 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
 [numthreads(64,1,1)]
 void CollisionResponse (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)nodeCount) return;
+    if (id.x >= nodeCount) return;
     
     float2 position = nodes[id.x].position;
     float2 velocity = nodes[id.x].velocity;
@@ -75,7 +75,7 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
 [numthreads(64,1,1)]
 void IntegrateForces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)nodeCount) return;
+    if (id.x >= nodeCount) return;
     
     // Semi-implicit Euler integration
     nodes[id.x].velocity += nodes[id.x].force * deltaTime;
