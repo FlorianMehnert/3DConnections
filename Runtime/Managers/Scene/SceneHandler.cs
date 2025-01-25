@@ -16,7 +16,6 @@ using UnityEngine.SceneManagement;
         private TMP_Dropdown _sceneDropdown;
         private SceneManager _sceneManager;
         [SerializeField] public Scene analyzeScene;
-        [SerializeField] public Scene overlayScene;
 
 
         private static bool IsSceneLoaded(string sceneName)
@@ -104,6 +103,18 @@ using UnityEngine.SceneManagement;
 
         public static GameObject GetParentObject()
         {
-            return GameObject.Find("ParentNodeObject");
+            return GameObject.Find("ParentNodesObject");
+        }
+
+        public static List<GameObject> GetNodesByTransform()
+        {
+            var parentObject = GetParentObject();
+            
+            if (parentObject == null)
+                return new List<GameObject>();
+            Debug.Log("parent object is:"  + parentObject);
+            return parentObject.transform.Cast<Transform>()
+                .Select(child => child.gameObject)
+                .ToList();
         }
     }
