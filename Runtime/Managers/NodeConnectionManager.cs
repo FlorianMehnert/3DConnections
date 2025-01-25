@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using _3DConnections.Assets.ScriptableObjects.Configurations;
 using _3DConnections.Runtime;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -13,10 +14,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private static NodeConnectionManager _instance;
 
     [Header("Component based physics sim")]
-    public float springFrequency = 2.0f;
-
-    public float springDamping = 0.5f;
-    public float distance = 1f;
+    public PhysicsSimulationConfiguration simConfig;
 
     private NativeArray<float3> _nativeConnections;
     private bool _usingNativeArray;
@@ -156,9 +154,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
         {
             var spring = connection.startNode.AddComponent<SpringJoint2D>();
             spring.connectedBody = connection.endNode.GetComponent<Rigidbody2D>();
-            spring.frequency = springFrequency;
-            spring.dampingRatio = springDamping;
-            spring.distance = distance;
+            spring.frequency = simConfig.stiffness;
+            spring.dampingRatio = simConfig.damping;
+            spring.distance = simConfig.colliderRadius;
             if (spring.connectedBody == null) return;
             spring.connectedBody.freezeRotation = true;
         }
@@ -172,9 +170,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
         foreach (var spring in connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>())
                      .SelectMany(springComponents => springComponents))
         {
-            spring.dampingRatio = springDamping;
-            spring.frequency = springFrequency;
-            spring.distance = distance;
+            spring.dampingRatio = simConfig.damping;
+            spring.frequency = simConfig.stiffness;
+            spring.distance = simConfig.colliderRadius;
         }
     }
 

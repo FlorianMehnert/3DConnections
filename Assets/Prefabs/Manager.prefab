@@ -90,9 +90,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e997bb88bd44d52aa3000df1dc6965b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  springFrequency: 0.1
-  springDamping: 0.1
-  distance: 5
+  simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
   connections: []
   lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
 --- !u!114 &5742035924882090109
