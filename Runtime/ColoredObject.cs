@@ -16,6 +16,7 @@ namespace _3DConnections.Runtime
         private float _timer;
         private UnityAction _actionAfterHighlight;
         [SerializeField] private OverlaySceneScriptableObject overlay;
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
 
         private void Start()
@@ -98,6 +99,7 @@ namespace _3DConnections.Runtime
             {
                 _objectRenderer.material.color = _originalColor;
             }
+            _objectRenderer.material.DisableKeyword("_EMISSION");
         }
 
         public void SetToOriginalColor()
@@ -116,13 +118,16 @@ namespace _3DConnections.Runtime
         /// <summary>
         /// Highlights the LineRenderer by changing its color temporarily.
         /// </summary>
-        public void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null)
+        private void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null)
         {
             if (!_objectRenderer || !_objectRenderer.material) return;
             _objectRenderer.material.color = highlightColor;
             _highlightDuration = duration;
             _timer = 0f;
             _isHighlighting = true;
+            _objectRenderer.material.EnableKeyword("_EMISSION");
+            var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
+            _objectRenderer.material.SetColor(EmissionColor, emissionColor);
             _actionAfterHighlight = actionAfterHighlight;
         }
     }

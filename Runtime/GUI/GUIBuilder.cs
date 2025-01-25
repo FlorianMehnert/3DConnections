@@ -192,6 +192,7 @@ public class GUIBuilder : MonoBehaviour
         nodeGraph.Initialize();
         _executeNodeSpawnButton = CreateButton("Execute Action", 14, (() =>
         {
+            OnNodeGraphDropdownChanged(_nodeGraphDropdownInstance.value);
             _sceneAnalyzer.AnalyzeScene();
             NodeLayoutManagerV2.LayoutForest();
             ChangeButtonEnabled(_removePhysicsButton, true);
