@@ -23,6 +23,7 @@ public class GUIBuilder : MonoBehaviour
     private TMP_Dropdown _nodeGraphDropdownInstance;
     private GameObject _clearButton;
     private GameObject _removePhysicsButton;
+    private GameObject _executeNodeSpawnButton;
     private UnityAction _toExecute;
     [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
@@ -151,28 +152,12 @@ public class GUIBuilder : MonoBehaviour
     private void CreateButtons()
     {
         nodeGraph.Initialize();
-        CreateButton("Execute Action", 14, () =>
+        _executeNodeSpawnButton = CreateButton("Execute Action", 14, () =>
         {
             _toExecute?.Invoke();
-            _nodeGraphDropdownInstance.enabled = false;
-            _nodeGraphDropdownInstance.image.color = Color.gray;
-            if (_removePhysicsButton != null)
-            {
-                var image = _removePhysicsButton.GetComponent<Image>();
-                var button = _removePhysicsButton.GetComponent<Image>();
-                image.color = Color.white;
-                button.enabled = true;
-            }
-
-            if (_clearButton == null) return;
-            {
-                var image = _removePhysicsButton.GetComponent<Image>();
-                var button = _removePhysicsButton.GetComponent<Image>();
-                image.color = Color.white;
-                button.enabled = true;
-            }
-
-        });
+            ChangeButtonEnabled(_removePhysicsButton, true);
+            ChangeButtonEnabled(_clearButton, true);
+        }, disableAfterClick: true);
         _toExecute = StaticLayout;
         var types = new List<System.Type>
         {
@@ -183,7 +168,7 @@ public class GUIBuilder : MonoBehaviour
         {
             nodeGraph.NodesRemoveComponents(types);
             removePhysicsEvent.TriggerEvent();
-        }, isEnabled:false);
+        }, isEnabled: false, disableAfterClick: true);
 
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
         if (sceneAnalyzer != null)
@@ -192,13 +177,22 @@ public class GUIBuilder : MonoBehaviour
             {
                 sceneAnalyzer.ClearNodes();
                 nodeGraph.Initialize();
-                _nodeGraphDropdownInstance.enabled = true;
-                _nodeGraphDropdownInstance.image.color = Color.white;
-            }, isEnabled:false);
+                ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
+            }, isEnabled: false, disableAfterClick: true);
         }
     }
 
-    private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true)
+    private static void ChangeButtonEnabled(GameObject buttonGameObject, bool isEnabled)
+    {
+        var image = buttonGameObject.GetComponent<Image>();
+        var button = buttonGameObject.GetComponent<Button>();
+        if (buttonGameObject == null) return;
+        
+        image.color = isEnabled ? Color.white : Color.gray;
+        button.enabled = isEnabled;
+    }
+
+    private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true, bool disableAfterClick = false)
     {
         if (anchoredPosition == default)
         {
@@ -218,7 +212,16 @@ public class GUIBuilder : MonoBehaviour
             buttonText.text = text;
             buttonText.fontSize = fontSize;
         }
-        if (buttonComponent != null) buttonComponent.onClick.AddListener(onClick);
+
+        if (buttonComponent == null) return browserButtonInstance;
+        buttonComponent.onClick.AddListener(onClick);
+        buttonComponent.onClick.AddListener(() =>
+        {
+            onClick.Invoke();
+            if (disableAfterClick)
+                ChangeButtonEnabled(browserButtonInstance, false);
+        });
+
         return browserButtonInstance;
     }
 
