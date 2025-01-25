@@ -1,9 +1,6 @@
-namespace _3DConnections.Runtime
+public enum PrefabType
 {
-    public enum PrefabType
-    {
-        PrefabAsset,
-        PrefabInstance,
-        GameObject,
-    }
+    PrefabAsset,
+    PrefabInstance,
+    GameObject,
 }
