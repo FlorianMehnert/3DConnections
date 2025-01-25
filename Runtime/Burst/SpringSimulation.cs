@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using _3DConnections.Assets.ScriptableObjects.Configurations;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -8,10 +9,7 @@ using UnityEngine;
 public class SpringSimulation : MonoBehaviour
 {
     public NodeGraphScriptableObject nodeGraph;
-    public float stiffness = 0.1f;
-    public float damping = 0.02f;
-    public float colliderRadius = 5f;
-    public float collisionResponseStrength = 0.1f;
+    [SerializeField] private PhysicsSimulationConfiguration simConfig;
 
     private NativeArray<float2> _positions;
     private NativeArray<float2> _newPositions;
@@ -108,8 +106,8 @@ public class SpringSimulation : MonoBehaviour
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
             Forces = _forces,
-            Stiffness = stiffness,
-            Damping = damping,
+            Stiffness = simConfig.stiffness,
+            Damping = simConfig.damping,
             DeltaTime = deltaTime
         };
 
@@ -119,8 +117,8 @@ public class SpringSimulation : MonoBehaviour
             NewPositions = _newPositions,
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
-            ColliderRadius = colliderRadius,
-            CollisionResponseStrength = collisionResponseStrength,
+            ColliderRadius = simConfig.colliderRadius,
+            CollisionResponseStrength = simConfig.collisionResponseStrength,
             DeltaTime = deltaTime
         };
 

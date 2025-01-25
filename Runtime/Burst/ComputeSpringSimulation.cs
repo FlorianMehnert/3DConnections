@@ -1,3 +1,4 @@
+using _3DConnections.Assets.ScriptableObjects.Configurations;
 using UnityEngine;
 using Unity.Mathematics;
 
@@ -12,10 +13,7 @@ public class ComputeSpringSimulation : MonoBehaviour
     private static readonly int CollisionResponseStrength = Shader.PropertyToID("collisionResponseStrength");
     public ComputeShader computeShader;
     public NodeGraphScriptableObject nodeGraph;
-    public float stiffness = 0.1f;
-    public float damping = 0.02f;
-    public float colliderRadius = 5f;
-    public float collisionResponseStrength = 0.1f;
+    [SerializeField] private PhysicsSimulationConfiguration simConfig; 
 
     private ComputeBuffer _nodeBuffer;
     private Transform[] _nodes;
@@ -113,10 +111,10 @@ public class ComputeSpringSimulation : MonoBehaviour
         // Update shader parameters
         computeShader.SetInt(NodeCount, _nodes.Length);
         computeShader.SetFloat(DeltaTime, deltaTime);
-        computeShader.SetFloat(Stiffness, stiffness);
-        computeShader.SetFloat(Damping, damping);
-        computeShader.SetFloat(ColliderRadius, colliderRadius);
-        computeShader.SetFloat(CollisionResponseStrength, collisionResponseStrength);
+        computeShader.SetFloat(Stiffness, simConfig.stiffness);
+        computeShader.SetFloat(Damping, simConfig.damping);
+        computeShader.SetFloat(ColliderRadius, simConfig.colliderRadius);
+        computeShader.SetFloat(CollisionResponseStrength, simConfig.collisionResponseStrength);
 
         // Calculate thread groups
         var threadGroups = Mathf.CeilToInt(_nodes.Length / 64f);

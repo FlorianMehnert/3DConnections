@@ -125,10 +125,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
-  stiffness: 0.1
-  damping: 0.02
-  colliderRadius: 5
-  collisionResponseStrength: 0.1
+  simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
 --- !u!114 &1748416101785934847
 MonoBehaviour:
@@ -202,10 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   computeShader: {fileID: 7200000, guid: dae5f5e648014affb9e80da422bf6545, type: 3}
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
-  stiffness: 0.1
-  damping: 0.02
-  colliderRadius: 5
-  collisionResponseStrength: 0.1
+  simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
 --- !u!114 &3086584372877910348
 MonoBehaviour:

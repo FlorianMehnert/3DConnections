@@ -691,6 +691,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 438415427359241478, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: simConfig
+      value: 
+      objectReference: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
+    - target: {fileID: 1687708456964858736, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+      propertyPath: simConfig
+      value: 
+      objectReference: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
     - target: {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: uiCanvas
       value: 
