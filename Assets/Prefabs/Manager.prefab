@@ -221,5 +221,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   analyzeScene:
     m_Handle: 0
-  overlayScene:
-    m_Handle: 0

@@ -319,10 +319,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasDropdown
       objectReference: {fileID: 0}
-    - target: {fileID: 2912296795345058206, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7579628121259745900, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -484,10 +480,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4654813872808827996, guid: 5d5f88b76cde890c6beac15fee7c215c, type: 3}
-      propertyPath: sharedProfile
-      value: 
-      objectReference: {fileID: 11400000, guid: d4d21c61818eed9918723e7d6d3a0034, type: 2}
     - target: {fileID: 8099731814826070043, guid: 5d5f88b76cde890c6beac15fee7c215c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12.050312
@@ -763,10 +755,6 @@ PrefabInstance:
       propertyPath: parentNode
       value: 
       objectReference: {fileID: 108217077}
-    - target: {fileID: 8876743746579018258, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: searchForPrefabsUsingNames
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
