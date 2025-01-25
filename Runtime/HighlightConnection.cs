@@ -1,5 +1,3 @@
-namespace _3DConnections.Runtime
-{
     using UnityEngine;
 
     public class HighlightConnection : MonoBehaviour
@@ -53,4 +51,3 @@ namespace _3DConnections.Runtime
             }
         }
     }
-}

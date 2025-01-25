@@ -192,7 +192,8 @@ public class GUIBuilder : MonoBehaviour
         nodeGraph.Initialize();
         _executeNodeSpawnButton = CreateButton("Execute Action", 14, (() =>
         {
-            StaticLayout();
+            _sceneAnalyzer.AnalyzeScene();
+            NodeLayoutManagerV2.LayoutForest();
             ChangeButtonEnabled(_removePhysicsButton, true);
             ChangeButtonEnabled(_clearButton, true);
         }), disableAfterClick: true);
@@ -260,7 +261,6 @@ public class GUIBuilder : MonoBehaviour
         buttonComponent.onClick.AddListener(onClick);
         buttonComponent.onClick.AddListener(() =>
         {
-            onClick.Invoke();
             if (disableAfterClick)
                 ChangeButtonEnabled(browserButtonInstance, false);
         });

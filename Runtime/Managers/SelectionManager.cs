@@ -192,7 +192,15 @@ public class CubeSelector : MonoBehaviour
 
                 foreach (var cube in _selectedCubes)
                 {
-                    _selectedCubesStartPositions[cube] = cube.transform.position;
+                    try
+                    {
+                        _selectedCubesStartPositions[cube] = cube.transform.position;
+                    }
+                    finally
+                    {
+                        Debug.Log("trying to access destroyed gameobject");
+                    } 
+                    
                 }
             }
             else
