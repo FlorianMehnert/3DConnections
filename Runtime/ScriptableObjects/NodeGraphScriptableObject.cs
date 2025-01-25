@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -286,10 +285,11 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// Remove component of a given type from all nodes
     /// </summary>
     /// <param name="componentType">Component type to remove</param>
-    private void NodesRemoveComponent(Type componentType)
+    /// <param name="customNodesList"></param>
+    private void NodesRemoveComponent(Type componentType, List<GameObject> customNodesList = null)
     {
         // Check if the target object already has the component
-        foreach (var node in AllNodes)
+        foreach (var node in customNodesList ?? AllNodes)
         {
             if (node != null && componentType != null)
             {
@@ -302,12 +302,12 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
 
-    public void NodesRemoveComponents(List<Type> componentTypes)
+    public void NodesRemoveComponents(List<Type> componentTypes, List<GameObject> customNodesList = null)
     {
         var orderedTypes = componentTypes.OrderBy(t => t != typeof(SpringJoint2D)).ToList();
         foreach (var componentType in orderedTypes)
         {
-            NodesRemoveComponent(componentType);
+            NodesRemoveComponent(componentType, customNodesList);
         }
     }
 
