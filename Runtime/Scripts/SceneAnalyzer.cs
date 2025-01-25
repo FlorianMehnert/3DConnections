@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using _3DConnections.Editor.CustomTags;
+using JetBrains.Annotations;
 using TMPro;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
@@ -28,13 +29,13 @@ public class SceneAnalyzer : MonoBehaviour
     [ReadonlyColor] private Color _scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
     [ReadonlyColor] private Color _parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
     [ReadonlyColor] private Color _componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-    [ReadonlyColor] private Color _referenceConnection = new(1f, 0f, 0.5f); // Light Yellow
+    [ReadonlyColor] private Color _referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
     [SerializeField] private bool searchForPrefabsUsingNames;
     private List<string> _cachedPrefabPaths = new();
     private int _currentNodes;
-
+    public List<string> ignoredTypes = new();
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
     [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
 
@@ -42,6 +43,11 @@ public class SceneAnalyzer : MonoBehaviour
     private void Start()
     {
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+    }
+    
+    public List<Type> GetIgnoredTypes()
+    {
+        return ignoredTypes.Select(Type.GetType).Where(type => type != null).ToList();
     }
 
     public void AnalyzeScene()
@@ -459,7 +465,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
     private void TraverseComponent(Component component, GameObject parentNodeObject = null)
     {
-        if (component == null || _currentNodes > maxNodes ||
+        if (component == null || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) || 
             _ignoreTransforms && component.GetType() == typeof(Transform)) return;
 
         var instanceId = component.GetInstanceID();
