@@ -159,6 +159,8 @@ public sealed class NodeConnectionManager : MonoBehaviour
             spring.frequency = springFrequency;
             spring.dampingRatio = springDamping;
             spring.distance = distance;
+            if (spring.connectedBody == null) return;
+            spring.connectedBody.freezeRotation = true;
         }
     }
 
