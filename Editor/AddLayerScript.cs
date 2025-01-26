@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class AddLayerScript : Editor
 {
-    [MenuItem("Tools/Add OverlayScene Layer")]
+    [MenuItem("Tools/3DConnections/Add OverlayScene Layer")]
     public static void AddPredefinedLayer()
     {
         AddLayer("OverlayScene");

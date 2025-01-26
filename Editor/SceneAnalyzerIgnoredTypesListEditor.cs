@@ -30,6 +30,7 @@ public class SceneAnalyzerEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        DrawDefaultInspector();
         EditorGUILayout.LabelField("Ignored Types", EditorStyles.boldLabel);
 
         // Display ignored types list

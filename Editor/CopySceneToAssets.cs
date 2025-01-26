@@ -11,7 +11,7 @@ public class CopySceneFromPackage
     private static string packageName = "com.florian-mehnert.3d-connections";
     private static string sceneName = "OverlayScene.unity";
 
-    [MenuItem("Tools/Copy and Add Overlay Scene")]
+    [MenuItem("Tools/3DConnections/Copy and Add Overlay Scene")]
     public static void CopyOverlayScene()
     {
         _listRequest = Client.List();

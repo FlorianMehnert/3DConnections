@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class AddEntryPointPrefabContext
 {
-    [MenuItem("GameObject/Add 3DConnections Entrypoint", false, 0)]
+    [MenuItem("GameObject/3DConnections/Add Entrypoint", false, 0)]
     private static void AddPrefabToScene()
     {
         const string prefabName = "3DConnectionsLoadOverlay";
