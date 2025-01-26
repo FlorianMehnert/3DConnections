@@ -180,7 +180,7 @@ MonoBehaviour:
   nodeWidth: 2
   nodeHeight: 1
   gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
-  maxNodes: 1000
+  maxNodes: 100
   searchForPrefabsUsingNames: 1
   ignoredTypes: []
   prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
