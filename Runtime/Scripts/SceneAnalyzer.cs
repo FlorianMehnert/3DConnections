@@ -314,7 +314,6 @@ public class SceneAnalyzer : MonoBehaviour
 
     private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth)
     {
-        Debug.Log("depth is" + depth);
         NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7)+.1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10)+.1f);
         var inConnections = inGameObject.GetComponent<NodeConnections>();
         var outConnections = outGameObject.GetComponent<NodeConnections>();
