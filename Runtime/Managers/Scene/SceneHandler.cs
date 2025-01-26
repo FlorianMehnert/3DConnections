@@ -106,7 +106,7 @@ using UnityEngine.SceneManagement;
             return GameObject.Find("ParentNodesObject");
         }
 
-        public static List<GameObject> GetNodesByTransform()
+        public static List<GameObject> GetNodesUsingTheNodegraphParentObject()
         {
             var parentObject = GetParentObject();
             

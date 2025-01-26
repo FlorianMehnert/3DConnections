@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 8876743746579018258}
   - component: {fileID: 438415427359241478}
   - component: {fileID: 3086584372877910348}
+  - component: {fileID: 580276786112376230}
   m_Layer: 6
   m_Name: Manager
   m_TagString: Untagged
@@ -91,6 +92,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
+  nodeGraph: {fileID: 0}
   connections: []
   lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
 --- !u!114 &5742035924882090109
@@ -219,3 +221,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   analyzeScene:
     m_Handle: 0
+--- !u!114 &580276786112376230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43d47821150742bfa51dbfad33979692, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

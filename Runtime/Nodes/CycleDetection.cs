@@ -4,7 +4,7 @@ using System.Linq;
 
 public class CycleDetection : MonoBehaviour
 {
-    private Dictionary<GameObject, NodeConnections> _graph = new();
+    private readonly Dictionary<GameObject, NodeConnections> _graph = new();
 
     public bool HasCycle(List<GameObject> nodes, out List<List<GameObject>> cycles)
     {
@@ -15,18 +15,7 @@ public class CycleDetection : MonoBehaviour
         foreach (var node in nodes.Where(node => !visited.Contains(node)))
             FindCyclesIterative(node, visited, cycles);
 
-        if (cycles.Count > 0)
-        {
-            Debug.Log($"Cycle detected! Found {cycles.Count} cycles.");
-            foreach (var cycle in cycles)
-            {
-                Debug.Log("Cycle: " + string.Join(" -> ", cycle.Select(n => n.name)));
-            }
-            return true;
-        }
-
-        Debug.Log("No cycles found.");
-        return false;
+        return cycles.Count > 0;
     }
 
     private void BuildGraph(List<GameObject> nodes)

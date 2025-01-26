@@ -120,7 +120,7 @@ public class ColoredObject : MonoBehaviour
     /// <summary>
     /// Highlights the LineRenderer by changing its color temporarily.
     /// </summary>
-    public void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null)
+    public void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null, Color emissionColor = default)
     {
         if (!_objectRenderer || !_objectRenderer.material) return;
         _objectRenderer.material.color = highlightColor;
@@ -128,7 +128,10 @@ public class ColoredObject : MonoBehaviour
         _timer = 0f;
         _isHighlighting = true;
         _objectRenderer.material.EnableKeyword("_EMISSION");
-        var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
+        if (emissionColor == default)
+        {
+            emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
+        }
         _objectRenderer.material.SetColor(EmissionColor, emissionColor);
         _actionAfterHighlight = actionAfterHighlight;
     }

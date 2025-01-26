@@ -19,6 +19,8 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private NativeArray<float3> _nativeConnections;
     private bool _usingNativeArray;
     private int _currentConnectionCount;
+    private CycleDetection _cycleDetection;
+    [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
     public static NodeConnectionManager Instance
     {
@@ -54,6 +56,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
 
         _instance = this;
+        _cycleDetection = gameObject.GetComponent<CycleDetection>();
     }
 
     private void Update()
@@ -249,6 +252,36 @@ public sealed class NodeConnectionManager : MonoBehaviour
             // Update line renderer
             connections[i].lineRenderer.SetPosition(0, _nativeConnections[i * 2]);
             connections[i].lineRenderer.SetPosition(1, _nativeConnections[i * 2 + 1]);
+        }
+    }
+
+    public void HighlightCycles(Color color, float duration)
+    {
+        
+        if (_cycleDetection.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles))
+        {
+            foreach (var cycle in cycles)
+            {
+                // Debug.Log("Cycle detected: " + string.Join(" -> ", cycle.Select(n => n.name)));
+                foreach (var go in cycle)
+                {
+                    var col = go.GetComponent<ColoredObject>();
+                    if (col != null)
+                    {
+                        col.Highlight(color, duration);
+                    }
+                    else
+                    {
+                        col = go.AddComponent<ColoredObject>();
+                        var emissionColor = color * 5.0f;
+                        col.Highlight(color, duration, () => Destroy(col), emissionColor:emissionColor);
+                    }
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("No cycles detected.");
         }
     }
 }

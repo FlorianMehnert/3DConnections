@@ -211,7 +211,7 @@ public class GUIBuilder : MonoBehaviour
 
             if (parentObject == null)
                 return;
-            nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesByTransform());
+            nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
         }, isEnabled: false, disableAfterClick: true);
 
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
