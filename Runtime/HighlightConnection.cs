@@ -1,4 +1,5 @@
     using UnityEngine;
+    using UnityEngine.Events;
 
     public class HighlightConnection : MonoBehaviour
     {
@@ -7,6 +8,8 @@
         private bool _isHighlighting;
         private float _highlightDuration = 1.0f;
         private float _timer;
+        private UnityAction _actionAfterHighlight;
+
 
         private void Awake()
         {
@@ -24,12 +27,13 @@
             if (!(_timer >= _highlightDuration)) return;
             ResetColor();
             _isHighlighting = false;
+            _actionAfterHighlight?.Invoke();
         }
 
         /// <summary>
         /// Highlights the LineRenderer by changing its color temporarily.
         /// </summary>
-        public void Highlight(Color highlightColor, float duration)
+        public void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null)
         {
             if (!_lineRenderer || !_lineRenderer.material) return;
             _lineRenderer.startColor = highlightColor;
@@ -37,6 +41,7 @@
             _highlightDuration = duration;
             _timer = 0f;
             _isHighlighting = true;
+            _actionAfterHighlight = actionAfterHighlight;
         }
 
         /// <summary>

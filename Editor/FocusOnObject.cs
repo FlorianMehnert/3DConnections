@@ -28,14 +28,19 @@ public class FocusOnObject : Editor
         }
 
         var lineRenderer = selected.GetComponent<LineRenderer>();
-        var center = lineRenderer.bounds.center;
+        var bounds = lineRenderer.bounds;
+        var center = bounds.center;
         overlayCamera.transform.position = new Vector3(center.x, center.y, overlayCamera.transform.position.z);
-        var size = Mathf.Max(lineRenderer.bounds.extents.x, lineRenderer.bounds.extents.y);
+        var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
         overlayCamera.orthographicSize = size * 1.1f;
         Debug.Log($"Focused OverlayCamera on {selected.name}");
-        var coloredObject = selected.GetComponent<ColoredObject>();
-        if (coloredObject == null) return;
-        coloredObject.Highlight(Color.red, 1f);
+        var highlight = !lineRenderer.GetComponent<HighlightConnection>()
+            ? lineRenderer.gameObject.AddComponent<HighlightConnection>()
+            : lineRenderer.GetComponent<HighlightConnection>();
+        highlight.Highlight(Color.red, 1f, (() =>
+        {
+            Destroy(highlight);
+        }));
     }
 
     [MenuItem("GameObject/3DConnections/Focus Overlay Camera #&%f", true)]
