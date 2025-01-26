@@ -284,4 +284,22 @@ public sealed class NodeConnectionManager : MonoBehaviour
             Debug.Log("No cycles detected.");
         }
     }
+    
+    /// <summary>
+    /// Push cycles away from each other by applying a force -> only usable in component-based physics sim
+    /// </summary>
+    public void SeparateCycles()
+    {
+        _cycleDetection.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles);
+        foreach (var cycle in cycles)
+        {
+            var center = cycle.Aggregate(Vector3.zero, (acc, node) => acc + node.transform.position) / cycle.Count;
+            foreach (var node in cycle)
+            {
+                var rb = node.GetComponent<Rigidbody2D>();
+                var forceDirection = (rb.position - (Vector2)center).normalized;
+                rb.AddForce(forceDirection * 5f, ForceMode2D.Impulse);
+            }
+        }
+    }
 }

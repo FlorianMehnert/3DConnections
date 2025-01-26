@@ -20,10 +20,15 @@ public class SceneConnectionsExecuteEditor : Editor
         _highlightColor = EditorGUILayout.ColorField("Highlight Color", _highlightColor);
         _duration = EditorGUILayout.FloatField(value:_duration, label:"Duration");
         EditorGUILayout.EndHorizontal();
+        EditorGUILayout.BeginVertical();
         if (GUILayout.Button("Highlight Cycles"))
         {
-            
             _nodeConnectionManager.HighlightCycles(_highlightColor, _duration);
         }
+        if (GUILayout.Button("Apply Forces to Nodes"))
+        {
+            _nodeConnectionManager.SeparateCycles();
+        }
+        EditorGUILayout.EndVertical();
     }
 }
