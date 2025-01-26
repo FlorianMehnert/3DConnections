@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class AddLayerScript : Editor
 {
+#if UNITY_EDITOR
     [MenuItem("Tools/3DConnections/Add OverlayScene Layer")]
     public static void AddPredefinedLayer()
     {
@@ -33,4 +34,5 @@ public class AddLayerScript : Editor
 
         Debug.LogWarning("No available layer slots to add: " + layerName);
     }
+#endif
 }

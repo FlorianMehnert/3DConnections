@@ -1,12 +1,9 @@
-
-namespace _3DConnections.Runtime
-{
-    using Unity.Entities;
+using Unity.Entities;
 using UnityEngine;
 
 public class PhysicsEcsConverter : MonoBehaviour
 {
-    public NodeGraphScriptableObject nodeGraph;  // Assign in Inspector
+    public NodeGraphScriptableObject nodeGraph; // Assign in Inspector
 
     private EntityManager _entityManager;
 
@@ -63,6 +60,4 @@ public class PhysicsEcsConverter : MonoBehaviour
             Debug.Log($"Converted {node.name} to ECS entity {entity.Index}");
         }
     }
-}
-
 }

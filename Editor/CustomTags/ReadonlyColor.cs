@@ -7,7 +7,7 @@ namespace _3DConnections.Editor.CustomTags
     [System.AttributeUsage(System.AttributeTargets.Field)]
     public class ReadonlyColor : PropertyAttribute { }
 
-// Custom property drawer for readonly color
+#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(ReadonlyColor))]
     public class ReadonlyColorDrawer : PropertyDrawer
     {
@@ -29,4 +29,5 @@ namespace _3DConnections.Editor.CustomTags
             EditorGUI.EndDisabledGroup();
         }
     }
+#endif
 }

@@ -319,10 +319,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasDropdown
       objectReference: {fileID: 0}
-    - target: {fileID: 2912296795345058206, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7579628121259745900, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
       propertyPath: m_Pivot.x
       value: 0

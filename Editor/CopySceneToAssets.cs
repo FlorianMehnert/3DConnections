@@ -7,6 +7,7 @@ using System.Linq;
 
 public class CopySceneFromPackage
 {
+#if UNITY_EDITOR
     private static ListRequest _listRequest;
     private static string packageName = "com.florian-mehnert.3d-connections";
     private static string sceneName = "OverlayScene.unity";
@@ -83,7 +84,7 @@ public class CopySceneFromPackage
     {
         var scenes = EditorBuildSettings.scenes.ToList();
 
-        if (!scenes.Any(s => s.path == scenePath))
+        if (scenes.All(s => s.path != scenePath))
         {
             scenes.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
@@ -94,5 +95,5 @@ public class CopySceneFromPackage
             Debug.Log("Scene already exists in build settings: " + scenePath);
         }
     }
+#endif
 }
-

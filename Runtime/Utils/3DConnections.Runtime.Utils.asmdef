@@ -1,4 +1,5 @@
 {
   "name": "3DConnections.Runtime.Utils",
-  "rootNamespace": "3DConnections.Runtime.Utils"
+  "rootNamespace": "3DConnections.Runtime.Utils",
+  "references":[ "GUID:68990cf58c0248f2ae7aaa38040ef8a9", "GUID:407d9f5d313b4d20b83d06c1f10def66" ]
 }

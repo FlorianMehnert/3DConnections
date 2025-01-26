@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using _3DConnections.Runtime;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;

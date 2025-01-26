@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Assets.ScriptableObjects.Configurations;
-using _3DConnections.Runtime;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 /// <summary>
 /// Singleton Manager that handles all the connections in the node graph. Singleton because connections are only important for the overlay scene.
@@ -94,20 +94,24 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
     }
 
-    public void AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 0.1f)
+    public void AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 1f, float saturation = 1f)
     {
         if (_isShuttingDown) return;
 
         var lineObj = Instantiate(lineRendererPrefab, transform);
         var lineRenderer = lineObj.GetComponent<LineRenderer>();
         lineRenderer.name = startNode.name + "-" + endNode.name;
-
+        var knownColor = color ?? Color.white;
+        Color.RGBToHSV(knownColor, out var h, out _, out var v);
+        
+        knownColor = Color.HSVToRGB(h, saturation, v);
+        knownColor.a = .5f;
         var newConnection = new NodeConnection
         {
             startNode = startNode,
             endNode = endNode,
             lineRenderer = lineRenderer,
-            connectionColor = color ?? Color.black,
+            connectionColor = knownColor,
             lineWidth = lineWidth
         };
 

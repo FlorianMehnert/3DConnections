@@ -25,27 +25,31 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int nodeWidth = 2;
     [SerializeField] private int nodeHeight = 1;
     [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
-    [ReadonlyColor] private Color _componentColor = new(0.4f, 0.8f, 0.4f); // Green
-    [ReadonlyColor] private Color _scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
-    [ReadonlyColor] private Color _parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
-    [ReadonlyColor] private Color _componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-    [ReadonlyColor] private Color _referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
+    [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
+    [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
+    [SerializeField] private Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
+    [SerializeField] private Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
+    [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
     [SerializeField] private int maxNodes = 1000;
     [ReadOnly] private bool _ignoreTransforms;
     [SerializeField] private bool searchForPrefabsUsingNames;
     private List<string> _cachedPrefabPaths = new();
     private int _currentNodes;
+
     public List<string> ignoredTypes = new();
+
     // TODO: add some editor only shading/monoBehaviour to visualize prefab
     [SerializeField] internal Color prefabColor = new(1f, 0.6f, 0.2f); // Orange
 
 
     private void Start()
     {
+#if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+#endif
     }
-    
-    public List<Type> GetIgnoredTypes()
+
+    private List<Type> GetIgnoredTypes()
     {
         return ignoredTypes.Select(Type.GetType).Where(type => type != null).ToList();
     }
@@ -56,7 +60,9 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _instanceIdToNode.Clear();
+#if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+#endif
         var sceneHandler = GetComponent<SceneHandler>();
         Scene scene = default;
         if (sceneHandler != null)
@@ -74,11 +80,11 @@ public class SceneAnalyzer : MonoBehaviour
     {
         var palette = Colorpalette.GeneratePaletteFromBaseColor(gameObjectColor);
         gameObjectColor = palette[0];
-        _componentColor = palette[1];
-        _scriptableObjectColor = palette[2];
-        _parentChildConnection = palette[3];
-        _componentConnection = palette[4];
-        _referenceConnection = palette[5];
+        componentColor = palette[1];
+        scriptableObjectColor = palette[2];
+        parentChildConnection = palette[3];
+        componentConnection = palette[4];
+        referenceConnection = palette[5];
     }
 
     private static void LoadSceneCallback(Scene sceneByName, out GameObject[] rootGameObjects)
@@ -112,7 +118,7 @@ public class SceneAnalyzer : MonoBehaviour
 
         foreach (var rootObject in rootGameObjects)
         {
-            TraverseGameObject(rootObject, rootNode);
+            TraverseGameObject(rootObject, parentNodeObject:rootNode, depth:0);
         }
 
         if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.AllNodes is { Count: 0 })
@@ -231,6 +237,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="obj"></param>
     /// <returns></returns>
+#if UNITY_EDITOR
     private bool IsPrefab(Object obj)
     {
 #if UNITY_2018_3_OR_NEWER
@@ -262,13 +269,18 @@ public class SceneAnalyzer : MonoBehaviour
         if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
         var gameObjectName = obj.name;
 
+
         return _cachedPrefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>)
             .Any(prefab => prefab != null && prefab.name == gameObjectName);
-
 #else
 	        return PrefabUtility.GetPrefabType(go) != PrefabType.None;
 #endif
     }
+#else
+            private bool IsPrefab(Object obj){
+                return false;
+            }
+#endif
 
 
     private static void SetNodeType(NodeType type, Object obj)
@@ -294,29 +306,30 @@ public class SceneAnalyzer : MonoBehaviour
             componentRenderer.material.color = obj switch
             {
                 GameObject => gameObjectColor,
-                Component => _componentColor,
-                ScriptableObject => _scriptableObjectColor,
+                Component => componentColor,
+                ScriptableObject => scriptableObjectColor,
                 _ => Color.black
             };
     }
 
-    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor)
+    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth)
     {
-        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor);
+        Debug.Log("depth is" + depth);
+        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7)+.1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10)+.1f);
         var inConnections = inGameObject.GetComponent<NodeConnections>();
         var outConnections = outGameObject.GetComponent<NodeConnections>();
         inConnections.outConnections.Add(outGameObject);
         outConnections.inConnections.Add(inGameObject);
     }
 
-    private GameObject GetOrSpawnNode(Object obj, GameObject parentNodeObject = null)
+    private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null)
     {
         if (obj == null) return null;
 
         var instanceId = obj.GetInstanceID();
 
         // Check if we already have a node for this instance ID
-        if (_instanceIdToNode.TryGetValue(instanceId, out GameObject existingNode))
+        if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode))
         {
             // If we have a parent node, connect to the existing node
             if (parentNodeObject != null)
@@ -324,12 +337,12 @@ public class SceneAnalyzer : MonoBehaviour
                 ConnectNodes(parentNodeObject, existingNode,
                     obj switch
                     {
-                        GameObject => new Color(_parentChildConnection.r, _parentChildConnection.g,
-                            _parentChildConnection.b, 0.5f),
-                        Component => new Color(_componentConnection.r, _componentConnection.g, _componentConnection.b,
+                        GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
+                            parentChildConnection.b, 0.5f),
+                        Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                             0.5f),
-                        _ => new Color(_referenceConnection.r, _referenceConnection.g, _referenceConnection.b, 0.5f)
-                    });
+                        _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+                    }, depth:depth);
             }
 
             return existingNode;
@@ -345,12 +358,12 @@ public class SceneAnalyzer : MonoBehaviour
             ConnectNodes(parentNodeObject, newNode,
                 obj switch
                 {
-                    GameObject => new Color(_parentChildConnection.r, _parentChildConnection.g,
-                        _parentChildConnection.b, 0.5f),
-                    Component => new Color(_componentConnection.r, _componentConnection.g, _componentConnection.b,
+                    GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
+                        parentChildConnection.b, 0.5f),
+                    Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                         0.5f),
-                    _ => new Color(_referenceConnection.r, _referenceConnection.g, _referenceConnection.b, 0.5f)
-                });
+                    _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+                }, depth:depth);
         }
 
         return newNode;
@@ -363,7 +376,8 @@ public class SceneAnalyzer : MonoBehaviour
     /// <param name="toTraverseGameObject">To Traverse gameObject</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
     /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
-    private void TraverseGameObject(GameObject toTraverseGameObject, GameObject parentNodeObject = null,
+    /// <param name="depth">Depth of the node</param>
+    private void TraverseGameObject(GameObject toTraverseGameObject, int depth, GameObject parentNodeObject = null,
         bool isReference = false)
     {
         if (toTraverseGameObject == null || _currentNodes >= maxNodes) return;
@@ -377,7 +391,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
                 ConnectNodes(parentNodeObject, existingNode,
-                    isReference ? _referenceConnection : _parentChildConnection);
+                    isReference ? referenceConnection : parentChildConnection, depth:depth);
             }
 
             return;
@@ -388,7 +402,7 @@ public class SceneAnalyzer : MonoBehaviour
 
         try
         {
-            var nodeObject = GetOrSpawnNode(toTraverseGameObject, parentNodeObject);
+            var nodeObject = GetOrSpawnNode(toTraverseGameObject, depth, parentNodeObject);
 
             // Only traverse children and components if we haven't visited this object before
             if (!needsTraversal) return;
@@ -399,7 +413,7 @@ public class SceneAnalyzer : MonoBehaviour
             {
                 if (component != null)
                 {
-                    TraverseComponent(component, nodeObject);
+                    TraverseComponent(component, depth+1, parentNodeObject:nodeObject);
                 }
             }
 
@@ -408,7 +422,7 @@ public class SceneAnalyzer : MonoBehaviour
             {
                 if (child != null && child.gameObject != null)
                 {
-                    TraverseGameObject(child.gameObject, nodeObject);
+                    TraverseGameObject(child.gameObject, depth+1, nodeObject);
                 }
             }
         }
@@ -418,7 +432,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
     }
 
-    private void FindReferencesInScriptableObject(ScriptableObject scriptableObject, GameObject parentNodeObject)
+    private void FindReferencesInScriptableObject(ScriptableObject scriptableObject, GameObject parentNodeObject, int depth)
     {
         if (scriptableObject == null || _currentNodes > maxNodes) return;
         var instanceId = scriptableObject.GetInstanceID();
@@ -426,7 +440,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
-                ConnectNodes(parentNodeObject, existingNode, _referenceConnection);
+                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth:depth);
             }
 
             return;
@@ -436,7 +450,7 @@ public class SceneAnalyzer : MonoBehaviour
         _processingObjects.Add(scriptableObject);
         try
         {
-            var nodeObject = GetOrSpawnNode(scriptableObject, parentNodeObject);
+            var nodeObject = GetOrSpawnNode(scriptableObject, depth, parentNodeObject);
             if (!needsTraversal) return;
             _visitedObjects.Add(scriptableObject);
 
@@ -448,7 +462,7 @@ public class SceneAnalyzer : MonoBehaviour
             {
                 if (property.propertyType != SerializedPropertyType.ObjectReference ||
                     property.objectReferenceValue == null) continue;
-                TraverseGameObject(property.objectReferenceValue as GameObject, nodeObject);
+                TraverseGameObject(property.objectReferenceValue as GameObject, depth, nodeObject);
             }
 #endif
         }
@@ -463,9 +477,10 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="component">To Traverse component</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
-    private void TraverseComponent(Component component, GameObject parentNodeObject = null)
+    /// <param name="depth">Depth of node</param>
+    private void TraverseComponent(Component component, int depth, GameObject parentNodeObject = null)
     {
-        if (component == null || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) || 
+        if (component == null || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
             _ignoreTransforms && component.GetType() == typeof(Transform)) return;
 
         var instanceId = component.GetInstanceID();
@@ -474,9 +489,9 @@ public class SceneAnalyzer : MonoBehaviour
         if (_processingObjects.Contains(component))
         {
             // If we're in a cycle, connect to the existing node if we have one
-            if (_instanceIdToNode.TryGetValue(instanceId, out GameObject existingNode) && parentNodeObject != null)
+            if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
-                ConnectNodes(parentNodeObject, existingNode, _componentConnection);
+                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth:depth);
             }
 
             return;
@@ -487,7 +502,7 @@ public class SceneAnalyzer : MonoBehaviour
 
         try
         {
-            var nodeObject = GetOrSpawnNode(component, parentNodeObject);
+            var nodeObject = GetOrSpawnNode(component, depth+1, parentNodeObject);
 
             // Only traverse references if we haven't visited this component before
             if (!needsTraversal) return;
@@ -501,13 +516,13 @@ public class SceneAnalyzer : MonoBehaviour
                 switch (referencedObject)
                 {
                     case GameObject go when go != null:
-                        TraverseGameObject(go, nodeObject, true);
+                        TraverseGameObject(go, parentNodeObject:nodeObject, isReference:true, depth:depth + 1);
                         break;
                     case Component comp when comp != null:
-                        TraverseComponent(comp, nodeObject);
+                        TraverseComponent(comp, parentNodeObject: nodeObject, depth:depth + 1);
                         break;
                     case ScriptableObject so when so != null:
-                        FindReferencesInScriptableObject(so, nodeObject);
+                        FindReferencesInScriptableObject(so, nodeObject, depth + 1);
                         break;
                 }
             }
@@ -527,7 +542,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
         }
-        
+
         parentNode = overlay.GetNodeGraph();
         if (!parentNode)
         {

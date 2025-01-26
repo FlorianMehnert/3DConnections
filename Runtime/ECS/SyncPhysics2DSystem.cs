@@ -1,5 +1,3 @@
-namespace _3DConnections.Runtime
-{
     using Unity.Entities;
     using UnityEngine;
 
@@ -15,5 +13,3 @@ namespace _3DConnections.Runtime
             }).WithoutBurst().Run();
         }
     }
-
-}

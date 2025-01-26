@@ -1,4 +1,3 @@
-using _3DConnections.Runtime;
 using UnityEditor;
 using UnityEngine;
 
@@ -37,10 +36,7 @@ public class FocusOnObject : Editor
         var highlight = !lineRenderer.GetComponent<HighlightConnection>()
             ? lineRenderer.gameObject.AddComponent<HighlightConnection>()
             : lineRenderer.GetComponent<HighlightConnection>();
-        highlight.Highlight(Color.red, 1f, (() =>
-        {
-            Destroy(highlight);
-        }));
+        highlight.Highlight(Color.red, 1f, (() => { Destroy(highlight); }));
     }
 
     [MenuItem("GameObject/3DConnections/Focus Overlay Camera #&%f", true)]
