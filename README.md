@@ -1,5 +1,4 @@
-# 3D Connections
-![nodegraph](./images/3DConnections.png)
+# ![nodegraph](./images/3DConnections.png)
 This is a Unity Extension used to primarily visualize and analyze scenes in Unity.
 
 ## GUIBuilder
