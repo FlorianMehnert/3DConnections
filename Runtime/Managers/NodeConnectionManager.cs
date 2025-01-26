@@ -297,6 +297,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             foreach (var node in cycle)
             {
                 var rb = node.GetComponent<Rigidbody2D>();
+                if (rb == null) continue;
                 var forceDirection = (rb.position - (Vector2)center).normalized;
                 rb.AddForce(forceDirection * 5f, ForceMode2D.Impulse);
             }
