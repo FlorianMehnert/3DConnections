@@ -1,12 +1,6 @@
 # 3D Connections
 ![nodegraph](./images/3DConnections.png)
-- this is a Unity Asset required to be symlinked into the Packages folder of the project you want to use it in
-- add an empty and add the GUIBuilder Script to it
-```bash
-# in the folder of 3D
-ln -s <PATH-TO-3DConnections> <PATH-TO-ASSETS-FOLDER-IN-YOUR-PROJECT>/3DConnections
-```
-- to add UnityStandaloneFileBrowser to your Project, please download this [unitypackage](https://github.com/gkngkc/UnityStandaloneFileBrowser) and import it to your project: Assets/Import Package
+This is a Unity Extension used to primarily visualize and analyze scenes in Unity.
 
 ## GUIBuilder
 - execute all Button GUI Methods to ensure proper placement of UI Elements
@@ -19,10 +13,6 @@ ln -s <PATH-TO-3DConnections> <PATH-TO-ASSETS-FOLDER-IN-YOUR-PROJECT>/3DConnecti
 
 ## NodeBuilder
 - Handle the creation and composition of the nodes later used to display dependencies
-
-## Deprecated
-- ScriptDependencyAnalyzer, ScriptVisualization, MainScript (All used to play around with node creation and adapting the SceneConnections approach)
-# Experimental
 
 ## 30.November
 - add layer to which I can render stuff that only appears in display 2
@@ -175,3 +165,7 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 - right click context to add entrypoint prefab to your scene
 - add license
 - remove roslyn dependency
+
+# 26.January
+- add different line thickness
+- allow building again
