@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b549318091d4d12b5cac5903a0cf093, type: 3}
   m_Name: PhysicsSimConfig
   m_EditorClassIdentifier: 
-  stiffness: 0.01
-  damping: 0.001
+  stiffness: 0.00001
+  damping: 1
   colliderRadius: 5
-  collisionResponseStrength: 0.1
+  collisionResponseStrength: 0.01

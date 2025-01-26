@@ -678,6 +678,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SelectionBoxCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 5332921850118517873, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
