@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 438415427359241478}
   - component: {fileID: 3086584372877910348}
   - component: {fileID: 580276786112376230}
+  - component: {fileID: 3120672303489094690}
   m_Layer: 6
   m_Name: Manager
   m_TagString: Untagged
@@ -189,6 +190,8 @@ MonoBehaviour:
   referenceConnection: {r: 0.6719999, g: 0.7, b: 0.42, a: 1}
   maxNodes: 1000
   searchForPrefabsUsingNames: 1
+  analysisData: {fileID: 4900000, guid: a50f5d748ba945a5aecdf256de3372b0, type: 3}
+  setIcons: 0
   ignoredTypes: []
   prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
 --- !u!114 &438415427359241478
@@ -231,5 +234,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43d47821150742bfa51dbfad33979692, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3120672303489094690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bc338bcf371440c9740e23bf2a6003d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
