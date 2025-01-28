@@ -3,10 +3,9 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
-using _3DConnections.Editor.CustomTags;
-using JetBrains.Annotations;
 using TMPro;
 using Unity.Collections;
+using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -35,6 +34,10 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private bool searchForPrefabsUsingNames;
     private List<string> _cachedPrefabPaths = new();
     private int _currentNodes;
+    [SerializeField] private TextAsset analysisData; // Assign the JSON file here
+    private Dictionary<string, float> _complexityMap;
+    public bool setIcons = false;
+
 
     public List<string> ignoredTypes = new();
 
@@ -71,6 +74,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
 
         if (!scene.IsValid()) return;
+        LoadComplexityMetrics(analysisData.ToString());
         _cachedPrefabPaths.Clear();
         var rootGameObjects = scene.GetRootGameObjects();
         FinishAnalyzeScene(rootGameObjects);
@@ -118,7 +122,7 @@ public class SceneAnalyzer : MonoBehaviour
 
         foreach (var rootObject in rootGameObjects)
         {
-            TraverseGameObject(rootObject, parentNodeObject:rootNode, depth:0);
+            TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
         }
 
         if (_instanceIdToNode != null && nodeGraph != null && nodeGraph.AllNodes is { Count: 0 })
@@ -176,7 +180,7 @@ public class SceneAnalyzer : MonoBehaviour
 
 #if UNITY_EDITOR
         // set icons
-        if (obj is Component componentObject)
+        if (obj is Component componentObject && setIcons)
         {
             var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
             var iconObj = new GameObject("Icon");
@@ -314,7 +318,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth)
     {
-        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7)+.1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10)+.1f);
+        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7) + .1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10) + .1f);
         var inConnections = inGameObject.GetComponent<NodeConnections>();
         var outConnections = outGameObject.GetComponent<NodeConnections>();
         inConnections.outConnections.Add(outGameObject);
@@ -341,7 +345,7 @@ public class SceneAnalyzer : MonoBehaviour
                         Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                             0.5f),
                         _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                    }, depth:depth);
+                    }, depth: depth);
             }
 
             return existingNode;
@@ -362,7 +366,7 @@ public class SceneAnalyzer : MonoBehaviour
                     Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                         0.5f),
                     _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                }, depth:depth);
+                }, depth: depth);
         }
 
         return newNode;
@@ -390,7 +394,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
                 ConnectNodes(parentNodeObject, existingNode,
-                    isReference ? referenceConnection : parentChildConnection, depth:depth);
+                    isReference ? referenceConnection : parentChildConnection, depth: depth);
             }
 
             return;
@@ -404,6 +408,7 @@ public class SceneAnalyzer : MonoBehaviour
             var nodeObject = GetOrSpawnNode(toTraverseGameObject, depth, parentNodeObject);
 
             // Only traverse children and components if we haven't visited this object before
+
             if (!needsTraversal) return;
             _visitedObjects.Add(toTraverseGameObject);
 
@@ -412,7 +417,7 @@ public class SceneAnalyzer : MonoBehaviour
             {
                 if (component != null)
                 {
-                    TraverseComponent(component, depth+1, parentNodeObject:nodeObject);
+                    TraverseComponent(component, depth + 1, parentNodeObject: nodeObject);
                 }
             }
 
@@ -421,7 +426,7 @@ public class SceneAnalyzer : MonoBehaviour
             {
                 if (child != null && child.gameObject != null)
                 {
-                    TraverseGameObject(child.gameObject, depth+1, nodeObject);
+                    TraverseGameObject(child.gameObject, depth + 1, nodeObject);
                 }
             }
         }
@@ -439,7 +444,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
-                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth:depth);
+                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth: depth);
             }
 
             return;
@@ -470,6 +475,60 @@ public class SceneAnalyzer : MonoBehaviour
             _processingObjects.Remove(scriptableObject);
         }
     }
+    
+    private string GetClassNameFromMetric(string metricName)
+    {
+        // Split the metric name to extract the class name (e.g., "Program.cs::AnalyzeCodeMetrics" -> "Program")
+        string[] parts = metricName.Split(new[] { "::" }, System.StringSplitOptions.None);
+        if (parts.Length > 0)
+        {
+            return parts[0].Split('.')[0]; // Extract "Program" from "Program.cs"
+        }
+
+        return metricName; // Fallback in case of unexpected format
+    }
+
+
+    private void ScaleNode(GameObject nodeObject, Component component)
+    {
+        // Check if the complexity value exists for the component's class name
+        if (_complexityMap.TryGetValue(component.GetType().Name, out var complexity))
+        {
+            Debug.Log($"Found component type: {component.GetType().Name} with complexity: {complexity}");
+
+            // compute all scales maybe and adjust
+            var scaleFactor = Math.Abs(complexity-90f)*0.3f; // Clamp to prevent extreme scaling
+            
+
+            if (nodeObject != null && nodeObject.transform != null)
+            {
+                nodeObject.transform.localScale = new Vector3(scaleFactor*2, scaleFactor, nodeObject.transform.localScale.z);
+                // nodeObject.GetComponent<Collider2D>();
+            }
+        }
+        else
+        {
+            Debug.Log($"Component type {component.GetType().Name} not found in complexity map.");
+        }
+    }
+
+
+    private void LoadComplexityMetrics(string json)
+    {
+        var metrics = JsonConvert.DeserializeObject<CodeMetrics>(json);
+        _complexityMap = new Dictionary<string, float>();
+
+        foreach (var metric in metrics.Metrics)
+        {
+            // Extract only the class name from the metric.Name (remove file name and method details)
+            string className = GetClassNameFromMetric(metric.Name);
+
+            if (!_complexityMap.ContainsKey(className))
+            {
+                _complexityMap[className] = metric.Maintainability;
+            }
+        }
+    }
 
     /// <summary>
     /// Recursive function to Spawn a node for the given Component and Traverse References of the given Component which might be GameObjects or ScriptableObjects
@@ -490,7 +549,7 @@ public class SceneAnalyzer : MonoBehaviour
             // If we're in a cycle, connect to the existing node if we have one
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
-                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth:depth);
+                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth: depth);
             }
 
             return;
@@ -501,8 +560,9 @@ public class SceneAnalyzer : MonoBehaviour
 
         try
         {
-            var nodeObject = GetOrSpawnNode(component, depth+1, parentNodeObject);
-
+            var nodeObject = GetOrSpawnNode(component, depth + 1, parentNodeObject);
+            ScaleNode(nodeObject, component);
+            
             // Only traverse references if we haven't visited this component before
             if (!needsTraversal) return;
             _visitedObjects.Add(component);
@@ -515,10 +575,10 @@ public class SceneAnalyzer : MonoBehaviour
                 switch (referencedObject)
                 {
                     case GameObject go when go != null:
-                        TraverseGameObject(go, parentNodeObject:nodeObject, isReference:true, depth:depth + 1);
+                        TraverseGameObject(go, parentNodeObject: nodeObject, isReference: true, depth: depth + 1);
                         break;
                     case Component comp when comp != null:
-                        TraverseComponent(comp, parentNodeObject: nodeObject, depth:depth + 1);
+                        TraverseComponent(comp, parentNodeObject: nodeObject, depth: depth + 1);
                         break;
                     case ScriptableObject so when so != null:
                         FindReferencesInScriptableObject(so, nodeObject, depth + 1);
