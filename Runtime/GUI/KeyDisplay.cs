@@ -96,7 +96,7 @@ public class KeyDisplay : MonoBehaviour
                 ExitApplication();
             }else if (_inputString.Contains(":loadscene") && Input.GetKey(KeyCode.Return))
             {
-                SceneManager.LoadScene(0);
+                SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
             }
 
             // Limit the input string length to avoid overflow

@@ -95,9 +95,9 @@ public class GUIBuilder : MonoBehaviour
         return currentY;
     }
 
-    private Vector2 GetButtonPosition()
+    private Vector2 GetButtonPosition(GameObject buttonGameObject)
     {
-        return new Vector2(300, NextYPosition());
+        return new Vector2(GetButtonVerticalPosition(buttonGameObject), NextYPosition());
     }
 
     private void CreateSceneDropdown()
@@ -144,7 +144,7 @@ public class GUIBuilder : MonoBehaviour
         }
 
         var rectTransform = dropdownInstance.GetComponent<RectTransform>();
-        rectTransform.anchoredPosition = GetButtonPosition();
+        rectTransform.anchoredPosition = GetButtonPosition(dropdownInstance.gameObject);
         ScriptableObject.CreateInstance<SceneReference>();
         dropdownInstance.onValueChanged.AddListener(OnSceneDropdownValueChanged);
     }
@@ -174,7 +174,7 @@ public class GUIBuilder : MonoBehaviour
         }
 
         var rectTransform = dropdownInstance.GetComponent<RectTransform>();
-        rectTransform.anchoredPosition = GetButtonPosition();
+        rectTransform.anchoredPosition = GetButtonPosition(tmpDropdown.gameObject);
         ScriptableObject.CreateInstance<SceneReference>();
         dropdownInstance.onValueChanged.AddListener(OnNodeGraphDropdownChanged);
     }
@@ -237,14 +237,37 @@ public class GUIBuilder : MonoBehaviour
         button.enabled = isEnabled;
     }
 
-    private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true, bool disableAfterClick = false)
+    /// <summary>
+    /// Returns an x position for a button rect transform to be at the rightmost position
+    /// </summary>
+    /// <param name="buttonGameObject"></param>
+    private float GetButtonVerticalPosition(GameObject buttonGameObject)
     {
-        if (anchoredPosition == default)
+        var rectTransform = buttonGameObject.GetComponent<RectTransform>();
+
+        if (rectTransform == null)
         {
-            anchoredPosition = GetButtonPosition();
+            Debug.LogError("RectTransform is missing on the GameObject.");
+            return 0;
         }
 
+        var buttonWidth = rectTransform.rect.width;
+        var screenWidth = Screen.width;
+
+        // Position the button at the rightmost edge of the screen, leaving a margin of 20
+        return (screenWidth - buttonWidth - 20) / 2;
+    }
+
+
+    private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true, bool disableAfterClick = false)
+    {
         var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
+        
+        if (anchoredPosition == default)
+        {
+            anchoredPosition = GetButtonPosition(browserButtonInstance);
+        }
+        
         var buttonComponent = browserButtonInstance.GetComponent<Button>();
         buttonComponent.enabled = isEnabled;
         buttonComponent.image.color = isEnabled ? Color.white : Color.gray;
