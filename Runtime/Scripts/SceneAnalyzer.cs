@@ -5,7 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Collections;
-using Unity.Plastic.Newtonsoft.Json;
+using SimpleJSON;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -506,30 +506,23 @@ public class SceneAnalyzer : MonoBehaviour
                 // nodeObject.GetComponent<Collider2D>();
             }
         }
-        else
-        {
-            Debug.Log($"Component type {component.GetType().Name} not found in complexity map.");
-        }
     }
 
 
     private void LoadComplexityMetrics(string json)
     {
-        var metrics = JsonConvert.DeserializeObject<CodeMetrics>(json);
+        var root = JSON.Parse(json);
         _complexityMap = new Dictionary<string, float>();
 
-        foreach (var metric in metrics.Metrics)
+        foreach (var metricNode in root["Metrics"].AsArray)
         {
-            // Extract only the class name from the metric.Name (remove file name and method details)
-            string className = GetClassNameFromMetric(metric.Name);
-
-            if (!_complexityMap.ContainsKey(className))
-            {
-                _complexityMap[className] = metric.Maintainability;
-            }
+            var maintainability = metricNode.Value["Maintainability"].AsFloat;
+            string metricName = metricNode.Value["Name"];
+            var className = GetClassNameFromMetric(metricName);
+            
+            _complexityMap.TryAdd(className, maintainability);
         }
     }
-
     /// <summary>
     /// Recursive function to Spawn a node for the given Component and Traverse References of the given Component which might be GameObjects or ScriptableObjects
     /// </summary>
