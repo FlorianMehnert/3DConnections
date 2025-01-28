@@ -2,9 +2,27 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class CycleDetection : MonoBehaviour
+public class CycleDetection
 {
+    private static CycleDetection _instance;
+    private static readonly object LockObject = new();
+    
     private readonly Dictionary<GameObject, NodeConnections> _graph = new();
+    
+    private CycleDetection() { }
+    
+    public static CycleDetection Instance
+    {
+        get
+        {
+            if (_instance != null) return _instance;
+            lock (LockObject)
+            {
+                _instance ??= new CycleDetection();
+            }
+            return _instance;
+        }
+    }
 
     public bool HasCycle(List<GameObject> nodes, out List<List<GameObject>> cycles)
     {
@@ -24,7 +42,7 @@ public class CycleDetection : MonoBehaviour
         foreach (var node in nodes)
         {
             var connections = node.GetComponent<NodeConnections>();
-            if (connections != null)
+            if (connections)
             {
                 _graph[node] = connections;
             }
@@ -47,12 +65,10 @@ public class CycleDetection : MonoBehaviour
             {
                 if (currentPath.Contains(neighbor))
                 {
-                    // Cycle found, extract cycle path
                     var cycleStartIndex = currentPath.IndexOf(neighbor);
                     var cycle = currentPath.Skip(cycleStartIndex).ToList();
                     cycle.Add(neighbor); // Closing the cycle
 
-                    // Add only if it's a unique cycle (ignoring node order)
                     if (!cycles.Any(existingCycle => existingCycle.SequenceEqual(cycle)))
                     {
                         cycles.Add(cycle);

@@ -19,7 +19,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private NativeArray<float3> _nativeConnections;
     private bool _usingNativeArray;
     private int _currentConnectionCount;
-    private CycleDetection _cycleDetection;
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
     public static NodeConnectionManager Instance
@@ -56,7 +55,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
 
         _instance = this;
-        _cycleDetection = gameObject.GetComponent<CycleDetection>();
     }
 
     private void Update()
@@ -258,7 +256,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     public void HighlightCycles(Color color, float duration)
     {
         
-        if (_cycleDetection.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles))
+        if (CycleDetection.Instance.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles))
         {
             foreach (var cycle in cycles)
             {
@@ -266,7 +264,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
                 foreach (var go in cycle)
                 {
                     var col = go.GetComponent<ColoredObject>();
-                    if (col != null)
+                    if (col)
                     {
                         col.Highlight(color, duration);
                     }
@@ -290,7 +288,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     /// </summary>
     public void SeparateCycles()
     {
-        _cycleDetection.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles);
+        CycleDetection.Instance.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles);
         foreach (var cycle in cycles)
         {
             var center = cycle.Aggregate(Vector3.zero, (acc, node) => acc + node.transform.position) / cycle.Count;

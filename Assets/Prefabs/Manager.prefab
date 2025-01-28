@@ -19,7 +19,6 @@ GameObject:
   - component: {fileID: 8876743746579018258}
   - component: {fileID: 438415427359241478}
   - component: {fileID: 3086584372877910348}
-  - component: {fileID: 580276786112376230}
   - component: {fileID: 3120672303489094690}
   m_Layer: 6
   m_Name: Manager
@@ -224,18 +223,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   analyzeScene:
     m_Handle: 0
---- !u!114 &580276786112376230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7644496426939543078}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 43d47821150742bfa51dbfad33979692, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &3120672303489094690
 MonoBehaviour:
   m_ObjectHideFlags: 0
