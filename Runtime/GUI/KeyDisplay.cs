@@ -140,6 +140,11 @@ public class KeyDisplay : MonoBehaviour
                 var message = nodeGraph ? "nodecount is: " + nodeGraph.AllNodes.Count : "there exists no nodegraph scriptable object";
                 Debug.Log(message);
                 Log(message);
+            }else if (_inputString.Contains(":ui") && Input.GetKey(KeyCode.Return))
+            {
+                var gui = gameObject.GetComponent<GUIBuilder>();
+                if (gui)
+                    gui.Init();
             }
 
             // Limit the input string length to avoid overflow

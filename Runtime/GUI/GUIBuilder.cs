@@ -34,6 +34,20 @@ public class GUIBuilder : MonoBehaviour
 
     private void Start()
     {
+        Init();
+    }
+
+    public void Init()
+    {
+        // Ensure a clean canvas
+        foreach (Transform tf in uiCanvas.transform)
+        {
+            if (tf.gameObject.activeSelf)
+            {
+                Destroy(tf.gameObject);
+            }
+        }
+        _currentYCoordinate = Screen.height/2;
         _nodeBuilder = GetComponent<NodeBuilder>();
         if (_nodeBuilder == null)
         {
