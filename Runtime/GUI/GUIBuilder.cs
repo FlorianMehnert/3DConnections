@@ -32,7 +32,7 @@ public class GUIBuilder : MonoBehaviour
 
     private int _currentYCoordinate = 300;
 
-    private void Start()
+    private void OnEnable()
     {
         Init();
     }
