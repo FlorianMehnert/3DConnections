@@ -4,21 +4,59 @@ using Color = UnityEngine.Color;
 
 public static class Colorpalette
 {
-    public static Color[] GeneratePaletteFromBaseColor(Color baseColor, bool usePrebuilt = false)
+    public static Color[] GeneratePaletteFromBaseColor(Color baseColor, int prebuiltChannels = 0, bool generateColors = false)
     {
         var palette = new Color[6];
-
-        if (usePrebuilt)
+        if (generateColors)
         {
-            return new[]
+            switch (prebuiltChannels)
             {
-                HexToColor("#FAD900"), // go
-                HexToColor("#00E6FA"), // co
-                HexToColor("#FA0090"), // so
-                HexToColor("#379CA5"), // pc
-                HexToColor("#7A723D"), // coc
-                HexToColor("#7A3D60") // ref
-            };
+                case 0:
+                    return new[]
+                    {
+                        new Color(0.2f, 0.6f, 1f),
+                        new(0.4f, 0.8f, 0.4f),
+                        new(0.8f, 0.4f, 0.8f),
+                        new(0.1f, 0.9f, 0.9f),
+                        new(0.5f, 0.5f, 1f),
+                        new(0.5f, 1f, 0.5f),
+                        new(1f, 0f, 0.5f)
+                    };
+                case 1:
+                    return new[]
+                    {
+                        HexToColor("#FAD900"), // go
+                        HexToColor("#00E6FA"), // co
+                        HexToColor("#FA0090"), // so
+                        HexToColor("#c7ecee"), // asset
+                        HexToColor("#379CA5"), // pc
+                        HexToColor("#7A723D"), // co-conn
+                        HexToColor("#7A3D60") // ref
+                    };
+                case 2:
+                    return new[]
+                    {
+                        HexToColor("#22a6b3"), // go
+                        HexToColor("#be2edd"), // co
+                        HexToColor("#4834d4"), // so
+                        HexToColor("#f0932b"), // asset
+
+                        HexToColor("#7ed6df"), // pc
+                        HexToColor("#e056fd"), // co-conn
+                        HexToColor("#686de0"), // ref
+                    };
+                case 3:
+                    return new[]
+                    {
+                        HexToColor("#6D214F"), // go
+                        HexToColor("#182C61"), // co
+                        HexToColor("#FC427B"), // so
+                        HexToColor("#BDC581"), // asset
+                        HexToColor("#B33771"), // pc
+                        HexToColor("#3B3B98"), // co-conn
+                        HexToColor("#FD7272"), // ref
+                    };
+            }
         }
 
         // Manual HSV conversion
