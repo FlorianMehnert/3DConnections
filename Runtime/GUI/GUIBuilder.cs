@@ -29,13 +29,10 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     private UnityAction[] _actions;
-    private const float TOP_MARGIN = 20f;
-    private const float RIGHT_MARGIN = 20f;
+    private const float TOP_MARGIN = 60f;
+    private const float RIGHT_MARGIN = 0;
     private const float VERTICAL_SPACING = 35f;
     private float _currentYCoordinate;
-
-    private float _referenceWidth = 2560f;
-    private float _referenceHeight = 1440f;
 
     private void OnEnable()
     {
@@ -53,8 +50,9 @@ public class GUIBuilder : MonoBehaviour
                 Destroy(tf.gameObject);
             }
         }
-
-        _currentYCoordinate = Screen.height - TOP_MARGIN;
+        
+        // set to button-width plus margin from the top right corner 
+        _currentYCoordinate = -(30f + TOP_MARGIN);
 
         _nodeBuilder = GetComponent<NodeBuilder>();
         if (_nodeBuilder == null)
@@ -122,13 +120,9 @@ public class GUIBuilder : MonoBehaviour
     {
         var rectTransform = buttonGameObject.GetComponent<RectTransform>();
         if (!rectTransform)
-        {
-            Debug.LogError("RectTransform is missing on the GameObject.");
             return Vector2.zero;
-        }
         var buttonWidth = rectTransform.rect.width;
-        var xPosition = (_referenceWidth / 2) - buttonWidth - RIGHT_MARGIN;
-        
+        var xPosition = -(buttonWidth + RIGHT_MARGIN);
         return new Vector2(xPosition, NextYPosition());
     }
 
@@ -303,6 +297,8 @@ public class GUIBuilder : MonoBehaviour
     private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true, bool disableAfterClick = false)
     {
         var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
+        var buttonTransform = browserButtonInstance.GetComponent<RectTransform>();
+        buttonTransform.anchorMin = buttonTransform.anchorMax = Vector2.one;
 
         if (anchoredPosition == default)
         {

@@ -14,7 +14,7 @@ public class FPSDisplay : MonoBehaviour
         int w = Screen.width, h = Screen.height;
 
         var style = new GUIStyle();
-        var rect = new Rect(w - 100, 10, 90, 30); // Adjust position
+        var rect = new Rect(w - 130, 10, 90, 30); // Adjust position
 
         style.alignment = TextAnchor.UpperRight;
         style.fontSize = h / 30;
