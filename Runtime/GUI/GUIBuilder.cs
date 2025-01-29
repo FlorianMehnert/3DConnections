@@ -29,12 +29,18 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     private UnityAction[] _actions;
+    private const float TOP_MARGIN = 20f;
+    private const float RIGHT_MARGIN = 20f;
+    private const float VERTICAL_SPACING = 35f;
+    private float _currentYCoordinate;
 
-    private int _currentYCoordinate = 300;
+    private float _referenceWidth = 2560f;
+    private float _referenceHeight = 1440f;
 
     private void OnEnable()
     {
         Init();
+        Clear();
     }
 
     public void Init()
@@ -47,7 +53,9 @@ public class GUIBuilder : MonoBehaviour
                 Destroy(tf.gameObject);
             }
         }
-        _currentYCoordinate = Screen.height/2;
+
+        _currentYCoordinate = Screen.height - TOP_MARGIN;
+
         _nodeBuilder = GetComponent<NodeBuilder>();
         if (_nodeBuilder == null)
         {
@@ -64,6 +72,7 @@ public class GUIBuilder : MonoBehaviour
         CreateNodeGraphDropdown();
         CreateButtons();
 
+        // possible actions that can be executed using the execute-button
         _actions = new UnityAction[]
         {
             StaticLayout,
@@ -102,16 +111,25 @@ public class GUIBuilder : MonoBehaviour
         };
     }
 
-    private int NextYPosition()
+    private float NextYPosition()
     {
         var currentY = _currentYCoordinate;
-        _currentYCoordinate -= 35;
+        _currentYCoordinate -= VERTICAL_SPACING;
         return currentY;
     }
 
     private Vector2 GetButtonPosition(GameObject buttonGameObject)
     {
-        return new Vector2(GetButtonVerticalPosition(buttonGameObject), NextYPosition());
+        var rectTransform = buttonGameObject.GetComponent<RectTransform>();
+        if (!rectTransform)
+        {
+            Debug.LogError("RectTransform is missing on the GameObject.");
+            return Vector2.zero;
+        }
+        var buttonWidth = rectTransform.rect.width;
+        var xPosition = (_referenceWidth / 2) - buttonWidth - RIGHT_MARGIN;
+        
+        return new Vector2(xPosition, NextYPosition());
     }
 
     private void CreateSceneDropdown()
@@ -142,7 +160,7 @@ public class GUIBuilder : MonoBehaviour
         }
 
 
-        if (tmpDropdown != null)
+        if (tmpDropdown)
         {
             tmpDropdown.enabled = true;
             tmpDropdown.AddOptions(sceneOptions);
@@ -169,12 +187,12 @@ public class GUIBuilder : MonoBehaviour
         _nodeGraphDropdownInstance = dropdownInstance;
         _nodeGraphDropdownInstance.gameObject.SetActive(true);
         var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
-        if (tmpDropdown != null)
+        if (tmpDropdown)
         {
             tmpDropdown.ClearOptions();
         }
 
-        if (tmpDropdown != null)
+        if (tmpDropdown)
         {
             tmpDropdown.enabled = true;
             var dropdownOptions = new List<string>()
@@ -216,29 +234,38 @@ public class GUIBuilder : MonoBehaviour
         _removePhysicsButton = CreateButton("Remove Physics", 14, () =>
         {
             removePhysicsEvent.TriggerEvent();
-            var types = new List<Type>
-            {
-                typeof(SpringJoint2D),
-                typeof(Rigidbody2D)
-            };
-            var parentObject = SceneHandler.GetParentObject();
-
-            if (parentObject == null)
-                return;
-            nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
+            RemovePhysics();
         }, isEnabled: false, disableAfterClick: true);
 
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
         if (sceneAnalyzer != null)
         {
-            _clearButton = CreateButton("Clear", 14, () =>
-            {
-                sceneAnalyzer.ClearNodes();
-                nodeGraph.Initialize();
-                ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
-                ChangeButtonEnabled(_removePhysicsButton.gameObject, false);
-            }, isEnabled: false, disableAfterClick: true);
+            _clearButton = CreateButton("Clear", 14, Clear, isEnabled: false, disableAfterClick: true);
         }
+    }
+
+    private void RemovePhysics()
+    {
+        var types = new List<Type>
+        {
+            typeof(SpringJoint2D),
+            typeof(Rigidbody2D)
+        };
+        var parentObject = SceneHandler.GetParentObject();
+
+        if (parentObject == null)
+            return;
+        nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
+    }
+
+    public void Clear()
+    {
+        var sceneAnalyzer = GetComponent<SceneAnalyzer>();
+        if (sceneAnalyzer == null) return;
+        sceneAnalyzer.ClearNodes();
+        nodeGraph.Initialize();
+        ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
+        ChangeButtonEnabled(_removePhysicsButton.gameObject, false);
     }
 
     private static void ChangeButtonEnabled(GameObject buttonGameObject, bool isEnabled)
@@ -255,11 +282,11 @@ public class GUIBuilder : MonoBehaviour
     /// Returns an x position for a button rect transform to be at the rightmost position
     /// </summary>
     /// <param name="buttonGameObject"></param>
-    private float GetButtonVerticalPosition(GameObject buttonGameObject)
+    private static float GetButtonVerticalPosition(GameObject buttonGameObject)
     {
         var rectTransform = buttonGameObject.GetComponent<RectTransform>();
 
-        if (rectTransform == null)
+        if (!rectTransform)
         {
             Debug.LogError("RectTransform is missing on the GameObject.");
             return 0;
@@ -276,12 +303,12 @@ public class GUIBuilder : MonoBehaviour
     private GameObject CreateButton(string text, int fontSize, UnityAction onClick, Vector2 anchoredPosition = default, bool isEnabled = true, bool disableAfterClick = false)
     {
         var browserButtonInstance = Instantiate(buttonPrefab, uiCanvas.transform);
-        
+
         if (anchoredPosition == default)
         {
             anchoredPosition = GetButtonPosition(browserButtonInstance);
         }
-        
+
         var buttonComponent = browserButtonInstance.GetComponent<Button>();
         buttonComponent.enabled = isEnabled;
         buttonComponent.image.color = isEnabled ? Color.white : Color.gray;
@@ -306,6 +333,10 @@ public class GUIBuilder : MonoBehaviour
         return browserButtonInstance;
     }
 
+    /// <summary>
+    /// Changes the listeners of the execute-button to invoke the currently selected dropdown option
+    /// </summary>
+    /// <param name="index"></param>
     private void OnNodeGraphDropdownChanged(int index)
     {
         var button = _executeNodeSpawnButton.GetComponent<Button>();
@@ -349,5 +380,79 @@ public class GUIBuilder : MonoBehaviour
     private void OnFileBrowserOpen()
     {
         path = StandaloneFileBrowser.OpenFolderPanel("Open File", "/home/florian/Bilder", false);
+    }
+
+    public void ApplyComponentPhysics()
+    {
+        if (nodeGraph.AllNodes.Count <= 0) return;
+        removePhysicsEvent.TriggerEvent();
+        var springSimulation = gameObject.GetComponent<SpringSimulation>();
+        if (springSimulation)
+            springSimulation.CleanupNativeArrays();
+
+        ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, false);
+        ChangeButtonEnabled(_removePhysicsButton.gameObject, true);
+        ChangeButtonEnabled(_clearButton.gameObject, true);
+
+        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+
+        // required to avoid intersections when using components
+        foreach (var collider in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(collider => collider != null))
+        {
+            collider.isTrigger = false;
+            collider.size = Vector2.one * 5;
+        }
+
+        NodeConnectionManager.Instance.ConvertToNativeArray();
+        NodeLayoutManagerV2.LayoutForest();
+        NodeConnectionManager.Instance.AddSpringsToConnections();
+    }
+
+    public void ApplyBurstPhysics()
+    {
+        Debug.Log("apply burst physics");
+        var springSimulation = GetComponent<SpringSimulation>();
+        if (springSimulation)
+        {
+            if (nodeGraph.AllNodes.Count <= 0) return;
+            RemovePhysics();
+            NodeLayoutManagerV2.LayoutForest();
+            NodeConnectionManager.Instance.UseNativeArray();
+            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+            NodeConnectionManager.Instance.AddSpringsToConnections();
+            NodeConnectionManager.Instance.ResizeNativeArray();
+            NodeConnectionManager.Instance.ConvertToNativeArray();
+            springSimulation.Simulate();
+        }
+        else
+        {
+            Debug.Log("missing springSimulation Script on the Manager");
+        }
+    }
+
+    public void ApplyGPUPhysics()
+    {
+        Debug.Log("apply gpu physics");
+        var gpuSpringSim = gameObject.GetComponent<ComputeSpringSimulation>();
+        if (gpuSpringSim)
+        {
+            if (nodeGraph.AllNodes.Count <= 0) return;
+            RemovePhysics();
+            NodeLayoutManagerV2.LayoutForest();
+            NodeConnectionManager.Instance.UseNativeArray();
+            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+            NodeConnectionManager.Instance.AddSpringsToConnections();
+            NodeConnectionManager.Instance.ResizeNativeArray();
+            NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
+            Debug.Log("initializing gpu physics");
+            var springSimulation = GetComponent<SpringSimulation>();
+            if (springSimulation)
+                springSimulation.Disable();
+            gpuSpringSim.Initialize();
+        }
+        else
+        {
+            Debug.Log("missing ComputeSpringSimulation Script on the Manager");
+        }
     }
 }
