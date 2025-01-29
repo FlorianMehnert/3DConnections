@@ -6,7 +6,7 @@ public static class Colorpalette
 {
     public static Color[] GeneratePaletteFromBaseColor(Color baseColor, int prebuiltChannels = 0, bool generateColors = false)
     {
-        var palette = new Color[6];
+        var palette = new Color[7];
         if (generateColors)
         {
             switch (prebuiltChannels)
@@ -40,7 +40,6 @@ public static class Colorpalette
                         HexToColor("#be2edd"), // co
                         HexToColor("#4834d4"), // so
                         HexToColor("#f0932b"), // asset
-
                         HexToColor("#7ed6df"), // pc
                         HexToColor("#e056fd"), // co-conn
                         HexToColor("#686de0"), // ref
@@ -84,9 +83,11 @@ public static class Colorpalette
         palette[0] = baseColor; // Original color
         palette[1] = HSVToRGB(h + 0.3f, s, max); // Shifted hue
         palette[2] = HSVToRGB(h + 0.6f, s, max); // More saturated
-        palette[3] = HSVToRGB(h, s * 0.5f, max * 0.7f); // Brighter
-        palette[4] = HSVToRGB(h + 0.3f, s * 0.5f, max * 0.7f); // Complementary
-        palette[5] = HSVToRGB(h + 0.6f, s * 0.5f, max * 0.7f); // Muted
+        palette[3] = HSVToRGB(h + 0.1f, s, max);
+        palette[4] = HSVToRGB(h, s * 0.5f, max * 0.7f); // Brighter
+        palette[5] = HSVToRGB(h + 0.3f, s * 0.5f, max * 0.7f); // Complementary
+        palette[6] = HSVToRGB(h + 0.6f, s * 0.5f, max * 0.7f); // Muted
+        
 
         return palette;
     }
