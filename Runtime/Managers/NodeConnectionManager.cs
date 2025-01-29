@@ -153,16 +153,42 @@ public sealed class NodeConnectionManager : MonoBehaviour
         _currentConnectionCount = 0;
     }
 
+    public void ClearNativeArray()
+    {
+        if (_usingNativeArray && _nativeConnections.IsCreated)
+        {
+            _nativeConnections.Dispose();
+            _usingNativeArray = false;
+        }
+    }
+
     public void AddSpringsToConnections()
     {
         foreach (var connection in connections)
         {
-            var spring = connection.startNode.AddComponent<SpringJoint2D>();
+            var existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
+            
+            // avoid duplicating spring joints
+            var alreadyExists = false;
+            SpringJoint2D springComponent = null;
+            foreach (var existingSpring in existingSprings)
+            {
+                if (existingSpring.connectedBody.gameObject == connection.endNode.gameObject)
+                {
+                    alreadyExists = true;
+                    springComponent = existingSpring;
+                    break;
+                }
+            }
+            
+            var spring = (alreadyExists && springComponent) ? springComponent : alreadyExists ? null : connection.startNode.AddComponent<SpringJoint2D>();
+            if (!spring) return;
+            spring.autoConfigureDistance = false;
             spring.connectedBody = connection.endNode.GetComponent<Rigidbody2D>();
-            spring.frequency = simConfig.stiffness;
-            spring.dampingRatio = simConfig.damping;
+            spring.dampingRatio = simConfig.damping * 2;
             spring.distance = simConfig.colliderRadius;
-            if (spring.connectedBody == null) return;
+            spring.frequency = 0.05f;
+            if (!spring.connectedBody) return;
             spring.connectedBody.freezeRotation = true;
         }
     }
@@ -205,6 +231,11 @@ public sealed class NodeConnectionManager : MonoBehaviour
             _nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
         }
 
+        _usingNativeArray = true;
+    }
+
+    public void UseNativeArray()
+    {
         _usingNativeArray = true;
     }
 

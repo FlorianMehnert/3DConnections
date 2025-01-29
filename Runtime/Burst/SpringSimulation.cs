@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using _3DConnections.Assets.ScriptableObjects.Configurations;
 using Unity.Burst;
 using Unity.Collections;
@@ -6,7 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-public class SpringSimulation : MonoBehaviour
+public class SpringSimulation : MonoBehaviour, ILogable
 {
     public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private PhysicsSimulationConfiguration simConfig;
@@ -16,7 +17,7 @@ public class SpringSimulation : MonoBehaviour
     private NativeArray<float2> _velocities;
     private NativeArray<float2> _newVelocities;
     private NativeArray<float2> _forces;
-    private Transform[] _nodes;
+    private List<GameObject> _nodes;
     private bool _isSetUp;
     
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
@@ -40,6 +41,9 @@ public class SpringSimulation : MonoBehaviour
         CleanupNativeArrays();
     }
 
+    /// <summary>
+    /// Required to prevent memory leaks
+    /// </summary>
     public void CleanupNativeArrays()
     {
         if (!_isSetUp) return;
@@ -57,17 +61,17 @@ public class SpringSimulation : MonoBehaviour
     {
         CleanupNativeArrays();
 
-        _nodes = nodeGraph.AllNodeTransforms2D;
+        _nodes = nodeGraph.AllNodes;
 
-        _positions = new NativeArray<float2>(_nodes.Length, Allocator.Persistent);
-        _newPositions = new NativeArray<float2>(_nodes.Length, Allocator.Persistent);
-        _velocities = new NativeArray<float2>(_nodes.Length, Allocator.Persistent);
-        _newVelocities = new NativeArray<float2>(_nodes.Length, Allocator.Persistent);
-        _forces = new NativeArray<float2>(_nodes.Length, Allocator.Persistent);
+        _positions = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
+        _newPositions = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
+        _velocities = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
+        _newVelocities = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
+        _forces = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
 
-        for (var i = 0; i < _nodes.Length; i++)
+        for (var i = 0; i < _nodes.Count; i++)
         {
-            _positions[i] = new float2(_nodes[i].position.x, _nodes[i].position.y);
+            _positions[i] = new float2(_nodes[i].transform.position.x, _nodes[i].transform.position.y);
             _newPositions[i] = _positions[i];
             _velocities[i] = float2.zero;
             _newVelocities[i] = float2.zero;
@@ -89,7 +93,7 @@ public class SpringSimulation : MonoBehaviour
     private void Update()
     {
         if (!_isSetUp || !Application.isPlaying) return;
-
+        Debug.Log("in spring sim");
         var deltaTime = Time.deltaTime;
 
         // Clear forces
@@ -123,16 +127,16 @@ public class SpringSimulation : MonoBehaviour
         };
 
         // Schedule and complete jobs
-        var springHandle = springJob.Schedule(_nodes.Length, 64);
-        var collisionHandle = collisionJob.Schedule(_nodes.Length, 64, springHandle);
+        var springHandle = springJob.Schedule(_nodes.Count, 64);
+        var collisionHandle = collisionJob.Schedule(_nodes.Count, 64, springHandle);
         collisionHandle.Complete();
 
         SwapBuffers();
 
         // Update transforms
-        for (var i = 0; i < _nodes.Length; i++)
+        for (var i = 0; i < _nodes.Count; i++)
         {
-            _nodes[i].position = new Vector3(_positions[i].x, _positions[i].y, _nodes[i].position.z);
+            _nodes[i].transform.position = new Vector3(_positions[i].x, _positions[i].y, _nodes[i].transform.position.z);
         }
     }
 
@@ -145,13 +149,9 @@ public class SpringSimulation : MonoBehaviour
 
     private void ConvertCollidersToTriggers()
     {
-        foreach (var node in nodeGraph.AllNodeTransforms2D)
+        foreach (var col in nodeGraph.AllNodes.Select(node => node.GetComponent<Collider2D>()).Where(col => col))
         {
-            var col = node.GetComponent<Collider2D>();
-            if (col != null)
-            {
-                col.isTrigger = true;
-            }
+            col.isTrigger = true;
         }
     }
 
@@ -206,30 +206,36 @@ public class SpringSimulation : MonoBehaviour
                 var distance = math.length(delta);
                 var minDist = ColliderRadius * 2;
 
-                if (distance < minDist && distance > float.Epsilon)
-                {
-                    var direction = delta / distance;
-                    var overlap = minDist - distance;
+                if (!(distance < minDist) || !(distance > float.Epsilon)) continue;
+                var direction = delta / distance;
+                var overlap = minDist - distance;
 
-                    position += direction * (overlap * 0.5f);
+                position += direction * (overlap * 0.5f);
 
-                    var relativeVelocity = velocity - CurrentVelocities[j];
-                    var velocityAlongNormal = math.dot(relativeVelocity, direction);
+                var relativeVelocity = velocity - CurrentVelocities[j];
+                var velocityAlongNormal = math.dot(relativeVelocity, direction);
 
-                    if (velocityAlongNormal < 0)
-                    {
-                        var restitution = 0.5f;
-                        var j_scalar = -(1 + restitution) * velocityAlongNormal;
-                        j_scalar *= CollisionResponseStrength;
+                if (!(velocityAlongNormal < 0)) continue;
+                const float restitution = 0.5f;
+                var jScalar = -(1 + restitution) * velocityAlongNormal;
+                jScalar *= CollisionResponseStrength;
 
-                        velocity += direction * j_scalar;
-                    }
-                }
+                velocity += direction * jScalar;
             }
 
             NewPositions[index] = position;
             NewVelocities[index] = velocity;
         }
+    }
+
+    public string GetStatus()
+    {
+        return _nodes.Count + " is setup: " + _isSetUp;
+    }
+
+    public void Disable()
+    {
+        _isSetUp = false;
     }
 
 

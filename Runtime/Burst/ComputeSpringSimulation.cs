@@ -2,7 +2,7 @@ using _3DConnections.Assets.ScriptableObjects.Configurations;
 using UnityEngine;
 using Unity.Mathematics;
 
-public class ComputeSpringSimulation : MonoBehaviour
+public class ComputeSpringSimulation : MonoBehaviour, ILogable
 {
     private static readonly int Nodes = Shader.PropertyToID("nodes");
     private static readonly int NodeCount = Shader.PropertyToID("nodeCount");
@@ -105,7 +105,7 @@ public class ComputeSpringSimulation : MonoBehaviour
     private void Update()
     {
         if (_nodeBuffer == null || !Application.isPlaying || _isShuttingDown) return;
-
+        Debug.Log("in compute spring sim");
         var deltaTime = Time.deltaTime;
 
         // Update shader parameters
@@ -144,5 +144,15 @@ public class ComputeSpringSimulation : MonoBehaviour
     private void HandleEvent()
     {
         CleanupBuffers();
+    }
+
+    public void Status()
+    {
+        Debug.Log(_nodeBuffer == null || !Application.isPlaying || _isShuttingDown);
+    }
+
+    public string GetStatus()
+    {
+        return "enabled keywords: " + computeShader.enabledKeywords.Length + " nodes: " + _nodes.Length + " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null");
     }
 }

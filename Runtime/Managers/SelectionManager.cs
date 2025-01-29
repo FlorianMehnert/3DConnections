@@ -410,7 +410,6 @@ public class CubeSelector : MonoBehaviour
 
         if (coRenderer)
         {
-            Debug.Log("has coRenderer");
             var coloredObject = cube.GetComponent<ColoredObject>();
             if (!coloredObject)
             {
@@ -437,7 +436,7 @@ public class CubeSelector : MonoBehaviour
         _selectedCubes.Clear();
     }
 
-    public Bounds GetSelectionBounds()
+    private Bounds GetSelectionBounds()
     {
         if (_selectedCubes.Count == 0) return new Bounds();
         var selectedCubesArray = _selectedCubes.ToArray();

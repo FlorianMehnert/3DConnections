@@ -25,7 +25,22 @@ public class NodeGraphScriptableObject : ScriptableObject
         {
             lock (_lock)
             {
-                if (_allNodes != null) return _allNodes ?? new List<GameObject>();
+                
+                if (_allNodes != null)
+                {
+                    if (_allNodes.Count == 0)
+                    {
+                        _parentObject ??= SceneHandler.GetParentObject();
+                        if (!_parentObject)
+                            return new List<GameObject>();
+                        else
+                        {
+                            _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+                            return _allNodes;
+                        }
+                    }
+                    return _allNodes ?? new List<GameObject>();
+                }
                 _parentObject ??= SceneHandler.GetParentObject();
                 if (!_parentObject)
                     return new List<GameObject>();

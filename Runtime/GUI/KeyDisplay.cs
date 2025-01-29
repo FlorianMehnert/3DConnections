@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class KeyDisplay : MonoBehaviour
@@ -77,31 +76,36 @@ public class KeyDisplay : MonoBehaviour
             // Handle special cases for Shift + key combinations
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
-                _inputString += keyCode switch
+                if (Input.GetKey(KeyCode.Backspace))
+                    _inputString  = "";
+                else
                 {
-                    // Convert Shift + key to uppercase
-                    >= KeyCode.A and <= KeyCode.Z => keyCode.ToString().ToUpper() + " ",
-                    KeyCode.Alpha1 => "!",
-                    KeyCode.Alpha2 => "@",
-                    KeyCode.Alpha3 => "#",
-                    KeyCode.Alpha4 => "$",
-                    KeyCode.Alpha5 => "%",
-                    KeyCode.Alpha6 => "^",
-                    KeyCode.Alpha7 => "&",
-                    KeyCode.Alpha8 => "*",
-                    KeyCode.Alpha9 => "(",
-                    KeyCode.Alpha0 => ")",
-                    KeyCode.Minus => "_",
-                    KeyCode.Equals => "+",
-                    KeyCode.LeftBracket => "{",
-                    KeyCode.RightBracket => "}",
-                    KeyCode.Quote => "\"",
-                    KeyCode.Comma => ";",
-                    (KeyCode)66 => ">",
-                    KeyCode.Slash => "?",
-                    KeyCode.Period => ":",
-                    _ => ""
-                };
+                    _inputString += keyCode switch
+                    {
+                        // Convert Shift + key to uppercase
+                        >= KeyCode.A and <= KeyCode.Z => keyCode.ToString().ToUpper() + " ",
+                        KeyCode.Alpha1 => "!",
+                        KeyCode.Alpha2 => "@",
+                        KeyCode.Alpha3 => "#",
+                        KeyCode.Alpha4 => "$",
+                        KeyCode.Alpha5 => "%",
+                        KeyCode.Alpha6 => "^",
+                        KeyCode.Alpha7 => "&",
+                        KeyCode.Alpha8 => "*",
+                        KeyCode.Alpha9 => "(",
+                        KeyCode.Alpha0 => ")",
+                        KeyCode.Minus => "_",
+                        KeyCode.Equals => "+",
+                        KeyCode.LeftBracket => "{",
+                        KeyCode.RightBracket => "}",
+                        KeyCode.Quote => "\"",
+                        KeyCode.Comma => ";",
+                        (KeyCode)66 => ">",
+                        KeyCode.Slash => "?",
+                        KeyCode.Period => ":",
+                        _ => ""
+                    };
+                }
             }
             else
             {
@@ -110,13 +114,27 @@ public class KeyDisplay : MonoBehaviour
                     if (_inputString != "")
                         _inputString = _inputString.Remove(_inputString.Length - 1);
                 }
-                else if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift or KeyCode.Return))
+                else if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift) || IsConfirm())
                 {
                     _inputString += keyCode switch
                     {
                         // Handle regular key presses
                         >= KeyCode.A and <= KeyCode.Z => keyCode.ToString().ToLower(),
                         KeyCode.Space => " ",
+                        KeyCode.Alpha0 => "0",
+                        KeyCode.Alpha1 => "1",
+                        KeyCode.Alpha2 => "2",
+                        KeyCode.Alpha3 => "3",
+                        KeyCode.Alpha4 => "4",
+                        KeyCode.Alpha5 => "5",
+                        KeyCode.Alpha6 => "6",
+                        KeyCode.Alpha7 => "7",
+                        KeyCode.Alpha8 => "8",
+                        KeyCode.Alpha9 => "9",
+                        KeyCode.Period => ".",
+                        KeyCode.Keypad1 => ":ui.1",
+                        KeyCode.Keypad2 => ":ui.2",
+                        KeyCode.Keypad3 => ":ui.3",
                         _ => keyCode + ""
                     };
                 }
@@ -124,27 +142,53 @@ public class KeyDisplay : MonoBehaviour
 
             // Update the last input time
             _lastInputTime = Time.time;
-            if (Input.GetKey(KeyCode.Return))
+            if (IsConfirm())
                 _style.normal.textColor = Color.green;
                 
             // Check for the ":q" sequence
-            if (_inputString.Contains(":q") && Input.GetKey(KeyCode.Return))
+            if (_inputString.Contains(":q") && IsConfirm())
             {
                 ExitApplication();
-            }else if (_inputString.Contains(":loadscene") && Input.GetKey(KeyCode.Return))
+            }else if (_inputString.Contains(":loadscene") && IsConfirm())
             {
                 SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
-            }else if (_inputString.Contains(":nodecount") && Input.GetKey(KeyCode.Return))
+            }else if (_inputString.Contains(":stats") && IsConfirm())
             {
                 var nodeGraph = GetNodeGraph();
-                var message = nodeGraph ? "nodecount is: " + nodeGraph.AllNodes.Count : "there exists no nodegraph scriptable object";
+                var message = nodeGraph ? "nodecount is: " + nodeGraph.AllNodes.Count + " " : "there exists no nodegraph scriptable object ";
+                message += "connection count is: " + NodeConnectionManager.Instance.connections.Count;
                 Debug.Log(message);
                 Log(message);
-            }else if (_inputString.Contains(":ui") && Input.GetKey(KeyCode.Return))
+            }else if (_inputString.Contains(":ui") && IsConfirm())
             {
                 var gui = gameObject.GetComponent<GUIBuilder>();
                 if (gui)
-                    gui.Init();
+                {
+                    if (_inputString.StartsWith(":ui.1"))
+                        gui.ApplyComponentPhysics();
+                    else if (_inputString.StartsWith(":ui.2"))
+                    {
+                        gui.ApplyBurstPhysics();
+                        Log(gui.GetComponent<SpringSimulation>().GetStatus());
+                    }
+                        
+                    else if (_inputString.StartsWith(":ui.3"))
+                    {
+                        gui.ApplyGPUPhysics();
+                        Log(gui.GetComponent<ComputeSpringSimulation>().GetStatus());    
+                    }
+                    else
+                        gui.Init();
+                    _inputString = "";
+                }
+                    
+            }else if (_inputString.Contains(":clear") && IsConfirm())
+            {
+                var gui = gameObject.GetComponent<GUIBuilder>();
+                if (gui)
+                {
+                    gui.Clear();
+                }
             }
 
             // Limit the input string length to avoid overflow
@@ -153,6 +197,11 @@ public class KeyDisplay : MonoBehaviour
                 _inputString = _inputString[^50..];
             }
         }
+    }
+
+    private static bool IsConfirm()
+    {
+        return Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter);
     }
 
     private static void ExitApplication()
