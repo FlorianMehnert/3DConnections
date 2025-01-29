@@ -6,16 +6,29 @@ using UnityEngine.SceneManagement;
 public class KeyDisplay : MonoBehaviour
 {
     private string _inputString = "";
+    private string _debugString = "";
     private const float ClearDelay = 1f; // Time in seconds before the input string disappears
     private float _lastInputTime;
+    private float _lastDebugTime;
     private GUIStyle _style;
+    private GUIStyle _debugStyle;
 
     private void Start()
     {
-        _style = new GUIStyle();
+        _style = new();
         _style.normal.textColor = Color.white;
         _style.fontSize = 20;
         _style.alignment = TextAnchor.MiddleLeft;
+        _debugStyle = new();
+        _debugStyle.normal.textColor = Color.red;
+        _debugStyle.fontSize = 20;
+        _debugStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    private void Log(string message)
+    {
+        _lastDebugTime = Time.time;
+        _debugString = _debugString + " " + message;
     }
 
     private void OnGUI()
@@ -27,7 +40,24 @@ public class KeyDisplay : MonoBehaviour
         const float height = 40f;
 
         // Draw the input string on the screen
-        GUI.Label(new Rect(x, y, width, height), "Input: " + _inputString, _style);
+        GUI.Label(new Rect(x, y, width, height), _inputString, _style);
+        GUI.Label(new Rect(x, y-height, width, height), _debugString, _debugStyle);
+    }
+
+    private NodeGraphScriptableObject GetNodeGraph()
+    {
+        var nodegraphs = Resources.FindObjectsOfTypeAll<NodeGraphScriptableObject>();
+        switch (nodegraphs.Length)
+        {
+            case 0:
+                return null;
+            case 1:
+                return nodegraphs[0];
+            default:
+
+                Log("there exist multiple nodegraph scriptable objects");
+                return nodegraphs[0];
+        }
     }
 
     private void Update()
@@ -36,10 +66,12 @@ public class KeyDisplay : MonoBehaviour
             _style.normal.textColor = new Color(1, 1, 1, 1);
         if (Time.time - _lastInputTime > ClearDelay && !string.IsNullOrEmpty(_inputString))
             _inputString = "";
+        if (Time.time - _lastDebugTime > ClearDelay && !string.IsNullOrEmpty(_debugString))
+            _debugString = "";
 
         // Check for key presses
         if (!Input.anyKeyDown) return;
-        foreach (KeyCode keyCode in System.Enum.GetValues(typeof(KeyCode)))
+        foreach (KeyCode keyCode in Enum.GetValues(typeof(KeyCode)))
         {
             if (!Input.GetKeyDown(keyCode)) continue;
             // Handle special cases for Shift + key combinations
@@ -73,7 +105,12 @@ public class KeyDisplay : MonoBehaviour
             }
             else
             {
-                if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift or KeyCode.Return))
+                if (keyCode is KeyCode.Backspace)
+                {
+                    if (_inputString != "")
+                        _inputString = _inputString.Remove(_inputString.Length - 1);
+                }
+                else if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift or KeyCode.Return))
                 {
                     _inputString += keyCode switch
                     {
@@ -97,6 +134,12 @@ public class KeyDisplay : MonoBehaviour
             }else if (_inputString.Contains(":loadscene") && Input.GetKey(KeyCode.Return))
             {
                 SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
+            }else if (_inputString.Contains(":nodecount") && Input.GetKey(KeyCode.Return))
+            {
+                var nodeGraph = GetNodeGraph();
+                var message = nodeGraph ? "nodecount is: " + nodeGraph.AllNodes.Count : "there exists no nodegraph scriptable object";
+                Debug.Log(message);
+                Log(message);
             }
 
             // Limit the input string length to avoid overflow

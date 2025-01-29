@@ -25,18 +25,16 @@ public class NodeGraphScriptableObject : ScriptableObject
         {
             lock (_lock)
             {
-                if (_allNodes == null)
-                {
-                    _parentObject ??= SceneHandler.GetParentObject();
-                    if (_parentObject == null)
-                        return new List<GameObject>();
+                if (_allNodes != null) return _allNodes ?? new List<GameObject>();
+                _parentObject ??= SceneHandler.GetParentObject();
+                if (!_parentObject)
+                    return new List<GameObject>();
 
-                    _allNodes = _parentObject.transform.Cast<Transform>()
-                        .Select(child => child.gameObject)
-                        .ToList();
-                }
+                _allNodes = _parentObject.transform.Cast<Transform>()
+                    .Select(child => child.gameObject)
+                    .ToList();
 
-                return _allNodes;
+                return _allNodes ?? new List<GameObject>();
             }
         }
         set
