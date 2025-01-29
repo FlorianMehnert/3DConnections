@@ -559,6 +559,7 @@ public class SceneAnalyzer : MonoBehaviour
                         return;
                     }
                     GetOrSpawnNode(referencedObject, depth, parentNodeObject, true);
+                    return;
                 }
                 switch (referencedObject)
                 {
@@ -579,8 +580,8 @@ public class SceneAnalyzer : MonoBehaviour
             _processingObjects.Remove(component);
         }
     }
-    
-    public static bool IsAsset(Object obj)
+
+    private static bool IsAsset(Object obj)
     {
         if (obj == null)
             return false;
