@@ -18,12 +18,10 @@ public class Entrypoint3DConnections : MonoBehaviour
             return;
         }
 
-        if (loadOnStart)
-        {
-            SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
-            if (disableSceneOnOverlay)
-                ToggleRootObjectsInSceneWhileOverlay();
-        }
+        if (!loadOnStart) return;
+        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
+        if (disableSceneOnOverlay)
+            ToggleRootObjectsInSceneWhileOverlay();
     }
 
     private void Update()

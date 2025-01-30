@@ -189,6 +189,14 @@ public class KeyDisplay : MonoBehaviour
                 {
                     gui.Clear();
                 }
+            }else if (_inputString.Contains(":reset") && IsConfirm())
+            {
+                var gui = gameObject.GetComponent<GUIBuilder>();
+                if (gui)
+                {
+                    gui.Init();
+                    gui.Clear();
+                }
             }
 
             // Limit the input string length to avoid overflow

@@ -19,7 +19,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private NativeArray<float3> _nativeConnections;
     private bool _usingNativeArray;
     private int _currentConnectionCount;
-    [SerializeField] private NodeGraphScriptableObject nodeGraph;
 
     public static NodeConnectionManager Instance
     {
