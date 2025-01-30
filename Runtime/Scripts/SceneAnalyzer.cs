@@ -167,14 +167,19 @@ public class SceneAnalyzer : MonoBehaviour
         {
             var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
             var iconObj = new GameObject("Icon");
-            if (componentIcon != null)
+            if (componentIcon)
             {
                 iconObj.transform.SetParent(nodeObject.transform);
                 iconObj.transform.localPosition = new Vector3(0, 0, -1f);
-
                 var iconRenderer = iconObj.AddComponent<SpriteRenderer>();
-                iconRenderer.sprite = TextureToSprite(componentIcon);
+                var sprite = TextureToSprite(componentIcon);
+                iconRenderer.sprite = sprite;
                 iconRenderer.sortingOrder = 1;
+                const float desiredHeight = 0.5f;
+                Vector2 spriteSize = sprite.bounds.size;
+                var scaleY = desiredHeight / spriteSize.y;
+                var scaleX = scaleY * (spriteSize.x / spriteSize.y) * .5f; // since nodes are scale 2:1
+                iconObj.transform.localScale = new Vector3(scaleX, scaleY, 1);
             }
         }
 #endif
