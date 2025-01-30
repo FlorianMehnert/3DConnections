@@ -581,7 +581,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
     }
 
-    private static bool IsAsset(Object obj)
+    private static bool IsAsset(Object obj) 
     {
         if (obj == null)
             return false;
