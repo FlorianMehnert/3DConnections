@@ -137,7 +137,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
-  nodeGraph: {fileID: 0}
   connections: []
   lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
 --- !u!114 &5742035924882090109
@@ -229,15 +228,17 @@ MonoBehaviour:
   gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
   componentColor: {r: 1, g: 0.19999999, b: 0.76000005, a: 1}
   scriptableObjectColor: {r: 0.9199997, g: 1, b: 0.19999999, a: 1}
+  assetColor: {r: 0.28, g: 0.19999999, b: 1, a: 1}
   parentChildConnection: {r: 0.42, g: 0.56, b: 0.7, a: 1}
   componentConnection: {r: 0.7, g: 0.42, b: 0.616, a: 1}
   referenceConnection: {r: 0.6719999, g: 0.7, b: 0.42, a: 1}
   maxNodes: 1000
   searchForPrefabsUsingNames: 1
   analysisData: {fileID: 4900000, guid: a50f5d748ba945a5aecdf256de3372b0, type: 3}
-  setIcons: 0
+  setIcons: 1
   ignoredTypes: []
-  prefabColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  colorPreset: 0
+  generateColors: 0
 --- !u!114 &438415427359241478
 MonoBehaviour:
   m_ObjectHideFlags: 0
