@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,16 +7,30 @@ public class Entrypoint3DConnections : MonoBehaviour
     [SerializeField] private OverlaySceneScriptableObject overlay;
     [SerializeField] private ToggleOverlayEvent overlayEvent;
     [SerializeField] private bool disableSceneOnOverlay = true;
+    [SerializeField] private bool loadOnStart = true;
+    private string _sceneName;
 
     private void Start()
     {
-        var sceneName = overlay.overlayScene.Name;
-        if (SceneManager.GetSceneByName(sceneName).isLoaded)
+        _sceneName = overlay.overlayScene.Name;
+        if (SceneManager.GetSceneByName(_sceneName).isLoaded)
         {
             return;
         }
 
-        SceneManager.LoadScene(sceneName: sceneName, mode: LoadSceneMode.Additive);
+        if (loadOnStart)
+        {
+            SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
+            if (disableSceneOnOverlay)
+                ToggleRootObjectsInSceneWhileOverlay();
+        }
+    }
+
+    private void Update()
+    {
+        if (!Input.GetKeyDown(KeyCode.Return)) return;
+        if (SceneManager.GetSceneByName(_sceneName).isLoaded) return;
+        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
         if (disableSceneOnOverlay)
             ToggleRootObjectsInSceneWhileOverlay();
     }
