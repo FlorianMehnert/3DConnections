@@ -62,7 +62,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         {
             UpdateConnectionPositionsNative();
         }
-        else
+        else if (connections.Count > 0)
         {
             UpdateConnectionPositions();
         }

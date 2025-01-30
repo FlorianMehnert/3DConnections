@@ -50,7 +50,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         CleanupBuffers();
     }
 
-    private void CleanupBuffers()
+    public void CleanupBuffers()
     {
         if (_nodeBuffer == null) return;
         _nodeBuffer.Release();

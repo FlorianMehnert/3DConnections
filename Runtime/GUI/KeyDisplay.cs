@@ -135,6 +135,7 @@ public class KeyDisplay : MonoBehaviour
                         KeyCode.Keypad1 => ":ui.1",
                         KeyCode.Keypad2 => ":ui.2",
                         KeyCode.Keypad3 => ":ui.3",
+                        KeyCode.Return => "",
                         _ => keyCode + ""
                     };
                 }

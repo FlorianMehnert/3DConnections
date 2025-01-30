@@ -78,6 +78,7 @@ public class CubeSelector : MonoBehaviour
 
     private void Update()
     {
+        if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) && !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) && !Input.GetKeyDown(KeyCode.I)) return;
         if (_currentlyDraggedCube)
         {
             _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color =
@@ -95,6 +96,9 @@ public class CubeSelector : MonoBehaviour
         HandleOtherHotkeys();
     }
 
+    /// <summary>
+    /// LCtrl+I, M
+    /// </summary>
     private void HandleOtherHotkeys()
     {
         // check for keydown first
@@ -102,7 +106,7 @@ public class CubeSelector : MonoBehaviour
         {
             var selectedCubes = _selectedCubes.ToList();
             foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<NodeConnections>())
-                         .Where(connections => connections != null).Select(connections => connections.outConnections)
+                         .Where(connections => connections).Select(connections => connections.outConnections)
                          .SelectMany(outConnections => outConnections))
             {
                 SelectCube(outgoingNode, false, false);

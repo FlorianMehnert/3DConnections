@@ -51,7 +51,6 @@ public class CameraController : MonoBehaviour
     private void Update()
     {
         // Recalculate world dimensions if zoom changes
-        CalculateWorldDimensions();
 
         if (Input.GetKeyDown(KeyCode.F))
         {
@@ -83,7 +82,7 @@ public class CameraController : MonoBehaviour
     {
         var scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll == 0f) return;
-
+        CalculateWorldDimensions();
         // Calculate zoom speed dynamically based on the current zoom level
         var dynamicZoomSpeed = zoomSpeed * (_cam.orthographicSize / 10f);
         _cam.orthographicSize -= scroll * dynamicZoomSpeed;

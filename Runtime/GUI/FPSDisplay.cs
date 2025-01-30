@@ -12,9 +12,7 @@ public class FPSDisplay : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.F3))
-        {
             _showFPS = !_showFPS;
-        }
 
         if (!_showFPS) return;
         _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;

@@ -26,11 +26,11 @@ public class ScaleSphereWithOrthographicSize : MonoBehaviour
 
     private void Update()
     {
-        if (orthographicCamera == null)
+        if (!orthographicCamera)
             return;
 
         // Update the sphere's scale if the orthographic size changes
-        if (orthographicCamera.orthographicSize != baseOrthographicSize)
+        if (!Mathf.Approximately(orthographicCamera.orthographicSize, baseOrthographicSize))
         {
             UpdateSphereScale();
         }

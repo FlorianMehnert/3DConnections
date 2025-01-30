@@ -255,8 +255,13 @@ public class GUIBuilder : MonoBehaviour
     public void Clear()
     {
         var sceneAnalyzer = GetComponent<SceneAnalyzer>();
-        if (sceneAnalyzer == null) return;
+        if (!sceneAnalyzer) return;
         sceneAnalyzer.ClearNodes();
+        
+        var gpuSimulation = GetComponent<ComputeSpringSimulation>();
+        if (!gpuSimulation) return;
+        gpuSimulation.CleanupBuffers();
+        
         nodeGraph.Initialize();
         ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
         ChangeButtonEnabled(_removePhysicsButton.gameObject, false);
