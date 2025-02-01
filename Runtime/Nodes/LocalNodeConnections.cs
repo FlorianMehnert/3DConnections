@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NodeConnections : MonoBehaviour
+public class LocalNodeConnections : MonoBehaviour
 {
     [SerializeField] public List<GameObject> inConnections = new();
 

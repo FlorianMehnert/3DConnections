@@ -105,7 +105,7 @@ public class CubeSelector : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.I) && Input.GetKey(KeyCode.LeftControl))
         {
             var selectedCubes = _selectedCubes.ToList();
-            foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<NodeConnections>())
+            foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<LocalNodeConnections>())
                          .Where(connections => connections).Select(connections => connections.outConnections)
                          .SelectMany(outConnections => outConnections))
             {

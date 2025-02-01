@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(NodeConnections))]
+[CustomEditor(typeof(LocalNodeConnections))]
 public class GameObjectListDisplayEditor : Editor
 {
     public override void OnInspectorGUI()
     {
-        var script = (NodeConnections)target;
+        var script = (LocalNodeConnections)target;
 
         // Display the "In Connections"
         EditorGUILayout.LabelField("In Connections", EditorStyles.boldLabel);

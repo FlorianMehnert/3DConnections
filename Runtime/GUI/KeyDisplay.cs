@@ -27,7 +27,7 @@ public class KeyDisplay : MonoBehaviour
     private void Log(string message)
     {
         _lastDebugTime = Time.time;
-        _debugString = _debugString + " " + message;
+        _debugString = message;
     }
 
     private void OnGUI()

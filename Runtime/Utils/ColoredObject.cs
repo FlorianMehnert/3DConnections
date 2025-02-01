@@ -6,7 +6,7 @@ public class ColoredObject : MonoBehaviour
 {
     private Color _originalColor;
     private Renderer _objectRenderer;
-    private NodeConnections _nodeConnections;
+    private LocalNodeConnections _nodeConnections;
     private int _targetLayerMask;
 
     private bool _isHighlighting;
@@ -25,7 +25,7 @@ public class ColoredObject : MonoBehaviour
             _originalColor = _objectRenderer.material.color;
         }
 
-        _nodeConnections = GetComponent<NodeConnections>();
+        _nodeConnections = GetComponent<LocalNodeConnections>();
         _targetLayerMask = LayerMask.GetMask("OverlayScene");
     }
 
@@ -86,7 +86,7 @@ public class ColoredObject : MonoBehaviour
 
     private void DeleteNode()
     {
-        foreach (var outNodeConnections in _nodeConnections.outConnections.Select(outNode => outNode.GetComponent<NodeConnections>()).Where(outNodeConnections => outNodeConnections))
+        foreach (var outNodeConnections in _nodeConnections.outConnections.Select(outNode => outNode.GetComponent<LocalNodeConnections>()).Where(outNodeConnections => outNodeConnections))
         {
             outNodeConnections.inConnections.Remove(gameObject);
         }

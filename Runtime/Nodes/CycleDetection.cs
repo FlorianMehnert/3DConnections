@@ -7,7 +7,7 @@ public class CycleDetection
     private static CycleDetection _instance;
     private static readonly object LockObject = new();
     
-    private readonly Dictionary<GameObject, NodeConnections> _graph = new();
+    private readonly Dictionary<GameObject, LocalNodeConnections> _graph = new();
     
     private CycleDetection() { }
     
@@ -41,7 +41,7 @@ public class CycleDetection
         _graph.Clear();
         foreach (var node in nodes)
         {
-            var connections = node.GetComponent<NodeConnections>();
+            var connections = node.GetComponent<LocalNodeConnections>();
             if (connections)
             {
                 _graph[node] = connections;
