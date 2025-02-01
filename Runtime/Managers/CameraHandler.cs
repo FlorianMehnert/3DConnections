@@ -90,12 +90,12 @@ public class CameraController : MonoBehaviour
 
     private void HandlePan()
     {
-        if (Input.GetMouseButtonDown(2)) // Middle mouse button pressed
+        if (Input.GetMouseButtonDown(2) || Input.GetMouseButtonDown(1)) // Middle mouse button pressed
         {
             _lastMousePosition = Input.mousePosition;
         }
 
-        if (!Input.GetMouseButton(2)) return; // Middle mouse button held down
+        if (!Input.GetMouseButton(2) && !Input.GetMouseButton(1)) return; // Middle mouse button held down
 
         var delta = Input.mousePosition - _lastMousePosition;
 

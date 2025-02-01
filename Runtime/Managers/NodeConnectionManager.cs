@@ -15,10 +15,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     [Header("Component based physics sim")]
     public PhysicsSimulationConfiguration simConfig;
-
-    private NativeArray<float3> _nativeConnections;
-    private bool _usingNativeArray;
-    private int _currentConnectionCount;
+    [SerializeField] private NodeConnectionsScriptableObject conSo;
 
     public static NodeConnectionManager Instance
     {
@@ -58,7 +55,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void Update()
     {
-        if (_usingNativeArray)
+        if (conSo.usingNativeArray)
         {
             UpdateConnectionPositionsNative();
         }
@@ -76,9 +73,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
     // Make sure to clean up the native array when the component is destroyed
     private void OnDestroy()
     {
-        if (_usingNativeArray && _nativeConnections.IsCreated)
+        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
         {
-            _nativeConnections.Dispose();
+            conSo.nativeConnections.Dispose();
         }
 
         if (_instance != this) return;
@@ -137,10 +134,10 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void ClearConnections()
     {
-        if (_usingNativeArray && _nativeConnections.IsCreated)
+        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
         {
-            _nativeConnections.Dispose();
-            _usingNativeArray = false;
+            conSo.nativeConnections.Dispose();
+            conSo.usingNativeArray = false;
         }
 
         foreach (var connection in connections.Where(connection => connection.lineRenderer != null))
@@ -149,15 +146,15 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
 
         connections.Clear();
-        _currentConnectionCount = 0;
+        conSo.currentConnectionCount = 0;
     }
 
     public void ClearNativeArray()
     {
-        if (_usingNativeArray && _nativeConnections.IsCreated)
+        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
         {
-            _nativeConnections.Dispose();
-            _usingNativeArray = false;
+            conSo.nativeConnections.Dispose();
+            conSo.usingNativeArray = false;
         }
     }
 
@@ -208,78 +205,78 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void ConvertToNativeArray()
     {
-        if (_usingNativeArray)
+        if (conSo.usingNativeArray)
         {
-            if (_nativeConnections.IsCreated)
+            if (conSo.nativeConnections.IsCreated)
             {
-                _nativeConnections.Dispose();
+                conSo.nativeConnections.Dispose();
             }
         }
 
-        _currentConnectionCount = connections.Count;
-        if (_currentConnectionCount == 0) return;
+        conSo.currentConnectionCount = connections.Count;
+        if (conSo.currentConnectionCount == 0) return;
 
         // Create a new native array with the exact size needed
-        _nativeConnections = new NativeArray<float3>(_currentConnectionCount * 2, Allocator.Persistent);
+        conSo.nativeConnections = new NativeArray<float3>(conSo.currentConnectionCount * 2, Allocator.Persistent);
 
         // Copy existing connections to the native array
-        for (var i = 0; i < _currentConnectionCount; i++)
+        for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
             if (!connections[i].startNode || !connections[i].endNode) continue;
-            _nativeConnections[i * 2] = connections[i].startNode.transform.position;
-            _nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+            conSo.nativeConnections[i * 2] = connections[i].startNode.transform.position;
+            conSo.nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
         }
 
-        _usingNativeArray = true;
+        conSo.usingNativeArray = true;
     }
 
     public void UseNativeArray()
     {
-        _usingNativeArray = true;
+        conSo.usingNativeArray = true;
     }
 
     // Call this when you want to resize the native array (e.g., when connections are added/removed)
     public void ResizeNativeArray()
     {
-        if (!_usingNativeArray) return;
+        if (!conSo.usingNativeArray) return;
 
         var newConnectionCount = connections.Count;
-        if (newConnectionCount == _currentConnectionCount) return;
+        if (newConnectionCount == conSo.currentConnectionCount) return;
 
         var newArray = new NativeArray<float3>(newConnectionCount * 2, Allocator.Persistent);
 
         // Copy existing data up to the smaller of the two sizes
-        var copyCount = math.min(_currentConnectionCount, newConnectionCount) * 2;
+        var copyCount = math.min(conSo.currentConnectionCount, newConnectionCount) * 2;
         for (var i = 0; i < copyCount; i++)
         {
-            newArray[i] = _nativeConnections[i];
+            newArray[i] = conSo.nativeConnections[i];
         }
 
         // Dispose old array and assign new one
-        if (_nativeConnections.IsCreated)
+        if (conSo.nativeConnections.IsCreated)
         {
-            _nativeConnections.Dispose();
+            conSo.nativeConnections.Dispose();
         }
 
-        _nativeConnections = newArray;
-        _currentConnectionCount = newConnectionCount;
+        conSo.nativeConnections = newArray;
+        conSo.currentConnectionCount = newConnectionCount;
     }
 
 
     private void UpdateConnectionPositionsNative()
     {
-        if (!_usingNativeArray || !_nativeConnections.IsCreated) return;
+        if (!conSo.usingNativeArray || !conSo.nativeConnections.IsCreated) return;
 
-        for (var i = 0; i < _currentConnectionCount; i++)
+        for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
             if (!connections[i].startNode || !connections[i].endNode || !connections[i].lineRenderer) continue;
             // Update the native array
-            _nativeConnections[i * 2] = connections[i].startNode.transform.position;
-            _nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+            conSo.nativeConnections[i * 2] = connections[i].startNode.transform.position;
+            conSo.nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
 
             // Update line renderer
-            connections[i].lineRenderer.SetPosition(0, _nativeConnections[i * 2]);
-            connections[i].lineRenderer.SetPosition(1, _nativeConnections[i * 2 + 1]);
+            connections[i].lineRenderer.SetPosition(0, conSo.nativeConnections[i * 2]);
+            connections[i].lineRenderer.SetPosition(1, conSo.nativeConnections[i * 2 + 1]);
         }
     }
 
