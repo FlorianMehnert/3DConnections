@@ -176,3 +176,27 @@ https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
 # 26.January
 - add different line thickness
 - allow building again
+
+# 28.January
+- code analyzation based on roslyn dumped currently in the code_metrics.json file to size known nodes based on maintainability
+- add command input - most of typed keys appear on the screen (:q) + some words are understood as commands and execute functions such as applying different physics sims to the nodegraph
+
+# 29.January
+- trying to get into a nice background fast using shaders but took more time than expected
+- fix ui is not responsive after reload/recompiling
+- add fps display
+- got into custom editors displaying buttons to execute functions within their monobehaviour
+- add different color palettes
+
+# 30.January
+- resize icons to be all the same size and set to be on by default
+
+# 1.February
+- trying to build on android - working, but scroll out is missing
+- use connections scriptable object to split connectionsManager
+
+# 2.February
+- prevent selectionbox from drawing on ui interaction
+- create nodes on just pressing <kbd>Return</kbd>
+- Resize canvas containing ui buttons based on screen size
+- Add color slider to apply current color theme to all nodes
