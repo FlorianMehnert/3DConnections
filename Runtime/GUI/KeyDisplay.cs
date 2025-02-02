@@ -24,9 +24,9 @@ public class KeyDisplay : MonoBehaviour
         _debugStyle.alignment = TextAnchor.MiddleLeft;
     }
 
-    private void Log(string message)
+    private void Log(string message, float extendDelay=0f)
     {
-        _lastDebugTime = Time.time;
+        _lastDebugTime = Time.time + extendDelay;
         _debugString = message;
     }
 
@@ -132,9 +132,9 @@ public class KeyDisplay : MonoBehaviour
                         KeyCode.Alpha8 => "8",
                         KeyCode.Alpha9 => "9",
                         KeyCode.Period => ".",
-                        KeyCode.Keypad1 => ":ui.1",
-                        KeyCode.Keypad2 => ":ui.2",
-                        KeyCode.Keypad3 => ":ui.3",
+                        KeyCode.Keypad1 => "1",
+                        KeyCode.Keypad2 => "2",
+                        KeyCode.Keypad3 => "3",
                         KeyCode.Return => "",
                         _ => keyCode + ""
                     };
@@ -152,7 +152,12 @@ public class KeyDisplay : MonoBehaviour
                     if (gui && nodeGraph && nodeGraph.IsEmpty())
                     {
                         gui.StaticLayout();
-                        Log("Showing static circular layout");
+                        var overlayedScene = SceneHandler.GetOverlayedScene();
+                        if (overlayedScene.Value != null)
+                        {
+                            SceneManager.SetActiveScene(overlayedScene.Value);
+                        }
+                        Log("Showing static circular layout", 2f);
                         return;
                     }
                 }
@@ -163,33 +168,33 @@ public class KeyDisplay : MonoBehaviour
             if (_inputString.Contains(":q") && IsConfirm())
             {
                 ExitApplication();
-            }else if (_inputString.Contains(":loadscene") && IsConfirm())
+            }else if (_inputString.Contains("loadscene") && IsConfirm())
             {
                 SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
-            }else if (_inputString.Contains(":stats") && IsConfirm())
+            }else if (_inputString.Contains("stats") && IsConfirm())
             {
                 var nodeGraph = GetNodeGraph();
-                var message = nodeGraph ? "nodecount is: " + nodeGraph.AllNodes.Count + " " : "there exists no nodegraph scriptable object ";
+                var message = nodeGraph ? "nodeCount is: " + nodeGraph.AllNodes.Count + " " : "there exists no nodeGraph scriptable object ";
                 message += "connection count is: " + NodeConnectionManager.Instance.connections.Count;
                 Debug.Log(message);
                 Log(message);
-            }else if (_inputString.Contains(":ui") && IsConfirm())
+            }else if (IsConfirm())
             {
                 var gui = gameObject.GetComponent<GUIBuilder>();
                 if (gui)
                 {
-                    if (_inputString.StartsWith(":ui.1"))
+                    if (_inputString.StartsWith("1"))
                     {
                         Log("Executing physics sim (Method: Unity Components)");
                         gui.ApplyComponentPhysics();
                     }
-                    else if (_inputString.StartsWith(":ui.2"))
+                    else if (_inputString.StartsWith("2"))
                     {
                         Log("Executing physics sim (Method: Burst)");
                         gui.ApplyBurstPhysics();
                     }
                         
-                    else if (_inputString.StartsWith(":ui.3"))
+                    else if (_inputString.StartsWith("3"))
                     {
                         Log("Executing physics sim (Method: GPU)");
                         gui.ApplyGPUPhysics();
@@ -199,14 +204,15 @@ public class KeyDisplay : MonoBehaviour
                     _inputString = "";
                 }
                     
-            }else if (_inputString.Contains(":clear") && IsConfirm())
+            }else if (_inputString.Contains("clear") && IsConfirm())
             {
                 var gui = gameObject.GetComponent<GUIBuilder>();
                 if (gui)
                 {
+                    gui.Init();
                     gui.Clear();
                 }
-            }else if (_inputString.Contains(":reset") && IsConfirm())
+            }else if (_inputString.Contains("reset") && IsConfirm())
             {
                 var gui = gameObject.GetComponent<GUIBuilder>();
                 if (gui)
