@@ -691,10 +691,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 118189344272573009, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
-      propertyPath: conSo
-      value: 
-      objectReference: {fileID: 11400000, guid: 72018d7ede89c3f139aa5d7e8709f0a9, type: 2}
     - target: {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
       propertyPath: uiCanvas
       value: 

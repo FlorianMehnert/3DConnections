@@ -137,6 +137,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
+  conSo: {fileID: 11400000, guid: e03534a0f02dc33d48dc9f8e7d302d2a, type: 2}
   connections: []
   lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
 --- !u!114 &5742035924882090109
