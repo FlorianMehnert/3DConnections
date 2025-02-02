@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5985118532246660421}
   - component: {fileID: 6741713482695017902}
   - component: {fileID: 2996160047206839946}
+  - component: {fileID: 808789085474990485}
   m_Layer: 5
   m_Name: CanvasDropdown
   m_TagString: Untagged
@@ -102,6 +103,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &808789085474990485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525873507628586088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ba99c76917f4709b8e9b6fcf1e36eb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3186022170752424121
 PrefabInstance:
   m_ObjectHideFlags: 0
