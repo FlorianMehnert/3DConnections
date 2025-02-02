@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ColorPickerController : MonoBehaviour
 {
     public NodeGraphScriptableObject nodeGraph; // List of objects to color
-    private Slider _slider;
+    [SerializeField] private Slider slider;
     public Color col0;
     public Color col1;
     public Color col2;
@@ -20,27 +20,14 @@ public class ColorPickerController : MonoBehaviour
 
     private void Start()
     {
-        _slider = GetComponent<Slider>();
+        slider = GetComponent<Slider>();
         UpdateColor();
-        _slider.onValueChanged.AddListener(delegate { UpdateColor(); });
+        slider.onValueChanged.AddListener(delegate { UpdateColor(); });
     }
 
     private void OnValidate()
     {
-        var baseColor = new Color(0.2f, 0.6f, 1f);
-        Color.RGBToHSV(baseColor, out var h, out var s, out var v);
-        if (_slider == null) return;
-        h = (h + 0.33f * _slider.value) % 1f;
-        baseColor = Color.HSVToRGB(h, s, v);
-        var colors = Colorpalette.GeneratePaletteFromBaseColor(baseColor: baseColor, prebuiltChannels: (int)_slider.value, generateColors:generateColors, alternativeColors:alternativeColors);
-        col0 = Color.HSVToRGB(h, s, v);
-        col1 = colors[0];
-        col2 = colors[1];
-        col3 = colors[2];
-        col4 = colors[3];
-        col5 = colors[4];
-        col6 = colors[5];
-        col7 = colors[6];
+        UpdateColor();
     }
 
     private void UpdateColor()
@@ -50,7 +37,8 @@ public class ColorPickerController : MonoBehaviour
         Color.RGBToHSV(baseColor, out var h, out var s, out var v);
 
         // Proper hue shifting without clamping incorrectly
-        h = (h + 0.33f * _slider.value) % 1f;
+        if (slider == null) return;
+        h = (h + 1/(slider.maxValue+1) * slider.value) % 1f;
         s = Mathf.Max(0.5f, s); // Ensure some saturation
         v = Mathf.Max(0.5f, v); // Ensure some brightness
 
@@ -59,7 +47,7 @@ public class ColorPickerController : MonoBehaviour
         // Generate color palette
         var colors = Colorpalette.GeneratePaletteFromBaseColor(
             baseColor: baseColor,
-            prebuiltChannels: (int)_slider.value,
+            prebuiltChannels: (int)slider.value,
             generateColors: generateColors,
             alternativeColors: alternativeColors
         );
@@ -89,6 +77,10 @@ public class ColorPickerController : MonoBehaviour
         }
 
         // Apply colors to nodes
+        if (nodeGraph.AllNodes.Count > 0 && nodeGraph.AllNodes[0] == null)
+        {
+            nodeGraph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+        }
         foreach (var node in nodeGraph.AllNodes)
         {
             var coloredObject = node.GetComponent<ColoredObject>();
@@ -96,9 +88,9 @@ public class ColorPickerController : MonoBehaviour
 
             coloredObject.SetOriginalColor(nodeType.nodeTypeName switch
             {
-                "GameObject" => colors[4],
-                "Component" => colors[5],
-                "ScriptableObject" => colors[6],
+                "GameObject" => colors[0],
+                "Component" => colors[1],
+                "ScriptableObject" => colors[2],
                 _ => Color.white,
             });
 
