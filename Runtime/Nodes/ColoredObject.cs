@@ -13,7 +13,6 @@ public class ColoredObject : MonoBehaviour
     private float _highlightDuration = 1.0f;
     private float _timer;
     private UnityAction _actionAfterHighlight;
-    [SerializeField] private OverlaySceneScriptableObject overlay;
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
 
@@ -42,7 +41,7 @@ public class ColoredObject : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(1))
         {
-            var ray = Physics2D.Raycast(overlay.GetCameraOfScene().ScreenToWorldPoint(Input.mousePosition), Vector2.zero, Mathf.Infinity, _targetLayerMask);
+            var ray = Physics2D.Raycast(SceneHandler.GetCameraOfOverlayedScene().ScreenToWorldPoint(Input.mousePosition), Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
             if (!ray) return;
             if (ray.collider && ray.collider.gameObject && ray.collider.gameObject == gameObject)

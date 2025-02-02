@@ -25,22 +25,19 @@ public class NodeGraphScriptableObject : ScriptableObject
         {
             lock (_lock)
             {
-                
                 if (_allNodes != null)
                 {
-                    if (_allNodes.Count == 0)
+                    if (_allNodes.Count != 0) return _allNodes ?? new List<GameObject>();
+                    _parentObject ??= SceneHandler.GetParentObject();
+                    if (!_parentObject)
+                        return new List<GameObject>();
+                    else
                     {
-                        _parentObject ??= SceneHandler.GetParentObject();
-                        if (!_parentObject)
-                            return new List<GameObject>();
-                        else
-                        {
-                            _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
-                            return _allNodes;
-                        }
+                        _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+                        return _allNodes;
                     }
-                    return _allNodes ?? new List<GameObject>();
                 }
+
                 _parentObject ??= SceneHandler.GetParentObject();
                 if (!_parentObject)
                     return new List<GameObject>();
@@ -72,6 +69,10 @@ public class NodeGraphScriptableObject : ScriptableObject
     public void Clear()
     {
         _nodesByGameObject.Clear();
+        _allNodes.Clear();
+        _nodesByGameObject.Clear();
+        _parentObject ??= SceneHandler.GetParentObject();
+        AllNodes.Clear();
     }
 
     public bool IsEmpty()
@@ -326,6 +327,41 @@ public class NodeGraphScriptableObject : ScriptableObject
         foreach (var componentType in orderedTypes)
         {
             NodesRemoveComponent(componentType, customNodesList);
+        }
+    }
+
+    public void ApplyColorPresetToAllNodes(int preset, bool generateColors)
+    {
+        var colors = Colorpalette.GeneratePaletteFromBaseColor(prebuiltChannels: preset, generateColors: generateColors);
+        foreach (var node in AllNodes)
+        {
+            if (node == null) continue;
+            var type = node.GetComponent<NodeType>();
+            var typeName = type.nodeTypeName;
+            switch (typeName)
+            {
+                case "GameObject":
+                {
+                    var coloredObject = node.GetComponent<ColoredObject>();
+                    coloredObject.SetOriginalColor(colors[0]);
+                    coloredObject.SetToOriginalColor();
+                    break;
+                }
+                case "Component":
+                {
+                    var coloredObject = node.GetComponent<ColoredObject>();
+                    coloredObject.SetOriginalColor(colors[1]);
+                    coloredObject.SetToOriginalColor();
+                    break;
+                }
+                case "ScriptableObject":
+                {
+                    var coloredObject = node.GetComponent<ColoredObject>();
+                    coloredObject.SetOriginalColor(colors[2]);
+                    coloredObject.SetToOriginalColor();
+                    break;
+                }
+            }
         }
     }
 

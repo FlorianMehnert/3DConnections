@@ -117,4 +117,15 @@ public class SceneHandler : MonoBehaviour
             .Select(child => child.gameObject)
             .ToList();
     }
+
+    public static Camera GetCameraOfOverlayedScene()
+    {
+        var scene = GetOverlayedScene();
+        if (scene == null || !scene.Value.IsValid()) return null;
+        var rootObjects = scene.Value.GetRootGameObjects();
+        var camera = rootObjects.Select(obj => obj.GetComponentInChildren<Camera>())
+            .FirstOrDefault(overlayCamera => overlayCamera);
+        if (!camera) Debug.Log("You are missing a camera in the overlay scene");
+        return camera;
+    }
 }

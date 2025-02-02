@@ -60,7 +60,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// </summary>
     public static void LayoutForest()
     {
-        var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.connections);
+        var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
         var forestManager = new ConnectionsBasedForestManager();
         forestManager.SetLayoutParameters(
             minDistance: 2f, // Minimum distance between nodes

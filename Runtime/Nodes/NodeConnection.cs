@@ -8,4 +8,14 @@ public class NodeConnection
     public LineRenderer lineRenderer;
     public Color connectionColor = new(1, 255, 50);
     public float lineWidth = 0.1f;
+    public string connectionType;
+
+    public void ApplyConnection()
+    {
+        var color = new Color(connectionColor.r, connectionColor.g, connectionColor.b, 0.5f);
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+    }
 }

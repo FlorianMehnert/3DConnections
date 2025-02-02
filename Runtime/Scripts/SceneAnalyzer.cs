@@ -313,9 +313,9 @@ public class SceneAnalyzer : MonoBehaviour
 
     }
 
-    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth)
+    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType)
     {
-        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7) + .1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10) + .1f);
+        NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.9f - (float)depth / 7) + .1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10) + .1f, connectionType);
         var inConnections = inGameObject.GetComponent<LocalNodeConnections>();
         var outConnections = outGameObject.GetComponent<LocalNodeConnections>();
         inConnections.outConnections.Add(outGameObject);
@@ -334,7 +334,7 @@ public class SceneAnalyzer : MonoBehaviour
             // Connect existing node
             if (!parentNodeObject) return existingNode;
             if (isAsset)
-                ConnectNodes(parentNodeObject, existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1);
+                ConnectNodes(parentNodeObject, existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection");
             else
             {
                 ConnectNodes(parentNodeObject, existingNode,
@@ -345,7 +345,12 @@ public class SceneAnalyzer : MonoBehaviour
                         Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                             0.5f),
                         _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                    }, depth: depth);
+                    }, depth: depth, obj switch
+                    {
+                        GameObject => "parentChildConnection",
+                        Component => "componentConnection",
+                        _ => "referenceConnection"
+                    });
             }
             return existingNode;
         }
@@ -355,7 +360,7 @@ public class SceneAnalyzer : MonoBehaviour
         _instanceIdToNode[instanceId] = newNode;
         if (!parentNodeObject) return newNode;
         if (isAsset)
-            ConnectNodes(parentNodeObject, newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1);
+            ConnectNodes(parentNodeObject, newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection");
         else
         {
             ConnectNodes(parentNodeObject, newNode,
@@ -366,7 +371,12 @@ public class SceneAnalyzer : MonoBehaviour
                     Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                         0.5f),
                     _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                }, depth: depth);
+                }, depth: depth,obj switch
+                {
+                    GameObject => "parentChildConnection",
+                    Component => "componentConnection",
+                    _ => "referenceConnection"
+                });
         }
         return newNode;
     }
@@ -393,7 +403,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
                 ConnectNodes(parentNodeObject, existingNode,
-                    isReference ? referenceConnection : parentChildConnection, depth: depth);
+                    isReference ? referenceConnection : parentChildConnection, depth: depth, isReference? "referenceConnection" : "parentChildConnection");
             }
 
             return;
@@ -440,7 +450,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth: depth);
+                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection");
             }
 
             return;
@@ -532,7 +542,7 @@ public class SceneAnalyzer : MonoBehaviour
             // If we're in a cycle, connect to the existing node if we have one
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth: depth);
+                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth: depth, "componentConnection");
             }
 
             return;
@@ -560,7 +570,7 @@ public class SceneAnalyzer : MonoBehaviour
                     if (_processingObjects.Contains(referencedObject))
                     {
                         if (_instanceIdToNode.TryGetValue(idOfAssetObject, out var existingNode) && parentNodeObject)
-                            ConnectNodes(nodeObject, existingNode, referenceConnection, depth: depth);
+                            ConnectNodes(nodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection");
                         return;
                     }
                     GetOrSpawnNode(referencedObject, depth, parentNodeObject, true);

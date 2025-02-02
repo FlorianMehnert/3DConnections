@@ -5,7 +5,8 @@
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
         "GUID:776e09b4de4a427fba7608d3c91be466",
         "GUID:7d9d183d4bd44dbf921dcc470f619338",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "GUID:d4d225d43cef45518370ff85d6b9dd9f"
         
     ],
     "includePlatforms": [],

@@ -15,7 +15,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     [Header("Component based physics sim")]
     public PhysicsSimulationConfiguration simConfig;
-    [SerializeField] private NodeConnectionsScriptableObject conSo;
+    public NodeConnectionsScriptableObject conSo;
 
     public static NodeConnectionManager Instance
     {
@@ -39,7 +39,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private static bool _isShuttingDown;
 
-    public List<NodeConnection> connections = new();
     public GameObject lineRendererPrefab;
 
     private void Awake()
@@ -59,7 +58,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         {
             UpdateConnectionPositionsNative();
         }
-        else if (connections.Count > 0)
+        else if (conSo.connections.Count > 0)
         {
             UpdateConnectionPositions();
         }
@@ -91,9 +90,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
     }
 
-    public void AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 1f, float saturation = 1f)
+    public NodeConnection AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 1f, float saturation = 1f, string connectionType = "parentChildConnection")
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown) return null;
 
         var lineObj = Instantiate(lineRendererPrefab, transform);
         var lineRenderer = lineObj.GetComponent<LineRenderer>();
@@ -109,22 +108,21 @@ public sealed class NodeConnectionManager : MonoBehaviour
             endNode = endNode,
             lineRenderer = lineRenderer,
             connectionColor = knownColor,
-            lineWidth = lineWidth
+            lineWidth = lineWidth,
+            connectionType = connectionType
         };
 
         // Configure line renderer
-        lineRenderer.startColor = newConnection.connectionColor;
-        lineRenderer.endColor = newConnection.connectionColor;
-        lineRenderer.startWidth = newConnection.lineWidth;
-        lineRenderer.endWidth = newConnection.lineWidth;
+        newConnection.ApplyConnection();
         lineRenderer.positionCount = 2;
 
-        connections.Add(newConnection);
+        conSo.connections.Add(newConnection);
+        return newConnection;
     }
 
     private void UpdateConnectionPositions()
     {
-        foreach (var connection in connections.Where(connection =>
+        foreach (var connection in conSo.connections.Where(connection =>
                      connection.startNode && connection.endNode && connection.lineRenderer))
         {
             connection.lineRenderer.SetPosition(0, connection.startNode.transform.position);
@@ -140,12 +138,12 @@ public sealed class NodeConnectionManager : MonoBehaviour
             conSo.usingNativeArray = false;
         }
 
-        foreach (var connection in connections.Where(connection => connection.lineRenderer != null))
+        foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer != null))
         {
             Destroy(connection.lineRenderer.gameObject);
         }
 
-        connections.Clear();
+        conSo.connections.Clear();
         conSo.currentConnectionCount = 0;
     }
 
@@ -160,7 +158,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void AddSpringsToConnections()
     {
-        foreach (var connection in connections)
+        foreach (var connection in conSo.connections)
         {
             var existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
             
@@ -194,7 +192,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     /// </summary>
     public void UpdateSpringParameters()
     {
-        foreach (var spring in connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>())
+        foreach (var spring in conSo.connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>())
                      .SelectMany(springComponents => springComponents))
         {
             spring.dampingRatio = simConfig.damping;
@@ -213,7 +211,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             }
         }
 
-        conSo.currentConnectionCount = connections.Count;
+        conSo.currentConnectionCount = conSo.connections.Count;
         if (conSo.currentConnectionCount == 0) return;
 
         // Create a new native array with the exact size needed
@@ -222,9 +220,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
         // Copy existing connections to the native array
         for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
-            if (!connections[i].startNode || !connections[i].endNode) continue;
-            conSo.nativeConnections[i * 2] = connections[i].startNode.transform.position;
-            conSo.nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+            if (!conSo.connections[i].startNode || !conSo.connections[i].endNode) continue;
+            conSo.nativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
+            conSo.nativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
         }
 
         conSo.usingNativeArray = true;
@@ -240,7 +238,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     {
         if (!conSo.usingNativeArray) return;
 
-        var newConnectionCount = connections.Count;
+        var newConnectionCount = conSo.connections.Count;
         if (newConnectionCount == conSo.currentConnectionCount) return;
 
         var newArray = new NativeArray<float3>(newConnectionCount * 2, Allocator.Persistent);
@@ -269,14 +267,14 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
         for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
-            if (!connections[i].startNode || !connections[i].endNode || !connections[i].lineRenderer) continue;
+            if (!conSo.connections[i].startNode || !conSo.connections[i].endNode || !conSo.connections[i].lineRenderer) continue;
             // Update the native array
-            conSo.nativeConnections[i * 2] = connections[i].startNode.transform.position;
-            conSo.nativeConnections[i * 2 + 1] = connections[i].endNode.transform.position;
+            conSo.nativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
+            conSo.nativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
 
             // Update line renderer
-            connections[i].lineRenderer.SetPosition(0, conSo.nativeConnections[i * 2]);
-            connections[i].lineRenderer.SetPosition(1, conSo.nativeConnections[i * 2 + 1]);
+            conSo.connections[i].lineRenderer.SetPosition(0, conSo.nativeConnections[i * 2]);
+            conSo.connections[i].lineRenderer.SetPosition(1, conSo.nativeConnections[i * 2 + 1]);
         }
     }
 

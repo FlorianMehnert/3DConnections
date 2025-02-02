@@ -19,6 +19,7 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private TMP_Dropdown dropdownPrefab;
     [SerializeField] private GameObject buttonPrefab;
     [SerializeField] private Canvas uiCanvas;
+    [SerializeField] private GameObject sliderColorPresetPrefab;
     private TMP_Dropdown _sceneDropdownInstance;
     private TMP_Dropdown _nodeGraphDropdownInstance;
     private GameObject _clearButton;
@@ -29,15 +30,16 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     private UnityAction[] _actions;
-    private const float TOP_MARGIN = 60f;
-    private const float RIGHT_MARGIN = 0;
-    private const float VERTICAL_SPACING = 35f;
+    private const float TopMargin = 60f;
+    private const float RightMargin = 0;
+    private const float VerticalSpacing = 35f;
     private float _currentYCoordinate;
 
     private void OnEnable()
     {
         Init();
         Clear();
+        nodeGraph.Clear();
     }
 
     public void Init()
@@ -52,7 +54,7 @@ public class GUIBuilder : MonoBehaviour
         }
         
         // set to button-width plus margin from the top right corner 
-        _currentYCoordinate = -(30f + TOP_MARGIN);
+        _currentYCoordinate = -(30f + TopMargin);
 
         _nodeBuilder = GetComponent<NodeBuilder>();
         if (_nodeBuilder == null)
@@ -112,7 +114,7 @@ public class GUIBuilder : MonoBehaviour
     private float NextYPosition()
     {
         var currentY = _currentYCoordinate;
-        _currentYCoordinate -= VERTICAL_SPACING;
+        _currentYCoordinate -= VerticalSpacing;
         return currentY;
     }
 
@@ -122,7 +124,7 @@ public class GUIBuilder : MonoBehaviour
         if (!rectTransform)
             return Vector2.zero;
         var buttonWidth = rectTransform.rect.width;
-        var xPosition = -(buttonWidth + RIGHT_MARGIN);
+        var xPosition = -(buttonWidth + RightMargin);
         return new Vector2(xPosition, NextYPosition());
     }
 
@@ -137,7 +139,7 @@ public class GUIBuilder : MonoBehaviour
         var tmpDropdown = dropdownInstance.GetComponent<TMP_Dropdown>();
 
         // Clear existing options
-        if (tmpDropdown != null)
+        if (tmpDropdown)
         {
             tmpDropdown.ClearOptions();
         }
@@ -236,6 +238,8 @@ public class GUIBuilder : MonoBehaviour
         {
             _clearButton = CreateButton("Clear", 14, Clear, isEnabled: false, disableAfterClick: true);
         }
+
+        CreatePresetSlider();
     }
 
     private void RemovePhysics()
@@ -271,31 +275,10 @@ public class GUIBuilder : MonoBehaviour
     {
         var image = buttonGameObject.GetComponent<Image>();
         var button = buttonGameObject.GetComponent<Button>();
-        if (buttonGameObject == null) return;
+        if (!buttonGameObject) return;
 
         image.color = isEnabled ? Color.white : Color.gray;
         button.enabled = isEnabled;
-    }
-
-    /// <summary>
-    /// Returns an x position for a button rect transform to be at the rightmost position
-    /// </summary>
-    /// <param name="buttonGameObject"></param>
-    private static float GetButtonVerticalPosition(GameObject buttonGameObject)
-    {
-        var rectTransform = buttonGameObject.GetComponent<RectTransform>();
-
-        if (!rectTransform)
-        {
-            Debug.LogError("RectTransform is missing on the GameObject.");
-            return 0;
-        }
-
-        var buttonWidth = rectTransform.rect.width;
-        var screenWidth = Screen.width;
-
-        // Position the button at the rightmost edge of the screen, leaving a margin of 20
-        return (screenWidth - buttonWidth - 20) / 2;
     }
 
 
@@ -317,13 +300,13 @@ public class GUIBuilder : MonoBehaviour
 
         rectTransform.anchoredPosition = anchoredPosition;
         var buttonText = browserButtonInstance.GetComponentInChildren<TextMeshProUGUI>();
-        if (buttonText != null)
+        if (buttonText)
         {
             buttonText.text = text;
             buttonText.fontSize = fontSize;
         }
 
-        if (buttonComponent == null) return browserButtonInstance;
+        if (!buttonComponent) return browserButtonInstance;
         buttonComponent.onClick.AddListener(onClick);
         buttonComponent.onClick.AddListener(() =>
         {
@@ -332,6 +315,15 @@ public class GUIBuilder : MonoBehaviour
         });
 
         return browserButtonInstance;
+    }
+
+    private GameObject CreatePresetSlider()
+    {
+        var colorSlider = Instantiate(sliderColorPresetPrefab, uiCanvas.transform);
+        var rectTransform = colorSlider.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = GetButtonPosition(colorSlider.gameObject);
+        return colorSlider;
+        
     }
 
     /// <summary>
