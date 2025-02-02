@@ -205,7 +205,7 @@ public class GUIBuilder : MonoBehaviour
         dropdownInstance.onValueChanged.AddListener(OnNodeGraphDropdownChanged);
     }
 
-    private void StaticLayout()
+    public void StaticLayout()
     {
         OnSceneDropdownValueChanged(_sceneDropdownInstance.value);
         _sceneAnalyzer.AnalyzeScene();

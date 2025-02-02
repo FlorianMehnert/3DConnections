@@ -74,6 +74,11 @@ public class NodeGraphScriptableObject : ScriptableObject
         _nodesByGameObject.Clear();
     }
 
+    public bool IsEmpty()
+    {
+        return AllNodes.Count == 0;
+    }
+
     public Transform[] AllNodeTransforms2D
     {
         get

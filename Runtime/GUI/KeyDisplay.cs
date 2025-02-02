@@ -144,7 +144,20 @@ public class KeyDisplay : MonoBehaviour
             // Update the last input time
             _lastInputTime = Time.time;
             if (IsConfirm())
+            {
+                if (_inputString == "")
+                {
+                    var gui = gameObject.GetComponent<GUIBuilder>();
+                    var nodeGraph = GetNodeGraph();
+                    if (gui && nodeGraph && nodeGraph.IsEmpty())
+                    {
+                        gui.StaticLayout();
+                        Log("Showing static circular layout");
+                        return;
+                    }
+                }
                 _style.normal.textColor = Color.green;
+            }
                 
             // Check for the ":q" sequence
             if (_inputString.Contains(":q") && IsConfirm())
@@ -166,17 +179,20 @@ public class KeyDisplay : MonoBehaviour
                 if (gui)
                 {
                     if (_inputString.StartsWith(":ui.1"))
+                    {
+                        Log("Executing physics sim (Method: Unity Components)");
                         gui.ApplyComponentPhysics();
+                    }
                     else if (_inputString.StartsWith(":ui.2"))
                     {
+                        Log("Executing physics sim (Method: Burst)");
                         gui.ApplyBurstPhysics();
-                        Log(gui.GetComponent<SpringSimulation>().GetStatus());
                     }
                         
                     else if (_inputString.StartsWith(":ui.3"))
                     {
+                        Log("Executing physics sim (Method: GPU)");
                         gui.ApplyGPUPhysics();
-                        Log(gui.GetComponent<ComputeSpringSimulation>().GetStatus());    
                     }
                     else
                         gui.Init();
