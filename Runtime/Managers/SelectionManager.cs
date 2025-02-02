@@ -3,6 +3,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Vector3 = UnityEngine.Vector3;
 using UnityEngine.UI;
 
@@ -201,29 +202,32 @@ public class CubeSelector : MonoBehaviour
                     finally
                     {
                         Debug.Log("trying to access destroyed gameobject");
-                    } 
-                    
+                    }
                 }
             }
             else
             {
-                // Selection rectangle
-                _isDrawingSelectionRect = true;
-                _selectionStartPos = Input.mousePosition;
-                if (selectionRectangle)
+                // Do nothing on a button click
+                if (!EventSystem.current.IsPointerOverGameObject())
                 {
-                    selectionRectangle.gameObject.SetActive(true);
-                    UpdateSelectionRectangle();
-                }
+                    // Start drawing the selection rectangle
+                    _isDrawingSelectionRect = true;
+                    _selectionStartPos = Input.mousePosition;
+                    if (selectionRectangle)
+                    {
+                        selectionRectangle.gameObject.SetActive(true);
+                        UpdateSelectionRectangle();
+                    }
 
-                // Deselect all if shift is not pressed
-                if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
-                {
-                    DeselectAllCubes();
+                    // Deselect all if shift is not pressed
+                    if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                    {
+                        DeselectAllCubes();
 
-                    // unset currentlySelectedGO for camera handler to allow for editor selection
-                    nodeGraph.currentlySelectedGameObject = null;
-                    CloseContextMenu();
+                        // unset currentlySelectedGO for camera handler to allow for editor selection
+                        nodeGraph.currentlySelectedGameObject = null;
+                        CloseContextMenu();
+                    }
                 }
             }
         }
