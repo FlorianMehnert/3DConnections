@@ -29,6 +29,7 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+    [SerializeField] private LayoutParameters layoutParameters;
     private UnityAction[] _actions;
     private const float TopMargin = 60f;
     private const float RightMargin = 0;
@@ -211,7 +212,7 @@ public class GUIBuilder : MonoBehaviour
     {
         OnSceneDropdownValueChanged(_sceneDropdownInstance.value);
         _sceneAnalyzer.AnalyzeScene();
-        NodeLayoutManagerV2.LayoutForest();
+        NodeLayoutManagerV2.LayoutForest(layoutParameters);
     }
 
 
@@ -222,7 +223,7 @@ public class GUIBuilder : MonoBehaviour
         {
             OnNodeGraphDropdownChanged(_nodeGraphDropdownInstance.value);
             _sceneAnalyzer.AnalyzeScene();
-            NodeLayoutManagerV2.LayoutForest();
+            NodeLayoutManagerV2.LayoutForest(layoutParameters);
             ChangeButtonEnabled(_removePhysicsButton, true);
             ChangeButtonEnabled(_clearButton, true);
         }), disableAfterClick: true);
@@ -390,14 +391,14 @@ public class GUIBuilder : MonoBehaviour
         nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
-        foreach (var collider in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(collider => collider != null))
+        foreach (var collider in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(collider => collider))
         {
             collider.isTrigger = false;
             collider.size = Vector2.one * 5;
         }
 
         NodeConnectionManager.Instance.ConvertToNativeArray();
-        NodeLayoutManagerV2.LayoutForest();
+        NodeLayoutManagerV2.LayoutForest(layoutParameters);
         NodeConnectionManager.Instance.AddSpringsToConnections();
     }
 
@@ -409,7 +410,7 @@ public class GUIBuilder : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             RemovePhysics();
-            NodeLayoutManagerV2.LayoutForest();
+            NodeLayoutManagerV2.LayoutForest(layoutParameters);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
@@ -431,7 +432,7 @@ public class GUIBuilder : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             RemovePhysics();
-            NodeLayoutManagerV2.LayoutForest();
+            NodeLayoutManagerV2.LayoutForest(layoutParameters);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();

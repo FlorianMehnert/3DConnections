@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Linq;
-using _3DConnections.Assets.ScriptableObjects.Configurations;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;

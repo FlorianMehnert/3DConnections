@@ -58,15 +58,12 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// <summary>
     /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
     /// </summary>
-    public static void LayoutForest()
+    public static void LayoutForest(LayoutParameters layoutParameters)
     {
         var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
         var forestManager = new ConnectionsBasedForestManager();
         forestManager.SetLayoutParameters(
-            minDistance: 2f, // Minimum distance between nodes
-            startRadius: 3f, // Initial radius for first level
-            radiusInc: 4f, // Radius increase per level
-            rootSpacing: 10f // Space between root trees
+            layoutParameters
         );
         forestManager.LayoutForest(rootNodes);
         forestManager.FlattenToZPlane(rootNodes);

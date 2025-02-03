@@ -1,4 +1,3 @@
-using _3DConnections.Assets.ScriptableObjects.Configurations;
 using UnityEngine;
 using Unity.Mathematics;
 

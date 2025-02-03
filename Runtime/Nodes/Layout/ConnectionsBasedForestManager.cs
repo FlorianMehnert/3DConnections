@@ -141,12 +141,12 @@ public class ConnectionsBasedForestManager
     // Previous helper methods remain the same
     private float CalculateMinimumAngle(float radius) => (_minNodeDistance / radius) * (180f / Mathf.PI);
 
-    public void SetLayoutParameters(float minDistance, float startRadius, float radiusInc, float rootSpacing)
+    public void SetLayoutParameters(LayoutParameters parameters)
     {
-        _minNodeDistance = minDistance;
-        _startingRadius = startRadius;
-        _radiusIncrement = radiusInc;
-        _rootSpacing = rootSpacing;
+        _minNodeDistance = parameters.minDistance;
+        _startingRadius = parameters.startRadius;
+        _radiusIncrement = parameters.radiusInc;
+        _rootSpacing = parameters.rootSpacing;
     }
 
     private static void FindCycleRoots(TreeNode node, HashSet<TreeNode> visited, HashSet<TreeNode> inStack, List<TreeNode> cycleRoots)
