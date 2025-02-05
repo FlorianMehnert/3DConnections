@@ -7,7 +7,7 @@ public class FPSDisplay : MonoBehaviour
     private float _deltaTime;
     private readonly List<float> _fpsBuffer = new();
     private const int BufferSize = 60;
-    private bool _showFPS = true;
+    private bool _showFPS;
 
     private void Update()
     {

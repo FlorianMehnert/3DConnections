@@ -64,6 +64,7 @@ GameObject:
   - component: {fileID: 438415427359241478}
   - component: {fileID: 3086584372877910348}
   - component: {fileID: 3120672303489094690}
+  - component: {fileID: 4253787491956773054}
   m_Layer: 6
   m_Name: Manager
   m_TagString: Untagged
@@ -222,11 +223,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
-  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  analysisData: {fileID: 4900000, guid: a50f5d748ba945a5aecdf256de3372b0, type: 3}
   parentNode: {fileID: 0}
   nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   nodeWidth: 2
   nodeHeight: 1
+  maxNodes: 1000
+  ignoreTransforms: 0
+  scaleNodesUsingMaintainability: 0
   gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
   componentColor: {r: 1, g: 0.19999999, b: 0.76000005, a: 1}
   scriptableObjectColor: {r: 0.91999996, g: 1, b: 0.19999999, a: 1}
@@ -234,13 +239,11 @@ MonoBehaviour:
   parentChildConnection: {r: 0.308, g: 0.504, b: 0.7, a: 1}
   componentConnection: {r: 0.7, g: 0.308, b: 0.5824, a: 1}
   referenceConnection: {r: 0.6608, g: 0.7, b: 0.308, a: 1}
-  maxNodes: 1000
-  searchForPrefabsUsingNames: 1
-  analysisData: {fileID: 4900000, guid: a50f5d748ba945a5aecdf256de3372b0, type: 3}
-  setIcons: 1
-  ignoredTypes: []
   colorPreset: 0
   generateColors: 0
+  setIcons: 1
+  searchForPrefabsUsingNames: 1
+  ignoredTypes: []
 --- !u!114 &438415427359241478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -283,3 +286,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bc338bcf371440c9740e23bf2a6003d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &4253787491956773054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7644496426939543078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43b6b26dca764a939c98c3040da6f924, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showOverlay: 0
+  transparency: 0.7
+  nodeColors: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
+  nodeConnections: {fileID: 11400000, guid: e03534a0f02dc33d48dc9f8e7d302d2a, type: 2}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  overlayScene: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}

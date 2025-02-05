@@ -8,6 +8,7 @@ using TMPro;
 using Unity.Collections;
 using SimpleJSON;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 public class SceneAnalyzer : MonoBehaviour
@@ -16,14 +17,22 @@ public class SceneAnalyzer : MonoBehaviour
     private readonly HashSet<Object> _visitedObjects = new();
     private readonly HashSet<Object> _processingObjects = new();
     private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
+    
+    [Header("Resources")]
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
-
-    // required for node spawning
-    [SerializeField] private OverlaySceneScriptableObject overlay;
+    [SerializeField] private TextAsset analysisData; // Assign the JSON file here
     [SerializeField] private GameObject parentNode;
     [SerializeField] private GameObject nodePrefab;
+    [SerializeField] private OverlaySceneScriptableObject overlay;
+
+    [Header("Node Settings")]
     [SerializeField] private int nodeWidth = 2;
     [SerializeField] private int nodeHeight = 1;
+    [SerializeField] private int maxNodes = 1000;
+    [SerializeField] private bool ignoreTransforms;
+    [SerializeField] private bool scaleNodesUsingMaintainability;
+    
+    [Header("Display Settings")]
     [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
     [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
     [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
@@ -31,17 +40,20 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
     [SerializeField] private Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
     [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
-    [SerializeField] private int maxNodes = 1000;
-    [ReadOnly] private bool _ignoreTransforms;
-    [SerializeField] private bool searchForPrefabsUsingNames;
-    private List<string> _cachedPrefabPaths = new();
-    private int _currentNodes;
-    [SerializeField] private TextAsset analysisData; // Assign the JSON file here
-    private Dictionary<string, float> _complexityMap;
-    public bool setIcons = false;
-    public List<string> ignoredTypes = new();
     [SerializeField] private int colorPreset;
     [SerializeField] private bool generateColors;
+    public bool setIcons;
+    
+    [Header("Performance Settings")]
+    [SerializeField] private bool searchForPrefabsUsingNames;
+    
+    [Header("Ignored Types Settings")]
+    public List<string> ignoredTypes = new();
+    
+    private List<string> _cachedPrefabPaths = new();
+    private int _currentNodes;
+
+    private Dictionary<string, float> _complexityMap;
 
 
     private void Start()
@@ -532,7 +544,7 @@ public class SceneAnalyzer : MonoBehaviour
     private void TraverseComponent(Component component, int depth, GameObject parentNodeObject = null)
     {
         if (!component || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
-            _ignoreTransforms && component.GetType() == typeof(Transform)) return;
+            ignoreTransforms && component.GetType() == typeof(Transform)) return;
 
         var instanceId = component.GetInstanceID();
 
@@ -554,7 +566,8 @@ public class SceneAnalyzer : MonoBehaviour
         try
         {
             var nodeObject = GetOrSpawnNode(component, depth + 1, parentNodeObject);
-            ScaleNode(nodeObject, component);
+            if (scaleNodesUsingMaintainability)
+                ScaleNode(nodeObject, component);
             
             // Only traverse references if we haven't visited this component before
             if (!needsTraversal) return;
