@@ -241,6 +241,8 @@ public class GUIBuilder : MonoBehaviour
         }
 
         CreatePresetSlider();
+        if (!SceneManager.GetSceneAt(0).isLoaded)
+            SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
     }
 
     private void RemovePhysics()

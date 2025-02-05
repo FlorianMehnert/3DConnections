@@ -170,7 +170,10 @@ public class KeyDisplay : MonoBehaviour
                 ExitApplication();
             }else if (_inputString.Contains("loadscene") && IsConfirm())
             {
-                SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
+                if (!SceneManager.GetSceneAt(0).isLoaded)
+                    SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
+                else
+                    Log(SceneManager.GetSceneAt(0).name + " is already loaded", 2f);
             }else if (_inputString.Contains("stats") && IsConfirm())
             {
                 var nodeGraph = GetNodeGraph();
