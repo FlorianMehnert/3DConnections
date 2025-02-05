@@ -222,8 +222,21 @@ public class GUIBuilder : MonoBehaviour
         _executeNodeSpawnButton = CreateButton("Execute Action", 14, (() =>
         {
             OnNodeGraphDropdownChanged(_nodeGraphDropdownInstance.value);
+            
+            // set to analyze Scene
+            var selectedScene = _sceneDropdownInstance.options[_sceneDropdownInstance.value].text;
+            var scene = SceneManager.GetSceneByName(selectedScene);
+            var sceneHandler = GetComponent<SceneHandler>();
+            if (sceneHandler)
+                sceneHandler.analyzeScene = scene;
+            
+            // analyze
             _sceneAnalyzer.AnalyzeScene();
+            
+            // layout
             NodeLayoutManagerV2.LayoutForest(layoutParameters);
+            
+            // disable other buttons
             ChangeButtonEnabled(_removePhysicsButton, true);
             ChangeButtonEnabled(_clearButton, true);
         }), disableAfterClick: true);
@@ -352,7 +365,7 @@ public class GUIBuilder : MonoBehaviour
         var scene = SceneManager.GetSceneByName(selectedScene);
 
         var sceneHandler = GetComponent<SceneHandler>();
-        if (sceneHandler != null)
+        if (sceneHandler)
         {
             sceneHandler.analyzeScene = scene;
         }
@@ -360,13 +373,18 @@ public class GUIBuilder : MonoBehaviour
         SetButtonsEnabled(sceneHandler.analyzeScene.IsValid());
     }
 
-    private void SetButtonsEnabled(bool buttonEnabled = false)
+    /// <summary>
+    /// Sets all Buttons with the param buttonName to the value of buttonEnabled
+    /// </summary>
+    /// <param name="buttonEnabled">state to set the buttons to</param>
+    /// <param name="buttonName">name of the buttons that should be enabled/disabled</param>
+    private void SetButtonsEnabled(bool buttonEnabled = false, string buttonName = "GUIButton(Clone")
     {
         foreach (Transform uiElement in uiCanvas.transform)
         {
-            if (uiElement.gameObject.ToString() != "GUIButton(Clone)") continue;
+            if (uiElement.gameObject.ToString() != buttonName) continue;
             var button = uiElement.gameObject.GetComponent<Button>();
-            if (button != null)
+            if (button)
             {
                 button.enabled = buttonEnabled;
             }
@@ -393,13 +411,12 @@ public class GUIBuilder : MonoBehaviour
         nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
-        foreach (var collider in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(collider => collider))
+        foreach (var boxCollider2D in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(boxCollider2D => boxCollider2D))
         {
-            collider.isTrigger = false;
-            collider.size = Vector2.one * 5;
+            boxCollider2D.isTrigger = false;
+            boxCollider2D.size = Vector2.one * 5;
         }
 
-        NodeConnectionManager.Instance.ConvertToNativeArray();
         NodeLayoutManagerV2.LayoutForest(layoutParameters);
         NodeConnectionManager.Instance.AddSpringsToConnections();
     }

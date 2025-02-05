@@ -175,7 +175,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             
             var spring = (alreadyExists && springComponent) ? springComponent : alreadyExists ? null : connection.startNode.AddComponent<SpringJoint2D>();
             if (!spring) return;
-            spring.autoConfigureDistance = false;
+            spring.autoConfigureDistance = true;
             spring.connectedBody = connection.endNode.GetComponent<Rigidbody2D>();
             spring.dampingRatio = simConfig.damping * 2;
             spring.distance = simConfig.colliderRadius;

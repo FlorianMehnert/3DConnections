@@ -99,6 +99,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             typeof(Rigidbody2D)
         };
         nodeGraph.NodesRemoveComponents(types);
+        _isShuttingDown = false;
     }
 
     private void Update()
