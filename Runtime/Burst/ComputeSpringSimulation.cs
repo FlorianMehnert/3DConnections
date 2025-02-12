@@ -32,6 +32,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     private void OnEnable()
     {
+        _isShuttingDown = false;
         if (removePhysicsEvent != null)
             removePhysicsEvent.OnEventTriggered += HandleEvent;
     }

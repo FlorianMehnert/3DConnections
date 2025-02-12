@@ -24,10 +24,10 @@ public sealed class NodeConnectionManager : MonoBehaviour
                 return null;
             }
 
-            if (_instance != null) return _instance;
+            if (_instance) return _instance;
 
             _instance = FindFirstObjectByType<NodeConnectionManager>();
-            if (_instance != null) return _instance;
+            if (_instance) return _instance;
 
             var singletonObject = new GameObject("NodeConnectionManager");
             _instance = singletonObject.AddComponent<NodeConnectionManager>();
@@ -41,6 +41,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void Awake()
     {
+        _isShuttingDown = false;
         if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
