@@ -8,10 +8,17 @@ public class Entrypoint3DConnections : MonoBehaviour
     [SerializeField] private ToggleOverlayEvent overlayEvent;
     [SerializeField] private bool disableSceneOnOverlay = true;
     [SerializeField] private bool loadOnStart = true;
+    [SerializeField] private Scene sceneToLoad;
     private string _sceneName;
 
     private void Start()
     {
+        if (sceneToLoad != default)
+        {
+            var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
+            sceneReference.scene = sceneToLoad;
+            overlay.overlayScene = sceneReference;
+        }
         _sceneName = overlay.overlayScene.Name;
         if (SceneManager.GetSceneByName(_sceneName).isLoaded)
         {

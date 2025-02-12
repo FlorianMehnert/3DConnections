@@ -11,12 +11,21 @@ public class SceneReference : ScriptableObject
     public string scenePath;
     private Scene _scene;
 
+    public SceneReference(Scene scene)
+    {
+        _scene = scene;
+        sceneName = scene.name;
+        scenePath = scene.path;
+    }
+
     public Scene? scene
     {
         get => _scene.IsValid() ? _scene : TryResolveScene();
         set
         {
             if (value != null) _scene = (Scene)value;
+            sceneName = _scene.name;
+            scenePath = _scene.path;
         }
     }
 
