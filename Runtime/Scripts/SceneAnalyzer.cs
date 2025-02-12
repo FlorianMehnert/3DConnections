@@ -640,9 +640,10 @@ public class SceneAnalyzer : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        NodeConnectionManager.Instance.ClearConnections();
+        if (NodeConnectionManager.Instance)
+            NodeConnectionManager.Instance.ClearConnections();
         var springSimulation = GetComponent<SpringSimulation>();
-        if (springSimulation != null)
+        if (springSimulation)
         {
             springSimulation.CleanupNativeArrays();
         }
