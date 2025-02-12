@@ -52,6 +52,10 @@ public class ColorPickerController : MonoBehaviour
             alternativeColors: alternativeColors
         );
 
+        if (NodeConnectionManager.Instance == null || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
+        {
+            return;
+        }
         var connections = NodeConnectionManager.Instance.conSo.connections;
 
         // Store colors for direct access
