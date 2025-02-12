@@ -60,6 +60,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// </summary>
     public static void LayoutForest(LayoutParameters layoutParameters)
     {
+        if (!NodeConnectionManager.Instance) return;
         var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
         var forestManager = new ConnectionsBasedForestManager();
         forestManager.SetLayoutParameters(
