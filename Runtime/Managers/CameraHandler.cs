@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -51,11 +53,52 @@ public class CameraController : MonoBehaviour
     private void Update()
     {
         // Recalculate world dimensions if zoom changes
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
+        {
+            // Disable all nodes
+            foreach (var node in nodeGraph.AllNodes)
+            { 
+                if (!node) continue; 
+                var meshRenderer = node.GetComponent<MeshRenderer>();
+                if (meshRenderer)
+                    meshRenderer.enabled = false;
+                foreach (Transform child in node.transform)
+                {
+                    child.gameObject.SetActive(false);
+                }
+            }
+            
+            // Disable all connections
+            foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
+                lineRenderer.enabled = false;
+            
+            // reenable all nodes that are connected with deep
+            nodeGraph.ReenableConnectedNodes(nodeGraph.currentlySelectedGameObject, 0);
+            EnableOutgoingLines(nodeGraph.currentlySelectedGameObject);
+            return;
+        }
 
         if (Input.GetKeyDown(KeyCode.F))
         {
             CenterOnTarget(nodeGraph.currentlySelectedGameObject, true);
             return;
+        }
+
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G) && parentObject)
+        {
+            foreach (var node in nodeGraph.AllNodes)
+            { 
+                if (!node) continue; 
+                var meshRenderer = node.GetComponent<MeshRenderer>();
+                if (meshRenderer)
+                    meshRenderer.enabled = true;
+                foreach (Transform child in node.transform)
+                {
+                    child.gameObject.SetActive(true);
+                }
+            }
+            foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
+                lineRenderer.enabled = true;
         }
 
         if (Input.GetKeyDown(KeyCode.G) && parentObject)
@@ -222,5 +265,36 @@ public class CameraController : MonoBehaviour
         // Adjust orthographic size
         var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
         _cam.orthographicSize = size * padding;
+    }
+    
+    /// <summary>
+    /// Used in Focus on Node to reenable Nodes that are in focus
+    /// </summary>
+    /// <param name="startNode"></param>
+    /// <param name="maxDepth"></param>
+    private void EnableOutgoingLines(GameObject startNode, int maxDepth = 5)
+    {
+        if (!startNode) return;
+        Queue<(GameObject node, int depth)> queue = new();
+        var visited = new HashSet<GameObject>();
+        queue.Enqueue((startNode, 0));
+        visited.Add(startNode);
+        var connectionManager = NodeConnectionManager.Instance;
+        while (queue.Count > 0)
+        {
+            var (currentNode, depth) = queue.Dequeue();
+            if (depth >= maxDepth) continue;
+            var nodeConnections = currentNode.GetComponent<LocalNodeConnections>();
+            if (!nodeConnections) continue;
+            foreach (var nextNode in nodeConnections.outConnections)
+            {
+                if (!nextNode || visited.Contains(nextNode)) continue;
+                var connection = connectionManager.GetConnection(currentNode, nextNode);
+                if (connection != null && connection.lineRenderer)
+                    connection.lineRenderer.enabled = true;
+                queue.Enqueue((nextNode, depth + 1));
+                visited.Add(nextNode);
+            }
+        }
     }
 }

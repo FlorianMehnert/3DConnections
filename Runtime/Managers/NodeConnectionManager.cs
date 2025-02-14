@@ -324,4 +324,10 @@ public sealed class NodeConnectionManager : MonoBehaviour
             }
         }
     }
+    
+    public NodeConnection GetConnection(GameObject start, GameObject end)
+    {
+        if (!start || !end) return null;
+        return conSo.connections.FirstOrDefault(connection => connection.startNode == start && connection.endNode == end);
+    }
 }

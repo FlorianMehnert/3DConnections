@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -364,6 +365,34 @@ public class NodeGraphScriptableObject : ScriptableObject
             }
         }
     }
+    
+    /// <summary>
+    /// Recursive function to reenable nodes that are connected
+    /// </summary>
+    /// <param name="node">root node to be selected</param>
+    /// <param name="depth">current depth used in the recursive part to terminate</param>
+    /// <param name="maxDepth">maximum depth after which to terminate</param>
+    public void ReenableConnectedNodes(GameObject node, int depth, int maxDepth = 5)
+    {
+        if (depth >= maxDepth || !node) return; // Prevent excessive recursion and null node issues
+        var nodeRenderer = node.GetComponent<MeshRenderer>();
+        if (nodeRenderer)
+            nodeRenderer.enabled = true;
+        var nodeConnections = node.GetComponent<LocalNodeConnections>();
+        if (!nodeConnections) return; // Check if nodeConnections exists
+        foreach (var outwardsConnectedNode in nodeConnections.outConnections.Where(outwardsConnectedNode => outwardsConnectedNode))
+        {
+            nodeRenderer = outwardsConnectedNode.GetComponent<MeshRenderer>();
+            if (nodeRenderer) // Only enable if MeshRenderer exists
+                nodeRenderer.enabled = true;
+            foreach (Transform child in node.transform)
+            {
+                child.gameObject.SetActive(true);
+            }
+            ReenableConnectedNodes(outwardsConnectedNode, depth + 1, maxDepth);
+        }
+    }
+
 
     public void Initialize()
     {

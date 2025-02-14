@@ -225,7 +225,6 @@ public class CubeSelector : MonoBehaviour
                         DeselectAllCubes();
 
                         // unset currentlySelectedGO for camera handler to allow for editor selection
-                        nodeGraph.currentlySelectedGameObject = null;
                         CloseContextMenu();
                     }
                 }
@@ -298,6 +297,8 @@ public class CubeSelector : MonoBehaviour
                     selectionRectangle.gameObject.SetActive(false);
                 }
 
+                if (_selectedCubes.Count > 0)
+                    nodeGraph.currentlySelectedGameObject = _selectedCubes.ToArray()[0];
                 nodeGraph.currentlySelectedBounds = GetSelectionBounds();
             }
         }
