@@ -1,5 +1,9 @@
 using UnityEngine;
 
+
+/// <summary>
+/// Contains the connection gameObject in the form of the lineRenderer 
+/// </summary>
 [System.Serializable]
 public class NodeConnection
 {
@@ -18,4 +22,9 @@ public class NodeConnection
         lineRenderer.startWidth = lineWidth;
         lineRenderer.endWidth = lineWidth;
     }
+
+    public void DisableConnection()
+    {
+        lineRenderer.enabled = false;
+    } 
 }
