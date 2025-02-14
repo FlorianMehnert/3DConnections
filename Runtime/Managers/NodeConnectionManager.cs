@@ -13,7 +13,11 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     [Header("Component based physics sim")]
     public PhysicsSimulationConfiguration simConfig;
+
     public NodeConnectionsScriptableObject conSo;
+
+    private static bool _isShuttingDown;
+    public GameObject lineRendererPrefab;
 
     public static NodeConnectionManager Instance
     {
@@ -35,9 +39,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
     }
 
-    private static bool _isShuttingDown;
-
-    public GameObject lineRendererPrefab;
 
     private void Awake()
     {
@@ -71,9 +72,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
     // Make sure to clean up the native array when the component is destroyed
     private void OnDestroy()
     {
-        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
+        if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
         {
-            conSo.nativeConnections.Dispose();
+            conSo.NativeConnections.Dispose();
         }
 
         if (_instance != this) return;
@@ -98,7 +99,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         lineRenderer.name = startNode.name + "-" + endNode.name;
         var knownColor = color ?? Color.white;
         Color.RGBToHSV(knownColor, out var h, out _, out var v);
-        
+
         knownColor = Color.HSVToRGB(h, saturation, v);
         knownColor.a = .5f;
         var newConnection = new NodeConnection
@@ -131,9 +132,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void ClearConnections()
     {
-        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
+        if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
         {
-            conSo.nativeConnections.Dispose();
+            conSo.NativeConnections.Dispose();
             conSo.usingNativeArray = false;
         }
 
@@ -148,11 +149,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void ClearNativeArray()
     {
-        if (conSo.usingNativeArray && conSo.nativeConnections.IsCreated)
-        {
-            conSo.nativeConnections.Dispose();
-            conSo.usingNativeArray = false;
-        }
+        if (!conSo.usingNativeArray || !conSo.NativeConnections.IsCreated) return;
+        conSo.NativeConnections.Dispose();
+        conSo.usingNativeArray = false;
     }
 
     public void AddSpringsToConnections()
@@ -160,7 +159,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         foreach (var connection in conSo.connections)
         {
             var existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
-            
+
             // avoid duplicating spring joints
             var alreadyExists = false;
             SpringJoint2D springComponent = null;
@@ -173,7 +172,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
                     break;
                 }
             }
-            
+
             var spring = (alreadyExists && springComponent) ? springComponent : alreadyExists ? null : connection.startNode.AddComponent<SpringJoint2D>();
             if (!spring) return;
             spring.autoConfigureDistance = true;
@@ -204,9 +203,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
     {
         if (conSo.usingNativeArray)
         {
-            if (conSo.nativeConnections.IsCreated)
+            if (conSo.NativeConnections.IsCreated)
             {
-                conSo.nativeConnections.Dispose();
+                conSo.NativeConnections.Dispose();
             }
         }
 
@@ -214,14 +213,14 @@ public sealed class NodeConnectionManager : MonoBehaviour
         if (conSo.currentConnectionCount == 0) return;
 
         // Create a new native array with the exact size needed
-        conSo.nativeConnections = new NativeArray<float3>(conSo.currentConnectionCount * 2, Allocator.Persistent);
+        conSo.NativeConnections = new NativeArray<float3>(conSo.currentConnectionCount * 2, Allocator.Persistent);
 
         // Copy existing connections to the native array
         for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
             if (!conSo.connections[i].startNode || !conSo.connections[i].endNode) continue;
-            conSo.nativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
-            conSo.nativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
+            conSo.NativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
+            conSo.NativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
         }
 
         conSo.usingNativeArray = true;
@@ -246,40 +245,40 @@ public sealed class NodeConnectionManager : MonoBehaviour
         var copyCount = math.min(conSo.currentConnectionCount, newConnectionCount) * 2;
         for (var i = 0; i < copyCount; i++)
         {
-            newArray[i] = conSo.nativeConnections[i];
+            newArray[i] = conSo.NativeConnections[i];
         }
 
         // Dispose old array and assign new one
-        if (conSo.nativeConnections.IsCreated)
+        if (conSo.NativeConnections.IsCreated)
         {
-            conSo.nativeConnections.Dispose();
+            conSo.NativeConnections.Dispose();
         }
 
-        conSo.nativeConnections = newArray;
+        conSo.NativeConnections = newArray;
         conSo.currentConnectionCount = newConnectionCount;
     }
 
 
     private void UpdateConnectionPositionsNative()
     {
-        if (!conSo.usingNativeArray || !conSo.nativeConnections.IsCreated) return;
+        if (!conSo.usingNativeArray || !conSo.NativeConnections.IsCreated) return;
 
         for (var i = 0; i < conSo.currentConnectionCount; i++)
         {
             if (!conSo.connections[i].startNode || !conSo.connections[i].endNode || !conSo.connections[i].lineRenderer) continue;
             // Update the native array
-            conSo.nativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
-            conSo.nativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
+            conSo.NativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
+            conSo.NativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
 
             // Update line renderer
-            conSo.connections[i].lineRenderer.SetPosition(0, conSo.nativeConnections[i * 2]);
-            conSo.connections[i].lineRenderer.SetPosition(1, conSo.nativeConnections[i * 2 + 1]);
+            conSo.connections[i].lineRenderer.SetPosition(0, conSo.NativeConnections[i * 2]);
+            conSo.connections[i].lineRenderer.SetPosition(1, conSo.NativeConnections[i * 2 + 1]);
         }
     }
 
+    // ReSharper disable once MemberCanBeMadeStatic.Global
     public void HighlightCycles(Color color, float duration)
     {
-        
         if (CycleDetection.Instance.HasCycle(SceneHandler.GetNodesUsingTheNodegraphParentObject(), out var cycles))
         {
             foreach (var cycle in cycles)
@@ -296,7 +295,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
                     {
                         col = go.AddComponent<ColoredObject>();
                         var emissionColor = color * 5.0f;
-                        col.Highlight(color, duration, () => Destroy(col), emissionColor:emissionColor);
+                        col.Highlight(color, duration, () => Destroy(col), emissionColor: emissionColor);
                     }
                 }
             }
@@ -306,7 +305,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             Debug.Log("No cycles detected.");
         }
     }
-    
+
     /// <summary>
     /// Push cycles away from each other by applying a force -> only usable in component-based physics sim
     /// </summary>
