@@ -60,13 +60,31 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// </summary>
     public static void LayoutForest(LayoutParameters layoutParameters)
     {
+        HierarchicalLayout(layoutParameters);
         if (!NodeConnectionManager.Instance) return;
         var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
         var forestManager = new ConnectionsBasedForestManager();
         forestManager.SetLayoutParameters(
             layoutParameters
         );
-        forestManager.LayoutForest(rootNodes);
+        // forestManager.LayoutForest(rootNodes);
         forestManager.FlattenToZPlane(rootNodes);
+    }
+    
+    public static void HierarchicalLayout(LayoutParameters layoutParameters)
+    {
+        if (!NodeConnectionManager.Instance) return;
+    
+        var rootNodes = ConnectionsBasedForestManager.BuildForest(
+            NodeConnectionManager.Instance.conSo.connections);
+    
+        var hierarchicalLayout = new HierarchicalTreeLayout();
+        hierarchicalLayout.SetLayoutParameters(
+            layoutParameters.levelSpacing,
+            layoutParameters.nodeSpacing,
+            layoutParameters.subtreeSpacing
+        );
+    
+        hierarchicalLayout.LayoutTree(rootNodes);
     }
 }
