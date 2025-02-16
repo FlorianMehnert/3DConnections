@@ -4,6 +4,11 @@
         <ui:TabView reorderable="true">
             <ui:Tab label="Sim" name="SimTab">
                 <ui:VisualElement name="Container" class="menu">
+                    <ui:DropdownField label="Sim. Type" index="1" name="SimType" choices="Default,Burst,GPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
+                        <Bindings>
+                            <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:DropdownField>
                     <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
                         <Bindings>
                             <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
