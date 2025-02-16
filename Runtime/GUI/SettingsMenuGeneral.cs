@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Button = UnityEngine.UIElements.Button;
@@ -22,6 +20,12 @@ public class SettingsMenuGeneral : MonoBehaviour
     private DropdownField _sceneDropdown;
     private DropdownField _layoutDropdown;
     private DropdownField _simDropdown;
+    
+    // Sliders
+    private SliderInt _colorSlider;
+    
+    // Toggle
+    private Toggle _alternativeColorsButton;
     
     // Event
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
@@ -62,7 +66,8 @@ public class SettingsMenuGeneral : MonoBehaviour
         {
             OnSimulationTypeChanged(evt.newValue);
         });
-        
+        _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
+
         PopulateActions();
         InitializeAnalyzeButton();
         
@@ -77,6 +82,8 @@ public class SettingsMenuGeneral : MonoBehaviour
         _layoutDropdown = root.Q<DropdownField>("DropdownLayout");
         _simDropdown = root.Q<DropdownField>("DropdownSimType");
         _startButton = root.Q<Button>("AnalyzeScene");
+        _colorSlider = root.Q<SliderInt>("ColorSlider");
+        _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
     }
 
     private void PopulateActions()
@@ -231,6 +238,69 @@ public class SettingsMenuGeneral : MonoBehaviour
         else
         {
             Debug.Log("missing ComputeSpringSimulation Script on the Manager");
+        }
+    }
+    
+    private void UpdateColor(int sliderValue)
+    {
+        Debug.Log("in update Colors");
+        // Apply color to all connections
+        var baseColor = new Color(0.2f, 0.6f, 1f);
+        Color.RGBToHSV(baseColor, out var h, out var s, out var v);
+
+        // Proper hue shifting without clamping incorrectly
+        h = (float)((h + .25) * (float)sliderValue % 1f);
+        s = Mathf.Max(0.5f, s); // Ensure some saturation
+        v = Mathf.Max(0.5f, v); // Ensure some brightness
+
+        baseColor = Color.HSVToRGB(h, s, v);
+
+        // Generate color palette
+        var colors = Colorpalette.GeneratePaletteFromBaseColor(
+            baseColor: baseColor,
+            prebuiltChannels: sliderValue,
+            generateColors: false,
+            alternativeColors: _alternativeColorsButton.value
+        );
+
+        if (NodeConnectionManager.Instance == null || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
+        {
+            return;
+        }
+        var connections = NodeConnectionManager.Instance.conSo.connections;
+
+        // Assign colors based on connection types
+        foreach (var connection in connections)
+        {
+            connection.connectionColor = connection.connectionType switch
+            {
+                "parentChildConnection" => colors[4],
+                "componentConnection" => colors[5],
+                "referenceConnection" => colors[6],
+                _ => Color.white,
+            };
+            connection.ApplyConnection();
+        }
+
+        // Apply colors to nodes
+        if (nodeGraph.AllNodes.Count > 0 && nodeGraph.AllNodes[0] == null)
+        {
+            nodeGraph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+        }
+        foreach (var node in nodeGraph.AllNodes)
+        {
+            var coloredObject = node.GetComponent<ColoredObject>();
+            var nodeType = node.GetComponent<NodeType>();
+
+            coloredObject.SetOriginalColor(nodeType.nodeTypeName switch
+            {
+                "GameObject" => colors[0],
+                "Component" => colors[1],
+                "ScriptableObject" => colors[2],
+                _ => Color.white,
+            });
+
+            coloredObject.SetToOriginalColor();
         }
     }
     

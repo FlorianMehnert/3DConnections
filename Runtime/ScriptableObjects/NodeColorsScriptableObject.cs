@@ -6,4 +6,7 @@ public class NodeColorsScriptableObject : ScriptableObject
     public Color nodeDefaultColor;
     public Color nodeSelectedColor;
     public Color nodeRootColor;
+
+    public int palettePreset;
+    public bool generateColor;
 }

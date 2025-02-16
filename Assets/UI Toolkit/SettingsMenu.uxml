@@ -51,8 +51,16 @@
                             <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/NodeGraphLayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#NodeGraphLayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:DropdownField>
-                    <ui:SliderInt label="Colors" value="42" high-value="100" />
-                    <ui:Toggle label="Use Preset Colors" />
+                    <ui:SliderInt label="Colors" value="42" high-value="4" name="ColorSlider">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:SliderInt>
+                    <ui:Toggle label="Use Preset Colors" toggle-on-label-click="true" name="AlternativeColorsToggle">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Toggle>
                 </ui:VisualElement>
             </ui:Tab>
             <ui:Tab label="Layout" name="LayoutTab">
