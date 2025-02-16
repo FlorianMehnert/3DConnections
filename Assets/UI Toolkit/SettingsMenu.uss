@@ -38,7 +38,7 @@
     padding-left: 40px;
     background-color: rgba(77, 77, 77, 0.5);
     border-top-left-radius: 0;
-    border-top-right-radius: 10px;
+    border-top-right-radius: 0;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
 }
@@ -48,10 +48,10 @@
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
-    border-top-width: 5px;
-    border-right-width: 5px;
-    border-bottom-width: 5px;
-    border-left-width: 5px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
     border-left-color: rgb(0, 0, 0);
     border-right-color: rgb(0, 0, 0);
     border-top-color: rgb(0, 0, 0);
@@ -60,9 +60,9 @@
     margin-right: 10px;
     margin-bottom: 10px;
     margin-left: 10px;
-    padding-top: 0;
+    padding-top: 10px;
     padding-right: 0;
-    padding-bottom: 0;
+    padding-bottom: 10px;
     padding-left: 0;
     background-color: rgba(10, 10, 10, 0.4);
     color: rgb(0, 0, 0);
@@ -80,31 +80,9 @@
 }
 
 .unity-button:hover {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-top-width: 5px;
-    border-right-width: 5px;
-    border-bottom-width: 5px;
-    border-left-width: 5px;
-    border-left-color: rgb(0, 0, 0);
-    border-right-color: rgb(0, 0, 0);
-    border-top-color: rgb(0, 0, 0);
-    border-bottom-color: rgb(0, 0, 0);
-    margin-top: 10px;
-    margin-right: 10px;
-    margin-bottom: 10px;
-    margin-left: 10px;
-    padding-top: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 0;
     color: rgb(255, 0, 199);
-    -unity-text-outline-color: rgb(0, 0, 0);
     display: flex;
     opacity: 1;
-    background-size: 100% 100%;
     scale: 1.05 1.1;
     transition-property: scale;
     transition-duration: 0.2s;
@@ -112,34 +90,12 @@
 }
 
 .unity-button:active {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-top-width: 5px;
-    border-right-width: 5px;
-    border-bottom-width: 5px;
-    border-left-width: 5px;
-    border-left-color: rgb(0, 0, 0);
-    border-right-color: rgb(0, 0, 0);
-    border-top-color: rgb(0, 0, 0);
-    border-bottom-color: rgb(0, 0, 0);
-    margin-top: 10px;
-    margin-right: 10px;
-    margin-bottom: 10px;
-    margin-left: 10px;
-    padding-top: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 0;
     color: rgb(255, 255, 255);
-    -unity-text-outline-color: rgb(0, 0, 0);
     display: flex;
     opacity: 1;
 }
 
 .pink {
-    color: rgb(255, 255, 255);
 }
 
 .pink:hover {
@@ -213,10 +169,10 @@
 }
 
 .unity-popup-field__input {
-    border-top-width: 5px;
-    border-right-width: 5px;
-    border-bottom-width: 5px;
-    border-left-width: 5px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
     background-color: rgb(26, 26, 26);
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
@@ -226,10 +182,10 @@
     border-right-color: rgb(0, 0, 0);
     border-top-color: rgb(0, 0, 0);
     border-bottom-color: rgb(0, 0, 0);
-    padding-top: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 0;
+    padding-top: 6px;
+    padding-right: 6px;
+    padding-bottom: 6px;
+    padding-left: 6px;
 }
 
 .unity-base-popup-field__arrow {
@@ -247,32 +203,18 @@
 }
 
 .unity-tab__header {
-    background-color: rgba(77, 77, 77, 0.5);
+    background-color: rgba(76, 85, 63, 0.5);
+    flex-grow: 1;
 }
 
 .unity-tab__header:hover {
-    background-color: rgba(255, 255, 255, 0.5);
     transition-property: background-color;
     transition-duration: 0.2s;
-}
-
-.unity-tab__header:focus {
-    background-color: rgba(255, 255, 255, 0.5);
-    transition-duration: 0.3s;
-}
-
-.unity-tab__header:active {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgb(61, 68, 50);
 }
 
 .unity-tab__header:selected {
-    background-color: rgba(85, 85, 85, 0.87);
-    scale: 1.05 1.1;
-    rotate: 0;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
-    border-bottom-left-radius: 5px;
+    background-color: rgb(55, 75, 25);
     overflow: hidden;
 }
 
@@ -324,4 +266,10 @@
     scale: 1.05 1.1;
     transition-duration: 0.3s;
     transition-property: scale;
+}
+
+.unity-tab-view__reorderable {
+}
+
+.unity-tab-view {
 }

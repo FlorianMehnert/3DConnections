@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -60,21 +61,39 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// </summary>
     public static void LayoutForest(LayoutParameters layoutParameters)
     {
-        HierarchicalLayout(layoutParameters);
         if (!NodeConnectionManager.Instance) return;
-        var rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
         var forestManager = new ConnectionsBasedForestManager();
-        forestManager.SetLayoutParameters(
-            layoutParameters
-        );
-        // forestManager.LayoutForest(rootNodes);
+        var rootNodes = new List<TreeNode>();
+        switch (layoutParameters.layoutType)
+        {
+            case (int)LayoutType.Grid:
+            {
+                return;
+            }
+            case (int)LayoutType.Radial:
+            {
+                rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
+                forestManager.SetLayoutParameters(
+                    layoutParameters
+                );
+                forestManager.LayoutForest(rootNodes);
+                break;
+            }
+            case (int)LayoutType.Tree:
+            {
+                rootNodes = HierarchicalLayout(layoutParameters);
+                break;
+            }
+            default:
+                Debug.Log("Unknown layout type");
+                return;
+        }
+        
         forestManager.FlattenToZPlane(rootNodes);
     }
-    
-    public static void HierarchicalLayout(LayoutParameters layoutParameters)
+
+    private static List<TreeNode> HierarchicalLayout(LayoutParameters layoutParameters)
     {
-        if (!NodeConnectionManager.Instance) return;
-    
         var rootNodes = ConnectionsBasedForestManager.BuildForest(
             NodeConnectionManager.Instance.conSo.connections);
     
@@ -86,5 +105,6 @@ public class NodeLayoutManagerV2 : MonoBehaviour
         );
     
         hierarchicalLayout.LayoutTree(rootNodes);
+        return rootNodes;
     }
 }

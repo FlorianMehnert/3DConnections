@@ -8,16 +8,8 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Manager for SceneSwitching and interacting with the second display
 /// </summary>
-public class SceneHandler : MonoBehaviour
+public static class SceneHandler
 {
-    private readonly Camera _overlayCamera;
-    private Camera _mainCamera;
-
-    private TMP_Dropdown _sceneDropdown;
-    private SceneManager _sceneManager;
-    [SerializeField] public Scene analyzeScene;
-
-
     private static bool IsSceneLoaded(string sceneName)
     {
         // Iterate through all loaded scenes
@@ -95,11 +87,6 @@ public class SceneHandler : MonoBehaviour
 
         Debug.Log($"Scene {sceneName} loaded successfully.");
         onComplete?.Invoke();
-    }
-
-    public void LoadSceneWithCallback(string sceneName, Action onComplete)
-    {
-        StartCoroutine(LoadSceneCoroutine(sceneName, onComplete));
     }
 
     public static GameObject GetParentObject()

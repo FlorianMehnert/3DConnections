@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d08d4672f90e4f5a948a61c5818603f0, type: 3}
   m_Name: NodeGraphLayoutParameters
   m_EditorClassIdentifier: 
+  layoutType: 2
   minDistance: 3
   startRadius: 10
   radiusInc: 4
   rootSpacing: 10
+  levelSpacing: 10
+  nodeSpacing: 2
+  subtreeSpacing: 2

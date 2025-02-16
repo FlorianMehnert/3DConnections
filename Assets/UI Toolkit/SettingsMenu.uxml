@@ -1,10 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
     <ui:VisualElement name="Panel" class="panel">
+        <ui:VisualElement style="flex-grow: 1; background-size: 200px 0; background-color: rgba(76, 85, 63, 0.5); flex-direction: column; flex-basis: auto; width: 600px; height: 10px; max-height: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px;" />
         <ui:TabView reorderable="true">
+            <ui:Tab label="Start" name="AnalysisTab" closeable="false">
+                <ui:VisualElement name="Container" class="menu">
+                    <ui:Button text="Analyze Scene" name="AnalyzeScene" class="unity-button pink" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                </ui:VisualElement>
+            </ui:Tab>
             <ui:Tab label="Sim" name="SimTab">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:DropdownField label="Sim. Type" index="1" name="SimType" choices="Default,Burst,GPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
+                    <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
                         <Bindings>
                             <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
@@ -33,20 +41,24 @@
             </ui:Tab>
             <ui:Tab label="Vis" name="VisTab" closeable="false">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
-                    <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
-                    <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
-                    <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
-                    <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0">
+                        <Bindings>
+                            <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:DropdownField>
+                    <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout">
+                        <Bindings>
+                            <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/NodeGraphLayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#NodeGraphLayoutParameters" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:DropdownField>
+                    <ui:SliderInt label="Colors" value="42" high-value="100" />
+                    <ui:Toggle label="Use Preset Colors" />
                 </ui:VisualElement>
             </ui:Tab>
-            <ui:Tab label="Layout">
+            <ui:Tab label="Layout" name="LayoutTab">
                 <ui:VisualElement name="Container" class="menu">
                     <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
                     <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
-                    <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
-                    <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
-                    <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
                 </ui:VisualElement>
             </ui:Tab>
         </ui:TabView>

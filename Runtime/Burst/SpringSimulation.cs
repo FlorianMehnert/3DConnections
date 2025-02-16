@@ -92,7 +92,6 @@ public class SpringSimulation : MonoBehaviour, ILogable
     private void Update()
     {
         if (!_isSetUp || !Application.isPlaying) return;
-        Debug.Log("in spring sim");
         var deltaTime = Time.deltaTime;
 
         // Clear forces

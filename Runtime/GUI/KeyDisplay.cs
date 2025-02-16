@@ -115,7 +115,7 @@ public class KeyDisplay : MonoBehaviour
                     if (_inputString != "")
                         _inputString = _inputString.Remove(_inputString.Length - 1);
                 }
-                else if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift) || IsConfirm())
+                else if (keyCode is not (KeyCode.Mouse0 or KeyCode.Mouse1 or KeyCode.Mouse2 or KeyCode.LeftAlt or KeyCode.LeftControl or KeyCode.LeftCommand or KeyCode.LeftWindows or KeyCode.RightShift or KeyCode.Escape) || IsConfirm())
                 {
                     _inputString += keyCode switch
                     {
@@ -152,12 +152,12 @@ public class KeyDisplay : MonoBehaviour
                     var nodeGraph = GetNodeGraph();
                     if (gui && nodeGraph && nodeGraph.IsEmpty())
                     {
-                        gui.StaticLayout();
+                        var menu = FindFirstObjectByType<SettingsMenuGeneral>();
+                        if (menu)
+                            menu.StaticLayout();    
                         var overlayedScene = SceneHandler.GetOverlayedScene();
                         if (overlayedScene.Value != null)
-                        {
                             SceneManager.SetActiveScene(overlayedScene.Value);
-                        }
                         Log("Showing static circular layout", 2f);
                         return;
                     }
@@ -184,44 +184,37 @@ public class KeyDisplay : MonoBehaviour
                 Log(message);
             }else if (IsConfirm())
             {
-                var gui = gameObject.GetComponent<GUIBuilder>();
-                if (gui)
+                var menu = FindFirstObjectByType<SettingsMenuGeneral>();
+                if (menu)
                 {
                     if (_inputString.StartsWith("1"))
                     {
                         Log("Executing physics sim (Method: Unity Components)");
-                        gui.ApplyComponentPhysics();
+                        menu.ApplyComponentPhysics();
                     }
                     else if (_inputString.StartsWith("2"))
                     {
                         Log("Executing physics sim (Method: Burst)");
-                        gui.ApplyBurstPhysics();
+                        menu.ApplyBurstPhysics();
                     }
                         
                     else if (_inputString.StartsWith("3"))
                     {
                         Log("Executing physics sim (Method: GPU)");
-                        gui.ApplyGPUPhysics();
+                        menu.ApplyGPUPhysics();
                     }
-                    else
-                        gui.Init();
                     _inputString = "";
                 }
-                    
-            }else if (_inputString.Contains("clear") && IsConfirm())
-            {
-                var gui = gameObject.GetComponent<GUIBuilder>();
-                if (gui)
+                else
                 {
-                    gui.Init();
-                    clearEvent.TriggerEvent();
+                    Debug.Log("did not find SettingMenuGeneral script");
                 }
-            }else if (_inputString.Contains("reset") && IsConfirm())
+                    
+            }else if (_inputString.Contains("clear") && IsConfirm() || _inputString.Contains("reset") && IsConfirm())
             {
                 var gui = gameObject.GetComponent<GUIBuilder>();
                 if (gui)
                 {
-                    gui.Init();
                     clearEvent.TriggerEvent();
                 }
             }

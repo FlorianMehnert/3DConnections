@@ -45,6 +45,7 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
     [SerializeField] private int colorPreset;
     [SerializeField] private bool generateColors;
+    [SerializeField] private ToAnalyzeScene toAnalyzeScene;
     public bool setIcons;
 
     [Header("Performance Settings")] [SerializeField]
@@ -79,14 +80,14 @@ public class SceneAnalyzer : MonoBehaviour
 #if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
-        var sceneHandler = GetComponent<SceneHandler>();
-        Scene scene = default;
-        if (sceneHandler)
+        var scene = SceneManager.GetSceneByBuildIndex(toAnalyzeScene.sceneIndex);
+        if (!scene.IsValid())
         {
-            scene = sceneHandler.analyzeScene;
+            Debug.Log("scene is not valid");
+            return;
         }
 
-        if (!scene.IsValid()) return;
+        Debug.Log(scene.name + " " + toAnalyzeScene.sceneIndex);
         LoadComplexityMetrics(analysisData.ToString());
         _cachedPrefabPaths.Clear();
         var rootGameObjects = scene.GetRootGameObjects();

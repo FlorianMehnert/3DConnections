@@ -353,6 +353,9 @@ MonoBehaviour:
   uiDocument: {fileID: 574136029}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
   clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
+  layoutParameters: {fileID: 11400000, guid: 22eaa6a769169557ea327a3dcf50993c, type: 2}
+  toAnalyzeScene: {fileID: 0}
+  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
 --- !u!223 &1454689910 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 5985118532246660421, guid: 55c26fa12df61f36fbec2f81d5da3dbc, type: 3}
