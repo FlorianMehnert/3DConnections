@@ -11,6 +11,7 @@ public class KeyDisplay : MonoBehaviour
     private float _lastDebugTime;
     private GUIStyle _style;
     private GUIStyle _debugStyle;
+    [SerializeField] private ClearEvent clearEvent;
 
     private void Start()
     {
@@ -213,7 +214,7 @@ public class KeyDisplay : MonoBehaviour
                 if (gui)
                 {
                     gui.Init();
-                    gui.Clear();
+                    clearEvent.TriggerEvent();
                 }
             }else if (_inputString.Contains("reset") && IsConfirm())
             {
@@ -221,7 +222,7 @@ public class KeyDisplay : MonoBehaviour
                 if (gui)
                 {
                     gui.Init();
-                    gui.Clear();
+                    clearEvent.TriggerEvent();
                 }
             }
 

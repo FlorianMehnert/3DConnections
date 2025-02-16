@@ -17,23 +17,26 @@ public class SceneAnalyzer : MonoBehaviour
     private readonly HashSet<Object> _visitedObjects = new();
     private readonly HashSet<Object> _processingObjects = new();
     private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
-    
-    [Header("Resources")]
-    [SerializeField] private NodeGraphScriptableObject nodeGraph;
+
+    [Header("Resources")] [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private TextAsset analysisData; // Assign the JSON file here
     [SerializeField] private GameObject parentNode;
     [SerializeField] private GameObject nodePrefab;
     [SerializeField] private OverlaySceneScriptableObject overlay;
 
-    [Header("Node Settings")]
-    [SerializeField] private int nodeWidth = 2;
+    [Header("Node Settings")] [SerializeField]
+    private int nodeWidth = 2;
+
     [SerializeField] private int nodeHeight = 1;
     [SerializeField] private int maxNodes = 1000;
     [SerializeField] private bool ignoreTransforms;
     [SerializeField] private bool scaleNodesUsingMaintainability;
-    
-    [Header("Display Settings")]
-    [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
+    [SerializeField] private ClearEvent clearEvent;
+    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+
+    [Header("Display Settings")] [SerializeField]
+    internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
+
     [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
     [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
     [SerializeField] private Color assetColor = new(0.1f, 0.9f, 0.9f); // Purple
@@ -43,13 +46,12 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int colorPreset;
     [SerializeField] private bool generateColors;
     public bool setIcons;
-    
-    [Header("Performance Settings")]
-    [SerializeField] private bool searchForPrefabsUsingNames;
-    
-    [Header("Ignored Types Settings")]
-    public List<string> ignoredTypes = new();
-    
+
+    [Header("Performance Settings")] [SerializeField]
+    private bool searchForPrefabsUsingNames;
+
+    [Header("Ignored Types Settings")] public List<string> ignoredTypes = new();
+
     private List<string> _cachedPrefabPaths = new();
     private int _currentNodes;
 
@@ -103,6 +105,22 @@ public class SceneAnalyzer : MonoBehaviour
         referenceConnection = palette[6];
     }
 
+    private void OnEnable()
+    {
+        if (clearEvent != null)
+            clearEvent.OnEventTriggered += HandleEvent;
+        if (removePhysicsEvent != null)
+            removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
+    }
+
+    private void OnDisable()
+    {
+        if (clearEvent != null)
+            clearEvent.OnEventTriggered -= HandleEvent;
+        if (removePhysicsEvent != null)
+            removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
+    }
+
     private void FinishAnalyzeScene(GameObject[] rootGameObjects)
     {
         if (rootGameObjects == null)
@@ -129,7 +147,7 @@ public class SceneAnalyzer : MonoBehaviour
             nodeGraph.AllNodes.Add(rootNode);
     }
 
-    private GameObject SpawnNode(Object obj, bool isAsset=false)
+    private GameObject SpawnNode(Object obj, bool isAsset = false)
     {
         if (!overlay.GetCameraOfScene())
         {
@@ -304,13 +322,13 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="node"></param>
     /// <param name="obj"></param>
-    private void SetNodeColor(GameObject node, Object obj, bool isAsset=false)
+    private void SetNodeColor(GameObject node, Object obj, bool isAsset = false)
     {
         var componentRenderer = node.GetComponent<Renderer>();
         if (!componentRenderer) return;
         if (isAsset)
         {
-            componentRenderer.material.color  = assetColor;
+            componentRenderer.material.color = assetColor;
         }
         else
         {
@@ -322,7 +340,6 @@ public class SceneAnalyzer : MonoBehaviour
                 _ => Color.black
             };
         }
-
     }
 
     private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType)
@@ -365,6 +382,7 @@ public class SceneAnalyzer : MonoBehaviour
                         _ => "referenceConnection"
                     });
             }
+
             return existingNode;
         }
 
@@ -384,13 +402,14 @@ public class SceneAnalyzer : MonoBehaviour
                     Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
                         0.5f),
                     _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                }, depth: depth,obj switch
+                }, depth: depth, obj switch
                 {
                     GameObject => "parentChildConnection",
                     Component => "componentConnection",
                     _ => "referenceConnection"
                 });
         }
+
         return newNode;
     }
 
@@ -416,7 +435,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
             {
                 ConnectNodes(parentNodeObject, existingNode,
-                    isReference ? referenceConnection : parentChildConnection, depth: depth, isReference? "referenceConnection" : "parentChildConnection");
+                    isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection");
             }
 
             return;
@@ -494,12 +513,14 @@ public class SceneAnalyzer : MonoBehaviour
             _processingObjects.Remove(scriptableObject);
         }
     }
-    
+
     private string GetClassNameFromMetric(string metricName)
     {
         // Split the metric name to extract the class name (e.g., "Program.cs::AnalyzeCodeMetrics" -> "Program")
         var parts = metricName.Split(new[] { "::" }, System.StringSplitOptions.None);
-        return parts.Length > 0 ? parts[0].Split('.')[0] : // Extract "Program" from "Program.cs"
+        return parts.Length > 0
+            ? parts[0].Split('.')[0]
+            : // Extract "Program" from "Program.cs"
             metricName; // Fallback in case of unexpected format
     }
 
@@ -511,12 +532,12 @@ public class SceneAnalyzer : MonoBehaviour
         Debug.Log($"Found component type: {component.GetType().Name} with complexity: {complexity}");
 
         // compute all scales maybe and adjust
-        var scaleFactor = Math.Abs(complexity-90f)*0.3f; // Clamp to prevent extreme scaling
-            
+        var scaleFactor = Math.Abs(complexity - 90f) * 0.3f; // Clamp to prevent extreme scaling
+
 
         if (nodeObject && nodeObject.transform)
         {
-            nodeObject.transform.localScale = new Vector3(scaleFactor*2, scaleFactor, nodeObject.transform.localScale.z);
+            nodeObject.transform.localScale = new Vector3(scaleFactor * 2, scaleFactor, nodeObject.transform.localScale.z);
             // nodeObject.GetComponent<Collider2D>();
         }
     }
@@ -532,10 +553,11 @@ public class SceneAnalyzer : MonoBehaviour
             var maintainability = metricNode.Value["Maintainability"].AsFloat;
             string metricName = metricNode.Value["Name"];
             var className = GetClassNameFromMetric(metricName);
-            
+
             _complexityMap.TryAdd(className, maintainability);
         }
     }
+
     /// <summary>
     /// Recursive function to Spawn a node for the given Component and Traverse References of the given Component which might be GameObjects or ScriptableObjects
     /// </summary>
@@ -569,7 +591,7 @@ public class SceneAnalyzer : MonoBehaviour
             var nodeObject = GetOrSpawnNode(component, depth + 1, parentNodeObject);
             if (scaleNodesUsingMaintainability)
                 ScaleNode(nodeObject, component);
-            
+
             // Only traverse references if we haven't visited this component before
             if (!needsTraversal) return;
             _visitedObjects.Add(component);
@@ -587,9 +609,11 @@ public class SceneAnalyzer : MonoBehaviour
                             ConnectNodes(nodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection");
                         return;
                     }
+
                     GetOrSpawnNode(referencedObject, depth, parentNodeObject, true);
                     return;
                 }
+
                 switch (referencedObject)
                 {
                     case GameObject go when go:
@@ -610,7 +634,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
     }
 
-    private static bool IsAsset(Object obj) 
+    private static bool IsAsset(Object obj)
     {
         if (obj == null)
             return false;
@@ -622,7 +646,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// <summary>
     /// Delete internal datastructures of <see cref="SceneAnalyzer"/> and delete all children GameObjects (nodes) of the root node 
     /// </summary>
-    public void ClearNodes()
+    private void ClearNodes()
     {
         if (!parentNode)
         {
@@ -665,5 +689,24 @@ public class SceneAnalyzer : MonoBehaviour
         return (from field in fields
             where typeof(Object).IsAssignableFrom(field.FieldType)
             select field.GetValue(component)).OfType<Object>().ToList();
+    }
+
+    private void HandleEvent()
+    {
+        ClearNodes();
+        nodeGraph.Initialize();
+    }
+
+    private void HandleRemovePhysicsEvent()
+    {
+        var types = new List<Type>
+        {
+            typeof(SpringJoint2D),
+            typeof(Rigidbody2D)
+        };
+        var parentObject = SceneHandler.GetParentObject();
+        if (!parentObject)
+            return;
+        nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
     }
 }

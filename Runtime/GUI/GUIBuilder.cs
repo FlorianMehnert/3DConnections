@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using SFB;
@@ -22,13 +21,12 @@ public class GUIBuilder : MonoBehaviour
     [SerializeField] private GameObject sliderColorPresetPrefab;
     private TMP_Dropdown _sceneDropdownInstance;
     private TMP_Dropdown _nodeGraphDropdownInstance;
-    private GameObject _clearButton;
-    private GameObject _removePhysicsButton;
     private GameObject _executeNodeSpawnButton;
     private UnityAction _toExecute;
     [SerializeField] private OverlaySceneScriptableObject overlaySceneConfig;
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+    [SerializeField] private ClearEvent clearEvent;
     [SerializeField] private LayoutParameters layoutParameters;
     private UnityAction[] _actions;
     private const float TopMargin = 60f;
@@ -39,7 +37,7 @@ public class GUIBuilder : MonoBehaviour
     private void OnEnable()
     {
         Init();
-        Clear();
+        clearEvent.TriggerEvent();
         nodeGraph.Clear();
     }
 
@@ -53,18 +51,18 @@ public class GUIBuilder : MonoBehaviour
                 Destroy(tf.gameObject);
             }
         }
-        
+
         // set to button-width plus margin from the top right corner 
         _currentYCoordinate = -(30f + TopMargin);
 
         _nodeBuilder = GetComponent<NodeBuilder>();
-        if (_nodeBuilder == null)
+        if (!_nodeBuilder)
         {
             Debug.Log("The NodeBuilder component is missing on the manager");
         }
 
         _sceneAnalyzer = GetComponent<SceneAnalyzer>();
-        if (_sceneAnalyzer == null)
+        if (!_sceneAnalyzer)
         {
             Debug.Log("The SceneAnalyzer component is missing on the manager");
         }
@@ -222,69 +220,24 @@ public class GUIBuilder : MonoBehaviour
         _executeNodeSpawnButton = CreateButton("Execute Action", 14, (() =>
         {
             OnNodeGraphDropdownChanged(_nodeGraphDropdownInstance.value);
-            
+
             // set to analyze Scene
             var selectedScene = _sceneDropdownInstance.options[_sceneDropdownInstance.value].text;
             var scene = SceneManager.GetSceneByName(selectedScene);
             var sceneHandler = GetComponent<SceneHandler>();
             if (sceneHandler)
                 sceneHandler.analyzeScene = scene;
-            
+
             // analyze
             _sceneAnalyzer.AnalyzeScene();
-            
+
             // layout
             NodeLayoutManagerV2.LayoutForest(layoutParameters);
-            
-            // disable other buttons
-            ChangeButtonEnabled(_removePhysicsButton, true);
-            ChangeButtonEnabled(_clearButton, true);
         }), disableAfterClick: true);
-
-        _removePhysicsButton = CreateButton("Remove Physics", 14, () =>
-        {
-            removePhysicsEvent.TriggerEvent();
-            RemovePhysics();
-        }, isEnabled: false, disableAfterClick: true);
-
-        var sceneAnalyzer = GetComponent<SceneAnalyzer>();
-        if (sceneAnalyzer != null)
-        {
-            _clearButton = CreateButton("Clear", 14, Clear, isEnabled: false, disableAfterClick: true);
-        }
 
         CreatePresetSlider();
         if (!SceneManager.GetSceneAt(0).isLoaded)
             SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
-    }
-
-    private void RemovePhysics()
-    {
-        var types = new List<Type>
-        {
-            typeof(SpringJoint2D),
-            typeof(Rigidbody2D)
-        };
-        var parentObject = SceneHandler.GetParentObject();
-
-        if (parentObject == null)
-            return;
-        nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
-    }
-
-    public void Clear()
-    {
-        var sceneAnalyzer = GetComponent<SceneAnalyzer>();
-        if (!sceneAnalyzer) return;
-        sceneAnalyzer.ClearNodes();
-        
-        var gpuSimulation = GetComponent<ComputeSpringSimulation>();
-        if (!gpuSimulation) return;
-        gpuSimulation.CleanupBuffers();
-        
-        nodeGraph.Initialize();
-        ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
-        ChangeButtonEnabled(_removePhysicsButton.gameObject, false);
     }
 
     private static void ChangeButtonEnabled(GameObject buttonGameObject, bool isEnabled)
@@ -339,7 +292,6 @@ public class GUIBuilder : MonoBehaviour
         var rectTransform = colorSlider.GetComponent<RectTransform>();
         rectTransform.anchoredPosition = GetButtonPosition(colorSlider.gameObject);
         return colorSlider;
-        
     }
 
     /// <summary>
@@ -352,8 +304,6 @@ public class GUIBuilder : MonoBehaviour
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() =>
         {
-            ChangeButtonEnabled(_removePhysicsButton, true);
-            ChangeButtonEnabled(_clearButton, true);
             _actions[index].Invoke();
             ChangeButtonEnabled(_executeNodeSpawnButton, false);
         });
@@ -405,9 +355,6 @@ public class GUIBuilder : MonoBehaviour
             springSimulation.CleanupNativeArrays();
 
         ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, false);
-        ChangeButtonEnabled(_removePhysicsButton.gameObject, true);
-        ChangeButtonEnabled(_clearButton.gameObject, true);
-
         nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
@@ -428,7 +375,7 @@ public class GUIBuilder : MonoBehaviour
         if (springSimulation)
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
-            RemovePhysics();
+            removePhysicsEvent.TriggerEvent();
             NodeLayoutManagerV2.LayoutForest(layoutParameters);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
@@ -450,7 +397,7 @@ public class GUIBuilder : MonoBehaviour
         if (gpuSpringSim)
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
-            RemovePhysics();
+            removePhysicsEvent.TriggerEvent();
             NodeLayoutManagerV2.LayoutForest(layoutParameters);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));

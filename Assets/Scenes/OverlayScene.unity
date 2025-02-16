@@ -382,7 +382,6 @@ GameObject:
   m_Component:
   - component: {fileID: 574136030}
   - component: {fileID: 574136029}
-  - component: {fileID: 574136031}
   - component: {fileID: 574136032}
   m_Layer: 5
   m_Name: SettingsMenu
@@ -425,20 +424,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &574136031
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 574136028}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa3c3526a49f45fab2742d54198348fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  uiDocument: {fileID: 574136029}
-  physicsConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
 --- !u!114 &574136032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -452,6 +437,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiDocument: {fileID: 574136029}
+  removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
 --- !u!1 &665148189
 GameObject:
   m_ObjectHideFlags: 0

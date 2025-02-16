@@ -22,12 +22,15 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     private bool _isShuttingDown;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
+    [SerializeField] private ClearEvent clearEvent;
 
     private void OnDisable()
     {
         _isShuttingDown = true;
         if (removePhysicsEvent != null)
             removePhysicsEvent.OnEventTriggered -= HandleEvent;
+        if (clearEvent != null)
+            clearEvent.OnEventTriggered -= HandleEvent;
     }
 
     private void OnEnable()
@@ -35,6 +38,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         _isShuttingDown = false;
         if (removePhysicsEvent != null)
             removePhysicsEvent.OnEventTriggered += HandleEvent;
+        if (clearEvent != null)
+            clearEvent.OnEventTriggered += HandleEvent;
     }
 
     private struct NodeData

@@ -192,6 +192,7 @@ MonoBehaviour:
   overlaySceneConfig: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
   layoutParameters: {fileID: 11400000, guid: 22eaa6a769169557ea327a3dcf50993c, type: 2}
 --- !u!114 &2761152558827232600
 MonoBehaviour:
@@ -232,6 +233,8 @@ MonoBehaviour:
   maxNodes: 1000
   ignoreTransforms: 0
   scaleNodesUsingMaintainability: 0
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
+  removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
   gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
   componentColor: {r: 1, g: 0.19999999, b: 0.76000005, a: 1}
   scriptableObjectColor: {r: 0.91999996, g: 1, b: 0.19999999, a: 1}
@@ -260,6 +263,7 @@ MonoBehaviour:
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
 --- !u!114 &3086584372877910348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -286,6 +290,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bc338bcf371440c9740e23bf2a6003d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
 --- !u!114 &4253787491956773054
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -2,10 +2,11 @@
     <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
     <ui:VisualElement name="Panel" class="panel">
         <ui:VisualElement name="Container" class="menu">
-            <ui:Button text="Toggle Scene" enabled="true" class="unity-button pink" />
-            <ui:Button text="Execute Action" class="unity-button cyan" />
-            <ui:Button text="Remove Physics" class="unity-button khaki" />
-            <ui:Button text="Clear" class="unity-button mint" style="background-color: rgba(10, 10, 10, 0.4);" />
+            <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
+            <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
+            <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
+            <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
+            <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
             <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
                 <Bindings>
                     <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />

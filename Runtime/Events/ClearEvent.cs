@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-[CreateAssetMenu(fileName = "Remove Physics Event", menuName = "3DConnections/Events/Remove Physics Event")]
-public class RemovePhysicsEvent : ScriptableObject
+[CreateAssetMenu(fileName = "Clear Nodes Event", menuName = "3DConnections/Events/Clear Nodes Event")]
+public class ClearEvent : ScriptableObject
 {
     public UnityAction OnEventTriggered;
 
