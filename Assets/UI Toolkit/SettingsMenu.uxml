@@ -1,32 +1,49 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
     <ui:VisualElement name="Panel" class="panel">
-        <ui:VisualElement name="Container" class="menu">
-            <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
-            <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
-            <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
-            <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
-            <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
-            <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
-                <Bindings>
-                    <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
-                </Bindings>
-            </ui:Slider>
-            <ui:Slider label="Damping" value="42" high-value="1" name="SliderDamping">
-                <Bindings>
-                    <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
-                </Bindings>
-            </ui:Slider>
-            <ui:Slider label="Radius" value="42" high-value="10" name="SliderRadius" low-value="2">
-                <Bindings>
-                    <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
-                </Bindings>
-            </ui:Slider>
-            <ui:Slider label="Response" value="42" high-value="1" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05">
-                <Bindings>
-                    <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
-                </Bindings>
-            </ui:Slider>
-        </ui:VisualElement>
+        <ui:TabView reorderable="true">
+            <ui:Tab label="Sim" name="SimTab">
+                <ui:VisualElement name="Container" class="menu">
+                    <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                    <ui:Slider label="Damping" value="42" high-value="1" name="SliderDamping">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                    <ui:Slider label="Radius" value="42" high-value="10" name="SliderRadius" low-value="2">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                    <ui:Slider label="Response" value="42" high-value="1" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                </ui:VisualElement>
+            </ui:Tab>
+            <ui:Tab label="Vis" name="VisTab" closeable="false">
+                <ui:VisualElement name="Container" class="menu">
+                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
+                    <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
+                    <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                </ui:VisualElement>
+            </ui:Tab>
+            <ui:Tab label="Layout">
+                <ui:VisualElement name="Container" class="menu">
+                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0" />
+                    <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout" />
+                    <ui:Button text="Execute Action" name="Execute" class="unity-button cyan" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
+                    <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                </ui:VisualElement>
+            </ui:Tab>
+        </ui:TabView>
     </ui:VisualElement>
 </ui:UXML>
