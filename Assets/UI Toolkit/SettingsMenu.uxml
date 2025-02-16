@@ -6,10 +6,26 @@
             <ui:Button text="Execute Action" class="unity-button cyan" />
             <ui:Button text="Remove Physics" class="unity-button khaki" />
             <ui:Button text="Clear" class="unity-button mint" style="background-color: rgba(10, 10, 10, 0.4);" />
-            <ui:Slider label="Stiffness" value="42" high-value="1" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="stiffness" name="SliderStiffness" low-value="1E-05" />
-            <ui:Slider label="Damping" value="42" high-value="1" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="damping" name="SliderDamping" />
-            <ui:Slider label="Radius" value="42" high-value="10" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="colliderRadius" name="SliderRadius" low-value="2" />
-            <ui:Slider label="Response" value="42" high-value="1" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="collisionResponseStrength" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05" />
+            <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
+                <Bindings>
+                    <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                </Bindings>
+            </ui:Slider>
+            <ui:Slider label="Damping" value="42" high-value="1" name="SliderDamping">
+                <Bindings>
+                    <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                </Bindings>
+            </ui:Slider>
+            <ui:Slider label="Radius" value="42" high-value="10" name="SliderRadius" low-value="2">
+                <Bindings>
+                    <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                </Bindings>
+            </ui:Slider>
+            <ui:Slider label="Response" value="42" high-value="1" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05">
+                <Bindings>
+                    <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                </Bindings>
+            </ui:Slider>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

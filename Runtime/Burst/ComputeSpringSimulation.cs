@@ -112,10 +112,10 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Update shader parameters
         computeShader.SetInt(NodeCount, _nodes.Length);
         computeShader.SetFloat(DeltaTime, deltaTime);
-        computeShader.SetFloat(Stiffness, simConfig.stiffness);
+        computeShader.SetFloat(Stiffness, simConfig.Stiffness);
         computeShader.SetFloat(Damping, simConfig.damping);
         computeShader.SetFloat(ColliderRadius, simConfig.colliderRadius);
-        computeShader.SetFloat(CollisionResponseStrength, simConfig.collisionResponseStrength);
+        computeShader.SetFloat(CollisionResponseStrength, simConfig.CollisionResponseStrength);
 
         // Calculate thread groups
         var threadGroups = Mathf.CeilToInt(_nodes.Length / 64f);

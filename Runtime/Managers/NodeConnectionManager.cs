@@ -194,7 +194,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
                      .SelectMany(springComponents => springComponents))
         {
             spring.dampingRatio = simConfig.damping;
-            spring.frequency = simConfig.stiffness;
+            spring.frequency = simConfig.Stiffness;
             spring.distance = simConfig.colliderRadius;
         }
     }

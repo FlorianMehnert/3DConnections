@@ -109,7 +109,7 @@ public class SpringSimulation : MonoBehaviour, ILogable
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
             Forces = _forces,
-            Stiffness = simConfig.stiffness,
+            Stiffness = simConfig.Stiffness,
             Damping = simConfig.damping,
             DeltaTime = deltaTime
         };
@@ -121,7 +121,7 @@ public class SpringSimulation : MonoBehaviour, ILogable
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
             ColliderRadius = simConfig.colliderRadius,
-            CollisionResponseStrength = simConfig.collisionResponseStrength,
+            CollisionResponseStrength = simConfig.CollisionResponseStrength,
             DeltaTime = deltaTime
         };
 
