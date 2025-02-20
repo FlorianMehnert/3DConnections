@@ -167,7 +167,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         if (sceneAnalyzer)
         {
             sceneAnalyzer.AnalyzeScene();
-            NodeLayoutManagerV2.LayoutForest(layoutParameters);
+            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
         }
         else
             Debug.Log("did not find");
@@ -190,7 +190,7 @@ public class SettingsMenuGeneral : MonoBehaviour
             boxCollider2D.size = Vector2.one * 5;
         }
 
-        NodeLayoutManagerV2.LayoutForest(layoutParameters);
+        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
         NodeConnectionManager.Instance.AddSpringsToConnections();
     }
     
@@ -202,7 +202,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             removePhysicsEvent.TriggerEvent();
-            NodeLayoutManagerV2.LayoutForest(layoutParameters);
+            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
@@ -224,7 +224,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             removePhysicsEvent.TriggerEvent();
-            NodeLayoutManagerV2.LayoutForest(layoutParameters);
+            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();

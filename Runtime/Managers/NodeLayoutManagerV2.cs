@@ -59,7 +59,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// <summary>
     /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
     /// </summary>
-    public static void LayoutForest(LayoutParameters layoutParameters)
+    public static void Layout(LayoutParameters layoutParameters, NodeGraphScriptableObject nodeGraph)
     {
         if (!NodeConnectionManager.Instance) return;
         var forestManager = new ConnectionsBasedForestManager();
@@ -68,7 +68,12 @@ public class NodeLayoutManagerV2 : MonoBehaviour
         {
             case (int)LayoutType.Grid:
             {
-                return;
+                rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
+                forestManager.SetLayoutParameters(
+                    layoutParameters
+                );
+                rootNodes = LevelBoxAvoidanceLayout(rootNodes[0].GameObject, nodeGraph);
+                break;
             }
             case (int)LayoutType.Radial:
             {
@@ -88,7 +93,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
                 Debug.Log("Unknown layout type");
                 return;
         }
-        
+
         forestManager.FlattenToZPlane(rootNodes);
     }
 
@@ -96,15 +101,125 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     {
         var rootNodes = ConnectionsBasedForestManager.BuildForest(
             NodeConnectionManager.Instance.conSo.connections);
-    
+
         var hierarchicalLayout = new HierarchicalTreeLayout();
         hierarchicalLayout.SetLayoutParameters(
             layoutParameters.levelSpacing,
             layoutParameters.nodeSpacing,
             layoutParameters.subtreeSpacing
         );
-    
+
         hierarchicalLayout.LayoutTree(rootNodes);
         return rootNodes;
+    }
+
+    private static List<TreeNode> LevelBoxAvoidanceLayout(GameObject rootNode, NodeGraphScriptableObject nodeGraph)
+    {
+        // Create TreeNodes for all GameObjects
+        List<TreeNode> treeNodes = new();
+        Dictionary<GameObject, TreeNode> gameObjectToTreeNode = new();
+
+        foreach (var obj in nodeGraph.AllNodes)
+        {
+            var node = new TreeNode { GameObject = obj };
+            treeNodes.Add(node);
+            gameObjectToTreeNode[obj] = node;
+        }
+
+        // Build connections using LocalNodeConnections
+        foreach (var obj in nodeGraph.AllNodes)
+        {
+            var currentNode = gameObjectToTreeNode[obj];
+            var connections = obj.GetComponent<LocalNodeConnections>();
+
+            // Add children based on outDirection connections
+            foreach (var childNode in connections.outConnections.Select(childObj => gameObjectToTreeNode[childObj]))
+            {
+                currentNode.Children.Add(childNode);
+                childNode.Parents.Add(currentNode);
+            }
+        }
+
+        // Initialize dictionary to track levels
+        Dictionary<TreeNode, int> nodeLevels = new();
+        foreach (var node in treeNodes)
+        {
+            nodeLevels[node] = int.MaxValue;
+        }
+
+        // Set root level
+        var rootTreeNode = gameObjectToTreeNode[rootNode];
+        nodeLevels[rootTreeNode] = 0;
+
+        for (var currentLevel = 0; currentLevel < 10; currentLevel++)
+        {
+            var currentLevelNodes = treeNodes.Where(n => nodeLevels[n] == currentLevel).ToList();
+            var level = currentLevel;
+            foreach (var child in from node in currentLevelNodes from child in node.Children where nodeLevels[child] > level + 1 select child)
+            {
+                nodeLevels[child] = currentLevel + 1;
+            }
+
+            // Layout current level and next level without overlap
+            LayoutLevels(treeNodes, nodeLevels, currentLevel);
+        }
+        return treeNodes;
+    }
+
+    private static void LayoutLevels(List<TreeNode> allNodes, Dictionary<TreeNode, int> nodeLevels, int currentLevel)
+    {
+        var currentLevelNodes = allNodes.Where(n => nodeLevels[n] == currentLevel).ToList();
+        var nextLevelNodes = allNodes.Where(n => nodeLevels[n] == currentLevel + 1).ToList();
+
+        if (!currentLevelNodes.Any() || !nextLevelNodes.Any())
+            return;
+
+        var padding = 20f; // Adjust this value based on your needs
+
+        float xOffset = 10;
+        foreach (var node in currentLevelNodes)
+        {
+            var bounds = node.GameObject.GetComponent<Renderer>().bounds;
+            var newPosition = new Vector3(xOffset, currentLevel * -1, 0);
+            node.GameObject.transform.position = newPosition;
+            xOffset += bounds.size.x + padding;
+        }
+
+        xOffset = 0;
+        foreach (var node in nextLevelNodes)
+        {
+            var bounds = node.GameObject.GetComponent<Renderer>().bounds;
+            Vector3 newPosition = new Vector3(xOffset, (currentLevel + 1) * -50f, 0);
+            node.GameObject.transform.position = newPosition;
+            xOffset += bounds.size.x + padding;
+        }
+        CenterNodes(currentLevelNodes);
+        CenterNodes(nextLevelNodes);
+    }
+
+    private static void CenterNodes(List<TreeNode> nodes)
+    {
+        if (!nodes.Any()) return;
+
+        const float padding = 20f;
+
+        var totalWidth = nodes.Select(node => node.GameObject.GetComponent<Renderer>().bounds).Select(bounds => bounds.size.x + padding).Sum();
+
+        totalWidth -= padding; // Remove extra padding from last node
+
+        var centerOffset = -totalWidth / 2f;
+
+        // Adjust positions
+        foreach (var node in nodes)
+        {
+            var bounds = node.GameObject.GetComponent<Renderer>().bounds;
+            var currentPos = node.GameObject.transform.position;
+            node.GameObject.transform.position = new Vector3(
+                currentPos.x + centerOffset,
+                currentPos.y,
+                currentPos.z
+            );
+            centerOffset += bounds.size.x + padding;
+        }
     }
 }
