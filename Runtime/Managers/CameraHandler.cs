@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Manager Class to move the orthographic camera using middle mouse drag and zoom in/out using mouse wheel
@@ -19,6 +21,8 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
     [SerializeField] public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private GameObject parentObject;
+    Vector2 moveAmountGamepad;
+    float zoomGamepad;
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
 
@@ -109,6 +113,12 @@ public class CameraController : MonoBehaviour
 
         HandleZoom();
         HandlePan();
+        
+        // Handle Camera
+        Vector3 movement = new Vector3(moveAmountGamepad.x, moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
+        _cam.transform.position += movement;
+        // float zoom = 
+        _cam.orthographicSize += zoomGamepad  * _cam.orthographicSize;
     }
 
     private void CalculateWorldDimensions()
@@ -151,6 +161,18 @@ public class CameraController : MonoBehaviour
         _cam.transform.position += move;
 
         _lastMousePosition = Input.mousePosition;
+    }
+
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        moveAmountGamepad = context.ReadValue<Vector2>();
+    }
+    
+    public void OnZoom(InputAction.CallbackContext context)
+    {
+        var zoomVector = context.ReadValue<float>();
+        zoomGamepad = -zoomVector * Time.deltaTime;            
+        CalculateWorldDimensions();
     }
 
     private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
