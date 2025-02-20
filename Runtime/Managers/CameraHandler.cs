@@ -25,6 +25,7 @@ public class CameraController : MonoBehaviour
     float zoomGamepad;
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
+    [SerializeField] private MenuState menuState;
 
     private void Start()
     {
@@ -111,13 +112,12 @@ public class CameraController : MonoBehaviour
             return;
         }
 
+        if (!menuState) return;
         HandleZoom();
         HandlePan();
         
-        // Handle Camera
-        Vector3 movement = new Vector3(moveAmountGamepad.x, moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
+        var movement = new Vector3(moveAmountGamepad.x, moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
         _cam.transform.position += movement;
-        // float zoom = 
         _cam.orthographicSize += zoomGamepad  * _cam.orthographicSize;
     }
 
@@ -165,11 +165,14 @@ public class CameraController : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
+        if (menuState.menuOpen) return;
         moveAmountGamepad = context.ReadValue<Vector2>();
+
     }
     
     public void OnZoom(InputAction.CallbackContext context)
     {
+        if (menuState.menuOpen) return;
         var zoomVector = context.ReadValue<float>();
         zoomGamepad = -zoomVector * Time.deltaTime;            
         CalculateWorldDimensions();

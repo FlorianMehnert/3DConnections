@@ -95,6 +95,16 @@
     opacity: 1;
 }
 
+.unity-button:focus {
+    color: rgb(255, 0, 199);
+    display: flex;
+    opacity: 1;
+    scale: 1.05 1.1;
+    transition-property: scale;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out-cubic;
+}
+
 .pink {
 }
 
@@ -239,6 +249,18 @@
     scale: 1.05 1.1;
 }
 
+.unity-popup-field:focus {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-right: 5px;
+    padding-left: 5px;
+    transition-property: scale;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+    transition-delay: 0s;
+    scale: 1.05 1.1;
+}
+
 .unity-base-slider__dragger {
     scale: 1.5 1.5;
     border-top-left-radius: 5px;
@@ -263,6 +285,12 @@
 }
 
 .unity-base-slider__input:hover {
+    scale: 1.05 1.1;
+    transition-duration: 0.3s;
+    transition-property: scale;
+}
+
+.unity-base-slider__input:focus {
     scale: 1.05 1.1;
     transition-duration: 0.3s;
     transition-property: scale;

@@ -37,6 +37,7 @@ public class SettingsMenuGeneral : MonoBehaviour
     
     // Data - ScriptableObjects
     [SerializeField] private NodeGraphScriptableObject nodeGraph;
+    [SerializeField] private MenuState menuState;
     
     // Internal
     private System.Action[] _actions;
@@ -325,15 +326,18 @@ public class SettingsMenuGeneral : MonoBehaviour
     private void ShowMenu()
     {
         _panel.RemoveFromClassList("hidden");
+        menuState.menuOpen = true;
     }
 
     private void HideMenu()
     {
         _panel.AddToClassList("hidden");
+        menuState.menuOpen = false;
     }
 
-    private void ToggleMenu()
+    public void ToggleMenu()
     {
+        Debug.Log("toggle menu");
         if (_panel.ClassListContains("hidden"))
             ShowMenu();
         else

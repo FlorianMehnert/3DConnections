@@ -234,6 +234,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: menuState
+      value: 
+      objectReference: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
+    - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: parentObject
       value: 
       objectReference: {fileID: 108217077}
@@ -376,6 +380,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 2ec20d90-8627-42e8-9e23-db67cb922d08
     m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 369c631e-45e8-49ec-aeb3-efbcc88100eb
+    m_ActionName: 'MenuActions/ToggleMenu[/XInputControllerWindows/select]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: cameraMovement
@@ -464,6 +472,7 @@ MonoBehaviour:
   layoutParameters: {fileID: 11400000, guid: 22eaa6a769169557ea327a3dcf50993c, type: 2}
   toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &574136033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -553,6 +562,26 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 2ec20d90-8627-42e8-9e23-db67cb922d08
     m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 574136034}
+        m_TargetAssemblyTypeName: NavigatableMenu, 3DConnections.Runtime.GUI
+        m_MethodName: OnMenuToggle
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
+    m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 711a0510-1910-4f5f-9534-bfedce43112a
+    m_ActionName: 'MenuActions/ToggleMenu[/XInputControllerWindows/rightTrigger,/XInputControllerWindows/leftTrigger]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -570,6 +599,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095ab7057bdf46acb97e5212a5b3fc84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!1 &1365550533
 GameObject:
   m_ObjectHideFlags: 0
@@ -582,7 +612,7 @@ GameObject:
   - component: {fileID: 1365550535}
   - component: {fileID: 1365550534}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: EventSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

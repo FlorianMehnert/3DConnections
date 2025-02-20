@@ -17,6 +17,7 @@ public class NavigatableMenu : MonoBehaviour
     private List<Button> currentTabButtons;
     private int currentTabIndex = 0;
     private int currentButtonIndex = -1;
+    [SerializeField] MenuState menuState;
 
     private void Awake()
     {
@@ -59,7 +60,22 @@ public class NavigatableMenu : MonoBehaviour
     
         if (newIndex < 0 || newIndex >= totalTabs) return;
         tabView.selectedTabIndex = newIndex;
-        tabButtons[newIndex].Focus();
+        var currentTab = tabButtons[newIndex];
+        currentTab.Focus();
+
+        var currentElements = currentTab.Query<Button>().ToList();
+        if (currentElements.Count > 0)
+            currentElements[0].Focus();
+    }
+
+    public void OnMenuToggle(InputAction.CallbackContext context)
+    {
+        var settingsMenuGeneral = GetComponent<SettingsMenuGeneral>();
+        if (settingsMenuGeneral == null)
+        {
+            Debug.Log("did not find settingsMenuGeneral on menuToggle");
+        };
+        settingsMenuGeneral.ToggleMenu();
     }
 
     public void OnNavigationPerformed(InputAction.CallbackContext context)
@@ -106,22 +122,6 @@ public class NavigatableMenu : MonoBehaviour
             e.target = button;
             button.SendEvent(e);
             ;
-        }
-    }
-}
-
-// Custom TabButton class (you'll need to implement this)
-public abstract class TabButton : Button
-{
-    public void SetSelected(bool selected)
-    {
-        if (selected)
-        {
-            AddToClassList("selected-tab");
-        }
-        else
-        {
-            RemoveFromClassList("selected-tab");
         }
     }
 }

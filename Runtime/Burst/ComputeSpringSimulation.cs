@@ -111,7 +111,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private void Update()
     {
         if (_nodeBuffer == null || !Application.isPlaying || _isShuttingDown) return;
-        Debug.Log("in compute spring sim");
         var deltaTime = Time.deltaTime;
 
         // Update shader parameters
