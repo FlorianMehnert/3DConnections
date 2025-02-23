@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
-    <ui:VisualElement name="Panel" class="panel">
-        <ui:VisualElement style="flex-grow: 1; background-size: 200px 0; background-color: rgba(76, 85, 63, 0.5); flex-direction: column; flex-basis: auto; width: 600px; height: 10px; max-height: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px;" />
+    <ui:VisualElement name="Panel" class="panel" style="display: flex; margin-top: 5%;">
+        <ui:VisualElement enabled="true" style="flex-grow: 1; background-size: 200px 0; background-color: rgba(76, 85, 63, 0.5); flex-direction: column; flex-basis: auto; width: 700px; height: 10px; max-height: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px; display: flex;" />
         <ui:TabView reorderable="true" name="tabs">
             <ui:Tab label="Start" name="AnalysisTab" closeable="false">
                 <ui:VisualElement name="Container" class="menu">
@@ -100,6 +100,11 @@
                             <ui:DataBinding property="value" data-source-path="subtreeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
+                </ui:VisualElement>
+            </ui:Tab>
+            <ui:Tab label="Tab">
+                <ui:VisualElement name="Container" class="menu">
+                    <ui:TextField label="Searchbox" name="SearchField" style="padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;" />
                 </ui:VisualElement>
             </ui:Tab>
         </ui:TabView>

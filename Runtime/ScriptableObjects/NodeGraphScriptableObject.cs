@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 
@@ -390,6 +391,36 @@ public class NodeGraphScriptableObject : ScriptableObject
                 child.gameObject.SetActive(true);
             }
             ReenableConnectedNodes(outwardsConnectedNode, depth + 1, maxDepth);
+        }
+    }
+    
+    public void SearchNodes(string searchString)
+    {
+        if (AllNodes == null)
+            return;
+        foreach (var nodeObj in AllNodes)
+        {
+            var node = nodeObj.GetComponent<ColoredObject>();
+            if (node == null) continue;
+            if (string.IsNullOrEmpty(searchString) || nodeObj.name.Contains(searchString, System.StringComparison.OrdinalIgnoreCase))
+            {
+                node.SetColor(Color.white);
+                ChangeTextSize(nodeObj, 30f);
+            }
+            else
+            {
+                node.SetToOriginalColor();
+                ChangeTextSize(nodeObj, 1.5f);
+            }
+        }
+    }
+    
+    private static void ChangeTextSize(GameObject node, float size)
+    {
+        var textComponent = node.transform.GetComponentInChildren<TextMeshPro>();
+        if (textComponent != null)
+        {
+            textComponent.fontSize = size;
         }
     }
 

@@ -27,6 +27,9 @@ public class SettingsMenuGeneral : MonoBehaviour
     // Toggle
     private Toggle _alternativeColorsButton;
     
+    // Text input
+    private TextField _textField;
+    
     // Event
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     [SerializeField] private ClearEvent clearEvent;
@@ -69,6 +72,8 @@ public class SettingsMenuGeneral : MonoBehaviour
         });
         _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
 
+        _textField?.RegisterValueChangedCallback(evt => nodeGraph.SearchNodes(evt.newValue));
+
         PopulateActions();
         InitializeAnalyzeButton();
         
@@ -85,6 +90,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         _startButton = root.Q<Button>("AnalyzeScene");
         _colorSlider = root.Q<SliderInt>("ColorSlider");
         _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
+        _textField = root.Q<TextField>("SearchField");
     }
 
     private void PopulateActions()
