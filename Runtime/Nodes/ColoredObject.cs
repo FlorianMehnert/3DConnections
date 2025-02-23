@@ -103,6 +103,14 @@ public class ColoredObject : MonoBehaviour
         _objectRenderer.material.DisableKeyword("_EMISSION");
     }
 
+    public void SetColor(Color color)
+    {
+        if (_objectRenderer && _objectRenderer.material)
+        {
+            _objectRenderer.material.color = color;
+        }
+    }
+
     public void SetToOriginalColor()
     {
         if (_objectRenderer && _objectRenderer.material)
