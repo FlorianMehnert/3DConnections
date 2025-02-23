@@ -2,7 +2,7 @@
   "name": "com.florian-mehnert.3d-connections",
   "version": "0.0.10",
   "displayName": "3DConnections",
-  "description": "This package provides tries to give you an overview over one of the active scenes visualizing parent-child connections aswell as component references while also using static/dynamic layout",
+  "description": "This package will add an overlay to visualize your unity scenes",
   "unity": "2023.2",
   "documentationUrl": "https://github.com/FlorianMehnert/3DConnections/blob/master/README.md",
   "changelogUrl": "https://github.com/FlorianMehnert/3DConnections/blob/master/README.md",
