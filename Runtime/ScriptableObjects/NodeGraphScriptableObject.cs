@@ -404,12 +404,10 @@ public class NodeGraphScriptableObject : ScriptableObject
             if (node == null) continue;
             if (string.IsNullOrEmpty(searchString) || nodeObj.name.Contains(searchString, System.StringComparison.OrdinalIgnoreCase))
             {
-                node.SetColor(Color.white);
                 ChangeTextSize(nodeObj, 30f);
             }
             else
             {
-                node.SetToOriginalColor();
                 ChangeTextSize(nodeObj, 1.5f);
             }
         }
