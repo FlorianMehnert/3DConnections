@@ -7,8 +7,7 @@ public static class Colorpalette
     public static Color[] GeneratePaletteFromBaseColor(Color baseColor = default, int prebuiltChannels = 0, bool generateColors = false, bool alternativeColors = false)
 {
     var palette = new Color[7];
-
-    if (generateColors)
+    if (!generateColors)
     {
         switch (prebuiltChannels)
         {

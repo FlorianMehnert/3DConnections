@@ -18,7 +18,6 @@ public class SettingsMenuGeneral : MonoBehaviour
     
     // Dropdowns
     private DropdownField _sceneDropdown;
-    private DropdownField _layoutDropdown;
     private DropdownField _simDropdown;
     
     // Sliders
@@ -63,9 +62,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         if (_sceneDropdown != null)
             PopulateSceneDropdown();
         
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered += HandleEvent;
-        
         _simDropdown?.RegisterValueChangedCallback(evt =>
         {
             OnSimulationTypeChanged(evt.newValue);
@@ -85,7 +81,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         _clearButton = root.Q<Button>("Clear");
         _removePhysicsButton = root.Q<Button>("RemovePhysics");
         _sceneDropdown = root.Q<DropdownField>("DropdownScene");
-        _layoutDropdown = root.Q<DropdownField>("DropdownLayout");
         _simDropdown = root.Q<DropdownField>("DropdownSimType");
         _startButton = root.Q<Button>("AnalyzeScene");
         _colorSlider = root.Q<SliderInt>("ColorSlider");
@@ -142,12 +137,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         _startButton.clicked += _currentAction;
     }
     
-    private void OnDisable()
-    {
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered -= HandleEvent;
-    }
-    
     private void PopulateSceneDropdown()
     {
         // Get all scenes from build settings
@@ -168,7 +157,6 @@ public class SettingsMenuGeneral : MonoBehaviour
     
     public void StaticLayout()
     {
-        // TODO: add analyzeScene Event
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
         if (sceneAnalyzer)
         {
@@ -250,7 +238,6 @@ public class SettingsMenuGeneral : MonoBehaviour
     
     private void UpdateColor(int sliderValue)
     {
-        Debug.Log("in update Colors");
         // Apply color to all connections
         var baseColor = new Color(0.2f, 0.6f, 1f);
         Color.RGBToHSV(baseColor, out var h, out var s, out var v);
@@ -266,8 +253,8 @@ public class SettingsMenuGeneral : MonoBehaviour
         var colors = Colorpalette.GeneratePaletteFromBaseColor(
             baseColor: baseColor,
             prebuiltChannels: sliderValue,
-            generateColors: false,
-            alternativeColors: _alternativeColorsButton.value
+            generateColors: _alternativeColorsButton.value,
+            alternativeColors: false
         );
 
         if (NodeConnectionManager.Instance == null || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
@@ -348,11 +335,5 @@ public class SettingsMenuGeneral : MonoBehaviour
             ShowMenu();
         else
             HideMenu();
-    }
-    
-    private void HandleEvent()
-    {
-        // ChangeButtonEnabled(_executeNodeSpawnButton.gameObject, true);
-        // ChangeButtonEnabled(_removePhysicsButton.gameObject, false);
     }
 }
