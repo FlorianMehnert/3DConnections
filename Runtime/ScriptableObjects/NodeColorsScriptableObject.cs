@@ -9,4 +9,6 @@ public class NodeColorsScriptableObject : ScriptableObject
 
     public int palettePreset;
     public bool generateColor;
+    
+    public uint maxWidthHierarchy = 9;
 }
