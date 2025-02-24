@@ -119,6 +119,7 @@ public class CameraController : MonoBehaviour
         var movement = new Vector3(moveAmountGamepad.x, moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
         _cam.transform.position += movement;
         _cam.orthographicSize += zoomGamepad  * _cam.orthographicSize;
+        _cam.orthographicSize = Mathf.Abs(_cam.orthographicSize);
     }
 
     private void CalculateWorldDimensions()

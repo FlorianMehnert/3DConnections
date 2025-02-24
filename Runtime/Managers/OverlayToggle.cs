@@ -14,7 +14,6 @@ public class OverlayToggle : MonoBehaviour
         if (!Input.GetKeyDown(KeyCode.F1)) return;
         overlay.ToggleOverlay();
         ToggleAnalyzedScene();
-        Debug.Log(overlay.OverlayIsActive());
         ToggleOverlayScene(overlay.OverlayIsActive());
     }
 

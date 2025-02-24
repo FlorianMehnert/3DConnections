@@ -16,6 +16,7 @@
     transition-property: display, opacity;
     transition-timing-function: linear, ease-in-out;
     opacity: 0;
+    visibility: hidden;
 }
 
 .menu {

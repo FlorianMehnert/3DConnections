@@ -530,7 +530,6 @@ public class SceneAnalyzer : MonoBehaviour
     {
         // Check if the complexity value exists for the component's class name
         if (!_complexityMap.TryGetValue(component.GetType().Name, out var complexity)) return;
-        Debug.Log($"Found component type: {component.GetType().Name} with complexity: {complexity}");
 
         // compute all scales maybe and adjust
         var scaleFactor = Math.Abs(complexity - 90f) * 0.3f; // Clamp to prevent extreme scaling
