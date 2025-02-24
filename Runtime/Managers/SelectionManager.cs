@@ -52,8 +52,8 @@ public class CubeSelector : MonoBehaviour
     private bool _isDrawingSelectionRect;
     private int _selectedCubesCount;
     [UsedImplicitly] private Rect _selectionRect;
-    public Color selectionColor;
-
+    
+    [SerializeField] private MenuState menuState;
 
     private void Start()
     {
@@ -79,6 +79,8 @@ public class CubeSelector : MonoBehaviour
 
     private void Update()
     {
+        if (!menuState || menuState.menuOpen)
+            return;
         if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) && !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) && !Input.GetKeyDown(KeyCode.I)) return;
         if (_currentlyDraggedCube)
         {
@@ -479,7 +481,6 @@ public class CubeSelector : MonoBehaviour
         Color.RGBToHSV(selectionRectColor, out var h, out var s, out var v);
         var invertedColor = Color.HSVToRGB((h + .5f) % 1f, 1f, 1f);
         meshRenderer.material.color = invertedColor;
-        selectionColor = invertedColor;
     }
 
     public int GetSelectionCount()

@@ -57,6 +57,7 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
+        if (!menuState || menuState.menuOpen) return;
         // Recalculate world dimensions if zoom changes
         if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
         {

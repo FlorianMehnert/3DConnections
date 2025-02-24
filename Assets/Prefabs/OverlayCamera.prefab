@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6810327768359966640}
   - component: {fileID: 275891097617498144}
   - component: {fileID: 1241412518822067057}
+  - component: {fileID: 2237390801319845235}
   m_Layer: 0
   m_Name: OverlayCamera
   m_TagString: Untagged
@@ -102,6 +103,7 @@ MonoBehaviour:
   nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   parentObject: {fileID: 0}
   overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &1241412518822067057
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,3 +148,89 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &2237390801319845235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2167307905950667471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 4c2daa6b2bac08f4db0963352527a29b, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 275891097617498144}
+        m_TargetAssemblyTypeName: CameraController, 3DConnections.Runtime.Managers
+        m_MethodName: OnMove
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: f33b0288-d49d-45ab-8776-5015a50eba12
+    m_ActionName: 'cameraMovement/input[/XInputControllerWindows/rightStick]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 275891097617498144}
+        m_TargetAssemblyTypeName: CameraController, 3DConnections.Runtime.Managers
+        m_MethodName: OnZoom
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 39609140-d730-4995-89ea-3acb296162bf
+    m_ActionName: cameraMovement/zoom
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ae44f52d-ca96-4c80-854e-28af3fc57fce
+    m_ActionName: 'UI/Submit[/XInputControllerWindows/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8c597d60-34b9-4f2d-ac3b-668294d5968e
+    m_ActionName: 'UI/Navigate[/XInputControllerWindows/rightStick/up,/XInputControllerWindows/rightStick/down,/XInputControllerWindows/rightStick/left,/XInputControllerWindows/rightStick/right,/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f8c32cfa-ac4b-40c5-99f7-512114adbc47
+    m_ActionName: 'UI/Tab[/XInputControllerWindows/leftShoulder,/XInputControllerWindows/rightShoulder]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 0cdedd1a-ff56-4aff-9116-69853e352992
+    m_ActionName: 'UI/Click[/Mouse/leftButton,/Pen/tip]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2ec20d90-8627-42e8-9e23-db67cb922d08
+    m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
+    m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth,/XInputControllerWindows/select,/XInputControllerWindows/start]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: cameraMovement
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 6810327768359966640}
