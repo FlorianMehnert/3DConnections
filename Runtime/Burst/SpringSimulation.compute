@@ -81,6 +81,21 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
     // Apply damping force
     float2 dampingForce = -damping * nodes[id.x].velocity;
     nodes[id.x].force += dampingForce;
+
+    // Add a weak centering force
+    float2 centerPosition = float2(0, 0);
+    for (uint j = 0; j < nodeCount; j++) {
+        centerPosition += nodes[j].position;
+    }
+    centerPosition /= nodeCount;
+    
+    float2 toCenterDir = centerPosition - nodes[id.x].position;
+    float centerDist = length(toCenterDir);
+    
+    if (centerDist > 0.001) {
+        float stabilizingForce = 1e-6; // Very weak force
+        nodes[id.x].force += normalize(toCenterDir) * stabilizingForce * centerDist;
+    }
 }
 
 [numthreads(64,1,1)]
@@ -118,10 +133,35 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
                 velocity += direction * j_scalar;
             }
         }
+        
     }
     
     nodes[id.x].position = position;
     nodes[id.x].velocity = velocity;
+
+    if (nodeCount > 1) {
+        // Calculate center of mass
+        float2 centerOfMass = float2(0, 0);
+        for (uint j = 0; j < nodeCount; j++) {
+            centerOfMass += nodes[j].position;
+        }
+        centerOfMass /= nodeCount;
+        
+        // Calculate radial vector
+        float2 radialVector = nodes[id.x].position - centerOfMass;
+        float distance = length(radialVector);
+        
+        if (distance > 0.001) {
+            // Calculate tangential velocity component
+            float2 direction = radialVector / distance;
+            float2 tangent = float2(-direction.y, direction.x);
+            float tangentialVelocity = dot(nodes[id.x].velocity, tangent);
+            
+            // Apply damping to tangential velocity component
+            float angularDamping = 0.05;
+            nodes[id.x].velocity -= tangent * tangentialVelocity * angularDamping;
+        }
+    }
 }
 
 [numthreads(64,1,1)]
@@ -129,7 +169,11 @@ void IntegrateForces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= nodeCount) return;
     
+    // Use a smaller effective timestep for stability
+    float effectiveDeltaTime = min(deltaTime, 0.01); // Cap at 10ms
+    
     // Semi-implicit Euler integration
-    nodes[id.x].velocity += nodes[id.x].force * deltaTime;
-    nodes[id.x].position += nodes[id.x].velocity * deltaTime;
+    nodes[id.x].velocity += nodes[id.x].force * effectiveDeltaTime;
+    nodes[id.x].velocity *= 0.99; // Add extra damping
+    nodes[id.x].position += nodes[id.x].velocity * effectiveDeltaTime;
 }

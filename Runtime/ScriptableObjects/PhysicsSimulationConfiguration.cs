@@ -14,7 +14,7 @@ public class PhysicsSimulationConfiguration : ScriptableObject
         set => stiffness = ConvertToLog(value);
     }
 
-    public float damping = 0.02f;
+    public float damping = 2f;
     public float colliderRadius = 5f;
 
     [SerializeField] private SimulationType simulationType = SimulationType.Burst;
@@ -33,7 +33,7 @@ public class PhysicsSimulationConfiguration : ScriptableObject
         set => simulationType = (SimulationType)value;
     }
     
-    [SerializeField, DontCreateProperty] private float collisionResponseStrength;
+    [SerializeField, DontCreateProperty] private float collisionResponseStrength = 0.0001f;
 
     [CreateProperty]
     public float CollisionResponseStrength
