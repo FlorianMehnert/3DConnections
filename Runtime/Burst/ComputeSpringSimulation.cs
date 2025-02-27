@@ -47,6 +47,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         public float2 Position;
         public float2 Velocity;
         public float2 Force;
+        public int NodeType;
     }
 
     private void OnDestroy()
@@ -78,20 +79,27 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         _collisionKernel = computeShader.FindKernel("CollisionResponse");
         _integrationKernel = computeShader.FindKernel("IntegrateForces");
 
-        // Initialize compute buffer
         var nodeData = new NodeData[_nodes.Length];
         for (var i = 0; i < _nodes.Length; i++)
         {
+            var nodeType = 0; // Default to GameObject
+            // Get the actual component to check its type
+            var nodeTypeComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>();
+            if (nodeTypeComponent != null)
+            {
+                nodeType = nodeTypeComponent.GetNodeType(); // Assuming NodeType has a 'type' field
+            }
+
             nodeData[i] = new NodeData
             {
                 Position = new float2(_nodes[i].position.x, _nodes[i].position.y),
                 Velocity = float2.zero,
-                Force = float2.zero
+                Force = float2.zero,
+                NodeType = nodeType
             };
         }
 
-        _nodeBuffer =
-            new ComputeBuffer(_nodes.Length, sizeof(float) * 6); // 2 floats each for position, velocity, force
+        _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 6 + sizeof(int)); // Added int for NodeType
         _nodeBuffer.SetData(nodeData);
 
         // Set buffer for all kernels

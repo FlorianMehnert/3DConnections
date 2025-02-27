@@ -7,6 +7,7 @@ struct NodeData
     float2 position;
     float2 velocity;
     float2 force;
+    int nodeType;
 };
 
 RWStructuredBuffer<NodeData> nodes;
@@ -22,13 +23,34 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= nodeCount) return;
     
-    // Calculate spring forces
-    float2 targetPosition = float2(0, 0);
-    float2 displacement = targetPosition - nodes[id.x].position;
-    float2 springForce = stiffness * displacement;
-    float2 dampingForce = -damping * nodes[id.x].velocity;
+    nodes[id.x].force = float2(0, 0);
+    for (uint j = 0; j < nodeCount; j++)
+    {
+        if (id.x == j) continue;
+        float2 displacement = nodes[j].position - nodes[id.x].position;
+        float distance = length(displacement);
+        if (distance < 0.0001f) continue; // Avoid division by zero
+        float2 direction = displacement / distance;
+        float nodeStiffness = stiffness;
+        if (nodes[id.x].nodeType == 0 && nodes[j].nodeType == 0) 
+        {
+            // GameObject - GameObject
+            nodeStiffness = stiffness * .1;
+        }
+        else if ((nodes[id.x].nodeType == 0 && nodes[j].nodeType == 1) ||
+                (nodes[id.x].nodeType == 1 && nodes[j].nodeType == 0)) 
+        {
+            // GameObject - Component
+            nodeStiffness = stiffness * 50.0;
+        }
+        
+        float2 springForce = direction * nodeStiffness * distance;
+        nodes[id.x].force += springForce;
+    }
     
-    nodes[id.x].force = springForce + dampingForce;
+    // Apply damping force
+    float2 dampingForce = -damping * nodes[id.x].velocity;
+    nodes[id.x].force += dampingForce;
 }
 
 [numthreads(64,1,1)]
