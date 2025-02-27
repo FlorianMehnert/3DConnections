@@ -11,26 +11,6 @@ public class Entrypoint3DConnections : MonoBehaviour
     [SerializeField] private Scene sceneToLoad;
     private string _sceneName;
 
-    private void Start()
-    {
-        if (sceneToLoad != default)
-        {
-            var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
-            sceneReference.scene = sceneToLoad;
-            overlay.overlayScene = sceneReference;
-        }
-        _sceneName = overlay.overlayScene.Name;
-        if (SceneManager.GetSceneByName(_sceneName).isLoaded)
-        {
-            return;
-        }
-
-        if (!loadOnStart) return;
-        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
-        if (disableSceneOnOverlay)
-            ToggleRootObjectsInSceneWhileOverlay();
-    }
-
     private void Update()
     {
         if (!Input.GetKeyDown(KeyCode.Return)) return;
@@ -61,6 +41,22 @@ public class Entrypoint3DConnections : MonoBehaviour
     {
         if (overlayEvent != null)
             overlayEvent.OnEventTriggered += HandleEvent;
+        if (sceneToLoad != default)
+        {
+            var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
+            sceneReference.scene = sceneToLoad;
+            overlay.overlayScene = sceneReference;
+        }
+        _sceneName = overlay.overlayScene.Name;
+        if (SceneManager.GetSceneByName(_sceneName).isLoaded)
+        {
+            return;
+        }
+
+        if (!loadOnStart) return;
+        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
+        if (disableSceneOnOverlay)
+            ToggleRootObjectsInSceneWhileOverlay();
     }
 
     private void OnDisable()
