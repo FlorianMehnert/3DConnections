@@ -10,6 +10,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private static readonly int ColliderRadius = Shader.PropertyToID("colliderRadius");
     private static readonly int Damping = Shader.PropertyToID("damping");
     private static readonly int CollisionResponseStrength = Shader.PropertyToID("collisionResponseStrength");
+    private static readonly int RelaxationFactor = Shader.PropertyToID("relaxationFactor");
+    private static readonly int MaxVelocityLimit = Shader.PropertyToID("maxVelocityLimit");
     public ComputeShader computeShader;
     public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private PhysicsSimulationConfiguration simConfig; 
@@ -31,6 +33,14 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     [SerializeField] private float gameObjectRestLength = 2.0f;
     [SerializeField] private float gameObjectComponentRestLength = 0.5f;
     [SerializeField] private float componentRestLength = 1.0f;
+
+    // New relaxation parameters
+    [SerializeField] private bool enableRelaxation = true;
+    [SerializeField] private float relaxationDuration = 2.0f;
+    [SerializeField] private float relaxationStrength = 0.2f;
+    [SerializeField] private float initialMaxVelocity = 0.5f;
+    [SerializeField] private float finalMaxVelocity = 10.0f;
+    private float _relaxationTimer = 0.0f;
 
 
     private void OnDisable()
@@ -83,6 +93,9 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             return;
         }
 
+        // Reset relaxation timer when initializing
+        _relaxationTimer = 0.0f;
+
         // Get kernel IDs
         _springKernel = computeShader.FindKernel("SpringForces");
         _collisionKernel = computeShader.FindKernel("CollisionResponse");
@@ -130,6 +143,22 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         if (_nodeBuffer == null || !Application.isPlaying || _isShuttingDown) return;
         var deltaTime = Time.deltaTime;
 
+        // Update relaxation timer if enabled
+        float currentRelaxFactor = 1.0f;
+        float currentMaxVelocity = finalMaxVelocity;
+        
+        if (enableRelaxation)
+        {
+            _relaxationTimer += deltaTime;
+            if (_relaxationTimer < relaxationDuration)
+            {
+                // Gradually increase from initial relaxation strength to 1.0
+                float t = _relaxationTimer / relaxationDuration;
+                currentRelaxFactor = Mathf.Lerp(relaxationStrength, 1.0f, t);
+                currentMaxVelocity = Mathf.Lerp(initialMaxVelocity, finalMaxVelocity, t);
+            }
+        }
+
         // Update shader parameters
         computeShader.SetInt(NodeCount, _nodes.Length);
         computeShader.SetFloat(DeltaTime, deltaTime);
@@ -137,6 +166,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetFloat(Damping, simConfig.damping);
         computeShader.SetFloat(ColliderRadius, simConfig.colliderRadius);
         computeShader.SetFloat(CollisionResponseStrength, simConfig.CollisionResponseStrength);
+        computeShader.SetFloat(RelaxationFactor, currentRelaxFactor);
+        computeShader.SetFloat(MaxVelocityLimit, currentMaxVelocity);
         
         computeShader.SetFloat(GORestLength, gameObjectRestLength);
         computeShader.SetFloat(GCRestLength, gameObjectComponentRestLength);
@@ -172,6 +203,12 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         CleanupBuffers();
     }
 
+    // Method to manually trigger relaxation
+    public void TriggerRelaxation()
+    {
+        _relaxationTimer = 0.0f;
+    }
+
     public void Status()
     {
         Debug.Log(_nodeBuffer == null || !Application.isPlaying || _isShuttingDown);
@@ -179,6 +216,13 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     public string GetStatus()
     {
-        return "enabled keywords: " + computeShader.enabledKeywords.Length + " nodes: " + _nodes.Length + " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null");
+        string relaxationStatus = enableRelaxation ? 
+            $" (Relaxation: {(_relaxationTimer < relaxationDuration ? $"active {_relaxationTimer:F1}/{relaxationDuration:F1}" : "complete")})" : 
+            " (Relaxation: disabled)";
+            
+        return "enabled keywords: " + computeShader.enabledKeywords.Length + 
+               " nodes: " + _nodes.Length + 
+               " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null") +
+               relaxationStatus;
     }
 }

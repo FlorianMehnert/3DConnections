@@ -10,8 +10,6 @@ struct NodeData
     int nodeType;
 };
 
-
-
 RWStructuredBuffer<NodeData> nodes;
 uint nodeCount;
 float deltaTime;
@@ -20,11 +18,13 @@ float damping;
 float colliderRadius;
 float collisionResponseStrength;
 
+// Relaxation parameters
+float relaxationFactor; // Will be < 1 during relaxation and 1 when fully relaxed
+float maxVelocityLimit; // Will increase over time during relaxation
+
 float goRestLength;
 float gcRestLength;
 float ccRestLength;
-
-
 
 [numthreads(64,1,1)]
 void SpringForces (uint3 id : SV_DispatchThreadID)
@@ -48,20 +48,20 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
         float2 direction = displacement / distance;
         
         // Determine interaction stiffness and rest length based on node types
-        float nodeStiffness = stiffness;
+        float nodeStiffness = stiffness * relaxationFactor; // Apply relaxation factor to stiffness
         float restLength = 1.0; // Default rest length
         
         if (nodes[id.x].nodeType == 0 && nodes[j].nodeType == 0) 
         {
             // GameObject - GameObject
-            nodeStiffness = stiffness * .1;
+            nodeStiffness = stiffness * .1 * relaxationFactor;
             restLength = goRestLength;
         }
         else if ((nodes[id.x].nodeType == 0 && nodes[j].nodeType == 1) ||
                 (nodes[id.x].nodeType == 1 && nodes[j].nodeType == 0)) 
         {
             // GameObject - Component
-            nodeStiffness = stiffness * 5.0;
+            nodeStiffness = stiffness * 5.0 * relaxationFactor;
             restLength = gcRestLength;
         }
         else {
@@ -78,8 +78,9 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
         nodes[id.x].force += springForce;
     }
     
-    // Apply damping force
-    float2 dampingForce = -damping * nodes[id.x].velocity;
+    // Apply damping force - increase damping during relaxation phase
+    float effectiveDamping = damping * (2.0 - relaxationFactor); // More damping when relaxationFactor is low
+    float2 dampingForce = -effectiveDamping * nodes[id.x].velocity;
     nodes[id.x].force += dampingForce;
 
     // Add a weak centering force
@@ -93,7 +94,8 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
     float centerDist = length(toCenterDir);
     
     if (centerDist > 0.001) {
-        float stabilizingForce = 1e-6; // Very weak force
+        // Increase centering force during relaxation
+        float stabilizingForce = 1e-6 * (1.0 + (2.0 - relaxationFactor) * 10.0); 
         nodes[id.x].force += normalize(toCenterDir) * stabilizingForce * centerDist;
     }
 }
@@ -119,21 +121,23 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
             float2 direction = delta / distance;
             float overlap = minDist - distance;
             
-            position += direction * (overlap * 0.5f);
+            // Increase positional correction during relaxation
+            float correctionStrength = 0.5f * relaxationFactor + 0.5f;
+            position += direction * (overlap * correctionStrength);
             
             float2 relativeVelocity = velocity - nodes[j].velocity;
             float velocityAlongNormal = dot(relativeVelocity, direction);
             
             if (velocityAlongNormal < 0)
             {
-                float restitution = 0.5f;
+                // Adjust restitution based on relaxation
+                float restitution = 0.5f * relaxationFactor;
                 float j_scalar = -(1 + restitution) * velocityAlongNormal;
-                j_scalar *= collisionResponseStrength;
+                j_scalar *= collisionResponseStrength * relaxationFactor;
                 
                 velocity += direction * j_scalar;
             }
         }
-        
     }
     
     nodes[id.x].position = position;
@@ -157,8 +161,8 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
             float2 tangent = float2(-direction.y, direction.x);
             float tangentialVelocity = dot(nodes[id.x].velocity, tangent);
             
-            // Apply damping to tangential velocity component
-            float angularDamping = 0.05;
+            // Increase angular damping during relaxation
+            float angularDamping = 0.05 * (2.0 - relaxationFactor);
             nodes[id.x].velocity -= tangent * tangentialVelocity * angularDamping;
         }
     }
@@ -174,6 +178,16 @@ void IntegrateForces (uint3 id : SV_DispatchThreadID)
     
     // Semi-implicit Euler integration
     nodes[id.x].velocity += nodes[id.x].force * effectiveDeltaTime;
-    nodes[id.x].velocity *= 0.99; // Add extra damping
+    
+    // Apply extra damping during relaxation
+    float extraDamping = 0.99 * relaxationFactor + 0.9 * (1.0 - relaxationFactor);
+    nodes[id.x].velocity *= extraDamping;
+    
+    // Apply velocity limit - more strict during relaxation
+    float currentSpeed = length(nodes[id.x].velocity);
+    if (currentSpeed > maxVelocityLimit) {
+        nodes[id.x].velocity = (nodes[id.x].velocity / currentSpeed) * maxVelocityLimit;
+    }
+    
     nodes[id.x].position += nodes[id.x].velocity * effectiveDeltaTime;
 }
