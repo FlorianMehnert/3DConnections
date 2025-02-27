@@ -23,6 +23,15 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private bool _isShuttingDown;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     [SerializeField] private ClearEvent clearEvent;
+    
+    private static readonly int GORestLength = Shader.PropertyToID("goRestLength");
+    private static readonly int GCRestLength = Shader.PropertyToID("gcRestLength");
+    private static readonly int CCRestLength = Shader.PropertyToID("ccRestLength");
+    
+    [SerializeField] private float gameObjectRestLength = 2.0f;
+    [SerializeField] private float gameObjectComponentRestLength = 0.5f;
+    [SerializeField] private float componentRestLength = 1.0f;
+
 
     private void OnDisable()
     {
@@ -128,6 +137,10 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetFloat(Damping, simConfig.damping);
         computeShader.SetFloat(ColliderRadius, simConfig.colliderRadius);
         computeShader.SetFloat(CollisionResponseStrength, simConfig.CollisionResponseStrength);
+        
+        computeShader.SetFloat(GORestLength, gameObjectRestLength);
+        computeShader.SetFloat(GCRestLength, gameObjectComponentRestLength);
+        computeShader.SetFloat(CCRestLength, componentRestLength);
 
         // Calculate thread groups
         var threadGroups = Mathf.CeilToInt(_nodes.Length / 64f);

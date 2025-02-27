@@ -10,6 +10,8 @@ struct NodeData
     int nodeType;
 };
 
+
+
 RWStructuredBuffer<NodeData> nodes;
 uint nodeCount;
 float deltaTime;
@@ -18,33 +20,61 @@ float damping;
 float colliderRadius;
 float collisionResponseStrength;
 
+float goRestLength;
+float gcRestLength;
+float ccRestLength;
+
+
+
 [numthreads(64,1,1)]
 void SpringForces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= nodeCount) return;
     
+    // Reset force for this node
     nodes[id.x].force = float2(0, 0);
+    
     for (uint j = 0; j < nodeCount; j++)
     {
         if (id.x == j) continue;
+        
+        // Calculate displacement between nodes
         float2 displacement = nodes[j].position - nodes[id.x].position;
         float distance = length(displacement);
+        
         if (distance < 0.0001f) continue; // Avoid division by zero
+        
+        // Direction of the force
         float2 direction = displacement / distance;
+        
+        // Determine interaction stiffness and rest length based on node types
         float nodeStiffness = stiffness;
+        float restLength = 1.0; // Default rest length
+        
         if (nodes[id.x].nodeType == 0 && nodes[j].nodeType == 0) 
         {
             // GameObject - GameObject
             nodeStiffness = stiffness * .1;
+            restLength = goRestLength;
         }
         else if ((nodes[id.x].nodeType == 0 && nodes[j].nodeType == 1) ||
                 (nodes[id.x].nodeType == 1 && nodes[j].nodeType == 0)) 
         {
             // GameObject - Component
-            nodeStiffness = stiffness * 50.0;
+            nodeStiffness = stiffness * 5.0;
+            restLength = gcRestLength;
+        }
+        else {
+            // Component - Component
+            restLength = ccRestLength;
         }
         
-        float2 springForce = direction * nodeStiffness * distance;
+        // Calculate spring force with rest length
+        // F = -k * (|x| - L) * (x/|x|) where L is rest length
+        float springMagnitude = nodeStiffness * (distance - restLength);
+        float2 springForce = direction * springMagnitude;
+        
+        // Apply the spring force
         nodes[id.x].force += springForce;
     }
     
