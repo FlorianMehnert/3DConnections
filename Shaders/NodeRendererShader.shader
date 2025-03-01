@@ -9,7 +9,7 @@ Shader "Custom/NodeRenderer" {
             #pragma fragment frag
             #include "UnityCG.cginc"
 
-            struct NodeData {
+            struct node_data {
                 float3 position;
                 float3 velocity;
                 float4 color;
@@ -18,7 +18,7 @@ Shader "Custom/NodeRenderer" {
                 int customDataIndex;
             };
 
-            StructuredBuffer<NodeData> NodeBuffer;
+            StructuredBuffer<node_data> NodeBuffer;
             float _PointSize;
 
             struct v2f {
@@ -29,7 +29,7 @@ Shader "Custom/NodeRenderer" {
 
             v2f vert(uint id : SV_VertexID) {
                 v2f o;
-                NodeData node = NodeBuffer[id];
+                node_data node = NodeBuffer[id];
                 o.pos = UnityObjectToClipPos(float4(node.position, 1.0));
                 o.color = node.color;
                 o.size = _PointSize * node.size;

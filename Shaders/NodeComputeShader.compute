@@ -1,7 +1,7 @@
 #pragma kernel InitializeNodes
 #pragma kernel UpdateNodes
 
-struct NodeData
+struct node_data
 {
     float3 position;
     float3 velocity;
@@ -11,7 +11,7 @@ struct NodeData
     int customDataIndex;
 };
 
-RWStructuredBuffer<NodeData> NodeBuffer;
+RWStructuredBuffer<node_data> NodeBuffer;
 
 // Shader parameters
 int NodeCount;

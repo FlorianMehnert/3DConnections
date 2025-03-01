@@ -1,40 +1,42 @@
-#pragma kernel SpringForces
-#pragma kernel CollisionResponse
-#pragma kernel IntegrateForces
+#pragma kernel spring_forces
+#pragma kernel collision_response
+#pragma kernel integrate_forces
 
-struct NodeData
+struct node_data
 {
     float2 position;
     float2 velocity;
     float2 force;
-    int nodeType;
+    int node_type;
+    int parent_id; // ID of the parent GameObject for components, -1 for GameObjects
 };
 
-RWStructuredBuffer<NodeData> nodes;
-uint nodeCount;
-float deltaTime;
+RWStructuredBuffer<node_data> nodes;
+uint node_count;
+float delta_time;
 float stiffness;
 float damping;
-float colliderRadius;
-float collisionResponseStrength;
+float collider_radius;
+float collision_response_strength;
+float min_integration_timestep;
 
 // Relaxation parameters
-float relaxationFactor; // Will be < 1 during relaxation and 1 when fully relaxed
-float maxVelocityLimit; // Will increase over time during relaxation
+float relaxation_factor; // Will be < 1 during relaxation and 1 when fully relaxed
+float max_velocity_limit; // Will increase over time during relaxation
 
-float goRestLength;
-float gcRestLength;
-float ccRestLength;
+float go_rest_length;
+float gc_rest_length;
+float cc_rest_length;
 
 [numthreads(64,1,1)]
-void SpringForces (uint3 id : SV_DispatchThreadID)
+void spring_forces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= nodeCount) return;
+    if (id.x >= node_count) return;
     
     // Reset force for this node
     nodes[id.x].force = float2(0, 0);
     
-    for (uint j = 0; j < nodeCount; j++)
+    for (uint j = 0; j < node_count; j++)
     {
         if (id.x == j) continue;
         
@@ -48,73 +50,112 @@ void SpringForces (uint3 id : SV_DispatchThreadID)
         float2 direction = displacement / distance;
         
         // Determine interaction stiffness and rest length based on node types
-        float nodeStiffness = stiffness * relaxationFactor; // Apply relaxation factor to stiffness
-        float restLength = 1.0; // Default rest length
+        float node_stiffness = stiffness * relaxation_factor; // Apply a relaxation factor to stiffness
+        float rest_length; // Default rest length
         
-        if (nodes[id.x].nodeType == 0 && nodes[j].nodeType == 0) 
+        // Check if this is a parent-child relationship
+        bool is_parent_child = false;
+        if (nodes[id.x].node_type == 1 && nodes[j].node_type == 0 && nodes[id.x].parent_id == j) {
+            // This component is connected to its parent GameObject
+            node_stiffness = stiffness * 10.0 * relaxation_factor; // Very strong connection
+            rest_length = gc_rest_length * 0.5; // Very close distance
+            is_parent_child = true;
+        }
+        else if (nodes[id.x].node_type == 0 && nodes[j].node_type == 1 && nodes[j].parent_id == id.x) {
+            // This GameObject is connected to its child component
+            node_stiffness = stiffness * 10.0 * relaxation_factor; // Very strong connection
+            rest_length = gc_rest_length * 0.5; // Very close distance
+            is_parent_child = true;
+        }
+        else if (nodes[id.x].node_type == 0 && nodes[j].node_type == 0) 
         {
             // GameObject - GameObject
-            nodeStiffness = stiffness * .1 * relaxationFactor;
-            restLength = goRestLength;
+            node_stiffness = stiffness * 0.1 * relaxation_factor;
+            rest_length = go_rest_length;
         }
-        else if ((nodes[id.x].nodeType == 0 && nodes[j].nodeType == 1) ||
-                (nodes[id.x].nodeType == 1 && nodes[j].nodeType == 0)) 
+        else if ((nodes[id.x].node_type == 0 && nodes[j].node_type == 1) ||
+                (nodes[id.x].node_type == 1 && nodes[j].node_type == 0)) 
         {
-            // GameObject - Component
-            nodeStiffness = stiffness * 5.0 * relaxationFactor;
-            restLength = gcRestLength;
+            // GameObject - Component (not parent-child)
+            node_stiffness = stiffness * 1.0 * relaxation_factor; // Weaker than parent-child
+            rest_length = gc_rest_length * 2.0; // Further apart than parent-child
+        }
+        else if (nodes[id.x].node_type == 1 && nodes[j].node_type == 1 &&
+                 nodes[id.x].parent_id == nodes[j].parent_id && nodes[id.x].parent_id >= 0) 
+        {
+            // Components that share the same parent GameObject
+            node_stiffness = stiffness * 5.0 * relaxation_factor;
+            rest_length = cc_rest_length * 0.8; // Keep sibling components closer
         }
         else {
-            // Component - Component
-            restLength = ccRestLength;
+            // Other Component - Component interactions
+            rest_length = cc_rest_length;
         }
         
         // Calculate spring force with rest length
-        // F = -k * (|x| - L) * (x/|x|) where L is rest length
-        float springMagnitude = nodeStiffness * (distance - restLength);
-        float2 springForce = direction * springMagnitude;
+        // F = -k * (|x| - L) * (x/|x|) where L is the rest length
+        float spring_magnitude = node_stiffness * (distance - rest_length);
+        float2 spring_force = direction * spring_magnitude;
         
         // Apply the spring force
-        nodes[id.x].force += springForce;
+        nodes[id.x].force += spring_force;
+        
+        // Add a stronger cohesive force for parent-child relationships
+        if (is_parent_child && distance > rest_length * 1.5) {
+            float2 cohesiveForce = direction * stiffness * 5.0 * relaxation_factor;
+            nodes[id.x].force += cohesiveForce;
+        }
     }
     
     // Apply damping force - increase damping during relaxation phase
-    float effectiveDamping = damping * (2.0 - relaxationFactor); // More damping when relaxationFactor is low
+    float effectiveDamping = damping * (2.0 - relaxation_factor); // More damping when relaxationFactor is low
     float2 dampingForce = -effectiveDamping * nodes[id.x].velocity;
     nodes[id.x].force += dampingForce;
 
     // Add a weak centering force
     float2 centerPosition = float2(0, 0);
-    for (uint j = 0; j < nodeCount; j++) {
+    for (uint j = 0; j < node_count; j++) {
         centerPosition += nodes[j].position;
     }
-    centerPosition /= nodeCount;
+    centerPosition /= node_count;
     
     float2 toCenterDir = centerPosition - nodes[id.x].position;
     float centerDist = length(toCenterDir);
     
     if (centerDist > 0.001) {
         // Increase centering force during relaxation
-        float stabilizingForce = 1e-6 * (1.0 + (2.0 - relaxationFactor) * 10.0); 
+        float stabilizingForce = 1e-6 * (1.0 + (2.0 - relaxation_factor) * 10.0); 
         nodes[id.x].force += normalize(toCenterDir) * stabilizingForce * centerDist;
     }
 }
 
 [numthreads(64,1,1)]
-void CollisionResponse (uint3 id : SV_DispatchThreadID)
+void collision_response (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= nodeCount) return;
+    if (id.x >= node_count) return;
     
     float2 position = nodes[id.x].position;
     float2 velocity = nodes[id.x].velocity;
     
-    for (int j = 0; (uint)j < nodeCount; j++)
+    for (int j = 0; (uint)j < node_count; j++)
     {
         if (id.x == (uint)j) continue;
         
+        // Skip collision between component and its parent GameObject
+        if ((nodes[id.x].node_type == 1 && nodes[j].node_type == 0 && nodes[id.x].parent_id == j) ||
+            (nodes[id.x].node_type == 0 && nodes[j].node_type == 1 && nodes[j].parent_id == id.x)) {
+            continue;
+        }
+        
         float2 delta = position - nodes[j].position;
         float distance = length(delta);
-        float minDist = colliderRadius * 2;
+        float minDist = collider_radius * 2;
+        
+        // Reduce minimum distance for components that share the same parent
+        if (nodes[id.x].node_type == 1 && nodes[j].node_type == 1 && 
+            nodes[id.x].parent_id == nodes[j].parent_id && nodes[id.x].parent_id >= 0) {
+            minDist *= 0.75; // Allow sibling components to get closer
+        }
         
         if (distance < minDist && distance > 0.0001f)
         {
@@ -122,7 +163,7 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
             float overlap = minDist - distance;
             
             // Increase positional correction during relaxation
-            float correctionStrength = 0.5f * relaxationFactor + 0.5f;
+            float correctionStrength = 0.5f * relaxation_factor + 0.5f;
             position += direction * (overlap * correctionStrength);
             
             float2 relativeVelocity = velocity - nodes[j].velocity;
@@ -131,9 +172,9 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
             if (velocityAlongNormal < 0)
             {
                 // Adjust restitution based on relaxation
-                float restitution = 0.5f * relaxationFactor;
+                float restitution = 0.5f * relaxation_factor;
                 float j_scalar = -(1 + restitution) * velocityAlongNormal;
-                j_scalar *= collisionResponseStrength * relaxationFactor;
+                j_scalar *= collision_response_strength * relaxation_factor;
                 
                 velocity += direction * j_scalar;
             }
@@ -143,13 +184,13 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
     nodes[id.x].position = position;
     nodes[id.x].velocity = velocity;
 
-    if (nodeCount > 1) {
+    if (node_count > 1) {
         // Calculate center of mass
         float2 centerOfMass = float2(0, 0);
-        for (uint j = 0; j < nodeCount; j++) {
+        for (uint j = 0; j < node_count; j++) {
             centerOfMass += nodes[j].position;
         }
-        centerOfMass /= nodeCount;
+        centerOfMass /= node_count;
         
         // Calculate radial vector
         float2 radialVector = nodes[id.x].position - centerOfMass;
@@ -162,32 +203,32 @@ void CollisionResponse (uint3 id : SV_DispatchThreadID)
             float tangentialVelocity = dot(nodes[id.x].velocity, tangent);
             
             // Increase angular damping during relaxation
-            float angularDamping = 0.05 * (2.0 - relaxationFactor);
+            float angularDamping = 0.05 * (2.0 - relaxation_factor);
             nodes[id.x].velocity -= tangent * tangentialVelocity * angularDamping;
         }
     }
 }
 
 [numthreads(64,1,1)]
-void IntegrateForces (uint3 id : SV_DispatchThreadID)
+void integrate_forces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= nodeCount) return;
+    if (id.x >= node_count) return;
     
     // Use a smaller effective timestep for stability
-    float effectiveDeltaTime = min(deltaTime, 0.01); // Cap at 10ms
+    float effective_delta_time = min(delta_time, min_integration_timestep);
     
     // Semi-implicit Euler integration
-    nodes[id.x].velocity += nodes[id.x].force * effectiveDeltaTime;
+    nodes[id.x].velocity += nodes[id.x].force * effective_delta_time;
     
     // Apply extra damping during relaxation
-    float extraDamping = 0.99 * relaxationFactor + 0.9 * (1.0 - relaxationFactor);
-    nodes[id.x].velocity *= extraDamping;
+    float extra_damping = 0.99 * relaxation_factor + 0.9 * (1.0 - relaxation_factor);
+    nodes[id.x].velocity *= extra_damping;
     
     // Apply velocity limit - more strict during relaxation
-    float currentSpeed = length(nodes[id.x].velocity);
-    if (currentSpeed > maxVelocityLimit) {
-        nodes[id.x].velocity = (nodes[id.x].velocity / currentSpeed) * maxVelocityLimit;
+    float current_speed = length(nodes[id.x].velocity);
+    if (current_speed > max_velocity_limit) {
+        nodes[id.x].velocity = nodes[id.x].velocity / current_speed * max_velocity_limit;
     }
     
-    nodes[id.x].position += nodes[id.x].velocity * effectiveDeltaTime;
+    nodes[id.x].position += nodes[id.x].velocity * effective_delta_time;
 }
