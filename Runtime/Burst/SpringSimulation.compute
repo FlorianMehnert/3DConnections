@@ -46,20 +46,20 @@ float angle_separation; // Minimum separation between components (in radians)
 void spring_forces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
-    
-    // Reset force for this node
+
     nodes[id.x].force = float2(0, 0);
-    
-    // Special handling for component nodes with a parent
-    if (nodes[id.x].node_type == 1 && nodes[id.x].parent_id >= 0)
+
+    bool is_component = (nodes[id.x].node_type == 1);
+    bool is_game_object = (nodes[id.x].node_type == 0);
+
+    // Component Clustering around its parent GameObject
+    if (is_component && nodes[id.x].parent_id >= 0)
     {
-        // Get parent position
         float2 parent_pos = nodes[nodes[id.x].parent_id].position;
-        
-        // Count siblings to arrange them properly
+
+        // Find sibling index and count
         int sibling_count = 0;
         int component_index = 0;
-        
         for (uint j = 0; j < node_count; j++)
         {
             if (nodes[j].node_type == 1 && nodes[j].parent_id == nodes[id.x].parent_id)
@@ -68,121 +68,72 @@ void spring_forces (uint3 id : SV_DispatchThreadID)
                 sibling_count++;
             }
         }
-        
-        // Calculate angle for this component based on its index
-        float angle_step = 2.0 * 3.14159265 / max(sibling_count, 1);
-        float angle = radial_angle_offset + component_index * angle_step;
-        
-        // Calculate target position in radial layout
-        float2 target_pos = parent_pos + float2(cos(angle), sin(angle)) * radial_distance;
-        
-        // Create strong attractive force toward the target position
+
+        // Arrange in a local sphere (circle in 2D)
+        float angle_step = max(2.0 * 3.14159265 / sibling_count, 0.5);
+        float angle = component_index * angle_step;
+        float2 target_pos = parent_pos + float2(cos(angle), sin(angle)) * 1.5;  // Close clustering
         float2 to_target = target_pos - nodes[id.x].position;
-        float dist_to_target = length(to_target);
-        
-        if (dist_to_target > 0.0001f)
-        {
-            // Stronger force for radial positioning
-            float radial_force_strength = stiffness * 15.0 * relaxation_factor;
-            nodes[id.x].force += normalize(to_target) * dist_to_target * radial_force_strength;
-        }
+
+        nodes[id.x].force += normalize(to_target) * length(to_target) * stiffness * 5.0; // Strong clustering force
     }
-    
-    // Regular spring forces for all nodes
+
+    // Spring forces and GameObject-Component bonds
     for (uint j = 0; j < node_count; j++)
     {
         if (id.x == j) continue;
-        
-        // Calculate displacement between nodes
+
         float2 displacement = nodes[j].position - nodes[id.x].position;
         float distance = length(displacement);
-        
-        if (distance < 0.0001f) continue; // Avoid division by zero
-        
-        // Direction of the force
-        float2 direction = displacement / distance;
-        
-        // Determine interaction stiffness and rest length based on node types
-        float node_stiffness = stiffness * relaxation_factor; // Apply a relaxation factor to stiffness
-        float rest_length; // Default rest length
-        
-        // Check if this is a parent-child relationship
-        bool is_parent_child = false;
-        if (nodes[id.x].node_type == 1 && nodes[j].node_type == 0 && nodes[id.x].parent_id == j) {
-            // This component is connected to its parent GameObject
-            node_stiffness = stiffness * 10.0 * relaxation_factor; // Very strong connection
-            rest_length = radial_distance; // Use radial distance as rest length
-            is_parent_child = true;
-        }
-        else if (nodes[id.x].node_type == 0 && nodes[j].node_type == 1 && nodes[j].parent_id == id.x) {
-            // This GameObject is connected to its child component
-            node_stiffness = stiffness * 10.0 * relaxation_factor; // Very strong connection
-            rest_length = radial_distance; // Use radial distance as rest length
-            is_parent_child = true;
-        }
-        else if (nodes[id.x].node_type == 0 && nodes[j].node_type == 0) 
-        {
-            // GameObject - GameObject
-            node_stiffness = stiffness * 0.1 * relaxation_factor;
-            rest_length = go_rest_length;
-        }
-        else if ((nodes[id.x].node_type == 0 && nodes[j].node_type == 1) ||
-                (nodes[id.x].node_type == 1 && nodes[j].node_type == 0)) 
-        {
-            // GameObject - Component (not parent-child)
-            node_stiffness = stiffness * 1.0 * relaxation_factor; // Weaker than parent-child
-            rest_length = gc_rest_length * 2.0; // Further apart than parent-child
-        }
-        else if (nodes[id.x].node_type == 1 && nodes[j].node_type == 1 &&
-                 nodes[id.x].parent_id == nodes[j].parent_id && nodes[id.x].parent_id >= 0) 
-        {
-            // Components that share the same parent GameObject
-            // Use angle separation for siblings
-            node_stiffness = stiffness * 2.0 * relaxation_factor;
-            rest_length = 2.0 * radial_distance * sin(angle_separation / 2.0); // Arc distance
-        }
-        else {
-            // Other Component - Component interactions
-            rest_length = cc_rest_length;
-        }
-        
-        // Calculate spring force with rest length
-        // F = -k * (|x| - L) * (x/|x|) where L is the rest length
-        float spring_magnitude = node_stiffness * (distance - rest_length);
-        float2 spring_force = direction * spring_magnitude;
-        
-        // Apply the spring force
-        nodes[id.x].force += spring_force;
-        
-        // Add a stronger cohesive force for parent-child relationships to maintain the radial structure
-        if (is_parent_child && distance > rest_length * 1.2) {
-            float2 cohesiveForce = direction * stiffness * 5.0 * relaxation_factor;
-            nodes[id.x].force += cohesiveForce;
-        }
-    }
-    
-    // Apply damping force - increase damping during relaxation phase
-    float effectiveDamping = damping * (2.0 - relaxation_factor); // More damping when relaxationFactor is low
-    float2 dampingForce = -effectiveDamping * nodes[id.x].velocity;
-    nodes[id.x].force += dampingForce;
+        if (distance < 0.0001f) continue;
 
-    // Add a weak centering force for all nodes
-    float2 centerPosition = float2(0, 0);
-    for (uint j = 0; j < node_count; j++) {
-        centerPosition += nodes[j].position;
+        float2 direction = displacement / distance;
+        float rest_length = 1.5; // Base spacing
+        float node_stiffness = stiffness;
+
+        bool is_parent_child = (is_component && nodes[j].node_type == 0 && nodes[id.x].parent_id == j);
+
+        if (is_parent_child) {
+            rest_length = 1.2;
+            node_stiffness = stiffness * 8.0; // Strong parent-child attraction
+        }
+        else if (is_game_object && nodes[j].node_type == 0) {
+            rest_length = 5.0; // Separate GameObjects far apart
+            node_stiffness = stiffness * 0.1;
+        }
+        else if (is_component && nodes[j].node_type == 1 && nodes[id.x].parent_id == nodes[j].parent_id) {
+            rest_length = 1.5;
+            node_stiffness = stiffness * 2.0; // Keep sibling components close
+        }
+
+        // Spring force calculation
+        float spring_magnitude = node_stiffness * (distance - rest_length);
+        nodes[id.x].force += direction * spring_magnitude;
     }
-    centerPosition /= node_count;
-    
-    float2 toCenterDir = centerPosition - nodes[id.x].position;
-    float centerDist = length(toCenterDir);
-    
-    if (centerDist > 0.001) {
-        // Increase centering force during relaxation, but reduce it for component nodes
-        float centerForceMultiplier = nodes[id.x].node_type == 1 ? 0.2 : 1.0;
-        float stabilizingForce = 1e-6 * (1.0 + (2.0 - relaxation_factor) * 10.0) * centerForceMultiplier; 
-        nodes[id.x].force += normalize(toCenterDir) * stabilizingForce * centerDist;
+
+    // Repel GameObject Clusters from Each Other
+    if (is_game_object)
+    {
+        for (uint j = 0; j < node_count; j++)
+        {
+            if (id.x == j || nodes[j].node_type != 0) continue;
+
+            float2 go_displacement = nodes[j].position - nodes[id.x].position;
+            float go_distance = length(go_displacement);
+            if (go_distance < 0.0001f) continue;
+
+            float2 go_direction = go_displacement / go_distance;
+            float go_repulsion = stiffness * 15.0 / (go_distance * go_distance); // Strong repulsion
+            nodes[id.x].force -= go_direction * go_repulsion;
+        }
     }
+
+    // Apply damping
+    float2 damping_force = -damping * nodes[id.x].velocity;
+    nodes[id.x].force += damping_force;
 }
+
+
 
 [numthreads(64,1,1)]
 void collision_response (uint3 id : SV_DispatchThreadID)
@@ -204,31 +155,31 @@ void collision_response (uint3 id : SV_DispatchThreadID)
         
         float2 delta = position - nodes[j].position;
         float distance = length(delta);
-        float minDist = collider_radius * 2;
+        float min_dist = collider_radius * 2;
         
         // Reduce minimum distance for components that share the same parent
         if (nodes[id.x].node_type == 1 && nodes[j].node_type == 1 && 
             nodes[id.x].parent_id == nodes[j].parent_id && nodes[id.x].parent_id >= 0) {
-            minDist *= 0.75; // Allow sibling components to get closer
+            min_dist *= 0.75; // Allow sibling components to get closer
         }
         
-        if (distance < minDist && distance > 0.0001f)
+        if (distance < min_dist && distance > 0.0001f)
         {
             float2 direction = delta / distance;
-            float overlap = minDist - distance;
+            float overlap = min_dist - distance;
             
             // Increase positional correction during relaxation
-            float correctionStrength = 0.5f * relaxation_factor + 0.5f;
-            position += direction * (overlap * correctionStrength);
+            float correction_strength = 0.5f * relaxation_factor + 0.5f;
+            position += direction * (overlap * correction_strength);
             
-            float2 relativeVelocity = velocity - nodes[j].velocity;
-            float velocityAlongNormal = dot(relativeVelocity, direction);
+            float2 relative_velocity = velocity - nodes[j].velocity;
+            float velocity_along_normal = dot(relative_velocity, direction);
             
-            if (velocityAlongNormal < 0)
+            if (velocity_along_normal < 0)
             {
                 // Adjust restitution based on relaxation
                 float restitution = 0.5f * relaxation_factor;
-                float j_scalar = -(1 + restitution) * velocityAlongNormal;
+                float j_scalar = -(1 + restitution) * velocity_along_normal;
                 j_scalar *= collision_response_strength * relaxation_factor;
                 
                 velocity += direction * j_scalar;
@@ -242,19 +193,19 @@ void collision_response (uint3 id : SV_DispatchThreadID)
     // For GameObjects, add a mild rotational stabilization for their components
     if (nodes[id.x].node_type == 0) {
         // Find all components belonging to this GameObject
-        float2 avgComponentPos = float2(0, 0);
-        int componentCount = 0;
+        float2 avg_component_pos = float2(0, 0);
+        int component_count = 0;
         
         for (uint j = 0; j < node_count; j++) {
             if (nodes[j].node_type == 1 && nodes[j].parent_id == id.x) {
-                avgComponentPos += nodes[j].position;
-                componentCount++;
+                avg_component_pos += nodes[j].position;
+                component_count++;
             }
         }
         
-        if (componentCount > 0) {
-            avgComponentPos /= componentCount;
-            float2 to_avg_component_dir = avgComponentPos - position;
+        if (component_count > 0) {
+            avg_component_pos /= component_count;
+            float2 to_avg_component_dir = avg_component_pos - position;
             
             // Add a very weak force to balance components around parent
             if (length(to_avg_component_dir) > 0.1) {
@@ -265,25 +216,25 @@ void collision_response (uint3 id : SV_DispatchThreadID)
 
     if (node_count > 1) {
         // Calculate center of mass
-        float2 centerOfMass = float2(0, 0);
+        float2 center_of_mass = float2(0, 0);
         for (uint j = 0; j < node_count; j++) {
-            centerOfMass += nodes[j].position;
+            center_of_mass += nodes[j].position;
         }
-        centerOfMass /= node_count;
+        center_of_mass /= node_count;
         
         // Calculate radial vector
-        float2 radialVector = nodes[id.x].position - centerOfMass;
-        float distance = length(radialVector);
+        float2 radial_vector = nodes[id.x].position - center_of_mass;
+        float distance = length(radial_vector);
         
         if (distance > 0.001) {
             // Calculate tangential velocity component
-            float2 direction = radialVector / distance;
+            float2 direction = radial_vector / distance;
             float2 tangent = float2(-direction.y, direction.x);
-            float tangentialVelocity = dot(nodes[id.x].velocity, tangent);
+            float tangential_velocity = dot(nodes[id.x].velocity, tangent);
             
             // Increase angular damping during relaxation
-            float angularDamping = 0.05 * (2.0 - relaxation_factor);
-            nodes[id.x].velocity -= tangent * tangentialVelocity * angularDamping;
+            float angular_damping = 0.05 * (2.0 - relaxation_factor);
+            nodes[id.x].velocity -= tangent * tangential_velocity * angular_damping;
         }
     }
 }

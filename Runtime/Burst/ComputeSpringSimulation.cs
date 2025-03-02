@@ -122,6 +122,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         if (_forceArrowsBuffer == null) return;
         _forceArrowsBuffer.Release();
         _forceArrowsBuffer = null;
+        _arrowData = null;
     }
 
     public void Initialize()

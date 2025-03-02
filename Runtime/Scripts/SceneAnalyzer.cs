@@ -229,6 +229,11 @@ public class SceneAnalyzer : MonoBehaviour
         if (type.reference == null)
         {
             nodeObject.name = "tfRoot";
+            
+            // since this is required if analyzing parent-child relations
+            var nodeType = nodeObject.AddComponent<NodeType>();
+            nodeType.reference = null;
+            nodeType.nodeTypeName = "GameObject";
         }
         else
         {
