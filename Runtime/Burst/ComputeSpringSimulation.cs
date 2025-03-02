@@ -302,7 +302,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         // Dispatch compute shader
         computeShader.Dispatch(_springKernel, threadGroups, 1, 1);
-        computeShader.Dispatch(_collisionKernel, threadGroups, 1, 1);
+        // computeShader.Dispatch(_collisionKernel, threadGroups, 1, 1);
         computeShader.Dispatch(_integrationKernel, threadGroups, 1, 1);
         
         // Calculate force arrows if enabled

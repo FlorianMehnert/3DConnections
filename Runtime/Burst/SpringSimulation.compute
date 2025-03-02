@@ -146,72 +146,25 @@ void collision_response (uint3 id : SV_DispatchThreadID)
     {
         if (id.x == (uint)j) continue;
         
-        // Skip collision between component and its parent GameObject
-        if ((nodes[id.x].node_type == 1 && nodes[j].node_type == 0 && nodes[id.x].parent_id == j) ||
-            (nodes[id.x].node_type == 0 && nodes[j].node_type == 1 && nodes[j].parent_id == id.x)) {
-            continue;
-        }
-        
         float2 delta = position - nodes[j].position;
         float distance = length(delta);
-        float min_dist = collider_radius * 2;
         
-        // Reduce minimum distance for components that share the same parent
-        if (nodes[id.x].node_type == 1 && nodes[j].node_type == 1 && 
-            nodes[id.x].parent_id == nodes[j].parent_id && nodes[id.x].parent_id >= 0) {
-            min_dist *= 0.75; // Allow sibling components to get closer
-        }
-        
-        if (distance < min_dist && distance > 0.0001f)
+        if (distance < collider_radius && distance > 0.0001f)
         {
             float2 direction = delta / distance;
-            float overlap = min_dist - distance;
+            float overlap = collider_radius - distance;
             
-            // Increase positional correction during relaxation
-            float correction_strength = 0.5f * relaxation_factor + 0.5f;
-            position += direction * (overlap * correction_strength);
+            position += direction * overlap;
             
             float2 relative_velocity = velocity - nodes[j].velocity;
+
+            // is 1 when the relative velocity&direction are parallel / 0 when they are perpendicular
             float velocity_along_normal = dot(relative_velocity, direction);
-            
-            if (velocity_along_normal < 0)
-            {
-                // Adjust restitution based on relaxation
-                float restitution = 0.5f * relaxation_factor;
-                float j_scalar = -(1 + restitution) * velocity_along_normal;
-                j_scalar *= collision_response_strength * relaxation_factor;
-                
-                velocity += direction * j_scalar;
-            }
         }
     }
     
     nodes[id.x].position = position;
     nodes[id.x].velocity = velocity;
-
-    // For GameObjects, add a mild rotational stabilization for their components
-    if (nodes[id.x].node_type == 0) {
-        // Find all components belonging to this GameObject
-        float2 avg_component_pos = float2(0, 0);
-        int component_count = 0;
-        
-        for (uint j = 0; j < node_count; j++) {
-            if (nodes[j].node_type == 1 && nodes[j].parent_id == id.x) {
-                avg_component_pos += nodes[j].position;
-                component_count++;
-            }
-        }
-        
-        if (component_count > 0) {
-            avg_component_pos /= component_count;
-            float2 to_avg_component_dir = avg_component_pos - position;
-            
-            // Add a very weak force to balance components around parent
-            if (length(to_avg_component_dir) > 0.1) {
-                velocity -= normalize(to_avg_component_dir) * 0.001 * relaxation_factor;
-            }
-        }
-    }
 
     if (node_count > 1) {
         // Calculate center of mass
@@ -232,8 +185,7 @@ void collision_response (uint3 id : SV_DispatchThreadID)
             float tangential_velocity = dot(nodes[id.x].velocity, tangent);
             
             // Increase angular damping during relaxation
-            float angular_damping = 0.05 * (2.0 - relaxation_factor);
-            nodes[id.x].velocity -= tangent * tangential_velocity * angular_damping;
+            nodes[id.x].velocity -= tangent * tangential_velocity;
         }
     }
 }
