@@ -46,7 +46,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     [Header("Radial Layout Settings")]
     [SerializeField] private float radialDistance = 1.5f;
-    [SerializeField] private float radialAngleOffset = 0.0f;
+    [SerializeField] private float radialAngleOffset;
     [SerializeField] private float minAngleSeparation = 0.1f;
     
     [Header("Force Arrow Settings")]
@@ -56,6 +56,16 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     [SerializeField] private Color componentArrowColor = Color.green;
     [SerializeField] private float minArrowAlpha = 0.2f;
     [SerializeField] private float maxArrowAlpha = 0.8f;
+    
+    [Header("Trail Settings")]
+    [SerializeField] private bool showTrails = true;
+    [SerializeField] private int trailHistoryLength = 30;
+    [SerializeField] private Color gameObjectTrailColor = new Color(0.2f, 0.2f, 0.8f, 0.5f);
+    [SerializeField] private Color componentTrailColor = new Color(0.2f, 0.8f, 0.2f, 0.5f);
+    [SerializeField] private float trailWidth = 0.15f;
+    private Vector2[][] _positionHistory;
+    private int _currentHistoryIndex;
+    private bool _historyFilled;
 
     [Header("Lerp relaxation settings")]
     [SerializeField] private bool enableRelaxation = true;
@@ -99,6 +109,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private struct NodeData
     {
         public float2 Position;
+        public float2 PreviousPosition; // Added to store previous position
         public float2 Velocity;
         public float2 Force;
         public int NodeType;
@@ -119,10 +130,16 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             _nodeBuffer = null;
         }
 
-        if (_forceArrowsBuffer == null) return;
-        _forceArrowsBuffer.Release();
-        _forceArrowsBuffer = null;
+        if (_forceArrowsBuffer != null)
+        {
+            _forceArrowsBuffer.Release();
+            _forceArrowsBuffer = null;
+        }
+        
         _arrowData = null;
+        _positionHistory = null;
+        _historyFilled = false;
+        _currentHistoryIndex = 0;
     }
 
     public void Initialize()
@@ -138,6 +155,15 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         // Reset relaxation timer when initializing
         _relaxationTimer = 0.0f;
+
+        // Initialize position history buffer
+        _positionHistory = new Vector2[trailHistoryLength][];
+        for (int i = 0; i < trailHistoryLength; i++)
+        {
+            _positionHistory[i] = new Vector2[_nodes.Length];
+        }
+        _currentHistoryIndex = 0;
+        _historyFilled = false;
 
         // Get kernel IDs
         _springKernel = computeShader.FindKernel("spring_forces");
@@ -186,18 +212,27 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 }
             }
 
+            var currentPosition = new float2(_nodes[i].position.x, _nodes[i].position.y);
+            
             nodeData[i] = new NodeData
             {
-                Position = new float2(_nodes[i].position.x, _nodes[i].position.y),
+                Position = currentPosition,
+                PreviousPosition = currentPosition, // Initialize previous position to current
                 Velocity = float2.zero,
                 Force = float2.zero,
                 NodeType = nodeType,
                 ParentId = parentId
             };
+            
+            // Initialize history with current positions
+            for (int h = 0; h < trailHistoryLength; h++)
+            {
+                _positionHistory[h][i] = currentPosition;
+            }
         }
 
-        // Create buffer with space for the additional ParentId field
-        _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 6 + sizeof(int) * 2);
+        // Create buffer with space for the previous position field
+        _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 8 + sizeof(int) * 2); // 8 floats (2 positions, velocity, force) + 2 ints
         _nodeBuffer.SetData(nodeData);
 
         // Initialize arrow data and buffer
@@ -281,6 +316,21 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         var nodeData = new NodeData[_nodes.Length];
         _nodeBuffer.GetData(nodeData);
 
+        // Store current positions in history before updating
+        if (showTrails && _positionHistory != null)
+        {
+            _currentHistoryIndex = (_currentHistoryIndex + 1) % trailHistoryLength;
+            if (_currentHistoryIndex == 0)
+            {
+                _historyFilled = true;
+            }
+            
+            for (var i = 0; i < _nodes.Length; i++)
+            {
+                _positionHistory[_currentHistoryIndex][i] = new Vector2(nodeData[i].Position.x, nodeData[i].Position.y);
+            }
+        }
+
         for (var i = 0; i < _nodes.Length; i++)
         {
             if (_nodes[i])
@@ -296,46 +346,88 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     private void OnDrawGizmos()
     {
-        if (!showForceArrows || _arrowData == null || _nodes == null || _isShuttingDown) return;
+        if (_isShuttingDown || _nodes == null) return;
         
-        for (int i = 0; i < _arrowData.Length; i++)
+        // Draw force arrows
+        if (showForceArrows && _arrowData != null)
         {
-            if (i >= _nodes.Length) continue;
-            
-            var start = new Vector3(_arrowData[i].Start.x, _arrowData[i].Start.y, _nodes[i].position.z);
-            var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
-            
-            // Determine arrow color based on node type
-            Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.GetNodeType() == 1 
-                ? componentArrowColor 
-                : gameObjectArrowColor;
-            
-            // Scale alpha based on force strength
-            float normalizedStrength = Mathf.Clamp01(_arrowData[i].Strength / 10.0f); // Adjust divisor as needed
-            arrowColor.a = Mathf.Lerp(minArrowAlpha, maxArrowAlpha, normalizedStrength);
-            
-            // Draw arrow line
-            Gizmos.color = arrowColor;
-            Gizmos.DrawLine(start, end);
-            
-            // Draw arrow head if line is long enough
-            Vector3 direction = end - start;
-            float magnitude = direction.magnitude;
-            
-            if (magnitude > 0.1f)
+            for (int i = 0; i < _arrowData.Length; i++)
             {
-                direction.Normalize();
-                Vector3 right = Vector3.Cross(direction, Vector3.forward).normalized;
+                if (i >= _nodes.Length) continue;
                 
-                // Draw arrowhead
-                Gizmos.DrawLine(end, end - direction * arrowHeadSize + right * arrowHeadSize * 0.5f);
-                Gizmos.DrawLine(end, end - direction * arrowHeadSize - right * arrowHeadSize * 0.5f);
+                var start = new Vector3(_arrowData[i].Start.x, _arrowData[i].Start.y, _nodes[i].position.z);
+                var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
+                
+                // Determine arrow color based on node type
+                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.GetNodeType() == 1 
+                    ? componentArrowColor 
+                    : gameObjectArrowColor;
+                
+                // Scale alpha based on force strength
+                float normalizedStrength = Mathf.Clamp01(_arrowData[i].Strength / 10.0f); // Adjust divisor as needed
+                arrowColor.a = Mathf.Lerp(minArrowAlpha, maxArrowAlpha, normalizedStrength);
+                
+                // Draw arrow line
+                Gizmos.color = arrowColor;
+                Gizmos.DrawLine(start, end);
+                
+                // Draw arrow head if line is long enough
+                Vector3 direction = end - start;
+                float magnitude = direction.magnitude;
+                
+                if (magnitude > 0.1f)
+                {
+                    direction.Normalize();
+                    Vector3 right = Vector3.Cross(direction, Vector3.forward).normalized;
+                    
+                    // Draw arrowhead
+                    Gizmos.DrawLine(end, end - direction * arrowHeadSize + right * arrowHeadSize * 0.5f);
+                    Gizmos.DrawLine(end, end - direction * arrowHeadSize - right * arrowHeadSize * 0.5f);
+                }
+            }
+        }
+        
+        // Draw position history trails
+        if (!showTrails || _positionHistory == null || _nodes == null) return;
+        {
+            var historyCount = _historyFilled ? trailHistoryLength : _currentHistoryIndex;
+            
+            for (var i = 0; i < _nodes.Length; i++)
+            {
+                if (nodeGraph.AllNodes[i] == null) continue;
+                
+                // Get node type to determine trail color
+                var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.GetNodeType() == 1;
+                var trailColor = isComponent ? componentTrailColor : gameObjectTrailColor;
+                
+                for (var h = 1; h < historyCount; h++)
+                {
+                    var currentIndex = (_currentHistoryIndex - h + trailHistoryLength) % trailHistoryLength;
+                    var prevIndex = (_currentHistoryIndex - h + 1 + trailHistoryLength) % trailHistoryLength;
+                    
+                    // Fade the trail as it gets older
+                    var alpha = trailColor.a * (1.0f - (float)h / historyCount);
+                    var fadedColor = trailColor;
+                    fadedColor.a = alpha;
+                    Gizmos.color = fadedColor;
+                    
+                    var current = new Vector3(_positionHistory[currentIndex][i].x, _positionHistory[currentIndex][i].y, _nodes[i].position.z);
+                    var prev = new Vector3(_positionHistory[prevIndex][i].x, _positionHistory[prevIndex][i].y, _nodes[i].position.z);
+                    
+                    // Adjust width based on distance from current position
+                    var widthScale = 1.0f - (float)h / historyCount;
+                    var segmentWidth = trailWidth * widthScale;
+                    
+                    // Draw line segment
+                    Gizmos.DrawLine(current, prev);
+                }
             }
         }
     }
-
+    
     private void HandleEvent()
     {
+        _isShuttingDown = true;
         CleanupBuffers();
     }
 

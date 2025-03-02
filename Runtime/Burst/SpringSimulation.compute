@@ -6,6 +6,7 @@
 struct node_data
 {
     float2 position;
+    float2 previous_position; // Added to store previous position
     float2 velocity;
     float2 force;
     int node_type;
@@ -47,7 +48,7 @@ void spring_forces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
 
-    nodes[id.x].force = float2(0, 0);
+    // nodes[id.x].force = float2(0, 0);
 
     bool is_component = (nodes[id.x].node_type == 1);
     bool is_game_object = (nodes[id.x].node_type == 0);
@@ -132,8 +133,6 @@ void spring_forces (uint3 id : SV_DispatchThreadID)
     float2 damping_force = -damping * nodes[id.x].velocity;
     nodes[id.x].force += damping_force;
 }
-
-
 
 [numthreads(64,1,1)]
 void collision_response (uint3 id : SV_DispatchThreadID)
@@ -243,6 +242,9 @@ void collision_response (uint3 id : SV_DispatchThreadID)
 void integrate_forces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
+    
+    // Store previous position before updating
+    nodes[id.x].previous_position = nodes[id.x].position;
     
     // Use a smaller effective timestep for stability
     float effective_delta_time = min(delta_time, min_integration_timestep);
