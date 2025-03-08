@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
@@ -118,7 +119,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     // TODO: use to store spring forces/clusters based on node types
     // TODO: -> adjust strength also based on hierarchy level
-    private struct NodeConnections
+    private struct NodeConnection
     {
         public int2 NodeIndex;
         public int ConnectionType;
@@ -238,6 +239,19 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 _positionHistory[h][i] = currentPosition;
             }
         }
+        
+        // Create node amount squared node connection information
+        var nodeConnections = new NodeConnection[(int)Math.Pow(_nodes.Length, 2)];
+        for (var i = 0; i < _nodes.Length; i++){
+            for (var j = 0; j < _nodes.Length; j++)
+            {
+                nodeConnections[i] = new NodeConnection
+                {
+                    NodeIndex = new int2(i,j),
+                    ConnectionType = ConnectionStrength(i, j)
+                };
+            }
+        }
 
         // Create buffer with space for the previous position field
         _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 8 + sizeof(int) * 2); // 8 floats (2 positions, velocity, force) + 2 ints
@@ -262,6 +276,16 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         };
         nodeGraph.NodesRemoveComponents(types);
         _isShuttingDown = false;
+    }
+
+    // TODO: return connection strength based on hierarchy level and node types
+    private int ConnectionStrength(int i, int j)
+    {
+        // 1. get nodes
+        // 2. get hierarchy level they are in
+        // 3. get connection type
+        // 4. return strength
+        return 0;
     }
 
     private void Update()
