@@ -20,6 +20,16 @@ struct arrow_data
     float strength;
 };
 
+struct NodeConnection
+{
+    int2 nodeIndex;
+    int connectionType;
+};
+
+RWStructuredBuffer<NodeData> nodes;
+RWStructuredBuffer<NodeConnection> connections;
+uint nodeCount;
+float deltaTime;
 RWStructuredBuffer<node_data> nodes;
 RWStructuredBuffer<arrow_data> force_arrows;
 uint node_count;

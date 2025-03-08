@@ -22,6 +22,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     private ComputeBuffer _nodeBuffer;
     private ComputeBuffer _forceArrowsBuffer;
+    private ComputeBuffer _connectionBuffer;
     private Transform[] _nodes;
     private int _springKernel;
     private int _collisionKernel;
@@ -256,6 +257,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Create buffer with space for the previous position field
         _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 8 + sizeof(int) * 2); // 8 floats (2 positions, velocity, force) + 2 ints
         _nodeBuffer.SetData(nodeData);
+        _connectionBuffer = new ComputeBuffer((int)Math.Pow(_nodes.Length, 2), sizeof(int) * 3);
+        _connectionBuffer.SetData(nodeConnections);
 
         // Initialize arrow data and buffer
         _arrowData = new ArrowData[_nodes.Length];
