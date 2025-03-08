@@ -116,6 +116,14 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         public int ParentId; // ID of parent GameObject (-1 if none)
     }
 
+    // TODO: use to store spring forces/clusters based on node types
+    // TODO: -> adjust strength also based on hierarchy level
+    private struct NodeConnections
+    {
+        public int2 NodeIndex;
+        public int ConnectionType;
+    }
+
     private void OnDestroy()
     {
         _isShuttingDown = true;
