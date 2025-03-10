@@ -233,7 +233,7 @@ public class SceneAnalyzer : MonoBehaviour
             // since this is required if analyzing parent-child relations
             var nodeType = nodeObject.AddComponent<NodeType>();
             nodeType.reference = null;
-            nodeType.nodeTypeName = "GameObject";
+            nodeType.nodeTypeName = NodeTypeName.GameObject;
         }
         else
         {

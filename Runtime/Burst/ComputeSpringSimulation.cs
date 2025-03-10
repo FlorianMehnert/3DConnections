@@ -3,13 +3,12 @@ using System.Drawing;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
+using Color = UnityEngine.Color;
 
 public class ComputeSpringSimulation : MonoBehaviour, ILogable
 {
     private static readonly int Nodes = Shader.PropertyToID("nodes");
     private static readonly int Connections = Shader.PropertyToID("connections");
-    private static readonly int NodeCount = Shader.PropertyToID("nodeCount");
-    private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
     private static readonly int NodeCount = Shader.PropertyToID("node_count");
     private static readonly int DeltaTime = Shader.PropertyToID("delta_time");
     private static readonly int Stiffness = Shader.PropertyToID("stiffness");
@@ -21,7 +20,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private static readonly int MaxVelocityLimit = Shader.PropertyToID("max_velocity_limit");
     private static readonly int ForceArrows = Shader.PropertyToID("force_arrows");
     private static readonly int EConstant = Shader.PropertyToID("eConstant");
-    private static readonly int CollisionResponseStrength = Shader.PropertyToID("collisionResponseStrength");
     public ComputeShader computeShader;
     public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private PhysicsSimulationConfiguration simConfig;
@@ -197,7 +195,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         {
             var nodeObj = nodeGraph.AllNodes[i];
             var nodeTypeComponent = nodeObj.GetComponent<NodeType>();
-            if (nodeTypeComponent != null && nodeTypeComponent.GetNodeType() == 0) // If it's a GameObject
+            if (nodeTypeComponent != null && nodeTypeComponent.nodeTypeName == NodeTypeName.GameObject) // If it's a GameObject
             {
                 gameObjectIndices[nodeObj] = i;
             }
@@ -207,17 +205,17 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         for (var i = 0; i < _nodes.Length; i++)
         {
             var nodeObj = nodeGraph.AllNodes[i];
-            var nodeType = 0; // Default to GameObject
+            var nodeType = NodeTypeName.GameObject; // Default to GameObject
             var parentId = -1; // Default to no parent
             
             // Get the actual component to check its type
             var nodeTypeComponent = nodeObj.GetComponent<NodeType>();
             if (nodeTypeComponent)
             {
-                nodeType = nodeTypeComponent.GetNodeType();
+                nodeType = nodeTypeComponent.nodeTypeName;
                 
                 // If this is a Component node, find its parent GameObject
-                if (nodeType == 1) // Component
+                if (nodeType == NodeTypeName.Component) // Component
                 {
                     var localNodeConnections = nodeObj.GetComponent<LocalNodeConnections>();
                     if (localNodeConnections)
@@ -240,7 +238,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 PreviousPosition = currentPosition, // Initialize previous position to current
                 Velocity = float2.zero,
                 Force = float2.zero,
-                NodeType = nodeType,
+                NodeType = (int) nodeType,
                 ParentId = parentId
             };
             
@@ -447,7 +445,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
                 
                 // Determine arrow color based on node type
-                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.GetNodeType() == 1 
+                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component 
                     ? componentArrowColor 
                     : gameObjectArrowColor;
                 
@@ -485,7 +483,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 if (nodeGraph.AllNodes[i] == null) continue;
                 
                 // Get node type to determine trail color
-                var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.GetNodeType() == 1;
+                var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component;
                 var trailColor = isComponent ? componentTrailColor : gameObjectTrailColor;
                 
                 for (var h = 1; h < historyCount; h++)
@@ -539,7 +537,7 @@ public static class NodeTypeExtensions
 {
     public static GameObject GetParentOfComponentNode(this NodeType nodeType)
     {
-        if (!nodeType || nodeType.nodeTypeName != "Component") return null;
+        if (!nodeType || nodeType.nodeTypeName != NodeTypeName.Component) return null;
         return ((Component)nodeType.reference).gameObject;
     }
 }
