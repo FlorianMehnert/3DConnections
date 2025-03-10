@@ -1,4 +1,5 @@
 #pragma kernel spring_forces
+#pragma kernel spring_forces_connection_based
 #pragma kernel collision_response
 #pragma kernel integrate_forces
 #pragma kernel calculate_force_arrows
@@ -27,16 +28,14 @@ struct NodeConnection
     int hierarchy;
 };
 
-RWStructuredBuffer<NodeData> nodes;
+RWStructuredBuffer<node_data> nodes;
 RWStructuredBuffer<NodeConnection> connections;
 uint nodeCount;
 float deltaTime;
 float stiffness; // multiplier for the direction vector
-RWStructuredBuffer<node_data> nodes;
 RWStructuredBuffer<arrow_data> force_arrows;
 uint node_count;
 float delta_time;
-float stiffness;
 float damping;
 float eConstant;
 float collider_radius;
@@ -57,7 +56,6 @@ float radial_angle_offset; // Starting angle offset (in radians)
 float angle_separation; // Minimum separation between components (in radians)
 
 [numthreads(64,1,1)]
-void SpringForces(uint3 id : SV_DispatchThreadID)
 void spring_forces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= nodeCount) return;
@@ -170,7 +168,7 @@ float StiffnessByConnectionType(int connectionType)
 
 // Calculate spring forces based on connection types
 [numthreads(64,1,1)]
-void SpringForcesConnectionBased(uint3 id : SV_DispatchThreadID)
+void spring_forces_connection_based(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= pow(nodeCount, 2)) return;
     int2 node_index = connections[id.x].nodeIndex;
@@ -187,7 +185,6 @@ void SpringForcesConnectionBased(uint3 id : SV_DispatchThreadID)
 
 [numthreads(64,1,1)]
 void collision_response (uint3 id : SV_DispatchThreadID)
-void CollisionResponse(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
     
@@ -220,9 +217,9 @@ void CollisionResponse(uint3 id : SV_DispatchThreadID)
         }
         
         if (distance < min_dist && distance > 0.0001f)
-        float minDist = colliderRadius * 2;
+        float minDist = collider_radius * 2;
 
-        if (distance < minDist && distance > 0.0001f)
+        if (distance < min_dist && distance > 0.0001f)
         {
             float2 direction = delta / distance;
             float overlap = min_dist - distance;

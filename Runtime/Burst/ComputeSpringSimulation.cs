@@ -123,8 +123,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         public int ParentId; // ID of parent GameObject (-1 if none)
     }
 
-    // TODO: use to store spring forces/clusters based on node types
-    // TODO: -> adjust strength also based on hierarchy level
     private struct NodeConnection
     {
         public int2 NodeIndex;
@@ -182,10 +180,10 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         _historyFilled = false;
 
         // Get kernel IDs
-        _springKernel = computeShader.FindKernel("SpringForces");
-        _springConnectionsKernel = computeShader.FindKernel("SpringForcesConnectionBased");
-        _collisionKernel = computeShader.FindKernel("CollisionResponse");
-        _integrationKernel = computeShader.FindKernel("IntegrateForces");
+        _springKernel = computeShader.FindKernel("spring_forces");
+        _springConnectionsKernel = computeShader.FindKernel("spring_forces_connection_based");
+        _collisionKernel = computeShader.FindKernel("collision_response");
+        _integrationKernel = computeShader.FindKernel("integrate_forces");
         _forceArrowsKernel = computeShader.FindKernel("calculate_force_arrows");
 
         
