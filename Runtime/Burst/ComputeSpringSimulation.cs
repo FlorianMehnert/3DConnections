@@ -277,8 +277,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetBuffer(_springKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_collisionKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_integrationKernel, Nodes, _nodeBuffer);
-        computeShader.SetBuffer(_springConnectionsKernel, Connections, _connectionBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, Nodes, _nodeBuffer);
+        computeShader.SetBuffer(_springConnectionsKernel, Connections, _connectionBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, ForceArrows, _forceArrowsBuffer);
 
         var types = new List<System.Type>
@@ -388,7 +388,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.Dispatch(_springConnectionsKernel, threadGroupsConnections, 1, 1);
         computeShader.Dispatch(_collisionKernel, threadGroups, 1, 1);
         computeShader.Dispatch(_integrationKernel, threadGroups, 1, 1);
-        
+
         // Calculate force arrows if enabled
         if (showForceArrows)
         {

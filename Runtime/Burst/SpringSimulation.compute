@@ -21,23 +21,21 @@ struct arrow_data
     float strength;
 };
 
-struct NodeConnection
+struct node_connection
 {
-    int2 nodeIndex;
-    int connectionType;
+    int2 node_index;
+    int connection_type;
     int hierarchy;
 };
 
 RWStructuredBuffer<node_data> nodes;
-RWStructuredBuffer<NodeConnection> connections;
-uint nodeCount;
-float deltaTime;
+RWStructuredBuffer<node_connection> connections;
 float stiffness; // multiplier for the direction vector
 RWStructuredBuffer<arrow_data> force_arrows;
 uint node_count;
 float delta_time;
 float damping;
-float eConstant;
+float e_constant;
 float collider_radius;
 float collision_response_strength;
 float min_integration_timestep;
@@ -58,7 +56,7 @@ float angle_separation; // Minimum separation between components (in radians)
 [numthreads(64,1,1)]
 void spring_forces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= nodeCount) return;
+    if (id.x >= node_count) return;
 
     // Calculate spring forces
     float2 targetPosition = float2(0, 0);
@@ -170,13 +168,13 @@ float StiffnessByConnectionType(int connectionType)
 [numthreads(64,1,1)]
 void spring_forces_connection_based(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= pow(nodeCount, 2)) return;
-    int2 node_index = connections[id.x].nodeIndex;
-    int connection_type = connections[id.x].connectionType;
+    if (id.x >= pow(node_count, 2)) return;
+    int2 node_index = connections[id.x].node_index;
+    int connection_type = connections[id.x].connection_type;
     int hierarchy = connections[id.x].hierarchy;
 
     // Log function from 1 to 0 to reduce influence for children
-    float hierarchy_derived_stiffness = pow(eConstant, -log(hierarchy));
+    float hierarchy_derived_stiffness = pow(e_constant, -log(hierarchy));
     float2 displacement = nodes[node_index.y].position - nodes[node_index.x].position;
     float2 spring_force = StiffnessByConnectionType(connection_type) * displacement * hierarchy_derived_stiffness;
     float2 damping_force = -damping * nodes[id.x].velocity;
@@ -188,14 +186,14 @@ void collision_response (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
     
-    if (id.x >= nodeCount) return;
+    if (id.x >= node_count) return;
 
     float2 position = nodes[id.x].position;
     float2 velocity = nodes[id.x].velocity;
     
     for (int j = 0; (uint)j < node_count; j++)
 
-    for (int j = 0; (uint)j < nodeCount; j++)
+    for (int j = 0; (uint)j < node_count; j++)
     {
         if (id.x == (uint)j) continue;
         
