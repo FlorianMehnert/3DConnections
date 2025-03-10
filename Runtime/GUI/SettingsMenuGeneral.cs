@@ -288,9 +288,9 @@ public class SettingsMenuGeneral : MonoBehaviour
 
             coloredObject.SetOriginalColor(nodeType.nodeTypeName switch
             {
-                "GameObject" => colors[0],
-                "Component" => colors[1],
-                "ScriptableObject" => colors[2],
+                NodeTypeName.GameObject => colors[0],
+                NodeTypeName.Component => colors[1],
+                NodeTypeName.ScriptableObject => colors[2],
                 _ => Color.white,
             });
 

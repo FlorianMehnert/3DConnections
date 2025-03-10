@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class NodeType : MonoBehaviour
 {
-    [SerializeField] public string nodeTypeName;
+    [SerializeField] public NodeTypeName nodeTypeName;
     [SerializeField] public Object reference;
 
     public int GetNodeType()

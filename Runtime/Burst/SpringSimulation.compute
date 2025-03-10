@@ -24,18 +24,21 @@ struct NodeConnection
 {
     int2 nodeIndex;
     int connectionType;
+    int hierarchy;
 };
 
 RWStructuredBuffer<NodeData> nodes;
 RWStructuredBuffer<NodeConnection> connections;
 uint nodeCount;
 float deltaTime;
+float stiffness; // multiplier for the direction vector
 RWStructuredBuffer<node_data> nodes;
 RWStructuredBuffer<arrow_data> force_arrows;
 uint node_count;
 float delta_time;
 float stiffness;
 float damping;
+float eConstant;
 float collider_radius;
 float collision_response_strength;
 float min_integration_timestep;
@@ -54,8 +57,18 @@ float radial_angle_offset; // Starting angle offset (in radians)
 float angle_separation; // Minimum separation between components (in radians)
 
 [numthreads(64,1,1)]
+void SpringForces(uint3 id : SV_DispatchThreadID)
 void spring_forces (uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= nodeCount) return;
+
+    // Calculate spring forces
+    float2 targetPosition = float2(0, 0);
+    float2 displacement = targetPosition - nodes[id.x].position;
+    float2 springForce = stiffness * displacement;
+    float2 dampingForce = -damping * nodes[id.x].velocity;
+
+    nodes[id.x].force = springForce + dampingForce;
     if (id.x >= node_count) return;
 
     // nodes[id.x].force = float2(0, 0);
@@ -144,15 +157,48 @@ void spring_forces (uint3 id : SV_DispatchThreadID)
     nodes[id.x].force += damping_force;
 }
 
+float StiffnessByConnectionType(int connectionType)
+{
+    switch (0)
+    {
+    case 0: return stiffness; // parent-child
+    case 1: return stiffness * 10; // component 
+    case 2: return stiffness * 5; // other references
+    default: return stiffness;
+    }
+}
+
+// Calculate spring forces based on connection types
+[numthreads(64,1,1)]
+void SpringForcesConnectionBased(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= pow(nodeCount, 2)) return;
+    int2 node_index = connections[id.x].nodeIndex;
+    int connection_type = connections[id.x].connectionType;
+    int hierarchy = connections[id.x].hierarchy;
+
+    // Log function from 1 to 0 to reduce influence for children
+    float hierarchy_derived_stiffness = pow(eConstant, -log(hierarchy));
+    float2 displacement = nodes[node_index.y].position - nodes[node_index.x].position;
+    float2 spring_force = StiffnessByConnectionType(connection_type) * displacement * hierarchy_derived_stiffness;
+    float2 damping_force = -damping * nodes[id.x].velocity;
+    nodes[id.x].force = spring_force + damping_force;
+}
+
 [numthreads(64,1,1)]
 void collision_response (uint3 id : SV_DispatchThreadID)
+void CollisionResponse(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= node_count) return;
     
+    if (id.x >= nodeCount) return;
+
     float2 position = nodes[id.x].position;
     float2 velocity = nodes[id.x].velocity;
     
     for (int j = 0; (uint)j < node_count; j++)
+
+    for (int j = 0; (uint)j < nodeCount; j++)
     {
         if (id.x == (uint)j) continue;
         
@@ -162,6 +208,7 @@ void collision_response (uint3 id : SV_DispatchThreadID)
             continue;
         }
         
+
         float2 delta = position - nodes[j].position;
         float distance = length(delta);
         float min_dist = collider_radius * 2;
@@ -173,6 +220,9 @@ void collision_response (uint3 id : SV_DispatchThreadID)
         }
         
         if (distance < min_dist && distance > 0.0001f)
+        float minDist = colliderRadius * 2;
+
+        if (distance < minDist && distance > 0.0001f)
         {
             float2 direction = delta / distance;
             float overlap = min_dist - distance;
@@ -195,7 +245,7 @@ void collision_response (uint3 id : SV_DispatchThreadID)
             }
         }
     }
-    
+
     nodes[id.x].position = position;
     nodes[id.x].velocity = velocity;
 

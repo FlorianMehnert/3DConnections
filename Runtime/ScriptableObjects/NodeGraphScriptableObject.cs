@@ -342,21 +342,21 @@ public class NodeGraphScriptableObject : ScriptableObject
             var typeName = type.nodeTypeName;
             switch (typeName)
             {
-                case "GameObject":
+                case NodeTypeName.GameObject:
                 {
                     var coloredObject = node.GetComponent<ColoredObject>();
                     coloredObject.SetOriginalColor(colors[0]);
                     coloredObject.SetToOriginalColor();
                     break;
                 }
-                case "Component":
+                case NodeTypeName.Component:
                 {
                     var coloredObject = node.GetComponent<ColoredObject>();
                     coloredObject.SetOriginalColor(colors[1]);
                     coloredObject.SetToOriginalColor();
                     break;
                 }
-                case "ScriptableObject":
+                case NodeTypeName.ScriptableObject:
                 {
                     var coloredObject = node.GetComponent<ColoredObject>();
                     coloredObject.SetOriginalColor(colors[2]);

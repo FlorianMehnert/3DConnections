@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
@@ -6,6 +7,9 @@ using System.Collections.Generic;
 public class ComputeSpringSimulation : MonoBehaviour, ILogable
 {
     private static readonly int Nodes = Shader.PropertyToID("nodes");
+    private static readonly int Connections = Shader.PropertyToID("connections");
+    private static readonly int NodeCount = Shader.PropertyToID("nodeCount");
+    private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
     private static readonly int NodeCount = Shader.PropertyToID("node_count");
     private static readonly int DeltaTime = Shader.PropertyToID("delta_time");
     private static readonly int Stiffness = Shader.PropertyToID("stiffness");
@@ -16,15 +20,18 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private static readonly int RelaxationFactor = Shader.PropertyToID("relaxation_factor");
     private static readonly int MaxVelocityLimit = Shader.PropertyToID("max_velocity_limit");
     private static readonly int ForceArrows = Shader.PropertyToID("force_arrows");
+    private static readonly int EConstant = Shader.PropertyToID("eConstant");
+    private static readonly int CollisionResponseStrength = Shader.PropertyToID("collisionResponseStrength");
     public ComputeShader computeShader;
     public NodeGraphScriptableObject nodeGraph;
-    [SerializeField] private PhysicsSimulationConfiguration simConfig; 
+    [SerializeField] private PhysicsSimulationConfiguration simConfig;
 
     private ComputeBuffer _nodeBuffer;
     private ComputeBuffer _forceArrowsBuffer;
     private ComputeBuffer _connectionBuffer;
     private Transform[] _nodes;
     private int _springKernel;
+    private int _springConnectionsKernel;
     private int _collisionKernel;
     private int _integrationKernel;
     private int _forceArrowsKernel;
@@ -123,7 +130,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private struct NodeConnection
     {
         public int2 NodeIndex;
-        public int ConnectionType;
+        public float ConnectionType;
+        public int ConnectionHierarchy; // root connections are order 0, connections of root children are 1 and so on
     }
 
     private void OnDestroy()
@@ -176,11 +184,13 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         _historyFilled = false;
 
         // Get kernel IDs
-        _springKernel = computeShader.FindKernel("spring_forces");
-        _collisionKernel = computeShader.FindKernel("collision_response");
-        _integrationKernel = computeShader.FindKernel("integrate_forces");
+        _springKernel = computeShader.FindKernel("SpringForces");
+        _springConnectionsKernel = computeShader.FindKernel("SpringForcesConnectionBased");
+        _collisionKernel = computeShader.FindKernel("CollisionResponse");
+        _integrationKernel = computeShader.FindKernel("IntegrateForces");
         _forceArrowsKernel = computeShader.FindKernel("calculate_force_arrows");
 
+        
         // Create a map of GameObject instances to their index in the nodes array
         var gameObjectIndices = new Dictionary<GameObject, int>();
         for (var i = 0; i < _nodes.Length; i++)
@@ -240,16 +250,18 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 _positionHistory[h][i] = currentPosition;
             }
         }
-        
+
         // Create node amount squared node connection information
         var nodeConnections = new NodeConnection[(int)Math.Pow(_nodes.Length, 2)];
-        for (var i = 0; i < _nodes.Length; i++){
+        for (var i = 0; i < _nodes.Length; i++)
+        {
             for (var j = 0; j < _nodes.Length; j++)
             {
                 nodeConnections[i] = new NodeConnection
                 {
-                    NodeIndex = new int2(i,j),
-                    ConnectionType = ConnectionStrength(i, j)
+                    NodeIndex = new int2(i, j),
+                    ConnectionType = ConnectionStrength(i, j),
+                    ConnectionHierarchy = GetHierarchyDepth(_nodes[i]),
                 };
             }
         }
@@ -257,7 +269,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Create buffer with space for the previous position field
         _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 8 + sizeof(int) * 2); // 8 floats (2 positions, velocity, force) + 2 ints
         _nodeBuffer.SetData(nodeData);
-        _connectionBuffer = new ComputeBuffer((int)Math.Pow(_nodes.Length, 2), sizeof(int) * 3);
+        _connectionBuffer = new ComputeBuffer((int)Math.Pow(_nodes.Length, 2), sizeof(int) * 3 + sizeof(float));
         _connectionBuffer.SetData(nodeConnections);
 
         // Initialize arrow data and buffer
@@ -269,6 +281,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetBuffer(_springKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_collisionKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_integrationKernel, Nodes, _nodeBuffer);
+        computeShader.SetBuffer(_springConnectionsKernel, Connections, _connectionBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, ForceArrows, _forceArrowsBuffer);
 
@@ -279,16 +292,54 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         };
         nodeGraph.NodesRemoveComponents(types);
         _isShuttingDown = false;
+        computeShader.SetFloat(EConstant, (float)Math.E);
     }
 
     // TODO: return connection strength based on hierarchy level and node types
-    private int ConnectionStrength(int i, int j)
+    private float ConnectionStrength(int i, int j)
     {
         // 1. get nodes
-        // 2. get hierarchy level they are in
-        // 3. get connection type
-        // 4. return strength
-        return 0;
+        var type1 = _nodes[i].gameObject.GetComponent<NodeType>().nodeTypeName;
+        var type2 = _nodes[j].gameObject.GetComponent<NodeType>().nodeTypeName;
+
+        // 2. get connection type
+        // gogo = 0.1
+        // goco = 10
+        // coco = ? -> 1
+        // coso = 0.5
+        // soso = 0.5
+        const float referenceStrength = 0.01f;
+        const float parentChildStrength = .1f;
+        switch (type1)
+        {
+            case NodeTypeName.GameObject when type2 == NodeTypeName.GameObject:
+                return 0.001f;
+            case NodeTypeName.GameObject when type2 == NodeTypeName.Component:
+            case NodeTypeName.Component when type2 == NodeTypeName.GameObject:
+                return parentChildStrength;
+            case NodeTypeName.Component when type2 == NodeTypeName.Component:
+                return .0001f;
+            case NodeTypeName.GameObject when type2 == NodeTypeName.ScriptableObject:
+            case NodeTypeName.Component when type2 == NodeTypeName.ScriptableObject:
+            case NodeTypeName.ScriptableObject when type2 == NodeTypeName.GameObject:
+            case NodeTypeName.ScriptableObject when type2 == NodeTypeName.Component:
+            case NodeTypeName.ScriptableObject when type2 == NodeTypeName.ScriptableObject:
+                return referenceStrength;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private int GetHierarchyDepth(Transform transform)
+    {
+        var depth = 0;
+        while (transform.parent)
+        {
+            depth++;
+            transform = transform.parent;
+        }
+
+        return depth;
     }
 
     private void Update()
@@ -334,9 +385,11 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         // Calculate thread groups
         var threadGroups = Mathf.CeilToInt(_nodes.Length / 64f);
+        var threadGroupsConnections = Mathf.CeilToInt(Mathf.Pow(_nodes.Length, 2) / 64f);
 
         // Dispatch compute shader
         computeShader.Dispatch(_springKernel, threadGroups, 1, 1);
+        computeShader.Dispatch(_springConnectionsKernel, threadGroupsConnections, 1, 1);
         computeShader.Dispatch(_collisionKernel, threadGroups, 1, 1);
         computeShader.Dispatch(_integrationKernel, threadGroups, 1, 1);
         
@@ -468,6 +521,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
     public string GetStatus()
     {
+        return "enabled keywords: " + computeShader.enabledKeywords.Length + " nodes: " + _nodes.Length +
+               " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null");
         var relaxationStatus = enableRelaxation ? 
             $" (Relaxation: {(_relaxationTimer < relaxationDuration ? $"active {_relaxationTimer:F1}/{relaxationDuration:F1}" : "complete")})" : 
             " (Relaxation: disabled)";

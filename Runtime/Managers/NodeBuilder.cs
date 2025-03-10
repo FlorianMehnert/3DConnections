@@ -84,8 +84,8 @@ public class NodeBuilder : MonoBehaviour
         {
             type.nodeTypeName = node switch
             {
-                GameObjectNode => "GameObject",
-                ComponentNode => "Component",
+                GameObjectNode => NodeTypeName.GameObject,
+                ComponentNode => NodeTypeName.Component,
                 _ => type.nodeTypeName
             };
             type.reference = node switch

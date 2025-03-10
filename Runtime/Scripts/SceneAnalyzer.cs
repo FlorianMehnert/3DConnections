@@ -219,9 +219,9 @@ public class SceneAnalyzer : MonoBehaviour
         // set name
         var prefixNode = "" + type.nodeTypeName switch
         {
-            "GameObject" => "go_",
-            "Component" => "co_",
-            "ScriptableObject" => "so_",
+            NodeTypeName.GameObject => "go_",
+            NodeTypeName.Component => "co_",
+            NodeTypeName.ScriptableObject => "so_",
             _ => ""
         };
 
@@ -317,9 +317,9 @@ public class SceneAnalyzer : MonoBehaviour
     {
         type.nodeTypeName = obj switch
         {
-            GameObject => "GameObject",
-            Component => "Component",
-            ScriptableObject => "ScriptableObject",
+            GameObject => NodeTypeName.GameObject,
+            Component => NodeTypeName.Component,
+            ScriptableObject => NodeTypeName.ScriptableObject,
             _ => type.nodeTypeName
         };
     }
