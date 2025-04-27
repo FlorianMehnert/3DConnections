@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -40,13 +41,20 @@ namespace _3DConnections.Editor
             oddRowColor = new Color(0.93f, 0.93f, 0.93f, 0.3f);
             evenRowColor = new Color(0.8f, 0.8f, 0.8f, 0.3f);
 
-            headerStyle = new GUIStyle();
-            headerStyle.fontStyle = FontStyle.Bold;
-            headerStyle.normal.textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
-            
-            rowStyle = new GUIStyle();
-            rowStyle.padding = new RectOffset(5, 5, 3, 3);
-            rowStyle.margin = new RectOffset(0, 0, 1, 1);
+            headerStyle = new GUIStyle
+            {
+                fontStyle = FontStyle.Bold,
+                normal =
+                {
+                    textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black
+                }
+            };
+
+            rowStyle = new GUIStyle
+            {
+                padding = new RectOffset(5, 5, 3, 3),
+                margin = new RectOffset(0, 0, 1, 1)
+            };
 
             // Perform initial scan
             TrackUpdateReferences();
@@ -80,7 +88,7 @@ namespace _3DConnections.Editor
             // First pass: collect all update methods
             foreach (var script in allScripts)
             {
-                if (script == null) continue;
+                if (!script) continue;
                 
                 var updateMethod = script.GetType().GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (updateMethod == null) continue;
@@ -148,49 +156,41 @@ namespace _3DConnections.Editor
                 // Check for Component arrays/lists
                 else if (field.FieldType.IsArray && typeof(Component).IsAssignableFrom(field.FieldType.GetElementType()))
                 {
-                    var array = field.GetValue(script) as Component[];
-                    if (array != null)
+                    if (field.GetValue(script) is not Component[] array) continue;
+                    foreach (var component in array)
                     {
-                        foreach (var component in array)
+                        if (component)
                         {
-                            if (component != null)
+                            references.Add(new ReferenceInfo
                             {
-                                references.Add(new ReferenceInfo
-                                {
-                                    SourceInstanceID = info.InstanceID,
-                                    SourceName = $"{info.GameObject.name} ({info.ComponentName})",
-                                    TargetInstanceID = component.GetInstanceID(),
-                                    TargetName = $"{component.gameObject.name} ({component.GetType().Name})",
-                                    FieldName = $"{field.Name}[]",
-                                    IsActive = component is MonoBehaviour mb ? mb.isActiveAndEnabled && mb.gameObject.activeInHierarchy : component.gameObject.activeInHierarchy
-                                });
-                            }
+                                SourceInstanceID = info.InstanceID,
+                                SourceName = $"{info.GameObject.name} ({info.ComponentName})",
+                                TargetInstanceID = component.GetInstanceID(),
+                                TargetName = $"{component.gameObject.name} ({component.GetType().Name})",
+                                FieldName = $"{field.Name}[]",
+                                IsActive = component is MonoBehaviour mb ? mb.isActiveAndEnabled && mb.gameObject.activeInHierarchy : component.gameObject.activeInHierarchy
+                            });
                         }
                     }
                 }
                 else if (field.FieldType.IsGenericType && typeof(List<>).IsAssignableFrom(field.FieldType.GetGenericTypeDefinition()))
                 {
                     var listType = field.FieldType.GetGenericArguments()[0];
-                    if (typeof(Component).IsAssignableFrom(listType))
+                    if (!typeof(Component).IsAssignableFrom(listType)) continue;
+                    if (field.GetValue(script) is not IList list) continue;
+                    foreach (Component component in list)
                     {
-                        var list = field.GetValue(script) as System.Collections.IList;
-                        if (list != null)
+                        if (component)
                         {
-                            foreach (Component component in list)
+                            references.Add(new ReferenceInfo
                             {
-                                if (component != null)
-                                {
-                                    references.Add(new ReferenceInfo
-                                    {
-                                        SourceInstanceID = info.InstanceID,
-                                        SourceName = $"{info.GameObject.name} ({info.ComponentName})",
-                                        TargetInstanceID = component.GetInstanceID(),
-                                        TargetName = $"{component.gameObject.name} ({component.GetType().Name})",
-                                        FieldName = $"{field.Name} List",
-                                        IsActive = component is MonoBehaviour mb ? mb.isActiveAndEnabled && mb.gameObject.activeInHierarchy : component.gameObject.activeInHierarchy
-                                    });
-                                }
-                            }
+                                SourceInstanceID = info.InstanceID,
+                                SourceName = $"{info.GameObject.name} ({info.ComponentName})",
+                                TargetInstanceID = component.GetInstanceID(),
+                                TargetName = $"{component.gameObject.name} ({component.GetType().Name})",
+                                FieldName = $"{field.Name} List",
+                                IsActive = component is MonoBehaviour mb ? mb.isActiveAndEnabled && mb.gameObject.activeInHierarchy : component.gameObject.activeInHierarchy
+                            });
                         }
                     }
                 }
