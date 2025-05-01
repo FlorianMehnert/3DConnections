@@ -16,7 +16,7 @@ public class SceneAnalyzer : MonoBehaviour
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
     private readonly HashSet<Object> _visitedObjects = new();
     private readonly HashSet<Object> _processingObjects = new();
-    private readonly Dictionary<int, GameObject> _instanceIdToNode = new();
+    private readonly Dictionary<int, GameObject> _instanceIdToNodeLookup = new();
 
     [Header("Resources")] [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private TextAsset analysisData; // Assign the JSON file here
@@ -54,7 +54,14 @@ public class SceneAnalyzer : MonoBehaviour
 
     [Header("Ignored Types Settings")] public List<string> ignoredTypes = new();
 
+    /// <summary>
+    /// used to determine if a gameobject is part of a prefab (will be more accurate if this is running in the editor)
+    /// </summary>
     private List<string> _cachedPrefabPaths = new();
+    
+    /// <summary>
+    /// Keep track of the current node amount in the generation algorithm. Easy fix for node creation leading to more gameobjects leading to more nodes
+    /// </summary>
     private int _currentNodes;
 
     private Dictionary<string, float> _complexityMap;
@@ -77,7 +84,7 @@ public class SceneAnalyzer : MonoBehaviour
         _currentNodes = 0;
         _visitedObjects.Clear();
         _processingObjects.Clear();
-        _instanceIdToNode.Clear();
+        _instanceIdToNodeLookup.Clear();
 #if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
@@ -92,7 +99,7 @@ public class SceneAnalyzer : MonoBehaviour
         LoadComplexityMetrics(analysisData.ToString());
         _cachedPrefabPaths.Clear();
         var rootGameObjects = scene.GetRootGameObjects();
-        FinishAnalyzeScene(rootGameObjects);
+        TraverseScene(rootGameObjects);
     }
 
     private void OnValidate()
@@ -123,11 +130,11 @@ public class SceneAnalyzer : MonoBehaviour
             removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
     }
 
-    private void FinishAnalyzeScene(GameObject[] rootGameObjects)
+    private void TraverseScene(GameObject[] rootGameObjects)
     {
         if (rootGameObjects == null)
         {
-            Debug.Log("Trying to finalize analyzeScene with not root gameobjects");
+            Debug.Log("In traverse scene, however there are not gameobjects in the scene");
             return;
         }
 
@@ -142,8 +149,8 @@ public class SceneAnalyzer : MonoBehaviour
         foreach (var rootObject in rootGameObjects)
             TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
 
-        if (_instanceIdToNode != null && nodeGraph && nodeGraph.AllNodes is { Count: 0 })
-            nodeGraph.AllNodes = _instanceIdToNode.Values.ToList();
+        if (_instanceIdToNodeLookup != null && nodeGraph && nodeGraph.AllNodes is { Count: 0 })
+            nodeGraph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
 
         if (nodeGraph.AllNodes is { Count: > 0 })
             nodeGraph.AllNodes.Add(rootNode);
@@ -366,7 +373,7 @@ public class SceneAnalyzer : MonoBehaviour
         var instanceId = obj.GetInstanceID();
 
         // Check if this node already exists
-        if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode))
+        if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode))
         {
             // Connect existing node
             if (!parentNodeObject) return existingNode;
@@ -395,7 +402,7 @@ public class SceneAnalyzer : MonoBehaviour
 
         // Create a new node
         var newNode = SpawnNode(obj, isAsset);
-        _instanceIdToNode[instanceId] = newNode;
+        _instanceIdToNodeLookup[instanceId] = newNode;
         if (!parentNodeObject) return newNode;
         if (isAsset)
             ConnectNodes(parentNodeObject, newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
@@ -431,15 +438,22 @@ public class SceneAnalyzer : MonoBehaviour
     private void TraverseGameObject(GameObject toTraverseGameObject, int depth, GameObject parentNodeObject = null,
         bool isReference = false)
     {
+        // do not investigate gameobject when node count is too large or when the gameobject is a "node" gameobject
         if (!toTraverseGameObject || _currentNodes >= maxNodes) return;
-
-        var instanceId = toTraverseGameObject.GetInstanceID();
+        var isNodeGameObject = toTraverseGameObject.GetComponent<NodeType>() || parentNodeObject && parentNodeObject.GetComponent<NodeType>();
+        if (isNodeGameObject)
+        {
+            Debug.Log("in Traverse gameObject is Node");
+            return;
+        }
+        
+        var toTraverseGameObjectID = toTraverseGameObject.GetInstanceID();
 
         // avoid circles
         if (_processingObjects.Contains(toTraverseGameObject))
         {
-            // if already exists connect to existing node
-            if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject != null)
+            // connect to existing node if already exists 
+            if (_instanceIdToNodeLookup.TryGetValue(toTraverseGameObjectID, out var existingNode) && parentNodeObject)
             {
                 ConnectNodes(parentNodeObject, existingNode,
                     isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection", nodeColorsConfig.maxWidthHierarchy);
@@ -469,7 +483,7 @@ public class SceneAnalyzer : MonoBehaviour
             // Traverse its children
             foreach (Transform child in toTraverseGameObject.transform)
             {
-                if (child && child.gameObject)
+                if (child && child.gameObject && !child.gameObject.GetComponent<NodeType>())
                 {
                     TraverseGameObject(child.gameObject, depth + 1, nodeObject);
                 }
@@ -487,7 +501,7 @@ public class SceneAnalyzer : MonoBehaviour
         var instanceId = scriptableObject.GetInstanceID();
         if (_processingObjects.Contains(scriptableObject))
         {
-            if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
+            if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
                 ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
             }
@@ -549,6 +563,10 @@ public class SceneAnalyzer : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// Function to load metrics generated by external roslyn script which analyzes code complexity and maintainability  
+    /// </summary>
+    /// <param name="json"></param>
     private void LoadComplexityMetrics(string json)
     {
         var root = JSON.Parse(json);
@@ -574,6 +592,11 @@ public class SceneAnalyzer : MonoBehaviour
     {
         if (!component || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
             ignoreTransforms && component.GetType() == typeof(Transform)) return;
+        // if (parentNodeObject && parentNodeObject.GetComponent<NodeType>())
+        // {
+        //     Debug.Log("in traverse component is node gameObject");
+        //     return;
+        // }
 
         var instanceId = component.GetInstanceID();
 
@@ -581,7 +604,7 @@ public class SceneAnalyzer : MonoBehaviour
         if (_processingObjects.Contains(component))
         {
             // If we're in a cycle, connect to the existing node if we have one
-            if (_instanceIdToNode.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
+            if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
                 ConnectNodes(parentNodeObject, existingNode, componentConnection, depth: depth, "componentConnection", nodeColorsConfig.maxWidthHierarchy);
             }
@@ -611,7 +634,7 @@ public class SceneAnalyzer : MonoBehaviour
                     var idOfAssetObject = referencedObject.GetInstanceID();
                     if (_processingObjects.Contains(referencedObject))
                     {
-                        if (_instanceIdToNode.TryGetValue(idOfAssetObject, out var existingNode) && parentNodeObject)
+                        if (_instanceIdToNodeLookup.TryGetValue(idOfAssetObject, out var existingNode) && parentNodeObject)
                             ConnectNodes(nodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
                         return;
                     }
@@ -679,7 +702,7 @@ public class SceneAnalyzer : MonoBehaviour
             springSimulation.CleanupNativeArrays();
         }
 
-        _instanceIdToNode.Clear();
+        _instanceIdToNodeLookup.Clear();
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _currentNodes = 0;
