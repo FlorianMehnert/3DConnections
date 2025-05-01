@@ -96,6 +96,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
         var lineObj = Instantiate(lineRendererPrefab, transform);
         var lineRenderer = lineObj.GetComponent<LineRenderer>();
+        lineObj.AddComponent<ArtificialGameObject>();
         lineRenderer.name = startNode.name + "-" + endNode.name;
         var knownColor = color ?? Color.white;
         Color.RGBToHSV(knownColor, out var h, out _, out var v);

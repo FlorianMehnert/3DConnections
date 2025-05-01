@@ -191,6 +191,9 @@ public class SceneAnalyzer : MonoBehaviour
             type.reference = obj;
         }
 
+        // used to avoid recursive node spawning if applied to overlay scene
+        nodeObject.AddComponent<ArtificialGameObject>();
+
         // add text
         var textObj = new GameObject("Text");
         textObj.transform.SetParent(nodeObject.transform);
@@ -440,25 +443,19 @@ public class SceneAnalyzer : MonoBehaviour
     {
         // do not investigate gameobject when node count is too large or when the gameobject is a "node" gameobject
         if (!toTraverseGameObject || _currentNodes >= maxNodes) return;
-        var isNodeGameObject = toTraverseGameObject.GetComponent<NodeType>() || parentNodeObject && parentNodeObject.GetComponent<NodeType>();
-        if (isNodeGameObject)
-        {
-            Debug.Log("in Traverse gameObject is Node");
-            return;
-        }
-        
+        if (toTraverseGameObject.GetComponent<ArtificialGameObject>()) return;
+
         var toTraverseGameObjectID = toTraverseGameObject.GetInstanceID();
 
         // avoid circles
         if (_processingObjects.Contains(toTraverseGameObject))
         {
-            // connect to existing node if already exists 
+            // connect to existing node if already exists
             if (_instanceIdToNodeLookup.TryGetValue(toTraverseGameObjectID, out var existingNode) && parentNodeObject)
             {
                 ConnectNodes(parentNodeObject, existingNode,
                     isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection", nodeColorsConfig.maxWidthHierarchy);
             }
-
             return;
         }
 
@@ -469,7 +466,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             var nodeObject = GetOrSpawnNode(toTraverseGameObject, depth, parentNodeObject);
 
-            // Only traverse we haven't visited before
+            // Only traverse that was not visited before
             if (!needsTraversal) return;
             _visitedObjects.Add(toTraverseGameObject);
             foreach (var component in toTraverseGameObject.GetComponents<Component>())
@@ -483,7 +480,7 @@ public class SceneAnalyzer : MonoBehaviour
             // Traverse its children
             foreach (Transform child in toTraverseGameObject.transform)
             {
-                if (child && child.gameObject && !child.gameObject.GetComponent<NodeType>())
+                if (child && child.gameObject)
                 {
                     TraverseGameObject(child.gameObject, depth + 1, nodeObject);
                 }
@@ -592,11 +589,6 @@ public class SceneAnalyzer : MonoBehaviour
     {
         if (!component || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
             ignoreTransforms && component.GetType() == typeof(Transform)) return;
-        // if (parentNodeObject && parentNodeObject.GetComponent<NodeType>())
-        // {
-        //     Debug.Log("in traverse component is node gameObject");
-        //     return;
-        // }
 
         var instanceId = component.GetInstanceID();
 
