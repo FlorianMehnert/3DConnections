@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Button = UnityEngine.UIElements.Button;
 
+/// Query buttons and add callbacks for buttons in the Settings Menu which allows the user to adjust the "to analyze scene", layout and parameters
 public class SettingsMenuGeneral : MonoBehaviour
 {
     // General UI
