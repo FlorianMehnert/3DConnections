@@ -412,14 +412,28 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
     
-    private static void ChangeTextSize(GameObject node, float size)
+    public void ChangeTextSize(GameObject node, float size)
     {
-        var textComponent = node.transform.GetComponentInChildren<TextMeshPro>();
-        if (textComponent != null)
+        var textComponent = node.GetComponentInChildren<TMP_Text>();
+        if (!textComponent) return;
+        textComponent.fontSize = size;
+        textComponent.ForceMeshUpdate();
+
+        var preferredValues = textComponent.GetPreferredValues();
+        var textObject = textComponent.gameObject;
+
+        if (textObject.TryGetComponent<RectTransform>(out var rectTransform))
         {
-            textComponent.fontSize = size;
+            rectTransform.sizeDelta = new Vector2(preferredValues.x*1.5f, preferredValues.y);
+        }
+        else
+        {
+            var scaleFactor = size / 36f;
+            textObject.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
         }
     }
+
+
 
 
     public void Initialize()
