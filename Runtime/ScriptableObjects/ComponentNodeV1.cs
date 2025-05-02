@@ -2,36 +2,36 @@ using System;
 using JetBrains.Annotations;
 using UnityEngine;
 
-public class ComponentNode : Node
+public class ComponentNodeV1 : NodeV1
 {
     protected sealed override Type NodeType => base.NodeType;
 
     public Component Component { get; }
 
-    public ComponentNode(string name, float x, float y, float width, float height, [CanBeNull] Component co) : base(
+    public ComponentNodeV1(string name, float x, float y, float width, float height, [CanBeNull] Component co) : base(
         name, x, y, width, height)
     {
-        NodeType = typeof(ComponentNode);
+        NodeType = typeof(ComponentNodeV1);
         Component = co;
     }
 
-    public ComponentNode(string name, [CanBeNull] Component co) : base(name)
+    public ComponentNodeV1(string name, [CanBeNull] Component co) : base(name)
     {
-        NodeType = typeof(ComponentNode);
+        NodeType = typeof(ComponentNodeV1);
     }
 
-    public ComponentNode(Transform position, [CanBeNull] Component co) : base(position)
+    public ComponentNodeV1(Transform position, [CanBeNull] Component co) : base(position)
     {
-        NodeType = typeof(ComponentNode);
+        NodeType = typeof(ComponentNodeV1);
     }
 
-    public static ComponentNode GetOrCreateNode(Component component, NodeGraphScriptableObject nodegraph)
+    public static ComponentNodeV1 GetOrCreateNode(Component component, NodeGraphScriptableObject nodegraph)
     {
         if (component == null)
             return null;
 
         // component exists with a name
-        var newCo = new ComponentNode(component.GetType().Name, component);
+        var newCo = new ComponentNodeV1(component.GetType().Name, component);
         if (nodegraph.Contains(component))
         {
             var componentNode = nodegraph.GetNode(component);

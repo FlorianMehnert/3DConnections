@@ -532,7 +532,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
     }
 
-    private string GetClassNameFromMetric(string metricName)
+    private static string GetClassNameFromMetric(string metricName)
     {
         // Split the metric name to extract the class name (e.g., "Program.cs::AnalyzeCodeMetrics" -> "Program")
         var parts = metricName.Split(new[] { "::" }, System.StringSplitOptions.None);

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,14 +11,13 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     /// <param name="nodes">List of nodes to be positioned</param>
     /// <param name="targetAspectRatio">Desired aspect ratio (width/height)</param>
     /// <param name="minimumPadding">Minimum spacing between nodes</param>
-    public static void GridLayout(List<Node> nodes, float targetAspectRatio = 1.0f, float minimumPadding = 5f)
+    public static void GridLayout(List<NodeV1> nodes, float targetAspectRatio = 1.0f, float minimumPadding = 5f)
     {
         if (nodes == null || nodes.Count == 0) return;
 
         // Determine layout grid dimensions
         var nodeCount = nodes.Count;
         var gridColumns = Mathf.CeilToInt(Mathf.Sqrt(nodeCount));
-        var gridRows = Mathf.CeilToInt((float)nodeCount / gridColumns);
 
         // Normalize node sizes to a fixed aspect ratio while preserving total area
         var normalizedNodes = nodes.Select(node =>
@@ -28,7 +26,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
             var newWidth = Mathf.Sqrt(node.Width * node.Height * targetAspectRatio);
             var newHeight = newWidth / targetAspectRatio;
 
-            return new GameObjectNode(node.Name, 0, 0, newWidth, newHeight, null);
+            return new GameObjectNodeV1(node.Name, 0, 0, newWidth, newHeight, null);
         }).ToList();
 
         // Determine max node dimensions in the grid
@@ -63,7 +61,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     {
         if (!NodeConnectionManager.Instance) return;
         var forestManager = new ConnectionsBasedForestManager();
-        var rootNodes = new List<TreeNode>();
+        List<TreeNode> rootNodes;
         switch (layoutParameters.layoutType)
         {
             case (int)LayoutType.Grid:

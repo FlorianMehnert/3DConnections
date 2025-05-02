@@ -291,7 +291,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetFloat(EConstant, (float)Math.E);
     }
 
-    // TODO: return connection strength based on hierarchy level and node types
     private float ConnectionStrength(int i, int j)
     {
         // 1. get nodes

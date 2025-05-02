@@ -12,7 +12,7 @@ using UnityEngine;
 public class NodeGraphScriptableObject : ScriptableObject
 {
     // connections of Node objects and their visually representing GameObjects
-    private Dictionary<GameObject, Node> _nodesByGameObject = new();
+    private Dictionary<GameObject, NodeV1> _nodesByGameObject = new();
     public GameObject currentlySelectedGameObject;
     public Bounds currentlySelectedBounds;
     private List<GameObject> _allNodes = new();
@@ -98,9 +98,9 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// </summary>
     /// <param name="node"></param>
     /// <returns>True for successful adding, False for unsuccessful</returns>
-    public bool Add(Node node)
+    public bool Add(NodeV1 node)
     {
-        if (node.RelatedGameObject == null && node is GameObjectNode)
+        if (node.RelatedGameObject == null && node is GameObjectNodeV1)
         {
             Debug.Log("trying to add node that has no game object attached");
             return false;
@@ -108,7 +108,7 @@ public class NodeGraphScriptableObject : ScriptableObject
 
         if (!Contains(node))
         {
-            if (node is GameObjectNode)
+            if (node is GameObjectNodeV1)
             {
                 var success = _nodesByGameObject.TryAdd(node.RelatedGameObject, node);
                 if (!success)
@@ -130,7 +130,7 @@ public class NodeGraphScriptableObject : ScriptableObject
         return false;
     }
 
-    public Node Add(GameObject gameObject)
+    public NodeV1 Add(GameObject gameObject)
     {
         if (gameObject == null)
         {
@@ -138,7 +138,7 @@ public class NodeGraphScriptableObject : ScriptableObject
             return null;
         }
 
-        var newNode = new GameObjectNode(gameObject.name, null) { RelatedGameObject = gameObject };
+        var newNode = new GameObjectNodeV1(gameObject.name, null) { RelatedGameObject = gameObject };
         if (Contains(gameObject)) return _nodesByGameObject[gameObject];
 
         if (!_nodesByGameObject.TryAdd(gameObject, newNode))
@@ -155,21 +155,21 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// </summary>
     /// <param name="gameObject">GameObject that is on the OverlayScene representing a gameObject, component, etc.</param>
     /// <returns>Node that is representing the given gameObject which is on the overlay</returns>
-    public Node GetNode(GameObject gameObject)
+    public NodeV1 GetNode(GameObject gameObject)
     {
         return _nodesByGameObject[gameObject];
     }
 
-    public ComponentNode GetNode(Component component)
+    public ComponentNodeV1 GetNode(Component component)
     {
-        return _nodesByGameObject.Values.OfType<ComponentNode>().FirstOrDefault(x => x.Name == component.name);
+        return _nodesByGameObject.Values.OfType<ComponentNodeV1>().FirstOrDefault(x => x.Name == component.name);
     }
 
 
     // Contains using node as value
-    private bool Contains(Node node)
+    private bool Contains(NodeV1 nodeV1)
     {
-        return _nodesByGameObject.ContainsValue(node);
+        return _nodesByGameObject.ContainsValue(nodeV1);
     }
 
 
@@ -191,7 +191,7 @@ public class NodeGraphScriptableObject : ScriptableObject
     {
         foreach (var node in _nodesByGameObject.Values)
         {
-            if (node is not ComponentNode componentNode) continue;
+            if (node is not ComponentNodeV1 componentNode) continue;
             if (componentNode.Component && componentNode.Component == component)
             {
                 return true;
@@ -205,7 +205,7 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// Smarter Add which deletes node/go if the matching node has the same name and location to ensure 1 to 1
     /// </summary>
     /// <param name="node"></param>
-    public bool ReplaceRelatedGo(Node node)
+    public bool ReplaceRelatedGo(NodeV1 node)
     {
         // remove existing nodes and existing gameObjects
         foreach (var existingNode in GetNodes()
@@ -219,21 +219,21 @@ public class NodeGraphScriptableObject : ScriptableObject
         return Add(node);
     }
 
-    private Dictionary<GameObject, Node>.ValueCollection GetNodes()
+    private Dictionary<GameObject, NodeV1>.ValueCollection GetNodes()
     {
         return _nodesByGameObject.Values;
     }
 
-    private List<GameObjectNode> GetGameObjectNodes()
+    private List<GameObjectNodeV1> GetGameObjectNodes()
     {
-        return _nodesByGameObject.Values.OfType<GameObjectNode>().ToList();
+        return _nodesByGameObject.Values.OfType<GameObjectNodeV1>().ToList();
     }
 
     /// <summary>
     /// Get all GameObjectNodes but also check for existing GameObject
     /// </summary>
     /// <returns></returns>
-    private List<GameObjectNode> GetGameObjectNodesWithGameObject()
+    private List<GameObjectNodeV1> GetGameObjectNodesWithGameObject()
     {
         return GetGameObjectNodes().Where(gameObjectNode => gameObjectNode.GameObject != null).ToList();
     }
@@ -243,7 +243,7 @@ public class NodeGraphScriptableObject : ScriptableObject
     /// </summary>
     /// <param name="id">id of the searched gameObject</param>
     /// <returns></returns>
-    public GameObjectNode ContainsGameObjectNodeByID(int id)
+    public GameObjectNodeV1 ContainsGameObjectNodeByID(int id)
     {
         return GetGameObjectNodesWithGameObject().FirstOrDefault(goNode => goNode.GameObject.GetInstanceID() == id);
     }
@@ -402,7 +402,7 @@ public class NodeGraphScriptableObject : ScriptableObject
         {
             var node = nodeObj.GetComponent<ColoredObject>();
             if (node == null) continue;
-            if (string.IsNullOrEmpty(searchString) || nodeObj.name.Contains(searchString, System.StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(searchString) || nodeObj.name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             {
                 ChangeTextSize(nodeObj, 30f);
             }
@@ -425,7 +425,7 @@ public class NodeGraphScriptableObject : ScriptableObject
 
     public void Initialize()
     {
-        _nodesByGameObject = new Dictionary<GameObject, Node>();
+        _nodesByGameObject = new Dictionary<GameObject, NodeV1>();
         currentlySelectedGameObject = null;
         currentlySelectedBounds = new Bounds();
         _allNodes = new List<GameObject>();

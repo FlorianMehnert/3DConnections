@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Internal representation of a Node used to compute layouts and keep track of all available nodes
 /// </summary>
-public abstract class Node
+public abstract class NodeV1
 {
     public readonly string Name;
     public float X { get; set; }
@@ -16,7 +16,7 @@ public abstract class Node
     /// <summary>
     /// Property for displaying hierarchy among nodes. Mostly influenced by transform hierarchies
     /// </summary>
-    private List<Node> _children = new();
+    private List<NodeV1> _children = new();
 
     // physical node
     public GameObject RelatedGameObject;
@@ -24,7 +24,7 @@ public abstract class Node
     // the respective object in the analyzed scene
     protected virtual Type NodeType { get; set; }
 
-    protected Node(string name, float x, float y, float width, float height)
+    protected NodeV1(string name, float x, float y, float width, float height)
     {
         Name = name;
         X = x;
@@ -33,7 +33,7 @@ public abstract class Node
         Height = height;
     }
 
-    protected Node(string name)
+    protected NodeV1(string name)
     {
         X = 0;
         Y = 0;
@@ -43,7 +43,7 @@ public abstract class Node
         RelatedGameObject = null;
     }
 
-    protected Node(Transform position)
+    protected NodeV1(Transform position)
     {
         X = 0;
         Y = 0;
@@ -68,24 +68,24 @@ public abstract class Node
         return "Name: " + Name + " NodeType: " + NodeType;
     }
 
-    public bool AddChild(Node child)
+    public bool AddChild(NodeV1 child)
     {
         if (_children.Contains(child)) return false;
         _children.Add(child);
         return true;
     }
 
-    public bool RemoveChild(Node child)
+    public bool RemoveChild(NodeV1 child)
     {
         return _children.Remove(child);
     }
 
-    public List<Node> GetChildren()
+    public List<NodeV1> GetChildren()
     {
         return _children;
     }
 
-    public void SetChildren(List<Node> children)
+    public void SetChildren(List<NodeV1> children)
     {
         _children = children;
     }

@@ -2,12 +2,12 @@ using System;
 using JetBrains.Annotations;
 using UnityEngine;
 
-public class GameObjectNode : Node
+public class GameObjectNodeV1 : NodeV1
 {
     protected sealed override Type NodeType => base.NodeType;
 
 
-    public GameObjectNode(string name, float x, float y, float width, float height, [CanBeNull] GameObject go) : base(
+    public GameObjectNodeV1(string name, float x, float y, float width, float height, [CanBeNull] GameObject go) : base(
         name, x, y, width, height)
     {
         NodeType = typeof(GameObject);
@@ -19,7 +19,7 @@ public class GameObjectNode : Node
     /// </summary>
     /// <param name="name">Name of the GameObjectNode</param>
     /// <param name="go">GameObject that will be represented by this GameObjectNode</param>
-    public GameObjectNode(string name, [CanBeNull] GameObject go) : base(name)
+    public GameObjectNodeV1(string name, [CanBeNull] GameObject go) : base(name)
     {
         NodeType = typeof(GameObject);
         GameObject = go;

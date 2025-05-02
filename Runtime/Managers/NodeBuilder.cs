@@ -36,7 +36,7 @@ public class NodeBuilder : MonoBehaviour
     /// </summary>
     /// <param name="node"></param>
     /// <param name="color">Color of the node</param>
-    private GameObject SpawnNodeOnOverlay(Node node, Color color)
+    private GameObject SpawnNodeOnOverlay(NodeV1 node, Color color)
     {
         if (!overlay.GetCameraOfScene())
         {
@@ -57,7 +57,7 @@ public class NodeBuilder : MonoBehaviour
         {
             case null:
                 return null;
-            case GameObjectNode goNode when goNode.GameObject != null:
+            case GameObjectNodeV1 goNode when goNode.GameObject != null:
             {
                 if (nodeGraph.ContainsGameObjectNodeByID(goNode.GameObject.GetInstanceID()) != null)
                 {
@@ -67,7 +67,7 @@ public class NodeBuilder : MonoBehaviour
 
                 break;
             }
-            case GameObjectNode goNode:
+            case GameObjectNodeV1 goNode:
                 // this branch is entered using draw grid
                 break;
         }
@@ -84,14 +84,14 @@ public class NodeBuilder : MonoBehaviour
         {
             type.nodeTypeName = node switch
             {
-                GameObjectNode => NodeTypeName.GameObject,
-                ComponentNode => NodeTypeName.Component,
+                GameObjectNodeV1 => NodeTypeName.GameObject,
+                ComponentNodeV1 => NodeTypeName.Component,
                 _ => type.nodeTypeName
             };
             type.reference = node switch
             {
-                GameObjectNode gameObjectNode => gameObjectNode.GameObject,
-                ComponentNode componentNode => componentNode.Component.gameObject,
+                GameObjectNodeV1 gameObjectNode => gameObjectNode.GameObject,
+                ComponentNodeV1 componentNode => componentNode.Component.gameObject,
                 _ => null
             };
         }
@@ -119,14 +119,14 @@ public class NodeBuilder : MonoBehaviour
     /// <param name="path">Location in which to look for scripts to display</param>
     /// <param name="allReferences">Filled out string to string ClassReferences for the given path</param>
     /// <returns>List of nodes that were created for scripts in the given path</returns>
-    private static List<Node> FindScriptNodes(string path, out Dictionary<string, ClassReferences> allReferences)
+    private static List<NodeV1> FindScriptNodes(string path, out Dictionary<string, ClassReferences> allReferences)
     {
-        List<Node> nodes = new();
+        List<NodeV1> nodes = new();
         allReferences = ClassParser.GetAllClassReferencesParallel(path);
 
         foreach (var (scriptName, _) in allReferences)
         {
-            var node = new GameObjectNode(scriptName, null);
+            var node = new GameObjectNodeV1(scriptName, null);
             nodes.Add(node);
         }
 
@@ -139,19 +139,19 @@ public class NodeBuilder : MonoBehaviour
     /// <param name="nodes">List of nodes to analyze</param>
     /// <param name="allReferences">Lookup for all connections using string lookup</param>
     /// <returns></returns>
-    private static Dictionary<Node, HashSet<Node>> CalculateNodeConnections(
-        List<Node> nodes,
+    private static Dictionary<NodeV1, HashSet<NodeV1>> CalculateNodeConnections(
+        List<NodeV1> nodes,
         Dictionary<string, ClassReferences> allReferences)
     {
         // Create a lookup dictionary to quickly find nodes by their script name
-        var nodesByScriptName = new Dictionary<string, Node>();
+        var nodesByScriptName = new Dictionary<string, NodeV1>();
         foreach (var node in nodes)
         {
             nodesByScriptName.TryAdd(node.Name, node);
         }
 
         // Dictionary to store node connections
-        var nodeConnections = new Dictionary<Node, HashSet<Node>>();
+        var nodeConnections = new Dictionary<NodeV1, HashSet<NodeV1>>();
 
         foreach (var (scriptName, classReferences) in allReferences)
         {
@@ -162,7 +162,7 @@ public class NodeBuilder : MonoBehaviour
             // Ensure we have an entry for this node in the connection dictionary
             if (!nodeConnections.ContainsKey(currentNode))
             {
-                nodeConnections[currentNode] = new HashSet<Node>();
+                nodeConnections[currentNode] = new HashSet<NodeV1>();
             }
 
             // Find connections to other nodes
@@ -181,7 +181,7 @@ public class NodeBuilder : MonoBehaviour
     }
 
     private static void DrawNodeConnections(
-        Dictionary<Node, HashSet<Node>> nodeConnections)
+        Dictionary<NodeV1, HashSet<NodeV1>> nodeConnections)
     {
         foreach (var (sourceNode, connectedNodes) in nodeConnections)
         {
