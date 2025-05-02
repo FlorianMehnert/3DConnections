@@ -157,6 +157,12 @@ public class SceneAnalyzer : MonoBehaviour
             nodeGraph.AllNodes.Add(rootNode);
     }
 
+    /// <summary>
+    /// Spawn a node gameObject in the overlay scene
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="isAsset"></param>
+    /// <returns></returns>
     private GameObject SpawnNode(Object obj, bool isAsset = false)
     {
         if (!overlay.GetCameraOfScene())
@@ -324,15 +330,6 @@ public class SceneAnalyzer : MonoBehaviour
 #endif
 
 
-    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType, uint maxWidthHierarchy)
-    {
-        if (NodeConnectionManager.Instance)
-            NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.98f - (float)depth / maxWidthHierarchy) + .1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10) + .1f, connectionType);
-        var inConnections = inGameObject.GetComponent<LocalNodeConnections>();
-        var outConnections = outGameObject.GetComponent<LocalNodeConnections>();
-        inConnections.outConnections.Add(outGameObject);
-        outConnections.inConnections.Add(inGameObject);
-    }
 
     private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null, bool isAsset = false)
     {
@@ -346,10 +343,10 @@ public class SceneAnalyzer : MonoBehaviour
             // Connect existing node
             if (!parentNodeObject) return existingNode;
             if (isAsset)
-                ConnectNodes(parentNodeObject, existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
             else
             {
-                ConnectNodes(parentNodeObject, existingNode,
+                parentNodeObject.ConnectNodes(existingNode,
                     obj switch
                     {
                         GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
@@ -373,10 +370,10 @@ public class SceneAnalyzer : MonoBehaviour
         _instanceIdToNodeLookup[instanceId] = newNode;
         if (!parentNodeObject) return newNode;
         if (isAsset)
-            ConnectNodes(parentNodeObject, newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+            parentNodeObject.ConnectNodes(newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
         else
         {
-            ConnectNodes(parentNodeObject, newNode,
+            parentNodeObject.ConnectNodes(newNode,
                 obj switch
                 {
                     GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
@@ -418,7 +415,7 @@ public class SceneAnalyzer : MonoBehaviour
             // connect to existing node if already exists
             if (_instanceIdToNodeLookup.TryGetValue(toTraverseGameObjectID, out var existingNode) && parentNodeObject)
             {
-                ConnectNodes(parentNodeObject, existingNode,
+                parentNodeObject.ConnectNodes(existingNode,
                     isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection", nodeColorsConfig.maxWidthHierarchy);
             }
             return;
@@ -465,7 +462,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                ConnectNodes(parentNodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
             }
 
             return;
@@ -508,21 +505,7 @@ public class SceneAnalyzer : MonoBehaviour
     }
 
 
-    private void ScaleNode(GameObject nodeObject, Component component)
-    {
-        // Check if the complexity value exists for the component's class name
-        if (!_complexityMap.TryGetValue(component.GetType().Name, out var complexity)) return;
-
-        // compute all scales maybe and adjust
-        var scaleFactor = Math.Abs(complexity - 90f) * 0.3f; // Clamp to prevent extreme scaling
-
-
-        if (nodeObject && nodeObject.transform)
-        {
-            nodeObject.transform.localScale = new Vector3(scaleFactor * 2, scaleFactor, nodeObject.transform.localScale.z);
-            // nodeObject.GetComponent<Collider2D>();
-        }
-    }
+    
 
 
     /// <summary>
@@ -563,7 +546,7 @@ public class SceneAnalyzer : MonoBehaviour
             // If we're in a cycle, connect to the existing node if we have one
             if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                ConnectNodes(parentNodeObject, existingNode, componentConnection, depth: depth, "componentConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, componentConnection, depth: depth, "componentConnection", nodeColorsConfig.maxWidthHierarchy);
             }
 
             return;
@@ -576,7 +559,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             var nodeObject = GetOrSpawnNode(component, depth + 1, parentNodeObject);
             if (scaleNodesUsingMaintainability)
-                ScaleNode(nodeObject, component);
+                nodeObject.ScaleNodeUsingComplexityMap(component, _complexityMap);
 
             // Only traverse references if we haven't visited this component before
             if (!needsTraversal) return;
@@ -592,7 +575,7 @@ public class SceneAnalyzer : MonoBehaviour
                     if (_processingObjects.Contains(referencedObject))
                     {
                         if (_instanceIdToNodeLookup.TryGetValue(idOfAssetObject, out var existingNode) && parentNodeObject)
-                            ConnectNodes(nodeObject, existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                            parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
                         return;
                     }
 

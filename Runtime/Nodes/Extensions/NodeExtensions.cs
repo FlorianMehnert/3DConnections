@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// This class is an extension for gameObjects. These extensions are useful in the context of creating node graphs
@@ -35,7 +38,7 @@ public static class NodeExtensions
         }
     }
     
-    private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType, uint maxWidthHierarchy)
+    public static void ConnectNodes(this GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType, uint maxWidthHierarchy)
     {
         if (NodeConnectionManager.Instance)
             NodeConnectionManager.Instance.AddConnection(inGameObject, outGameObject, connectionColor, lineWidth: Mathf.Clamp01(.98f - (float)depth / maxWidthHierarchy) + .1f, saturation: Mathf.Clamp01(.9f - (float)depth / 10) + .1f, connectionType);
@@ -43,5 +46,20 @@ public static class NodeExtensions
         var outConnections = outGameObject.GetComponent<LocalNodeConnections>();
         inConnections.outConnections.Add(outGameObject);
         outConnections.inConnections.Add(inGameObject);
+    }
+    
+    public static void ScaleNodeUsingComplexityMap(this GameObject nodeObject, Component component, Dictionary<string, float> complexityMap)
+    {
+        // Check if the complexity value exists for the component's class name
+        if (!complexityMap.TryGetValue(component.GetType().Name, out var complexity)) return;
+
+        // compute all scales maybe and adjust
+        var scaleFactor = Math.Abs(complexity - 90f) * 0.3f; // Clamp to prevent extreme scaling
+
+
+        if (nodeObject && nodeObject.transform)
+        {
+            nodeObject.transform.localScale = new Vector3(scaleFactor * 2, scaleFactor, nodeObject.transform.localScale.z);
+        }
     }
 }
