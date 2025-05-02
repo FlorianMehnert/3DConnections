@@ -7,4 +7,15 @@ public class NodeType : MonoBehaviour
 {
     [SerializeField] public NodeTypeName nodeTypeName;
     [SerializeField] public Object reference;
+    
+    public void SetNodeType(Object obj)
+    {
+        nodeTypeName = obj switch
+        {
+            GameObject => NodeTypeName.GameObject,
+            Component => NodeTypeName.Component,
+            ScriptableObject => NodeTypeName.ScriptableObject,
+            _ => nodeTypeName
+        };
+    }
 }

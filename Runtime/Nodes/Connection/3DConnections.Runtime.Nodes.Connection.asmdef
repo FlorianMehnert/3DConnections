@@ -1,0 +1,6 @@
+{
+  "name": "3DConnections.Runtime.Nodes.Connection",
+  "rootNamespace": "3DConnections.Runtime.Nodes.Connection",
+  "references":[
+  ]
+}

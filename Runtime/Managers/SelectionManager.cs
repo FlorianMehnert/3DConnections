@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Vector3 = UnityEngine.Vector3;

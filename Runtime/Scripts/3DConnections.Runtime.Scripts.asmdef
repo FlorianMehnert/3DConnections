@@ -11,7 +11,9 @@
         "GUID:7d9d183d4bd44dbf921dcc470f619338",
         "GUID:776e09b4de4a427fba7608d3c91be466",
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
-        "GUID:b3002b8f7d8d4f289e3cbd54b99ed1fc"
+        "GUID:b3002b8f7d8d4f289e3cbd54b99ed1fc",
+        "3DConnections.Runtime.Nodes.Extensions",
+        "GUID:f4eb26c44d5d41ef825a8424c949fb63"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

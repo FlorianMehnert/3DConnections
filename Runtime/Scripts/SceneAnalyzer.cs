@@ -1,14 +1,15 @@
 using System;
 using System.Linq;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using TMPro;
-using Unity.Collections;
 using SimpleJSON;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 public class SceneAnalyzer : MonoBehaviour
@@ -187,7 +188,7 @@ public class SceneAnalyzer : MonoBehaviour
         var type = nodeObject.GetComponent<NodeType>();
         if (type)
         {
-            SetNodeType(type, obj);
+            type.SetNodeType(obj);
             type.reference = obj;
         }
 
@@ -254,15 +255,15 @@ public class SceneAnalyzer : MonoBehaviour
         // handle prefabs
         if (!IsPrefab(obj))
         {
-            SetNodeColor(nodeObject, obj, isAsset);
+            nodeObject.SetNodeColor(obj, gameObjectColor, componentColor, scriptableObjectColor, assetColor, isAsset);
             return nodeObject;
         }
 
-        var renderer = nodeObject.GetComponent<Renderer>();
-        if (!renderer) return nodeObject;
-        renderer.material.EnableKeyword("_EMISSION");
+        var nodeRenderer = nodeObject.GetComponent<Renderer>();
+        if (!nodeRenderer) return nodeObject;
+        nodeRenderer.material.EnableKeyword("_EMISSION");
         var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
-        renderer.material.SetColor(EmissionColor, emissionColor);
+        nodeRenderer.material.SetColor(EmissionColor, emissionColor);
         return nodeObject;
     }
 
@@ -311,7 +312,7 @@ public class SceneAnalyzer : MonoBehaviour
 
 
         return _cachedPrefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>)
-            .Any(prefab => prefab != null && prefab.name == gameObjectName);
+            .Any(prefab => prefab && prefab.name == gameObjectName);
 #else
 	        return PrefabUtility.GetPrefabType(go) != PrefabType.None;
 #endif
@@ -322,42 +323,6 @@ public class SceneAnalyzer : MonoBehaviour
             }
 #endif
 
-
-    private static void SetNodeType(NodeType type, Object obj)
-    {
-        type.nodeTypeName = obj switch
-        {
-            GameObject => NodeTypeName.GameObject,
-            Component => NodeTypeName.Component,
-            ScriptableObject => NodeTypeName.ScriptableObject,
-            _ => type.nodeTypeName
-        };
-    }
-
-    /// <summary>
-    /// Sets the material to according to the specified color for gameObjects, Components and ScriptableObjects
-    /// </summary>
-    /// <param name="node"></param>
-    /// <param name="obj"></param>
-    private void SetNodeColor(GameObject node, Object obj, bool isAsset = false)
-    {
-        var componentRenderer = node.GetComponent<Renderer>();
-        if (!componentRenderer) return;
-        if (isAsset)
-        {
-            componentRenderer.material.color = assetColor;
-        }
-        else
-        {
-            componentRenderer.material.color = obj switch
-            {
-                GameObject => gameObjectColor,
-                Component => componentColor,
-                ScriptableObject => scriptableObjectColor,
-                _ => Color.black
-            };
-        }
-    }
 
     private static void ConnectNodes(GameObject inGameObject, GameObject outGameObject, Color connectionColor, int depth, string connectionType, uint maxWidthHierarchy)
     {

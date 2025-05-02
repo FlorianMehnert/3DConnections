@@ -1,5 +1,7 @@
 {
   "name": "3DConnections.Runtime.Nodes",
   "rootNamespace": "3DConnections.Runtime.Nodes",
-  "references":[ "GUID:776e09b4de4a427fba7608d3c91be466" ]
+  "references":[ 
+    "GUID:776e09b4de4a427fba7608d3c91be466"
+  ]
 }
