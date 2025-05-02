@@ -187,7 +187,12 @@ public class KeyDisplay : MonoBehaviour
                 var menu = FindFirstObjectByType<SettingsMenuGeneral>();
                 if (menu)
                 {
-                    if (_inputString.StartsWith("1"))
+                    if (_inputString.StartsWith("0"))
+                    {
+                        Log("Executing physics sim (Method: Unity Components)");
+                        menu.ApplyStaticLayout();
+                    }
+                    else if (_inputString.StartsWith("1"))
                     {
                         Log("Executing physics sim (Method: Unity Components)");
                         menu.ApplyComponentPhysics();

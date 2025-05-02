@@ -168,6 +168,16 @@ public class SettingsMenuGeneral : MonoBehaviour
             Debug.Log("did not find");
     }
     
+    public void ApplyStaticLayout()
+    {
+        if (nodeGraph.AllNodes.Count <= 0) return;
+        removePhysicsEvent.TriggerEvent();
+        var springSimulation = FindFirstObjectByType<SpringSimulation>();
+        if (springSimulation)
+            springSimulation.CleanupNativeArrays();
+        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
+    }
+    
     public void ApplyComponentPhysics()
     {
         if (nodeGraph.AllNodes.Count <= 0) return;
@@ -179,7 +189,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
-        foreach (var boxCollider2D in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()).Where(boxCollider2D => boxCollider2D))
+        foreach (var boxCollider2D in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()))
         {
             boxCollider2D.isTrigger = false;
             boxCollider2D.size = Vector2.one * 5;
