@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -24,6 +25,12 @@ public class CameraController : MonoBehaviour
     [SerializeField] private GameObject parentObject;
     Vector2 moveAmountGamepad;
     float zoomGamepad;
+    
+    [Header("Wide Screenshot specific")] [SerializeField]
+    
+    // wide screenshot parameters
+    public int width = 2000;
+    public string filePath = "Assets/wide_screenshot.png";
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
     [SerializeField] private MenuState menuState;
@@ -325,4 +332,54 @@ public class CameraController : MonoBehaviour
             }
         }
     }
+    
+    #if UNITY_EDITOR
+    [ContextMenu("Capture Node Graph Screenshot")]
+    public void Capture()
+    {
+        if (nodeGraph.AllNodes == null || nodeGraph.AllNodes.Count == 0 || _cam == null)
+        {
+            Debug.LogError("Missing camera or nodes");
+            return;
+        }
+
+        // --- Calculate bounds around all nodes ---
+        var positions = nodeGraph.AllNodes.Select(go => go.transform.position);
+        var min = positions.Aggregate(Vector3.Min);
+        var max = positions.Aggregate(Vector3.Max);
+        var center = (min + max) * 0.5f;
+        var size = max - min;
+
+        // --- Set up camera to frame everything ---
+        _cam.orthographic = true;
+        _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+
+        var cameraHeight = size.y * 1.1f; // Add padding
+        var cameraWidth = size.x * 1.1f;
+
+        _cam.orthographicSize = cameraHeight / 2f;
+
+        var outputHeight = Mathf.RoundToInt(width * (cameraHeight / cameraWidth));
+
+        // --- Set up RenderTexture ---
+        var rt = new RenderTexture(width, outputHeight, 24);
+        _cam.targetTexture = rt;
+
+        // --- Render and save image ---
+        var image = new Texture2D(width, outputHeight, TextureFormat.RGB24, false);
+        _cam.Render();
+        RenderTexture.active = rt;
+        image.ReadPixels(new Rect(0, 0, width, outputHeight), 0, 0);
+        image.Apply();
+        
+        File.WriteAllBytes(filePath, image.EncodeToPNG());
+        Debug.Log("Saved screenshot to: " + filePath);
+
+        // --- Cleanup ---
+        _cam.targetTexture = null;
+        RenderTexture.active = null;
+        DestroyImmediate(rt);
+        AssetDatabase.Refresh();
+    }
+#endif
 }

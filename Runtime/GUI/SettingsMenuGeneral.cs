@@ -69,7 +69,10 @@ public class SettingsMenuGeneral : MonoBehaviour
         });
         _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
 
-        _textField?.RegisterValueChangedCallback(evt => nodeGraph.SearchNodes(evt.newValue));
+        _textField?.RegisterValueChangedCallback(evt =>
+        {
+            if (menuState.menuOpen) nodeGraph.SearchNodes(evt.newValue);
+        });
 
         PopulateActions();
         InitializeAnalyzeButton();
