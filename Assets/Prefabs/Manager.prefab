@@ -265,6 +265,29 @@ MonoBehaviour:
   simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
   clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
+  gameObjectRestLength: 20
+  gameObjectComponentRestLength: 5
+  componentRestLength: 1
+  radialDistance: 1.5
+  radialAngleOffset: 0
+  minAngleSeparation: 0.1
+  showForceArrows: 1
+  arrowHeadSize: 0.2
+  gameObjectArrowColor: {r: 0, g: 0, b: 1, a: 1}
+  componentArrowColor: {r: 0, g: 1, b: 0, a: 1}
+  minArrowAlpha: 0.2
+  maxArrowAlpha: 0.8
+  showTrails: 1
+  trailHistoryLength: 30
+  gameObjectTrailColor: {r: 0.2, g: 0.2, b: 0.8, a: 0.5}
+  componentTrailColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.5}
+  trailWidth: 0.05
+  enableRelaxation: 1
+  relaxationDuration: 2
+  relaxationStrength: 0.2
+  initialMaxVelocity: 0.5
+  finalMaxVelocity: 10
+  minIntegrationTimeStep: 0.01
 --- !u!114 &3120672303489094690
 MonoBehaviour:
   m_ObjectHideFlags: 0

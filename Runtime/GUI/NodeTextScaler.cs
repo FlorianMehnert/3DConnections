@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using TMPro;
 
@@ -22,13 +24,10 @@ public class NodeTextScaler : MonoBehaviour
     [Tooltip("Reference to the NodeGraph containing all nodes")]
     public NodeGraphScriptableObject nodeGraph;
 
-    // Store reference to camera
     public Camera mainCamera;
+    public MenuState menuState;
     
-    // Store velocity variables for SmoothDamp
     private readonly Dictionary<TMP_Text, float> _velocities = new();
-    
-    // Store original font sizes
     private readonly Dictionary<TMP_Text, float> _originalFontSizes = new();
 
     private void Start()
@@ -43,10 +42,10 @@ public class NodeTextScaler : MonoBehaviour
             return;
 
         foreach (var textComponent in from node in nodeGraph.AllNodes 
-                 where node != null 
+                 where node != null
                  select node.GetComponentInChildren<TMP_Text>() 
                  into textComponent 
-                 where textComponent != null 
+                 where textComponent != null
                  select textComponent)
         {
             _originalFontSizes[textComponent] = textComponent.fontSize;
@@ -56,7 +55,10 @@ public class NodeTextScaler : MonoBehaviour
 
     private void Update()
     {
-        ScaleTextBasedOnMouseProximity();
+        if (menuState && !menuState.menuOpen)
+        {
+            ScaleTextBasedOnMouseProximity();
+        }
     }
 
     private void ScaleTextBasedOnMouseProximity()
@@ -64,7 +66,6 @@ public class NodeTextScaler : MonoBehaviour
         if (!nodeGraph || nodeGraph.AllNodes == null || !mainCamera)
             return;
 
-        // Get mouse position in world space
         var mousePosition = Input.mousePosition;
         mousePosition.z = -mainCamera.transform.position.z; // Set the distance from the camera
         var mouseWorldPos = mainCamera.ScreenToWorldPoint(mousePosition);

@@ -3,7 +3,6 @@
     "rootNamespace": "3DConnections.Runtime.Managers",
     "references": [
         "GUID:407d9f5d313b4d20b83d06c1f10def66",
-        "GUID:56d16c4e5bd74b3e81439d09a9b966ca",
         "GUID:6055be8ebefd69e48b49212b09b47b2f",
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
         "GUID:2665a8d13d1b3f18800f46e256720795",
