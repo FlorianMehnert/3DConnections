@@ -1,8 +1,9 @@
 using UnityEngine;
 
-public class DebugOverlay : MonoBehaviour
+public class DebugOverlay : ModularSettingsUser
 {
-    public bool showOverlay = false;
+    [RegisterModularBoolSetting("Show overlay", "Show the DebugOverlay (F2)", "Debug", false)]
+    public bool showOverlay;
     public float transparency = 0.7f;
     
     private ModularSettingsManager _settingsManager;
@@ -24,18 +25,7 @@ public class DebugOverlay : MonoBehaviour
 
     private void Awake()
     {
-        _settingsManager = FindFirstObjectByType<ModularSettingsManager>();
-        if (!_settingsManager) return;
-        var showOverlaySetting = ScriptableObject.CreateInstance<BoolModularMenuData>();
-        showOverlaySetting.settingName = "Show Overlay";
-        showOverlaySetting.description = "Show the DebugOverlay (F2)";
-        showOverlaySetting.category = "Debug";
-        showOverlaySetting.defaultValue = false;
-        _settingsManager.RegisterSetting(showOverlaySetting);
-        showOverlaySetting.OnValueChanged += (value) =>
-        {
-            showOverlay = value;
-        };
+        RegisterModularSettings();
     }
 
     private void OnGUI()

@@ -3,21 +3,17 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class FPSDisplay : MonoBehaviour
+public class FPSDisplay : ModularSettingsUser
 {
     private float _deltaTime;
     private readonly List<float> _fpsBuffer = new();
     private const int BufferSize = 60;
-    [RegisterModularSetting("Show FPS", "Show the current fps (F3)", "Debug", false)]
+    [RegisterModularBoolSetting("Show FPS", "Show the current fps (F3)", "Debug", false)]
     private bool _showFPS;
     
     private void Awake()
     {
-        var settingsManager = FindFirstObjectByType<ModularSettingsManager>();
-        if (settingsManager)
-        {
-            RegisterModularSetting.RegisterAllSettings(this, settingsManager);
-        }
+        RegisterModularSettings();
     }
 
     private void Update()
@@ -37,10 +33,15 @@ public class FPSDisplay : MonoBehaviour
     {
         if (!_showFPS) return;
         int w = Screen.width, h = Screen.height;
-        var style = new GUIStyle();
-        style.alignment = TextAnchor.LowerRight; // Anchor text to the bottom-right
-        style.fontSize = h / 60;
-        style.normal.textColor = Color.white;
+        var style = new GUIStyle
+        {
+            alignment = TextAnchor.LowerRight, // Anchor text to the bottom-right
+            fontSize = h / 60,
+            normal =
+            {
+                textColor = Color.white
+            }
+        };
         var averageFPS = CalculateAverageFPS();
         var rect = new Rect(w - 130, h - 40, 120, 30); // Adjust position and size
         var text = $"FPS: {averageFPS:F1}";
