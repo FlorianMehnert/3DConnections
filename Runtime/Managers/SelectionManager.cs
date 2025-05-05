@@ -10,9 +10,10 @@ using UnityEngine.EventSystems;
 using Vector3 = UnityEngine.Vector3;
 using UnityEngine.UI;
 
-public class CubeSelector : MonoBehaviour
+public class CubeSelector : ModularSettingsUser
 {
     [Header("Layer settings")] [SerializeField]
+    [RegisterModularStringSetting("Target Layer", "The layer against which the selection will try to select objects against", "Selection", "OverlayLayer")]
     private string targetLayerName = "OverlayLayer";
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
@@ -39,12 +40,13 @@ public class CubeSelector : MonoBehaviour
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
 
-
+    [RegisterModularFloatSetting("Double Click Treshold", "How long you can wait for the double click to be recognized", "Selection", 0.3f, 0, 1f)]
     public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
 
     private float _timer; // Timer to track time between clicks
     private int _clickCount; // Number of clicks
 
+    [RegisterModularBoolSetting("Ping Object in the Editor", "When you select the object should it be pinged while in the editor", "Selection", false)]
     [SerializeField] private bool pingObjectInEditor;
 
     [Header("Selection Rectangle")] [SerializeField]
@@ -78,6 +80,11 @@ public class CubeSelector : MonoBehaviour
         // Initialize selection rectangle
         if (selectionRectangle == null) return;
         selectionRectangle.gameObject.SetActive(false);
+    }
+
+    private void Awake()
+    {
+        RegisterModularSettings();
     }
 
     private void Update()

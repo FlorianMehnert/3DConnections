@@ -22,21 +22,16 @@ This is a Unity Extension used to primarily visualize and analyze scenes in Unit
 - Handle the creation and composition of the nodes later used to display dependencies
 
 # How to register new settings
+This is an easier way to test settings I just throw together. Also this is only supposed to be used in manager scripts and similar components.
 - say you have this field `private bool _showFPS;` you can register the setting using
 ```csharp
 [RegisterModularSetting("Show FPS", "Show the current fps (F3)", "Debug", false)]
 private bool _showFPS;
 ```
+- then also inherit from `ModularSettingsUser` instead of `MonoBehaviour`
 - somewhere later e.g. `Awake()` you need to call the following:
 ```csharp
-# Get an instance of the ModularSettingsManager
-var settingsManager = FindFirstObjectByType<ModularSettingsManager>();
-
-# Register all settings for this class
-if (settingsManager)
-{
-    RegisterModularSetting.RegisterAllSettings(this, settingsManager);
-}
+RegisterModularSettings();
 ```
 
 # Changelog

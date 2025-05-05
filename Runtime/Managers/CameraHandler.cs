@@ -10,9 +10,10 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Manager Class to move the orthographic camera using middle mouse drag and zoom in/out using mouse wheel
 /// </summary>
-public class CameraController : MonoBehaviour
+public class CameraController : ModularSettingsUser
 {
-    [Header("Zoom Settings")] public float zoomSpeed = 10f;
+    [RegisterModularFloatSetting("Zoom Speed", "speed with which the camera is able to zoom in", "Camera", 10f, 1f, 20f)] [Header("Zoom Settings")]
+    public float zoomSpeed = 10f;
 
     private Camera _cam;
     private Vector3 _lastMousePosition;
@@ -20,16 +21,20 @@ public class CameraController : MonoBehaviour
     private float _screenHeight;
     private float _worldWidth;
     private float _worldHeight;
-    [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
+
+    [RegisterModularFloatSetting("Center padding", "When centering (g) use some padding", "Camera", 1.1f, 0f, 2f)] [SerializeField]
+    private float padding = 1.1f; // Extra space when centering on selection
+
     [SerializeField] public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private GameObject parentObject;
     private Vector2 _moveAmountGamepad;
     private float _zoomGamepad;
-    
+
     [Header("Wide Screenshot specific")] [SerializeField]
-    
+
     // wide screenshot parameters
     public int width = 2000;
+
     public string filePath = "Assets/wide_screenshot.png";
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
@@ -42,6 +47,11 @@ public class CameraController : MonoBehaviour
 
         // Calculate world dimensions based on current orthographic size
         CalculateWorldDimensions();
+    }
+
+    private void Awake()
+    {
+        RegisterModularSettings();
     }
 
     private void AddLayerToCamera(string layerName)
@@ -71,8 +81,8 @@ public class CameraController : MonoBehaviour
         {
             // Disable all nodes
             foreach (var node in nodeGraph.AllNodes)
-            { 
-                if (!node) continue; 
+            {
+                if (!node) continue;
                 var meshRenderer = node.GetComponent<MeshRenderer>();
                 if (meshRenderer)
                     meshRenderer.enabled = false;
@@ -81,11 +91,11 @@ public class CameraController : MonoBehaviour
                     child.gameObject.SetActive(false);
                 }
             }
-            
+
             // Disable all connections
             foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
                 lineRenderer.enabled = false;
-            
+
             // reenable all nodes that are connected with deep
             nodeGraph.ReenableConnectedNodes(nodeGraph.currentlySelectedGameObject, 0);
             EnableOutgoingLines(nodeGraph.currentlySelectedGameObject);
@@ -101,8 +111,8 @@ public class CameraController : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G) && parentObject)
         {
             foreach (var node in nodeGraph.AllNodes)
-            { 
-                if (!node) continue; 
+            {
+                if (!node) continue;
                 var meshRenderer = node.GetComponent<MeshRenderer>();
                 if (meshRenderer)
                     meshRenderer.enabled = true;
@@ -111,6 +121,7 @@ public class CameraController : MonoBehaviour
                     child.gameObject.SetActive(true);
                 }
             }
+
             foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
                 lineRenderer.enabled = true;
         }
@@ -124,10 +135,10 @@ public class CameraController : MonoBehaviour
         if (!menuState) return;
         HandleZoom();
         HandlePan();
-        
+
         var movement = new Vector3(_moveAmountGamepad.x, _moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
         _cam.transform.position += movement;
-        _cam.orthographicSize += _zoomGamepad  * _cam.orthographicSize;
+        _cam.orthographicSize += _zoomGamepad * _cam.orthographicSize;
         _cam.orthographicSize = Mathf.Abs(_cam.orthographicSize);
     }
 
@@ -177,7 +188,6 @@ public class CameraController : MonoBehaviour
     {
         if (menuState.menuOpen) return;
         _moveAmountGamepad = context.ReadValue<Vector2>();
-
     }
 
     private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
@@ -293,7 +303,7 @@ public class CameraController : MonoBehaviour
         var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
         _cam.orthographicSize = size * padding;
     }
-    
+
     /// <summary>
     /// Used in Focus on Node to reenable Nodes that are in focus
     /// </summary>
@@ -324,8 +334,8 @@ public class CameraController : MonoBehaviour
             }
         }
     }
-    
-    #if UNITY_EDITOR
+
+#if UNITY_EDITOR
     [ContextMenu("Capture Node Graph Screenshot")]
     public void Capture()
     {
@@ -364,7 +374,7 @@ public class CameraController : MonoBehaviour
         RenderTexture.active = rt;
         image.ReadPixels(new Rect(0, 0, width, outputHeight), 0, 0);
         image.Apply();
-        
+
         File.WriteAllBytes(filePath, image.EncodeToPNG());
         Debug.Log("Saved screenshot to: " + filePath);
 

@@ -2,11 +2,12 @@ using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class KeyDisplay : MonoBehaviour
+public class KeyDisplay : ModularSettingsUser
 {
     private string _inputString = "";
     private string _debugString = "";
-    private const float ClearDelay = 1f; // Time in seconds before the input string disappears
+   [RegisterModularFloatSetting("Clear delay", "Timespan for which the current letters will stay on the screen", "KeyDisplay", 1f, 0f, 1f)]
+    private const float ClearDelay = 1f;
     private float _lastInputTime;
     private float _lastDebugTime;
     private GUIStyle _style;
@@ -15,14 +16,29 @@ public class KeyDisplay : MonoBehaviour
 
     private void Start()
     {
-        _style = new();
-        _style.normal.textColor = Color.white;
-        _style.fontSize = 20;
-        _style.alignment = TextAnchor.MiddleLeft;
-        _debugStyle = new();
-        _debugStyle.normal.textColor = Color.red;
-        _debugStyle.fontSize = 20;
-        _debugStyle.alignment = TextAnchor.MiddleLeft;
+        _style = new GUIStyle
+        {
+            normal =
+            {
+                textColor = Color.white
+            },
+            fontSize = 20,
+            alignment = TextAnchor.MiddleLeft
+        };
+        _debugStyle = new GUIStyle
+        {
+            normal =
+            {
+                textColor = Color.red
+            },
+            fontSize = 20,
+            alignment = TextAnchor.MiddleLeft
+        };
+    }
+
+    private void Awake()
+    {
+        RegisterModularSettings();
     }
 
     private void Log(string message, float extendDelay=0f)

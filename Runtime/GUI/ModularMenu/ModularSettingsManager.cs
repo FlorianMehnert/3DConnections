@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -95,9 +96,8 @@ public class ModularSettingsManager : MonoBehaviour
             categoryContainer.AddToClassList("settings-category");
             categoryContainer.value = true; // Expanded by default
             
-            foreach (var setting in _categorySettingsMap[category])
+            foreach (var settingElement in _categorySettingsMap[category].Select(setting => setting.CreateSettingElement()))
             {
-                var settingElement = setting.CreateSettingElement();
                 categoryContainer.Add(settingElement);
             }
             

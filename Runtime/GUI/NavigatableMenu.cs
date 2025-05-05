@@ -2,42 +2,31 @@
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using System.Linq;
 
 public class NavigatableMenu : MonoBehaviour
 {
-    private UIDocument menuDocument;
-    private PlayerInput playerInput;
-    private InputAction navigationAction;
-    private InputAction submitAction;
-    private InputAction tabAction;
-    private TabView tabView;
-    private List<Tab> tabButtons;
-    private List<VisualElement> tabContents;
-    private List<Button> currentTabButtons;
-    private int currentTabIndex = 0;
-    private int currentButtonIndex = -1;
-    [SerializeField] MenuState menuState;
+    private UIDocument _menuDocument;
+    private InputAction _navigationAction;
+    private InputAction _submitAction;
+    private InputAction _tabAction;
+    private TabView _tabView;
+    private List<Tab> _tabButtons;
+    private List<Button> _currentTabButtons;
+    private int _currentButtonIndex = -1;
+    [SerializeField] private MenuState menuState;
 
     private void Awake()
     {
-        menuDocument = GetComponent<UIDocument>();
-        playerInput = GetComponent<PlayerInput>();
+        _menuDocument = GetComponent<UIDocument>();
     }
 
     private void OnEnable()
     {
-        var root = menuDocument.rootVisualElement;
+        var root = _menuDocument.rootVisualElement;
         
-        tabView = root.Q<TabView>("tabs");
-        tabButtons = tabView.Query<Tab>().ToList(); 
-        tabContents = new List<VisualElement>();
-        Debug.Log(tabButtons.Count);
-        
-        foreach (var content in tabButtons.Select(tab => root.Q<VisualElement>(tab.name + "Content")).Where(content => content != null))
-        {
-            tabContents.Add(content);
-        }
+        _tabView = root.Q<TabView>("tabs");
+        _tabButtons = _tabView.Query<Tab>().ToList(); 
+        Debug.Log(_tabButtons.Count);
     }
 
     public void OnTabSwitchPerformed(InputAction.CallbackContext context)
@@ -45,8 +34,8 @@ public class NavigatableMenu : MonoBehaviour
         if(context.performed || context.canceled ) return;
         var tabDirection = context.ReadValue<float>();
     
-        var currentIndex = tabView.selectedTabIndex;
-        var totalTabs = tabButtons.Count;
+        var currentIndex = _tabView.selectedTabIndex;
+        var totalTabs = _tabButtons.Count;
     
         int newIndex;
         if (tabDirection > 0)
@@ -59,8 +48,8 @@ public class NavigatableMenu : MonoBehaviour
         }
     
         if (newIndex < 0 || newIndex >= totalTabs) return;
-        tabView.selectedTabIndex = newIndex;
-        var currentTab = tabButtons[newIndex];
+        _tabView.selectedTabIndex = newIndex;
+        var currentTab = _tabButtons[newIndex];
         currentTab.Focus();
 
         var currentElements = currentTab.Query<Button>().ToList();
@@ -80,48 +69,39 @@ public class NavigatableMenu : MonoBehaviour
 
     public void OnNavigationPerformed(InputAction.CallbackContext context)
     {
-        if (currentTabButtons == null || currentTabButtons.Count == 0) return;
+        if (_currentTabButtons == null || _currentTabButtons.Count == 0) return;
 
-        Vector2 direction = context.ReadValue<Vector2>();
-        int previousIndex = currentButtonIndex;
+        var direction = context.ReadValue<Vector2>();
+        var previousIndex = _currentButtonIndex;
 
-        // Handle vertical navigation
+        // Vertical navigation
         if (direction.y != 0)
         {
-            currentButtonIndex += direction.y < 0 ? 1 : -1;
-            currentButtonIndex = Mathf.Clamp(currentButtonIndex, 0, currentTabButtons.Count - 1);
-        }
-        
-        // Handle horizontal navigation if you have buttons in a grid layout
-        else if (direction.x != 0)
-        {
-            // Implement grid-based navigation here if needed
+            _currentButtonIndex += direction.y < 0 ? 1 : -1;
+            _currentButtonIndex = Mathf.Clamp(_currentButtonIndex, 0, _currentTabButtons.Count - 1);
         }
 
-        if (previousIndex != currentButtonIndex)
+        if (previousIndex != _currentButtonIndex)
         {
             UpdateButtonFocus();
         }
     }
 
-    public void UpdateButtonFocus()
+    private void UpdateButtonFocus()
     {
-        if (currentButtonIndex >= 0 && currentButtonIndex < currentTabButtons.Count)
+        if (_currentButtonIndex >= 0 && _currentButtonIndex < _currentTabButtons.Count)
         {
-            currentTabButtons[currentButtonIndex].Focus();
+            _currentTabButtons[_currentButtonIndex].Focus();
         }
     }
 
     public void OnSubmitPerformed(InputAction.CallbackContext context)
     {
-        if (currentButtonIndex >= 0 && currentButtonIndex < currentTabButtons.Count)
-        {
-            // Simulate button click
-            var button = currentTabButtons[currentButtonIndex];
-            using var e = new NavigationSubmitEvent();
-            e.target = button;
-            button.SendEvent(e);
-            ;
-        }
+        if (_currentButtonIndex < 0 || _currentButtonIndex >= _currentTabButtons.Count) return;
+        var button = _currentTabButtons[_currentButtonIndex];
+        using var e = new NavigationSubmitEvent();
+        e.target = button;
+        button.SendEvent(e);
+        ;
     }
 }
