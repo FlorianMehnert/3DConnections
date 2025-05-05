@@ -4,6 +4,8 @@ public class DebugOverlay : MonoBehaviour
 {
     public bool showOverlay = false;
     public float transparency = 0.7f;
+    
+    private ModularSettingsManager _settingsManager;
 
     // Example variables to display
     public NodeColorsScriptableObject nodeColors;
@@ -18,6 +20,22 @@ public class DebugOverlay : MonoBehaviour
         {
             showOverlay = !showOverlay;
         }
+    }
+
+    private void Awake()
+    {
+        _settingsManager = FindFirstObjectByType<ModularSettingsManager>();
+        if (!_settingsManager) return;
+        var showOverlaySetting = ScriptableObject.CreateInstance<BoolModularMenuData>();
+        showOverlaySetting.settingName = "Show Overlay";
+        showOverlaySetting.description = "Show the DebugOverlay (F2)";
+        showOverlaySetting.category = "Debug";
+        showOverlaySetting.defaultValue = false;
+        _settingsManager.RegisterSetting(showOverlaySetting);
+        showOverlaySetting.OnValueChanged += (value) =>
+        {
+            showOverlay = value;
+        };
     }
 
     private void OnGUI()

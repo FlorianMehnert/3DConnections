@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <Style src="ModularMenu.uss" />
+    <engine:VisualElement name="settings-window" class="settings-window">
+        <engine:Label text="Settings" class="settings-title" />
+        <engine:ScrollView class="settings-scroll">
+            <engine:VisualElement name="settings-container" class="settings-container" />
+        </engine:ScrollView>
+        <engine:VisualElement class="settings-actions">
+            <engine:Button name="save-settings" text="Save" class="settings-button" />
+            <engine:Button name="cancel-settings" text="Cancel" class="settings-button" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

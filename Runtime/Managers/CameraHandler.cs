@@ -23,8 +23,8 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
     [SerializeField] public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private GameObject parentObject;
-    Vector2 moveAmountGamepad;
-    float zoomGamepad;
+    private Vector2 _moveAmountGamepad;
+    private float _zoomGamepad;
     
     [Header("Wide Screenshot specific")] [SerializeField]
     
@@ -125,9 +125,9 @@ public class CameraController : MonoBehaviour
         HandleZoom();
         HandlePan();
         
-        var movement = new Vector3(moveAmountGamepad.x, moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
+        var movement = new Vector3(_moveAmountGamepad.x, _moveAmountGamepad.y, 0) * (5 * Time.deltaTime * _cam.orthographicSize);
         _cam.transform.position += movement;
-        _cam.orthographicSize += zoomGamepad  * _cam.orthographicSize;
+        _cam.orthographicSize += _zoomGamepad  * _cam.orthographicSize;
         _cam.orthographicSize = Mathf.Abs(_cam.orthographicSize);
     }
 
@@ -163,8 +163,8 @@ public class CameraController : MonoBehaviour
         var delta = Input.mousePosition - _lastMousePosition;
 
         // Calculate pan based on screen width/height and world dimensions
-        var horizontalWorldMovement = (delta.x / _screenWidth) * _worldWidth;
-        var verticalWorldMovement = (delta.y / _screenHeight) * _worldHeight;
+        var horizontalWorldMovement = delta.x / _screenWidth * _worldWidth;
+        var verticalWorldMovement = delta.y / _screenHeight * _worldHeight;
 
         var move = new Vector3(-horizontalWorldMovement, -verticalWorldMovement, 0);
 
@@ -176,16 +176,8 @@ public class CameraController : MonoBehaviour
     public void OnMove(InputAction.CallbackContext context)
     {
         if (menuState.menuOpen) return;
-        moveAmountGamepad = context.ReadValue<Vector2>();
+        _moveAmountGamepad = context.ReadValue<Vector2>();
 
-    }
-    
-    public void OnZoom(InputAction.CallbackContext context)
-    {
-        if (menuState.menuOpen) return;
-        var zoomVector = context.ReadValue<float>();
-        zoomGamepad = -zoomVector * Time.deltaTime;            
-        CalculateWorldDimensions();
     }
 
     private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
@@ -210,7 +202,7 @@ public class CameraController : MonoBehaviour
             if (!targetObject) return;
 #endif
         LineRenderer lineRenderer = null;
-        if (targetObject != null)
+        if (targetObject)
             lineRenderer = targetObject.GetComponent<LineRenderer>();
         if (lineRenderer &&
             lineRenderer.positionCount == 2) // connections aka lineRenderers should be focussed on using their bounds
@@ -345,8 +337,9 @@ public class CameraController : MonoBehaviour
 
         // --- Calculate bounds around all nodes ---
         var positions = nodeGraph.AllNodes.Select(go => go.transform.position);
-        var min = positions.Aggregate(Vector3.Min);
-        var max = positions.Aggregate(Vector3.Max);
+        var enumerable = positions as Vector3[] ?? positions.ToArray();
+        var min = enumerable.Aggregate(Vector3.Min);
+        var max = enumerable.Aggregate(Vector3.Max);
         var center = (min + max) * 0.5f;
         var size = max - min;
 

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,17 @@ public class FPSDisplay : MonoBehaviour
     private float _deltaTime;
     private readonly List<float> _fpsBuffer = new();
     private const int BufferSize = 60;
+    [RegisterModularSetting("Show FPS", "Show the current fps (F3)", "Debug", false)]
     private bool _showFPS;
+    
+    private void Awake()
+    {
+        var settingsManager = FindFirstObjectByType<ModularSettingsManager>();
+        if (settingsManager)
+        {
+            RegisterModularSetting.RegisterAllSettings(this, settingsManager);
+        }
+    }
 
     private void Update()
     {

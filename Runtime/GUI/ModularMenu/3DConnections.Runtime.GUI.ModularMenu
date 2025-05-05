@@ -1,0 +1,15 @@
+{
+    "name": "3DConnections.Runtime.GUI.ModularMenu",
+    "rootNamespace": "3DConnections.Runtime.GUI.ModularMenu",
+    "references": [
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
