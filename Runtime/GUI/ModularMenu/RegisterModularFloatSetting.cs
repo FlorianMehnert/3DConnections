@@ -18,6 +18,8 @@ public class RegisterModularFloatSetting : Attribute
         _description = description;
         _category = category;
         _defaultValue = defaultValue;
+        _minValue = minValue;
+        _maxValue = maxValue;
     }
 
     public static void Register(MonoBehaviour target, FieldInfo field, RegisterModularFloatSetting attr, ModularSettingsManager settingsManager)

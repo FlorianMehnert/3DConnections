@@ -518,14 +518,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     {
         return "enabled keywords: " + computeShader.enabledKeywords.Length + " nodes: " + _nodes.Length +
                " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null");
-        var relaxationStatus = enableRelaxation ? 
-            $" (Relaxation: {(_relaxationTimer < relaxationDuration ? $"active {_relaxationTimer:F1}/{relaxationDuration:F1}" : "complete")})" : 
-            " (Relaxation: disabled)";
-
-        return "enabled keywords: " + computeShader.enabledKeywords.Length +
-               " nodes: " + _nodes.Length +
-               " nodeBuffer is " + (_nodeBuffer != null ? " not null " + _nodeBuffer.count : " null") +
-               relaxationStatus;
     }
 }
 

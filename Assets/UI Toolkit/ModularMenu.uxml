@@ -1,6 +1,6 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/ModularMenu.uss?fileID=7433441132597879392&amp;guid=02c05cb35fc742e7807e8059a8446ba3&amp;type=3#ModularMenu" />
-    <engine:VisualElement name="settings-window" class="settings-window">
+    <engine:VisualElement name="settings-window" class="settings-window" style="display: flex;">
         <engine:Label text="Settings" class="settings-title" />
         <engine:ScrollView class="settings-scroll">
             <engine:VisualElement name="settings-container" class="settings-container" />

@@ -4,6 +4,7 @@
     background-color: rgb(42, 42, 42);
     padding: 10px;
     -unity-font-definition: url("project://database/Assets/3DConnections/Assets/Fonts/Permanent_Marker,Source_Sans_3,Tilt_Neon,Ubuntu/Tilt_Neon/static/TiltNeon-Regular.ttf?fileID=12800000&guid=bb487ff9e1fea58929a0cc57f13906ba&type=3#TiltNeon-Regular");
+    display: none;
 }
 
 .settings-title {
