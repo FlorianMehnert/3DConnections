@@ -13,6 +13,8 @@ public class ModularSettingsManager : MonoBehaviour
     private readonly Dictionary<string, List<ModularMenuData>> _categorySettingsMap = new();
     private readonly List<ModularMenuData> _allSettings = new();
     private VisualElement _settingsWindow;
+    private VisualElement _saveButton;
+    private VisualElement _cancleButton;
 
     private void Awake()
     {
@@ -27,7 +29,8 @@ public class ModularSettingsManager : MonoBehaviour
     private void OnEnable()
     {
         GenerateSettingsUI();
-        _settingsWindow = uiDocument.rootVisualElement.Q<VisualElement>("settings-window");
+        GrabUIElements(uiDocument.rootVisualElement);
+        
     }
 
     private void Update()
@@ -36,6 +39,13 @@ public class ModularSettingsManager : MonoBehaviour
         {
             ToggleMenu();
         }
+    }
+    
+    private void GrabUIElements(VisualElement root)
+    {
+        _settingsWindow = root.Q<VisualElement>("settings-window");
+        _cancleButton = root.Q<Button>("cancel-settings");
+        _saveButton = root.Q<Button>("save-settings");
     }
 
     private void ToggleMenu()
