@@ -1,10 +1,68 @@
+:root {
+    --primary: rgb(252, 176, 213);
+    --surfaceTint: rgb(252, 176, 213);
+    --onPrimary: rgb(82, 29, 60);
+    --primaryContainer: rgb(108, 51, 83);
+    --onPrimaryContainer: rgb(255, 216, 232);
+    --secondary: rgb(223, 189, 204);
+    --onSecondary: rgb(64, 42, 53);
+    --secondaryContainer: rgb(88, 64, 75);
+    --onSecondaryContainer: rgb(253, 217, 232);
+    --tertiary: rgb(243, 187, 155);
+    --onTertiary: rgb(74, 40, 17);
+    --tertiaryContainer: rgb(100, 61, 37);
+    --onTertiaryContainer: rgb(255, 219, 200);
+    --error: rgb(255, 180, 171);
+    --onError: rgb(105, 0, 5);
+    --errorContainer: rgb(147, 0, 10);
+    --onErrorContainer: rgb(255, 218, 214);
+    --background: rgb(24, 17, 21);
+    --onBackground: rgb(238, 223, 227);
+    --surface: rgb(24, 17, 21);
+    --onSurface: rgb(238, 223, 227);
+    --surfaceVariant: rgb(80, 67, 73);
+    --onSurfaceVariant: rgb(212, 194, 200);
+    --outline: rgb(156, 141, 146);
+    --outlineVariant: rgb(80, 67, 73);
+    --shadow: rgb(0, 0, 0);
+    --scrim: rgb(0, 0, 0);
+    --inverseSurface: rgb(238, 223, 227);
+    --inverseOnSurface: rgb(55, 46, 50);
+    --inversePrimary: rgb(136, 75, 107);
+    --primaryFixed: rgb(255, 216, 232);
+    --onPrimaryFixed: rgb(56, 7, 38);
+    --primaryFixedDim: rgb(252, 176, 213);
+    --onPrimaryFixedVariant: rgb(108, 51, 83);
+    --secondaryFixed: rgb(253, 217, 232);
+    --onSecondaryFixed: rgb(41, 21, 32);
+    --secondaryFixedDim: rgb(223, 189, 204);
+    --onSecondaryFixedVariant: rgb(88, 64, 75);
+    --tertiaryFixed: rgb(255, 219, 200);
+    --onTertiaryFixed: rgb(49, 19, 2);
+    --tertiaryFixedDim: rgb(243, 187, 155);
+    --onTertiaryFixedVariant: rgb(100, 61, 37);
+    --surfaceDim: rgb(24, 17, 21);
+    --surfaceBright: rgb(64, 55, 58);
+    --surfaceContainerLowest: rgb(19, 12, 15);
+    --surfaceContainerLow: rgb(33, 25, 29);
+    --surfaceContainer: rgb(37, 29, 33);
+    --surfaceContainerHigh: rgb(48, 40, 43);
+    --surfaceContainerHighest: rgb(59, 50, 54);
+}
+
 .settings-window {
     width: 100%;
     height: 100%;
-    background-color: rgb(42, 42, 42);
+    background-color: var(--surfaceContainerLowest);
     padding: 10px;
     -unity-font-definition: url("project://database/Assets/3DConnections/Assets/Fonts/Permanent_Marker,Source_Sans_3,Tilt_Neon,Ubuntu/Tilt_Neon/static/TiltNeon-Regular.ttf?fileID=12800000&guid=bb487ff9e1fea58929a0cc57f13906ba&type=3#TiltNeon-Regular");
-    display: none;
+    visibility: visible;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.hidden {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .settings-title {
@@ -25,7 +83,7 @@
 
 .settings-category {
     margin-bottom: 15px;
-    background-color: rgb(60, 60, 60);
+    background-color: var(--surfaceContainerHigh);
     border-radius: 4px;
     padding: 5px;
 }
@@ -33,7 +91,7 @@
 .settings-category > Toggle {
     padding: 5px;
     font-size: 16px;
-    color: slategray;
+    color: var(--secondaryFixedDim);
     -unity-font-style: bold;
 }
 
@@ -44,8 +102,8 @@
 .setting-container {
     margin: 8px 0;
     padding: 8px;
-    background-color: rgb(50, 50, 50);
-    color: lightgrey;
+    background-color: var(--surfaceContainerLow);
+    color: var(--secondaryFixed);
     border-radius: 4px;
 }
 
@@ -63,12 +121,12 @@
 
 .setting-value {
     font-size: 12px;
-    color: rgb(200, 200, 200);
+    color: var(--onTertiary);
 }
 
 .setting-description {
     font-size: 12px;
-    color: rgb(180, 180, 180);
+    color: var(--tertiary);
     margin-top: 5px;
     white-space: normal;
 }
@@ -96,26 +154,88 @@ DropdownField {
 }
 
 .settings-button {
-    width: 100px;
-    height: 30px;
-    margin-left: 10px;
-    background-color: rgb(78, 122, 199);
-    color: white;
-    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    align-items: center;
+    justify-content: center;
 }
 
-.settings-button:hover {
-    background-color: rgb(100, 140, 220);
+.unity-button__image {
+    padding: 2px;
 }
 
-.reset-button {
-    margin-top: 20px;
-    padding: 8px;
-    background-color: rgb(190, 70, 70);
-    color: white;
-    border-radius: 4px;
+#unity-text-input {
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-left-color: rgb(108, 51, 83);
+    border-right-color: rgb(108, 51, 83);
+    border-top-color: rgb(108, 51, 83);
+    border-bottom-color: rgb(108, 51, 83);
 }
 
-.reset-button:hover {
-    background-color: rgb(220, 90, 90);
+.unity-base-slider__tracker {
+    background-color: rgb(252, 176, 213);
+}
+
+#unity-high-button {
+    background-color: rgb(108, 51, 83);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+#unity-low-button {
+    background-color: rgb(108, 51, 83);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.unity-base-slider__drag-container {
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
+
+#unity-dragger {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    background-color: rgb(88, 64, 75);
+}
+
+#unity-checkmark {
+    background-color: rgb(88, 64, 75);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
 }

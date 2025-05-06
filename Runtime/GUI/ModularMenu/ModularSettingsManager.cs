@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,8 +14,10 @@ public class ModularSettingsManager : MonoBehaviour
     private readonly Dictionary<string, List<ModularMenuData>> _categorySettingsMap = new();
     private readonly List<ModularMenuData> _allSettings = new();
     private VisualElement _settingsWindow;
-    private VisualElement _saveButton;
-    private VisualElement _cancleButton;
+    private Button _cancelButton;
+    private Button _resetButton;
+    private bool _isTransitioning;
+    [SerializeField] private MenuState menuState;
 
     private void Awake()
     {
@@ -29,13 +32,20 @@ public class ModularSettingsManager : MonoBehaviour
     private void OnEnable()
     {
         GenerateSettingsUI();
-        GrabUIElements(uiDocument.rootVisualElement);
+        try
+        {
+            GrabUIElements(uiDocument.rootVisualElement);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
         
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F4))
+        if (Input.GetKeyDown(KeyCode.F4) && !_isTransitioning)
         {
             ToggleMenu();
         }
@@ -44,24 +54,48 @@ public class ModularSettingsManager : MonoBehaviour
     private void GrabUIElements(VisualElement root)
     {
         _settingsWindow = root.Q<VisualElement>("settings-window");
-        _cancleButton = root.Q<Button>("cancel-settings");
-        _saveButton = root.Q<Button>("save-settings");
+        _cancelButton = root.Q<Button>("cancel-button");
+        _resetButton = root.Q<Button>("reset-button");
+        _resetButton.clicked += ResetAllSettings;
+        _cancelButton.clicked += HideMenu;
     }
 
     private void ToggleMenu()
     {
-        _settingsWindow.style.display = _settingsWindow.style.display == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None;
+        if (_settingsWindow.ClassListContains("hidden"))
+            ShowMenu();
+        else
+            HideMenu();
+    }
+    private void ShowMenu()
+    {
+        _settingsWindow.style.display = DisplayStyle.Flex;
+        _settingsWindow.RemoveFromClassList("hidden");
+        menuState.modularMenuOpen = true;
+    }
+    
+    private void HideMenu()
+    {
+        _isTransitioning = true;
+        StartCoroutine(HideMenuAfterDelay());
+        menuState.modularMenuOpen = false;
+    }
+
+    private IEnumerator HideMenuAfterDelay()
+    {
+        _settingsWindow.AddToClassList("hidden");
+        yield return new WaitForSeconds(0.3f);
+        _settingsWindow.style.display = DisplayStyle.None;
+        _isTransitioning = false;
     }
 
     public void RegisterSetting(ModularMenuData modularMenu)
     {
         if (modularMenu == null) return;
 
-        // Add to all settings lists
         if (_allSettings.Contains(modularMenu)) return;
         _allSettings.Add(modularMenu);
 
-        // Add to a category map
         if (!_categorySettingsMap.ContainsKey(modularMenu.category))
         {
             _categorySettingsMap[modularMenu.category] = new List<ModularMenuData>();
@@ -70,32 +104,6 @@ public class ModularSettingsManager : MonoBehaviour
         _categorySettingsMap[modularMenu.category].Add(modularMenu);
     }
 
-    // Method to unregister a setting
-    public void UnregisterSetting(ModularMenuData modularMenu)
-    {
-        if (modularMenu == null) return;
-
-        _allSettings.Remove(modularMenu);
-
-        if (_categorySettingsMap.ContainsKey(modularMenu.category))
-        {
-            _categorySettingsMap[modularMenu.category].Remove(modularMenu);
-
-            // Remove category if empty
-            if (_categorySettingsMap[modularMenu.category].Count == 0)
-            {
-                _categorySettingsMap.Remove(modularMenu.category);
-            }
-        }
-
-        // Refresh UI if needed
-        if (uiDocument != null && uiDocument.rootVisualElement != null)
-        {
-            GenerateSettingsUI();
-        }
-    }
-
-    // Generate the settings UI
     private void GenerateSettingsUI()
     {
         if (uiDocument == null || uiDocument.rootVisualElement == null) return;
@@ -109,10 +117,8 @@ public class ModularSettingsManager : MonoBehaviour
             return;
         }
 
-        // Clear existing settings
         settingsContainer.Clear();
-
-        // Create categories and add settings
+        
         foreach (var category in _categorySettingsMap.Keys)
         {
             var categoryContainer = new Foldout
@@ -129,14 +135,8 @@ public class ModularSettingsManager : MonoBehaviour
 
             settingsContainer.Add(categoryContainer);
         }
-
-        // Add reset button
-        var resetButton = new Button(ResetAllSettings) { text = "Reset All Settings" };
-        resetButton.AddToClassList("reset-button");
-        settingsContainer.Add(resetButton);
     }
 
-    // Method to reset all settings to their default values
     private void ResetAllSettings()
     {
         foreach (var setting in _allSettings)
@@ -144,75 +144,6 @@ public class ModularSettingsManager : MonoBehaviour
             setting.ResetToDefault();
         }
 
-        // Refresh UI
-        GenerateSettingsUI();
-    }
-
-    // Save settings to PlayerPrefs
-    public void SaveSettings()
-    {
-        foreach (var setting in _allSettings)
-        {
-            var key = $"Setting_{setting.name}";
-            var value = setting.GetValue();
-
-            switch (value)
-            {
-                case bool boolValue:
-                    PlayerPrefs.SetInt(key, boolValue ? 1 : 0);
-                    break;
-                case float floatValue:
-                    PlayerPrefs.SetFloat(key, floatValue);
-                    break;
-                case int intValue:
-                    PlayerPrefs.SetInt(key, intValue);
-                    break;
-                case string stringValue:
-                    PlayerPrefs.SetString(key, stringValue);
-                    break;
-            }
-        }
-
-        PlayerPrefs.Save();
-    }
-
-    // Load settings from PlayerPrefs
-    public void LoadSettings()
-    {
-        foreach (var setting in _allSettings)
-        {
-            var key = $"Setting_{setting.name}";
-
-            switch (setting)
-            {
-                case BoolModularMenuData boolSetting:
-                {
-                    if (PlayerPrefs.HasKey(key))
-                        boolSetting.Value = PlayerPrefs.GetInt(key) == 1;
-                    break;
-                }
-                case FloatModularMenuData floatSetting:
-                {
-                    if (PlayerPrefs.HasKey(key))
-                        floatSetting.Value = PlayerPrefs.GetFloat(key);
-                    break;
-                }
-                case DropdownModularMenuData dropdownSetting:
-                {
-                    if (PlayerPrefs.HasKey(key))
-                        dropdownSetting.SelectedIndex = PlayerPrefs.GetInt(key);
-                    break;
-                }
-                case StringModularMenuData stringSetting:
-                {
-                    if (PlayerPrefs.HasKey(key))
-                        stringSetting.Value = PlayerPrefs.GetString(key);
-                    break;
-                }
-            }
-        }
-
-        // Refresh UI
         GenerateSettingsUI();
     }
 }

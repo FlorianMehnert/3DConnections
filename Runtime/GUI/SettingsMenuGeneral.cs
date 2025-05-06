@@ -318,7 +318,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         var dropdownValue = (int)System.Enum.Parse(typeof(SimulationType), newValue);
         _currentAction = _actions[dropdownValue];
         _startButton.clicked += _currentAction;
-        Debug.Log($"Simulation type changed to {newValue} ({dropdownValue})");
     }
     
 
@@ -344,7 +343,6 @@ public class SettingsMenuGeneral : MonoBehaviour
 
     public void ToggleMenu()
     {
-        Debug.Log("toggle menu");
         if (_panel.ClassListContains("hidden"))
             ShowMenu();
         else

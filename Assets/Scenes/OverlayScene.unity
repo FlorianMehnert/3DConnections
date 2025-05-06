@@ -614,6 +614,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uiDocument: {fileID: 1770485198}
   defaultSettings: []
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &1770485198
 MonoBehaviour:
   m_ObjectHideFlags: 0

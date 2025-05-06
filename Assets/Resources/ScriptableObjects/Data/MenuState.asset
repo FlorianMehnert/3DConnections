@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: MenuState
   m_EditorClassIdentifier: 
   menuOpen: 1
+  modularMenuOpen: 1

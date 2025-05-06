@@ -4,4 +4,5 @@
 public class MenuState : ScriptableObject
 {
     public bool menuOpen = false;
+    public bool modularMenuOpen = false;
 }
