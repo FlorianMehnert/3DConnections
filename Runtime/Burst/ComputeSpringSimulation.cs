@@ -37,35 +37,38 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private bool _isShuttingDown;
     [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
     [SerializeField] private ClearEvent clearEvent;
-    
+
     private static readonly int GoRestLength = Shader.PropertyToID("go_rest_length");
     private static readonly int GCRestLength = Shader.PropertyToID("gc_rest_length");
     private static readonly int CcRestLength = Shader.PropertyToID("cc_rest_length");
-    
+
     // Radial layout parameters
     private static readonly int RadialDistance = Shader.PropertyToID("radial_distance");
     private static readonly int RadialAngleOffset = Shader.PropertyToID("radial_angle_offset");
     private static readonly int AngleSeparation = Shader.PropertyToID("angle_separation");
-    
+
     [SerializeField] private float gameObjectRestLength = 2.0f;
     [SerializeField] private float gameObjectComponentRestLength = 0.5f;
     [SerializeField] private float componentRestLength = 1.0f;
 
-    [Header("Radial Layout Settings")]
-    [SerializeField] private float radialDistance = 1.5f;
+    [Header("Radial Layout Settings")] [SerializeField]
+    private float radialDistance = 1.5f;
+
     [SerializeField] private float radialAngleOffset;
     [SerializeField] private float minAngleSeparation = 0.1f;
-    
-    [Header("Force Arrow Settings")]
-    [SerializeField] private bool showForceArrows = true;
+
+    [Header("Force Arrow Settings")] [SerializeField]
+    private bool showForceArrows = true;
+
     [SerializeField] private float arrowHeadSize = 0.2f;
     [SerializeField] private Color gameObjectArrowColor = Color.blue;
     [SerializeField] private Color componentArrowColor = Color.green;
     [SerializeField] private float minArrowAlpha = 0.2f;
     [SerializeField] private float maxArrowAlpha = 0.8f;
-    
-    [Header("Trail Settings")]
-    [SerializeField] private bool showTrails = true;
+
+    [Header("Trail Settings")] [SerializeField]
+    private bool showTrails = true;
+
     [SerializeField] private int trailHistoryLength = 30;
     [SerializeField] private Color gameObjectTrailColor = new Color(0.2f, 0.2f, 0.8f, 0.5f);
     [SerializeField] private Color componentTrailColor = new Color(0.2f, 0.8f, 0.2f, 0.5f);
@@ -74,15 +77,17 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private int _currentHistoryIndex;
     private bool _historyFilled;
 
-    [Header("Lerp relaxation settings")]
-    [SerializeField] private bool enableRelaxation = true;
+    [Header("Lerp relaxation settings")] [SerializeField]
+    private bool enableRelaxation = true;
+
     [SerializeField] private float relaxationDuration = 2.0f;
     [SerializeField] private float relaxationStrength = 0.2f;
     [SerializeField] private float initialMaxVelocity = 0.5f;
     [SerializeField] private float finalMaxVelocity = 10.0f;
-    
-    [Header("Simulation settings")]
-    [SerializeField] private float minIntegrationTimeStep = 0.01f;
+
+    [Header("Simulation settings")] [SerializeField]
+    private float minIntegrationTimeStep = 0.01f;
+
     private float _relaxationTimer;
 
     // Arrow data structure to match compute shader
@@ -149,7 +154,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             _forceArrowsBuffer.Release();
             _forceArrowsBuffer = null;
         }
-        
+
         _arrowData = null;
         _positionHistory = null;
         _historyFilled = false;
@@ -163,134 +168,199 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         _nodes = nodeGraph.AllNodeTransforms2D;
         if (_nodes.Length == 0)
         {
-            Debug.Log("no nodes while trying to create compute buffer");
+            Debug.Log("No nodes found while creating compute buffer.");
             return;
         }
 
-        // Reset relaxation timer when initializing
         _relaxationTimer = 0.0f;
+        InitializeHistory();
+        InitializeKernels();
 
-        // Initialize position history buffer
+        var gameObjectIndices = BuildGameObjectIndexMap();
+        var nodeData = BuildNodeData(gameObjectIndices);
+        var nodeConnections = BuildNodeConnections();
+
+        InitComputeBuffers(nodeData, nodeConnections);
+        BindBuffersToKernels();
+        RemovePhysicalComponents();
+
+        _isShuttingDown = false;
+        computeShader.SetFloat(EConstant, (float)Math.E);
+    }
+
+    /// <summary>
+    /// Init buffers for gizmo object trail drawing
+    /// </summary>
+    private void InitializeHistory()
+    {
         _positionHistory = new Vector2[trailHistoryLength][];
         for (int i = 0; i < trailHistoryLength; i++)
         {
             _positionHistory[i] = new Vector2[_nodes.Length];
         }
+
         _currentHistoryIndex = 0;
         _historyFilled = false;
+    }
 
-        // Get kernel IDs
+    /// <summary>
+    /// Find all the kernels
+    /// </summary>
+    private void InitializeKernels()
+    {
         _springKernel = computeShader.FindKernel("spring_forces");
         _springConnectionsKernel = computeShader.FindKernel("spring_forces_connection_based");
         _collisionKernel = computeShader.FindKernel("collision_response");
         _integrationKernel = computeShader.FindKernel("integrate_forces");
         _forceArrowsKernel = computeShader.FindKernel("calculate_force_arrows");
+    }
 
-        
-        // Create a map of GameObject instances to their index in the nodes array
-        var gameObjectIndices = new Dictionary<GameObject, int>();
+    /// <summary>
+    /// Index all the nodes of type gameObject 
+    /// </summary>
+    /// <returns>Indexed map of gameObject nodes</returns>
+    private Dictionary<GameObject, int> BuildGameObjectIndexMap()
+    {
+        var map = new Dictionary<GameObject, int>();
         for (var i = 0; i < _nodes.Length; i++)
         {
-            var nodeObj = nodeGraph.AllNodes[i];
-            var nodeTypeComponent = nodeObj.GetComponent<NodeType>();
-            if (nodeTypeComponent != null && nodeTypeComponent.nodeTypeName == NodeTypeName.GameObject) // If it's a GameObject
+            var obj = nodeGraph.AllNodes[i];
+            var typeComp = obj.GetComponent<NodeType>();
+            if (typeComp && typeComp.nodeTypeName == NodeTypeName.GameObject)
             {
-                gameObjectIndices[nodeObj] = i;
+                map[obj] = i;
             }
         }
 
-        var nodeData = new NodeData[_nodes.Length];
-        for (var i = 0; i < _nodes.Length; i++)
+        return map;
+    }
+
+    /// <summary>
+    /// Init all the NodeData for each part in spring simulation where each node needs to store history, position, last position, velocity, force, type of node and parent node
+    /// </summary>
+    /// <param name="gameObjectIndices"></param>
+    /// <returns>array of all the NodeData</returns>
+    private NodeData[] BuildNodeData(Dictionary<GameObject, int> gameObjectIndices)
+    {
+        var data = new NodeData[_nodes.Length];
+
+        for (int i = 0; i < _nodes.Length; i++)
         {
-            var nodeObj = nodeGraph.AllNodes[i];
-            var nodeType = NodeTypeName.GameObject; // Default to GameObject
-            var parentId = -1; // Default to no parent
-            
-            // Get the actual component to check its type
-            var nodeTypeComponent = nodeObj.GetComponent<NodeType>();
-            if (nodeTypeComponent)
+            var obj = nodeGraph.AllNodes[i];
+            var typeComp = obj.GetComponent<NodeType>();
+            var nodeType = typeComp ? typeComp.nodeTypeName : NodeTypeName.GameObject;
+            int parentId = -1;
+
+            if (nodeType == NodeTypeName.Component && typeComp != null)
             {
-                nodeType = nodeTypeComponent.nodeTypeName;
-                
-                // If this is a Component node, find its parent GameObject
-                if (nodeType == NodeTypeName.Component) // Component
+                var parent = typeComp.GetParentOfComponentNode();
+                if (parent && gameObjectIndices.TryGetValue(parent, out var index))
                 {
-                    var localNodeConnections = nodeObj.GetComponent<LocalNodeConnections>();
-                    if (localNodeConnections)
-                    {
-                        var parentObject = nodeTypeComponent.GetParentOfComponentNode(); // You'd need to implement this method
-                        var found = gameObjectIndices.TryGetValue(parentObject, out var parentIndex);
-                        if (parentObject && found)
-                        {
-                            parentId = parentIndex;
-                        }                        
-                    }
+                    parentId = index;
                 }
             }
 
-            var currentPosition = new float2(_nodes[i].position.x, _nodes[i].position.y);
-            
-            nodeData[i] = new NodeData
+            var pos = new float2(_nodes[i].position.x, _nodes[i].position.y);
+
+            data[i] = new NodeData
             {
-                Position = currentPosition,
-                PreviousPosition = currentPosition, // Initialize previous position to current
+                Position = pos,
+                PreviousPosition = pos,
                 Velocity = float2.zero,
                 Force = float2.zero,
-                NodeType = (int) nodeType,
+                NodeType = (int)nodeType,
                 ParentId = parentId
             };
-            
-            // Initialize history with current positions
+
             for (int h = 0; h < trailHistoryLength; h++)
             {
-                _positionHistory[h][i] = currentPosition;
+                _positionHistory[h][i] = pos;
             }
         }
 
-        // Create node amount squared node connection information
-        var nodeConnections = new NodeConnection[(int)Math.Pow(_nodes.Length, 2)];
-        for (var i = 0; i < _nodes.Length; i++)
+        return data;
+    }
+
+    /// <summary>
+    /// Initialize all the node connection data from the existing NodeType components calculated in ConnectionStrength() with respects to the current hierarchy depth
+    /// </summary>
+    /// <returns></returns>
+    private NodeConnection[] BuildNodeConnections()
+    {
+        var count = _nodes.Length;
+        var connections = new NodeConnection[count * count];
+
+        for (var i = 0; i < count; i++)
         {
-            for (var j = 0; j < _nodes.Length; j++)
+            for (var j = 0; j < count; j++)
             {
-                nodeConnections[i] = new NodeConnection
+                var index = i * count + j;
+                connections[index] = new NodeConnection
                 {
                     NodeIndex = new int2(i, j),
                     ConnectionType = ConnectionStrength(i, j),
-                    ConnectionHierarchy = GetHierarchyDepth(_nodes[i]),
+                    ConnectionHierarchy = GetHierarchyDepth(_nodes[i])
                 };
             }
         }
 
-        // Create buffer with space for the previous position field
-        _nodeBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 8 + sizeof(int) * 2); // 8 floats (2 positions, velocity, force) + 2 ints
+        return connections;
+    }
+
+    /// <summary>
+    /// Initialize all the required buffers 
+    /// </summary>
+    /// <param name="nodeData"></param>
+    /// <param name="connections"></param>
+    private void InitComputeBuffers(NodeData[] nodeData, NodeConnection[] connections)
+    {
+        var nodeCount = _nodes.Length;
+
+        _nodeBuffer = new ComputeBuffer(nodeCount, sizeof(float) * 8 + sizeof(int) * 2);
         _nodeBuffer.SetData(nodeData);
-        _connectionBuffer = new ComputeBuffer((int)Math.Pow(_nodes.Length, 2), sizeof(int) * 3 + sizeof(float));
-        _connectionBuffer.SetData(nodeConnections);
 
-        // Initialize arrow data and buffer
-        _arrowData = new ArrowData[_nodes.Length];
-        _forceArrowsBuffer = new ComputeBuffer(_nodes.Length, sizeof(float) * 5); // Start(2) + End(2) + Strength(1)
+        _connectionBuffer = new ComputeBuffer(connections.Length, sizeof(int) * 3 + sizeof(float));
+        _connectionBuffer.SetData(connections);
+
+        _arrowData = new ArrowData[nodeCount];
+        _forceArrowsBuffer = new ComputeBuffer(nodeCount, sizeof(float) * 5);
         _forceArrowsBuffer.SetData(_arrowData);
+    }
 
-        // Set buffer for all kernels
+    /// <summary>
+    /// As the method name suggests...
+    /// </summary>
+    private void BindBuffersToKernels()
+    {
         computeShader.SetBuffer(_springKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_collisionKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_integrationKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, Nodes, _nodeBuffer);
         computeShader.SetBuffer(_springConnectionsKernel, Connections, _connectionBuffer);
         computeShader.SetBuffer(_forceArrowsKernel, ForceArrows, _forceArrowsBuffer);
+    }
 
-        var types = new List<System.Type>
+    /// <summary>
+    /// Cleanup the component-based simulation
+    /// </summary>
+    private void RemovePhysicalComponents()
+    {
+        var typesToRemove = new List<Type>
         {
             typeof(SpringJoint2D),
             typeof(Rigidbody2D)
         };
-        nodeGraph.NodesRemoveComponents(types);
-        _isShuttingDown = false;
-        computeShader.SetFloat(EConstant, (float)Math.E);
+        nodeGraph.NodesRemoveComponents(typesToRemove);
     }
 
+
+    /// <summary>
+    /// Calculate connection-strength between two nodes based on their index 
+    /// </summary>
+    /// <param name="i">index of the first nodes transforms related to _nodes</param>
+    /// <param name="j">index of the second nodes transforms related to _nodes</param>
+    /// <returns>strength between two nodes</returns>
+    /// <exception cref="ArgumentOutOfRangeException">throws when trying to calculate the strength between nodes of unknown type</exception>
     private float ConnectionStrength(int i, int j)
     {
         // 1. get nodes
@@ -325,6 +395,11 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         }
     }
 
+    /// <summary>
+    /// hierarchy number based on the inspectors transform hierarchy
+    /// </summary>
+    /// <param name="transform"></param>
+    /// <returns></returns>
     private int GetHierarchyDepth(Transform transform)
     {
         var depth = 0;
@@ -345,7 +420,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Update relaxation timer if enabled
         float currentRelaxFactor = 1.0f;
         float currentMaxVelocity = finalMaxVelocity;
-        
+
         if (enableRelaxation)
         {
             _relaxationTimer += deltaTime;
@@ -368,11 +443,11 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         computeShader.SetFloat(MinIntegrationTimestep, minIntegrationTimeStep);
         computeShader.SetFloat(RelaxationFactor, currentRelaxFactor);
         computeShader.SetFloat(MaxVelocityLimit, currentMaxVelocity);
-        
+
         computeShader.SetFloat(GoRestLength, gameObjectRestLength);
         computeShader.SetFloat(GCRestLength, gameObjectComponentRestLength);
         computeShader.SetFloat(CcRestLength, componentRestLength);
-        
+
         // Set radial layout parameters
         computeShader.SetFloat(RadialDistance, radialDistance);
         computeShader.SetFloat(RadialAngleOffset, radialAngleOffset * Mathf.Deg2Rad); // Convert to radians
@@ -407,7 +482,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             {
                 _historyFilled = true;
             }
-            
+
             for (var i = 0; i < _nodes.Length; i++)
             {
                 _positionHistory[_currentHistoryIndex][i] = new Vector2(nodeData[i].Position.x, nodeData[i].Position.y);
@@ -430,84 +505,84 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private void OnDrawGizmos()
     {
         if (_isShuttingDown || _nodes == null) return;
-        
+
         // Draw force arrows
         if (showForceArrows && _arrowData != null)
         {
             for (int i = 0; i < _arrowData.Length; i++)
             {
                 if (i >= _nodes.Length) continue;
-                
+
                 var start = new Vector3(_arrowData[i].Start.x, _arrowData[i].Start.y, _nodes[i].position.z);
                 var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
-                
+
                 // Determine arrow color based on node type
-                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component 
-                    ? componentArrowColor 
+                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component
+                    ? componentArrowColor
                     : gameObjectArrowColor;
-                
+
                 // Scale alpha based on force strength
                 float normalizedStrength = Mathf.Clamp01(_arrowData[i].Strength / 10.0f); // Adjust divisor as needed
                 arrowColor.a = Mathf.Lerp(minArrowAlpha, maxArrowAlpha, normalizedStrength);
-                
+
                 // Draw arrow line
                 Gizmos.color = arrowColor;
                 Gizmos.DrawLine(start, end);
-                
+
                 // Draw arrow head if line is long enough
                 Vector3 direction = end - start;
                 float magnitude = direction.magnitude;
-                
+
                 if (magnitude > 0.1f)
                 {
                     direction.Normalize();
                     Vector3 right = Vector3.Cross(direction, Vector3.forward).normalized;
-                    
+
                     // Draw arrowhead
                     Gizmos.DrawLine(end, end - direction * arrowHeadSize + right * arrowHeadSize * 0.5f);
                     Gizmos.DrawLine(end, end - direction * arrowHeadSize - right * arrowHeadSize * 0.5f);
                 }
             }
         }
-        
+
         // Draw position history trails
         if (!showTrails || _positionHistory == null || _nodes == null) return;
         {
             var historyCount = _historyFilled ? trailHistoryLength : _currentHistoryIndex;
-            
+
             for (var i = 0; i < _nodes.Length; i++)
             {
                 if (nodeGraph.AllNodes[i] == null) continue;
-                
+
                 // Get node type to determine trail color
                 var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component;
                 var trailColor = isComponent ? componentTrailColor : gameObjectTrailColor;
-                
+
                 for (var h = 1; h < historyCount; h++)
                 {
                     var currentIndex = (_currentHistoryIndex - h + trailHistoryLength) % trailHistoryLength;
                     var prevIndex = (_currentHistoryIndex - h + 1 + trailHistoryLength) % trailHistoryLength;
-                    
+
                     // Fade the trail as it gets older
                     var alpha = trailColor.a * (1.0f - (float)h / historyCount);
                     var fadedColor = trailColor;
                     fadedColor.a = alpha;
                     Gizmos.color = fadedColor;
-                    
+
                     var current = new Vector3(_positionHistory[currentIndex][i].x, _positionHistory[currentIndex][i].y, _nodes[i].position.z);
                     var prev = new Vector3(_positionHistory[prevIndex][i].x, _positionHistory[prevIndex][i].y, _nodes[i].position.z);
-                    
+
                     // Adjust width based on distance from current position
                     var widthScale = 1.0f - (float)h / historyCount;
                     var segmentWidth = trailWidth * widthScale;
-                    
+
                     // Draw line segment
                     Gizmos.DrawLine(current, prev);
                 }
             }
         }
     }
-    
+
     private void HandleEvent()
     {
         _isShuttingDown = true;
