@@ -249,6 +249,26 @@ public class SettingsMenuGeneral : MonoBehaviour
             Debug.Log("missing ComputeSpringSimulation Script on the Manager");
         }
     }
+
+    public void ApplySimpleGPUPhysics()
+    {
+        var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
+        if (!forceDirectedSim) return;
+        if (nodeGraph.AllNodes.Count <= 0) return;
+        removePhysicsEvent.TriggerEvent();
+        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
+        NodeConnectionManager.Instance.UseNativeArray();
+        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+        NodeConnectionManager.Instance.AddSpringsToConnections();
+        NodeConnectionManager.Instance.ResizeNativeArray();
+        NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
+        Debug.Log("initializing gpu physics");
+        var springSimulation = GetComponent<SpringSimulation>();
+        if (springSimulation)
+            springSimulation.Disable();
+        forceDirectedSim.nodeTransforms = nodeGraph.AllNodes.Select(node => node.transform).ToArray();
+        forceDirectedSim.Initialize();
+    }
     
     private void UpdateColor(int sliderValue)
     {
