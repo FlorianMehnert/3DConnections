@@ -226,8 +226,11 @@ public class KeyDisplay : ModularSettingsUser
                     }
                     else if (_inputString.StartsWith("4"))
                     {
-                        Log("Executing physics sim (Method: GPU)");
                         menu.ApplySimpleGPUPhysics();
+                    }
+                    else if (_inputString.StartsWith("5"))
+                    {
+                        menu.ApplyForceDirectedComponentPhysics();
                     }
                     _inputString = "";
                 }

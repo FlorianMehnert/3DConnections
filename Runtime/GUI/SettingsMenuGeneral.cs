@@ -270,6 +270,17 @@ public class SettingsMenuGeneral : MonoBehaviour
         forceDirectedSim.Initialize();
     }
     
+    public void ApplyForceDirectedComponentPhysics()
+    {
+        var forceDirectedSim = gameObject.AddComponent<ForceDirectedLayoutV2>();
+        forceDirectedSim.nodeGraph = nodeGraph;
+        if (!forceDirectedSim) return;
+        if (nodeGraph.AllNodes.Count <= 0) return;
+        removePhysicsEvent.TriggerEvent();
+        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
+        forceDirectedSim.Initialize();
+    }
+    
     private void UpdateColor(int sliderValue)
     {
         // Apply color to all connections

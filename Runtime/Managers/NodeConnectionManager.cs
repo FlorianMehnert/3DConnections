@@ -43,7 +43,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private void Awake()
     {
         _isShuttingDown = false;
-        if (_instance != null && _instance != this)
+        if (_instance && _instance != this)
         {
             Destroy(gameObject);
             return;

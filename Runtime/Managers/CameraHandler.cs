@@ -35,7 +35,7 @@ public class CameraController : ModularSettingsUser
     // wide screenshot parameters
     public int width = 2000;
 
-    public string filePath = "Assets/wide_screenshot.png";
+    public string filePath = "Assets/screenshot.png";
 
     [SerializeField] private OverlaySceneScriptableObject overlay;
     [SerializeField] private MenuState menuState;
@@ -64,7 +64,7 @@ public class CameraController : ModularSettingsUser
         }
 
         var cameraComponent = gameObject.GetComponent<Camera>();
-        if (cameraComponent == null)
+        if (!cameraComponent)
         {
             Debug.Log("Please only attach the CameraController to a Camera");
             return;
@@ -230,7 +230,7 @@ public class CameraController : ModularSettingsUser
 
             SetCameraToBounds(bounds);
         }
-        else if (targetObject != null && targetObject.GetComponent<Collider2D>() != null)
+        else if (targetObject && targetObject.GetComponent<Collider2D>())
         {
             var bounds = nodeGraph.currentlySelectedBounds;
             if (nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
@@ -339,39 +339,45 @@ public class CameraController : ModularSettingsUser
     [ContextMenu("Capture Node Graph Screenshot")]
     public void Capture()
     {
-        if (nodeGraph.AllNodes == null || nodeGraph.AllNodes.Count == 0 || _cam == null)
+        if (nodeGraph.AllNodes == null || nodeGraph.AllNodes.Count == 0 || !_cam)
         {
             Debug.LogError("Missing camera or nodes");
             return;
         }
 
-        // --- Calculate bounds around all nodes ---
-        var positions = nodeGraph.AllNodes.Select(go => go.transform.position);
-        var enumerable = positions as Vector3[] ?? positions.ToArray();
-        var min = enumerable.Aggregate(Vector3.Min);
-        var max = enumerable.Aggregate(Vector3.Max);
+        var positions = nodeGraph.AllNodes.Select(go => go.transform.position).ToArray();
+        var min = positions.Aggregate(Vector3.Min);
+        var max = positions.Aggregate(Vector3.Max);
         var center = (min + max) * 0.5f;
         var size = max - min;
 
-        // --- Set up camera to frame everything ---
-        _cam.orthographic = true;
-        _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
-
-        var cameraHeight = size.y * 1.1f; // Add padding
+        var cameraHeight = size.y * 1.1f;
         var cameraWidth = size.x * 1.1f;
-
-        _cam.orthographicSize = cameraHeight / 2f;
-
         var outputHeight = Mathf.RoundToInt(width * (cameraHeight / cameraWidth));
 
         // --- Set up RenderTexture ---
-        var rt = new RenderTexture(width, outputHeight, 24);
-        _cam.targetTexture = rt;
+        var rt = new RenderTexture(width, outputHeight, 24, RenderTextureFormat.DefaultHDR)
+        {
+            antiAliasing = 1
+        };
+        rt.Create();
 
-        // --- Render and save image ---
-        var image = new Texture2D(width, outputHeight, TextureFormat.RGB24, false);
-        _cam.Render();
+        // --- Create temporary camera ---
+        var camGo = new GameObject("TempCaptureCamera");
+        var tempCam = camGo.AddComponent<Camera>();
+        tempCam.cullingMask = ~(1 << LayerMask.NameToLayer("OverlayScene"));
+        tempCam.CopyFrom(_cam); // Copy all settings from your main cam
+        tempCam.orthographic = true;
+        tempCam.orthographicSize = cameraHeight / 2f;
+        tempCam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+        tempCam.targetTexture = rt;
+
+        // --- Render ---
+        tempCam.Render();
+
+        // --- Save to PNG ---
         RenderTexture.active = rt;
+        var image = new Texture2D(width, outputHeight, TextureFormat.RGB24, false);
         image.ReadPixels(new Rect(0, 0, width, outputHeight), 0, 0);
         image.Apply();
 
@@ -379,10 +385,12 @@ public class CameraController : ModularSettingsUser
         Debug.Log("Saved screenshot to: " + filePath);
 
         // --- Cleanup ---
-        _cam.targetTexture = null;
+        tempCam.targetTexture = null;
         RenderTexture.active = null;
         DestroyImmediate(rt);
+        DestroyImmediate(camGo);
         AssetDatabase.Refresh();
     }
+
 #endif
 }
