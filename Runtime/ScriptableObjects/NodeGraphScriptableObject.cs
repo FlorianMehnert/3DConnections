@@ -92,182 +92,6 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
 
-    /// <summary>
-    /// Try to register node to internal tracking but only if not already present - in this case use <see cref="ReplaceRelatedGo"/>
-    /// </summary>
-    /// <param name="node"></param>
-    /// <returns>True for successful adding, False for unsuccessful</returns>
-    public bool Add(NodeV1 node)
-    {
-        if (node.RelatedGameObject == null && node is GameObjectNodeV1)
-        {
-            Debug.Log("trying to add node that has no game object attached");
-            return false;
-        }
-
-        if (!Contains(node))
-        {
-            if (node is GameObjectNodeV1)
-            {
-                var success = _nodesByGameObject.TryAdd(node.RelatedGameObject, node);
-                if (!success)
-                    Debug.Log("TryingToAdd GameObject node " + node.Name + " with GameObject" + node.RelatedGameObject +
-                              " which was not successfully created");
-                return success;
-            }
-
-            // handling other node types
-            var go = new GameObject(node.GetType() + " " + node.Name);
-            return _nodesByGameObject.TryAdd(go, node) ? go : null;
-        }
-
-        if (!Contains(node.RelatedGameObject) && Contains(node))
-        {
-            Debug.Log("trying to add a node that was already present but has a different gameObject now: skipping");
-        }
-
-        return false;
-    }
-
-    public NodeV1 Add(GameObject gameObject)
-    {
-        if (gameObject == null)
-        {
-            Debug.Log("trying to add empty gameObject to node graph");
-            return null;
-        }
-
-        var newNode = new GameObjectNodeV1(gameObject.name, null) { RelatedGameObject = gameObject };
-        if (Contains(gameObject)) return _nodesByGameObject[gameObject];
-
-        if (!_nodesByGameObject.TryAdd(gameObject, newNode))
-        {
-            Debug.Log(
-                "tried to add a gameObject to nodeGraph which was not present before but also could not be added");
-        }
-
-        return newNode;
-    }
-
-    /// <summary>
-    /// Get the node using the 1 to 1 mapping 
-    /// </summary>
-    /// <param name="gameObject">GameObject that is on the OverlayScene representing a gameObject, component, etc.</param>
-    /// <returns>Node that is representing the given gameObject which is on the overlay</returns>
-    public NodeV1 GetNode(GameObject gameObject)
-    {
-        return _nodesByGameObject[gameObject];
-    }
-
-    public ComponentNodeV1 GetNode(Component component)
-    {
-        return _nodesByGameObject.Values.OfType<ComponentNodeV1>().FirstOrDefault(x => x.Name == component.name);
-    }
-
-
-    // Contains using node as value
-    private bool Contains(NodeV1 nodeV1)
-    {
-        return _nodesByGameObject.ContainsValue(nodeV1);
-    }
-
-
-    // Contains using the go as a key
-    private bool Contains(GameObject gameObject)
-    {
-        return gameObject != null && _nodesByGameObject.ContainsKey(gameObject);
-    }
-
-    // Contains using SO name
-    public bool Contains(ScriptableObject scriptableObject)
-    {
-        return scriptableObject != null && _nodesByGameObject.Keys.Any(go => go.name == scriptableObject.name);
-    }
-
-
-    // Contains using Component name
-    public bool Contains(Component component)
-    {
-        foreach (var node in _nodesByGameObject.Values)
-        {
-            if (node is not ComponentNodeV1 componentNode) continue;
-            if (componentNode.Component && componentNode.Component == component)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Smarter Add which deletes node/go if the matching node has the same name and location to ensure 1 to 1
-    /// </summary>
-    /// <param name="node"></param>
-    public bool ReplaceRelatedGo(NodeV1 node)
-    {
-        // remove existing nodes and existing gameObjects
-        foreach (var existingNode in GetNodes()
-                     .Where(existingNode => existingNode.RelatedGameObject == node.RelatedGameObject))
-        {
-            _nodesByGameObject[existingNode.RelatedGameObject] = node;
-
-            return true;
-        }
-
-        return Add(node);
-    }
-
-    private Dictionary<GameObject, NodeV1>.ValueCollection GetNodes()
-    {
-        return _nodesByGameObject.Values;
-    }
-
-    private List<GameObjectNodeV1> GetGameObjectNodes()
-    {
-        return _nodesByGameObject.Values.OfType<GameObjectNodeV1>().ToList();
-    }
-
-    /// <summary>
-    /// Get all GameObjectNodes but also check for existing GameObject
-    /// </summary>
-    /// <returns></returns>
-    private List<GameObjectNodeV1> GetGameObjectNodesWithGameObject()
-    {
-        return GetGameObjectNodes().Where(gameObjectNode => gameObjectNode.GameObject != null).ToList();
-    }
-
-    /// <summary>
-    /// Returns the first gameObject node that has the gameObject with the given id
-    /// </summary>
-    /// <param name="id">id of the searched gameObject</param>
-    /// <returns></returns>
-    public GameObjectNodeV1 ContainsGameObjectNodeByID(int id)
-    {
-        return GetGameObjectNodesWithGameObject().FirstOrDefault(goNode => goNode.GameObject.GetInstanceID() == id);
-    }
-
-    /// <summary>
-    /// Add the given Component to all nodes. Sets the gravityScale to 0 and freezeRotation if set to Rigidbody2D
-    /// </summary>
-    /// <param name="componentType">Type of Component to be added to all nodes</param>
-    // public void NodesAddComponent(Type componentType)
-    // {
-    //     _workingOnAllNodes = true;
-    //     if (allNodes == null || allNodes.Count == 0) return;
-    //     var copy = new GameObject[allNodes.Count];
-    //     allNodes.CopyTo(copy);
-    //     foreach (var node in from node in copy
-    //              let existingComponent = node.GetComponent(componentType)
-    //              where existingComponent == null
-    //              select node)
-    //     {
-    //         var newComponent = node.AddComponent(componentType);
-    //         if (newComponent is not Rigidbody2D rigidbody2D) continue;
-    //         rigidbody2D.gravityScale = 0;
-    //         rigidbody2D.freezeRotation = true;
-    //     }
-    // }
     public void NodesAddComponent(Type componentType)
     {
         if (componentType == null)
@@ -282,8 +106,8 @@ public class NodeGraphScriptableObject : ScriptableObject
 
             foreach (var node in nodeCopy)
             {
-                if (node == null) continue;
-                if (node.GetComponent(componentType) != null) continue;
+                if (!node) continue;
+                if (node.GetComponent(componentType)) continue;
                 var newComponent = node.AddComponent(componentType);
                 if (newComponent is not Rigidbody2D rigidbody2D) continue;
                 rigidbody2D.gravityScale = 0;
@@ -309,16 +133,9 @@ public class NodeGraphScriptableObject : ScriptableObject
     private void NodesRemoveComponent(Type componentType, List<GameObject> customNodesList = null)
     {
         // Check if the target object already has the component
-        foreach (var node in customNodesList ?? AllNodes)
+        foreach (var component in (customNodesList ?? AllNodes).Where(node => node && componentType != null).Select(node => node.GetComponents(componentType)).SelectMany(components => components))
         {
-            if (node != null && componentType != null)
-            {
-                var components = node.GetComponents(componentType);
-                foreach (var component in components)
-                {
-                    DestroyImmediate(component);
-                }
-            }
+            DestroyImmediate(component);
         }
     }
 
@@ -331,41 +148,6 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
 
-    public void ApplyColorPresetToAllNodes(int preset, bool generateColors)
-    {
-        var colors = Colorpalette.GeneratePaletteFromBaseColor(prebuiltChannels: preset, generateColors: generateColors);
-        foreach (var node in AllNodes)
-        {
-            if (node == null) continue;
-            var type = node.GetComponent<NodeType>();
-            var typeName = type.nodeTypeName;
-            switch (typeName)
-            {
-                case NodeTypeName.GameObject:
-                {
-                    var coloredObject = node.GetComponent<ColoredObject>();
-                    coloredObject.SetOriginalColor(colors[0]);
-                    coloredObject.SetToOriginalColor();
-                    break;
-                }
-                case NodeTypeName.Component:
-                {
-                    var coloredObject = node.GetComponent<ColoredObject>();
-                    coloredObject.SetOriginalColor(colors[1]);
-                    coloredObject.SetToOriginalColor();
-                    break;
-                }
-                case NodeTypeName.ScriptableObject:
-                {
-                    var coloredObject = node.GetComponent<ColoredObject>();
-                    coloredObject.SetOriginalColor(colors[2]);
-                    coloredObject.SetToOriginalColor();
-                    break;
-                }
-            }
-        }
-    }
-    
     /// <summary>
     /// Recursive function to reenable nodes that are connected
     /// </summary>
@@ -400,7 +182,7 @@ public class NodeGraphScriptableObject : ScriptableObject
         foreach (var nodeObj in AllNodes)
         {
             var node = nodeObj.GetComponent<ColoredObject>();
-            if (node == null) continue;
+            if (!node) continue;
             if (string.IsNullOrEmpty(searchString) || nodeObj.name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             {
                 ChangeTextSize(nodeObj, 30f);

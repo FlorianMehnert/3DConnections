@@ -13,7 +13,8 @@
         "GUID:e419311175c241f381e49e9826a8b6f6",
         "GUID:75469ad4d38634e559750d17036d5f7c",
         "GUID:f4eb26c44d5d41ef825a8424c949fb63",
-        "3DConnections.Runtime.GUI.ModularMenu"
+        "GUID:7f93272ad2cf4802801fbf3c7e07d3ac",
+        "GUID:a3b0b6165b21422f893d1afda1b21d65"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

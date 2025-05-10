@@ -1,6 +1,7 @@
 using UnityEngine;
-
+#if UNITY_EDITOR
 [CreateAssetMenu(fileName = "NodeGraphLayoutParameters", menuName = "3DConnections/ScriptableObjects/LayoutParameters", order = 1)]
+#endif
 public class LayoutParameters : ScriptableObject
 {
     public int layoutType = (int)LayoutType.Radial;
