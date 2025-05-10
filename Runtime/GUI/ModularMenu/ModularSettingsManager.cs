@@ -17,7 +17,6 @@ public class ModularSettingsManager : MonoBehaviour
     private Button _cancelButton;
     private Button _resetButton;
     private bool _isTransitioning;
-    [SerializeField] private MenuState menuState;
 
     private void Awake()
     {
@@ -71,14 +70,14 @@ public class ModularSettingsManager : MonoBehaviour
     {
         _settingsWindow.style.display = DisplayStyle.Flex;
         _settingsWindow.RemoveFromClassList("hidden");
-        menuState.modularMenuOpen = true;
+        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = true;
     }
     
     private void HideMenu()
     {
         _isTransitioning = true;
         StartCoroutine(HideMenuAfterDelay());
-        menuState.modularMenuOpen = false;
+        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = false;
     }
 
     private IEnumerator HideMenuAfterDelay()
@@ -91,7 +90,7 @@ public class ModularSettingsManager : MonoBehaviour
 
     public void RegisterSetting(ModularMenuData modularMenu)
     {
-        if (modularMenu == null) return;
+        if (!modularMenu) return;
 
         if (_allSettings.Contains(modularMenu)) return;
         _allSettings.Add(modularMenu);
@@ -106,7 +105,7 @@ public class ModularSettingsManager : MonoBehaviour
 
     private void GenerateSettingsUI()
     {
-        if (uiDocument == null || uiDocument.rootVisualElement == null) return;
+        if (!uiDocument || uiDocument.rootVisualElement == null) return;
 
         var root = uiDocument.rootVisualElement;
         var settingsContainer = root.Q<VisualElement>("settings-container");

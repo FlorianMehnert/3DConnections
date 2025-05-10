@@ -29,7 +29,7 @@ public class MermaidExporter : MonoBehaviour
 
         var seenConnections = new HashSet<string>();
 
-        foreach (var edge in from connection in NodeConnectionManager.Instance.conSo.connections where connection.startNode != null && connection.endNode != null let startName = connection.startNode.name let endName = connection.endNode.name let label = string.IsNullOrEmpty(connection.connectionType) 
+        foreach (var edge in from connection in ScriptableObjectInventory.Instance.conSo.connections where connection.startNode && connection.endNode != null let startName = connection.startNode.name let endName = connection.endNode.name let label = string.IsNullOrEmpty(connection.connectionType) 
                      ? "" 
                      : $" |{connection.connectionType}|" select $"{Sanitize(startName)} -->{label} {Sanitize(endName)}" into edge where seenConnections.Add(edge) select edge)
         {

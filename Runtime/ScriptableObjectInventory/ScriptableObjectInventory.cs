@@ -9,13 +9,25 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
 
         public NodeConnectionsScriptableObject conSo;
         
+        public NodeGraphScriptableObject graph;
+        
+        public NodeColorsScriptableObject nodeColors;
+        
         public MenuState menuState;
         
         public LayoutParameters layout;
         
-        public OverlaySceneScriptableObject overlayScene;
+        public OverlaySceneScriptableObject overlay;
         
+        public ApplicationState applicationState;
         
+        public ToAnalyzeScene toAnalyzeScene;
+
+        public RemovePhysicsEvent removePhysicsEvent;
+        
+        public ClearEvent clearEvent;
+        
+        public ToggleOverlayEvent toggleOverlayEvent;
 
         private static bool _isShuttingDown;
 
@@ -53,11 +65,6 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
 
         private void OnDestroy()
         {
-            if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
-            {
-                conSo.NativeConnections.Dispose();
-            }
-
             if (_instance != this) return;
             _instance = null;
         }

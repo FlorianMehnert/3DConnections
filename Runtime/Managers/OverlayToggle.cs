@@ -5,22 +5,19 @@ using UnityEngine;
 /// </summary>
 public class OverlayToggle : MonoBehaviour
 {
-    [SerializeField] private OverlaySceneScriptableObject overlay;
-    [SerializeField] private ToggleOverlayEvent overlayEvent;
 
     private void Update()
     {
         // Check if F1 is pressed to switch to Display 1
         if (!Input.GetKeyDown(KeyCode.F1)) return;
-        overlay.ToggleOverlay();
+        ScriptableObjectInventory.Instance.overlay.ToggleOverlay();
         ToggleAnalyzedScene();
-        ToggleOverlayScene(overlay.OverlayIsActive());
+        ToggleOverlayScene(ScriptableObjectInventory.Instance.overlay.OverlayIsActive());
     }
 
     private void ToggleAnalyzedScene()
     {
-        Debug.Log("toggle overlay");
-        overlayEvent?.TriggerEvent();
+        ScriptableObjectInventory.Instance.toggleOverlayEvent?.TriggerEvent();
     }
 
     /// <summary>

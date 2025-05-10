@@ -11,7 +11,6 @@ using UnityEngine;
 public class NodeGraphScriptableObject : ScriptableObject
 {
     // connections of Node objects and their visually representing GameObjects
-    private Dictionary<GameObject, NodeV1> _nodesByGameObject = new();
     public GameObject currentlySelectedGameObject;
     public Bounds currentlySelectedBounds;
     private List<GameObject> _allNodes = new();
@@ -66,15 +65,6 @@ public class NodeGraphScriptableObject : ScriptableObject
         }
     }
 
-
-    public void Clear()
-    {
-        _nodesByGameObject.Clear();
-        _allNodes.Clear();
-        _nodesByGameObject.Clear();
-        _parentObject ??= SceneHandler.GetParentObject();
-        AllNodes.Clear();
-    }
 
     public bool IsEmpty()
     {
@@ -220,7 +210,6 @@ public class NodeGraphScriptableObject : ScriptableObject
 
     public void Initialize()
     {
-        _nodesByGameObject = new Dictionary<GameObject, NodeV1>();
         currentlySelectedGameObject = null;
         currentlySelectedBounds = new Bounds();
         _allNodes = new List<GameObject>();

@@ -16,7 +16,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
         {
             case (int)LayoutType.Grid:
             {
-                rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
+                rootNodes = ConnectionsBasedForestManager.BuildForest(ScriptableObjectInventory.Instance.conSo.connections);
                 forestManager.SetLayoutParameters(
                     layoutParameters
                 );
@@ -25,7 +25,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
             }
             case (int)LayoutType.Radial:
             {
-                rootNodes = ConnectionsBasedForestManager.BuildForest(NodeConnectionManager.Instance.conSo.connections);
+                rootNodes = ConnectionsBasedForestManager.BuildForest(ScriptableObjectInventory.Instance.conSo.connections);
                 forestManager.SetLayoutParameters(
                     layoutParameters
                 );
@@ -48,7 +48,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
     private static List<TreeNode> HierarchicalLayout(LayoutParameters layoutParameters)
     {
         var rootNodes = ConnectionsBasedForestManager.BuildForest(
-            NodeConnectionManager.Instance.conSo.connections);
+            ScriptableObjectInventory.Instance.conSo.connections);
 
         var hierarchicalLayout = new HierarchicalTreeLayout();
         hierarchicalLayout.SetLayoutParameters(

@@ -32,10 +32,8 @@ public class NodeTextScaler : ModularSettingsUser
     
     [Header("References")]
     [Tooltip("Reference to the NodeGraph containing all nodes")]
-    public NodeGraphScriptableObject nodeGraph;
 
     public Camera mainCamera;
-    public MenuState menuState;
 
       
     
@@ -55,10 +53,10 @@ public class NodeTextScaler : ModularSettingsUser
 
     private void InitializeOriginalFontSizes()
     {
-        if (!nodeGraph || nodeGraph.AllNodes == null)
+        if (!ScriptableObjectInventory.Instance.graph || ScriptableObjectInventory.Instance.graph.AllNodes == null)
             return;
 
-        foreach (var textComponent in from node in nodeGraph.AllNodes 
+        foreach (var textComponent in from node in ScriptableObjectInventory.Instance.graph.AllNodes 
                  where node
                  select node.GetComponentInChildren<TMP_Text>() 
                  into textComponent 
@@ -72,7 +70,7 @@ public class NodeTextScaler : ModularSettingsUser
 
     private void Update()
     {
-        if (menuState && !menuState.menuOpen && enableTextScaling)
+        if (ScriptableObjectInventory.Instance.menuState && !ScriptableObjectInventory.Instance.menuState.menuOpen && enableTextScaling)
         {
             ScaleTextBasedOnMouseProximity();
         }
@@ -80,14 +78,14 @@ public class NodeTextScaler : ModularSettingsUser
 
     private void ScaleTextBasedOnMouseProximity()
     {
-        if (!nodeGraph || nodeGraph.AllNodes == null || !mainCamera)
+        if (!ScriptableObjectInventory.Instance.graph || ScriptableObjectInventory.Instance.graph.AllNodes == null || !mainCamera)
             return;
 
         var mousePosition = Input.mousePosition;
         mousePosition.z = -mainCamera.transform.position.z; // Set the distance from the camera
         var mouseWorldPos = mainCamera.ScreenToWorldPoint(mousePosition);
         
-        foreach (var node in nodeGraph.AllNodes)
+        foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
         {
             if (!node) continue;
             
@@ -138,7 +136,7 @@ public class NodeTextScaler : ModularSettingsUser
         var velocity = _velocities[textComponent];
         var newSize = Mathf.SmoothDamp(currentSize, targetSize, ref velocity, smoothTime);
         _velocities[textComponent] = velocity;
-        nodeGraph.ChangeTextSize(node, newSize);
+        ScriptableObjectInventory.Instance.graph.ChangeTextSize(node, newSize);
     }
     
 
@@ -154,16 +152,16 @@ public class NodeTextScaler : ModularSettingsUser
     
     private void ResetAllTextSizes()
     {
-        if (!nodeGraph || nodeGraph.AllNodes == null)
+        if (!ScriptableObjectInventory.Instance.graph || ScriptableObjectInventory.Instance.graph.AllNodes == null)
             return;
             
-        foreach (var node in nodeGraph.AllNodes)
+        foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
         {
             if (!node) continue;
             var textComponent = node.GetComponentInChildren<TMP_Text>();
             if (textComponent && _originalFontSizes.TryGetValue(textComponent, out var originalSize))
             {
-                nodeGraph.ChangeTextSize(node, originalSize);
+                ScriptableObjectInventory.Instance.graph.ChangeTextSize(node, originalSize);
             }
         }
     }

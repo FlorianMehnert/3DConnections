@@ -11,10 +11,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
 {
     private static NodeConnectionManager _instance;
 
-    [Header("Component based physics sim")]
-    public PhysicsSimulationConfiguration simConfig;
-
-    public NodeConnectionsScriptableObject conSo;
 
     private static bool _isShuttingDown;
     public GameObject lineRendererPrefab;
@@ -54,11 +50,11 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void Update()
     {
-        if (conSo.usingNativeArray)
+        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray)
         {
             UpdateConnectionPositionsNative();
         }
-        else if (conSo.connections.Count > 0)
+        else if (ScriptableObjectInventory.Instance.conSo.connections.Count > 0)
         {
             UpdateConnectionPositions();
         }
@@ -71,9 +67,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
+        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
         {
-            conSo.NativeConnections.Dispose();
+            ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
         }
 
         if (_instance != this) return;
@@ -116,13 +112,13 @@ public sealed class NodeConnectionManager : MonoBehaviour
         newConnection.ApplyConnection();
         lineRenderer.positionCount = 2;
 
-        conSo.connections.Add(newConnection);
+        ScriptableObjectInventory.Instance.conSo.connections.Add(newConnection);
         return newConnection;
     }
 
     private void UpdateConnectionPositions()
     {
-        foreach (var connection in conSo.connections.Where(connection =>
+        foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection =>
                      connection.startNode && connection.endNode && connection.lineRenderer))
         {
             connection.lineRenderer.SetPosition(0, connection.startNode.transform.position);
@@ -132,31 +128,31 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public void ClearConnections()
     {
-        if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
+        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
         {
-            conSo.NativeConnections.Dispose();
-            conSo.usingNativeArray = false;
+            ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+            ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
         }
 
-        foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer))
+        foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection => connection.lineRenderer))
         {
             Destroy(connection.lineRenderer.gameObject);
         }
 
-        conSo.connections.Clear();
-        conSo.currentConnectionCount = 0;
+        ScriptableObjectInventory.Instance.conSo.connections.Clear();
+        ScriptableObjectInventory.Instance.conSo.currentConnectionCount = 0;
     }
 
     public void ClearNativeArray()
     {
-        if (!conSo.usingNativeArray || !conSo.NativeConnections.IsCreated) return;
-        conSo.NativeConnections.Dispose();
-        conSo.usingNativeArray = false;
+        if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray || !ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated) return;
+        ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+        ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
     }
 
     public void AddSpringsToConnections()
     {
-        foreach (var connection in conSo.connections)
+        foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections)
         {
             var existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
 
@@ -177,8 +173,8 @@ public sealed class NodeConnectionManager : MonoBehaviour
             if (!spring) return;
             spring.autoConfigureDistance = true;
             spring.connectedBody = connection.endNode.GetComponent<Rigidbody2D>();
-            spring.dampingRatio = simConfig.damping * 2;
-            spring.distance = simConfig.colliderRadius;
+            spring.dampingRatio = ScriptableObjectInventory.Instance.simConfig.damping * 2;
+            spring.distance = ScriptableObjectInventory.Instance.simConfig.colliderRadius;
             spring.frequency = 0.05f;
             if (!spring.connectedBody) return;
             spring.connectedBody.freezeRotation = true;
@@ -190,89 +186,89 @@ public sealed class NodeConnectionManager : MonoBehaviour
     /// </summary>
     public void UpdateSpringParameters()
     {
-        foreach (var spring in conSo.connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>())
+        foreach (var spring in ScriptableObjectInventory.Instance.conSo.connections.Select(connection => connection.startNode.GetComponents<SpringJoint2D>())
                      .SelectMany(springComponents => springComponents))
         {
-            spring.dampingRatio = simConfig.damping;
-            spring.frequency = simConfig.Stiffness;
-            spring.distance = simConfig.colliderRadius;
+            spring.dampingRatio = ScriptableObjectInventory.Instance.simConfig.damping;
+            spring.frequency = ScriptableObjectInventory.Instance.simConfig.Stiffness;
+            spring.distance = ScriptableObjectInventory.Instance.simConfig.colliderRadius;
         }
     }
 
     public void ConvertToNativeArray()
     {
-        if (conSo.usingNativeArray)
+        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray)
         {
-            if (conSo.NativeConnections.IsCreated)
+            if (ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
             {
-                conSo.NativeConnections.Dispose();
+                ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
             }
         }
 
-        conSo.currentConnectionCount = conSo.connections.Count;
-        if (conSo.currentConnectionCount == 0) return;
+        ScriptableObjectInventory.Instance.conSo.currentConnectionCount = ScriptableObjectInventory.Instance.conSo.connections.Count;
+        if (ScriptableObjectInventory.Instance.conSo.currentConnectionCount == 0) return;
 
         // Create a new native array with the exact size needed
-        conSo.NativeConnections = new NativeArray<float3>(conSo.currentConnectionCount * 2, Allocator.Persistent);
+        ScriptableObjectInventory.Instance.conSo.NativeConnections = new NativeArray<float3>(ScriptableObjectInventory.Instance.conSo.currentConnectionCount * 2, Allocator.Persistent);
 
         // Copy existing connections to the native array
-        for (var i = 0; i < conSo.currentConnectionCount; i++)
+        for (var i = 0; i < ScriptableObjectInventory.Instance.conSo.currentConnectionCount; i++)
         {
-            if (!conSo.connections[i].startNode || !conSo.connections[i].endNode) continue;
-            conSo.NativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
-            conSo.NativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
+            if (!ScriptableObjectInventory.Instance.conSo.connections[i].startNode || !ScriptableObjectInventory.Instance.conSo.connections[i].endNode) continue;
+            ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2] = ScriptableObjectInventory.Instance.conSo.connections[i].startNode.transform.position;
+            ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2 + 1] = ScriptableObjectInventory.Instance.conSo.connections[i].endNode.transform.position;
         }
 
-        conSo.usingNativeArray = true;
+        ScriptableObjectInventory.Instance.conSo.usingNativeArray = true;
     }
 
     public void UseNativeArray()
     {
-        conSo.usingNativeArray = true;
+        ScriptableObjectInventory.Instance.conSo.usingNativeArray = true;
     }
 
     // Call this when you want to resize the native array (e.g., when connections are added/removed)
     public void ResizeNativeArray()
     {
-        if (!conSo.usingNativeArray) return;
+        if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray) return;
 
-        var newConnectionCount = conSo.connections.Count;
-        if (newConnectionCount == conSo.currentConnectionCount) return;
+        var newConnectionCount = ScriptableObjectInventory.Instance.conSo.connections.Count;
+        if (newConnectionCount == ScriptableObjectInventory.Instance.conSo.currentConnectionCount) return;
 
         var newArray = new NativeArray<float3>(newConnectionCount * 2, Allocator.Persistent);
 
         // Copy existing data up to the smaller of the two sizes
-        var copyCount = math.min(conSo.currentConnectionCount, newConnectionCount) * 2;
+        var copyCount = math.min(ScriptableObjectInventory.Instance.conSo.currentConnectionCount, newConnectionCount) * 2;
         for (var i = 0; i < copyCount; i++)
         {
-            newArray[i] = conSo.NativeConnections[i];
+            newArray[i] = ScriptableObjectInventory.Instance.conSo.NativeConnections[i];
         }
 
         // Dispose old array and assign new one
-        if (conSo.NativeConnections.IsCreated)
+        if (ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
         {
-            conSo.NativeConnections.Dispose();
+            ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
         }
 
-        conSo.NativeConnections = newArray;
-        conSo.currentConnectionCount = newConnectionCount;
+        ScriptableObjectInventory.Instance.conSo.NativeConnections = newArray;
+        ScriptableObjectInventory.Instance.conSo.currentConnectionCount = newConnectionCount;
     }
 
 
     private void UpdateConnectionPositionsNative()
     {
-        if (!conSo.usingNativeArray || !conSo.NativeConnections.IsCreated) return;
+        if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray || !ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated) return;
 
-        for (var i = 0; i < conSo.currentConnectionCount; i++)
+        for (var i = 0; i < ScriptableObjectInventory.Instance.conSo.currentConnectionCount; i++)
         {
-            if (!conSo.connections[i].startNode || !conSo.connections[i].endNode || !conSo.connections[i].lineRenderer) continue;
+            if (!ScriptableObjectInventory.Instance.conSo.connections[i].startNode || !ScriptableObjectInventory.Instance.conSo.connections[i].endNode || !ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer) continue;
             // Update the native array
-            conSo.NativeConnections[i * 2] = conSo.connections[i].startNode.transform.position;
-            conSo.NativeConnections[i * 2 + 1] = conSo.connections[i].endNode.transform.position;
+            ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2] = ScriptableObjectInventory.Instance.conSo.connections[i].startNode.transform.position;
+            ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2 + 1] = ScriptableObjectInventory.Instance.conSo.connections[i].endNode.transform.position;
 
             // Update line renderer
-            conSo.connections[i].lineRenderer.SetPosition(0, conSo.NativeConnections[i * 2]);
-            conSo.connections[i].lineRenderer.SetPosition(1, conSo.NativeConnections[i * 2 + 1]);
+            ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.SetPosition(0, ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2]);
+            ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.SetPosition(1, ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2 + 1]);
         }
     }
 
@@ -328,6 +324,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
     public NodeConnection GetConnection(GameObject start, GameObject end)
     {
         if (!start || !end) return null;
-        return conSo.connections.FirstOrDefault(connection => connection.startNode == start && connection.endNode == end);
+        return ScriptableObjectInventory.Instance.conSo.connections.FirstOrDefault(connection => connection.startNode == start && connection.endNode == end);
     }
 }

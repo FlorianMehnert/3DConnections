@@ -194,7 +194,7 @@ public class KeyDisplay : ModularSettingsUser
             {
                 var nodeGraph = GetNodeGraph();
                 var message = nodeGraph ? "nodeCount is: " + nodeGraph.AllNodes.Count + " " : "there exists no nodeGraph scriptable object ";
-                message += "connection count is: " + NodeConnectionManager.Instance.conSo.connections.Count;
+                message += "connection count is: " + ScriptableObjectInventory.Instance.conSo.connections.Count;
                 Debug.Log(message);
                 Log(message);
             }else if (IsConfirm())

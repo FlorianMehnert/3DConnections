@@ -2,8 +2,9 @@
   "name": "3DConnections.Runtime.ScriptableObjectInventory",
   "rootNamespace": "3DConnections.Runtime.ScriptableObjectInventory",
   "references": [
-  "GUID:407d9f5d313b4d20b83d06c1f10def66",
-    "GUID:d8b63aba1907145bea998dd612889d6b"
+    "GUID:407d9f5d313b4d20b83d06c1f10def66",
+    "GUID:d8b63aba1907145bea998dd612889d6b",
+    "3DConnections.Runtime.Events"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

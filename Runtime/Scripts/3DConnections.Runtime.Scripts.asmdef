@@ -13,7 +13,8 @@
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
         "GUID:b3002b8f7d8d4f289e3cbd54b99ed1fc",
         "3DConnections.Runtime.Nodes.Extensions",
-        "GUID:f4eb26c44d5d41ef825a8424c949fb63"
+        "GUID:f4eb26c44d5d41ef825a8424c949fb63",
+        "GUID:577a0febf14c435a9f5ae7679ca580ba"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

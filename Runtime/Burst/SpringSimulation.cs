@@ -8,8 +8,6 @@ using UnityEngine;
 
 public class SpringSimulation : MonoBehaviour, ILogable
 {
-    public NodeGraphScriptableObject nodeGraph;
-    [SerializeField] private PhysicsSimulationConfiguration simConfig;
 
     private NativeArray<float2> _positions;
     private NativeArray<float2> _newPositions;
@@ -19,19 +17,18 @@ public class SpringSimulation : MonoBehaviour, ILogable
     private List<GameObject> _nodes;
     private bool _isSetUp;
     
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
 
     private void OnDisable()
     {
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
         CleanupNativeArrays();
     }
 
     private void OnEnable()
     {
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
     }
     
 
@@ -60,7 +57,7 @@ public class SpringSimulation : MonoBehaviour, ILogable
     {
         CleanupNativeArrays();
 
-        _nodes = nodeGraph.AllNodes;
+        _nodes = ScriptableObjectInventory.Instance.graph.AllNodes;
 
         _positions = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
         _newPositions = new NativeArray<float2>(_nodes.Count, Allocator.Persistent);
@@ -84,7 +81,7 @@ public class SpringSimulation : MonoBehaviour, ILogable
             typeof(SpringJoint2D),
             typeof(Rigidbody2D)
         };
-        nodeGraph.NodesRemoveComponents(types);
+        ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(types);
 
         ConvertCollidersToTriggers();
     }
@@ -108,8 +105,8 @@ public class SpringSimulation : MonoBehaviour, ILogable
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
             Forces = _forces,
-            Stiffness = simConfig.Stiffness,
-            Damping = simConfig.damping,
+            Stiffness = ScriptableObjectInventory.Instance.simConfig.Stiffness,
+            Damping = ScriptableObjectInventory.Instance.simConfig.damping,
             DeltaTime = deltaTime
         };
 
@@ -119,8 +116,8 @@ public class SpringSimulation : MonoBehaviour, ILogable
             NewPositions = _newPositions,
             CurrentVelocities = _velocities,
             NewVelocities = _newVelocities,
-            ColliderRadius = simConfig.colliderRadius,
-            CollisionResponseStrength = simConfig.CollisionResponseStrength,
+            ColliderRadius = ScriptableObjectInventory.Instance.simConfig.colliderRadius,
+            CollisionResponseStrength = ScriptableObjectInventory.Instance.simConfig.CollisionResponseStrength,
             DeltaTime = deltaTime
         };
 
@@ -145,9 +142,9 @@ public class SpringSimulation : MonoBehaviour, ILogable
         (_velocities, _newVelocities) = (_newVelocities, _velocities);
     }
 
-    private void ConvertCollidersToTriggers()
+    private static void ConvertCollidersToTriggers()
     {
-        foreach (var col in nodeGraph.AllNodes.Select(node => node.GetComponent<Collider2D>()).Where(col => col))
+        foreach (var col in ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.GetComponent<Collider2D>()).Where(col => col))
         {
             col.isTrigger = true;
         }

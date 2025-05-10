@@ -8,12 +8,6 @@ public class DebugOverlay : ModularSettingsUser
     
     private ModularSettingsManager _settingsManager;
 
-    // Example variables to display
-    public NodeColorsScriptableObject nodeColors;
-    public NodeConnectionsScriptableObject nodeConnections;
-    public NodeGraphScriptableObject nodeGraph;
-    public OverlaySceneScriptableObject overlayScene;
-
     private void Update()
     {
         // Toggle overlay with F3 key
@@ -42,7 +36,7 @@ public class DebugOverlay : ModularSettingsUser
         GUILayout.Space(10);
 
         // Display variables
-        GUILayout.Label($"There are {nodeGraph.AllNodes.Count} nodes");
+        GUILayout.Label($"There are {ScriptableObjectInventory.Instance.graph.AllNodes.Count} nodes");
         GUILayout.EndArea();
     }
 }

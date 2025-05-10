@@ -20,8 +20,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private static readonly int ForceArrows = Shader.PropertyToID("force_arrows");
     private static readonly int EConstant = Shader.PropertyToID("eConstant");
     public ComputeShader computeShader;
-    public NodeGraphScriptableObject nodeGraph;
-    [SerializeField] private PhysicsSimulationConfiguration simConfig;
 
     private ComputeBuffer _nodeBuffer;
     private ComputeBuffer _forceArrowsBuffer;
@@ -34,8 +32,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private int _forceArrowsKernel;
 
     private bool _isShuttingDown;
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
-    [SerializeField] private ClearEvent clearEvent;
 
     private static readonly int GoRestLength = Shader.PropertyToID("go_rest_length");
     private static readonly int GCRestLength = Shader.PropertyToID("gc_rest_length");
@@ -102,19 +98,19 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private void OnDisable()
     {
         _isShuttingDown = true;
-        if (removePhysicsEvent)
-            removePhysicsEvent.OnEventTriggered -= HandleEvent;
-        if (clearEvent)
-            clearEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
     }
 
     private void OnEnable()
     {
         _isShuttingDown = false;
-        if (removePhysicsEvent)
-            removePhysicsEvent.OnEventTriggered += HandleEvent;
-        if (clearEvent)
-            clearEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
     }
 
     private struct NodeData
@@ -164,7 +160,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     {
         CleanupBuffers();
 
-        _nodes = nodeGraph.AllNodeTransforms2D;
+        _nodes = ScriptableObjectInventory.Instance.graph.AllNodeTransforms2D;
         if (_nodes.Length == 0)
         {
             Debug.Log("No nodes found while creating compute buffer.");
@@ -223,7 +219,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         var map = new Dictionary<GameObject, int>();
         for (var i = 0; i < _nodes.Length; i++)
         {
-            var obj = nodeGraph.AllNodes[i];
+            var obj = ScriptableObjectInventory.Instance.graph.AllNodes[i];
             var typeComp = obj.GetComponent<NodeType>();
             if (typeComp && typeComp.nodeTypeName == NodeTypeName.GameObject)
             {
@@ -245,7 +241,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         for (int i = 0; i < _nodes.Length; i++)
         {
-            var obj = nodeGraph.AllNodes[i];
+            var obj = ScriptableObjectInventory.Instance.graph.AllNodes[i];
             var typeComp = obj.GetComponent<NodeType>();
             var nodeType = typeComp ? typeComp.nodeTypeName : NodeTypeName.GameObject;
             int parentId = -1;
@@ -349,7 +345,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             typeof(SpringJoint2D),
             typeof(Rigidbody2D)
         };
-        nodeGraph.NodesRemoveComponents(typesToRemove);
+        ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(typesToRemove);
     }
 
 
@@ -435,10 +431,10 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Update shader parameters
         computeShader.SetInt(NodeCount, _nodes.Length);
         computeShader.SetFloat(DeltaTime, deltaTime);
-        computeShader.SetFloat(Stiffness, simConfig.Stiffness);
-        computeShader.SetFloat(Damping, simConfig.damping);
-        computeShader.SetFloat(ColliderRadius, simConfig.colliderRadius);
-        computeShader.SetFloat(CollisionResponseStrength, simConfig.CollisionResponseStrength);
+        computeShader.SetFloat(Stiffness, ScriptableObjectInventory.Instance.simConfig.Stiffness);
+        computeShader.SetFloat(Damping, ScriptableObjectInventory.Instance.simConfig.damping);
+        computeShader.SetFloat(ColliderRadius, ScriptableObjectInventory.Instance.simConfig.colliderRadius);
+        computeShader.SetFloat(CollisionResponseStrength, ScriptableObjectInventory.Instance.simConfig.CollisionResponseStrength);
         computeShader.SetFloat(MinIntegrationTimestep, minIntegrationTimeStep);
         computeShader.SetFloat(RelaxationFactor, currentRelaxFactor);
         computeShader.SetFloat(MaxVelocityLimit, currentMaxVelocity);
@@ -516,7 +512,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
 
                 // Determine arrow color based on node type
-                Color arrowColor = i < _nodes.Length && nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component
+                Color arrowColor = i < _nodes.Length && ScriptableObjectInventory.Instance.graph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component
                     ? componentArrowColor
                     : gameObjectArrowColor;
 
@@ -551,10 +547,10 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
             for (var i = 0; i < _nodes.Length; i++)
             {
-                if (!nodeGraph.AllNodes[i]) continue;
+                if (!ScriptableObjectInventory.Instance.graph.AllNodes[i]) continue;
 
                 // Get the node type to determine trail color
-                var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component;
+                var isComponent = ScriptableObjectInventory.Instance.graph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component;
                 var trailColor = isComponent ? componentTrailColor : gameObjectTrailColor;
 
                 for (var h = 1; h < historyCount; h++)

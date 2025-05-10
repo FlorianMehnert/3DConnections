@@ -6,8 +6,6 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     public ComputeShader computeShader;
     public Transform[] nodeTransforms;
     
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
-    [SerializeField] private ClearEvent clearEvent;
     [SerializeField] private int simulationStepsPerFrame = 10; // Number of simulation steps to run per frame
 
     private ComputeBuffer _nodeBuffer;
@@ -34,10 +32,10 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     private void OnDisable()
     {
         _isShuttingDown = true;
-        if (removePhysicsEvent)
-            removePhysicsEvent.OnEventTriggered -= HandleEvent;
-        if (clearEvent)
-            clearEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
     }
 
     public void Initialize()
@@ -75,10 +73,10 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     private void OnEnable()
     {
         _isShuttingDown = false;
-        if (removePhysicsEvent)
-            removePhysicsEvent.OnEventTriggered += HandleEvent;
-        if (clearEvent)
-            clearEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
     }
 
     private void Update()

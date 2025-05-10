@@ -7,8 +7,8 @@ public class BoolModularMenuData : ModularMenuData
 {
     public bool defaultValue;
     [SerializeField] private bool currentValue;
-    
-    public bool Value 
+
+    private bool Value 
     { 
         get => currentValue;
         set 

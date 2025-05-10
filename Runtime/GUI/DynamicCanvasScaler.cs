@@ -21,11 +21,9 @@ public class DynamicCanvasScaler : MonoBehaviour
     {
         if (!_canvasScaler) return;
 
-        // Get current screen resolution
         var screenWidth = Screen.width;
         var screenHeight = Screen.height;
 
-        // Set reference resolution based on screen size
         _canvasScaler.referenceResolution = new Vector2(screenWidth, screenHeight);
     }
 }

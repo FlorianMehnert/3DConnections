@@ -44,15 +44,11 @@ public class OverlaySceneScriptableObject : ScriptableObject
 
     public GameObject GetNodeGraph()
     {
-        if (overlayScene && overlayScene.scene.HasValue)
-        {
-            if (parentNodeObject != null)
-                return parentNodeObject;
-            var rootObjects = overlayScene.scene.Value.GetRootGameObjects();
-            return rootObjects.FirstOrDefault(obj => obj.name == "ParentNodesObject");
-        }
+        if (!overlayScene || !overlayScene.scene.HasValue) return null;
+        if (parentNodeObject)
+            return parentNodeObject;
+        var rootObjects = overlayScene.scene.Value.GetRootGameObjects();
+        return rootObjects.FirstOrDefault(obj => obj.name == "ParentNodesObject");
 
-        Debug.Log("overlay scene is not properly configured");
-        return null;
     }
 }

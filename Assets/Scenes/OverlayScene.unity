@@ -286,6 +286,62 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+--- !u!1 &487318149
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 487318151}
+  - component: {fileID: 487318150}
+  m_Layer: 0
+  m_Name: ScriptableObjectInventory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &487318150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 487318149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9ed087a0220473e941b1b3ce7055318, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  simConfig: {fileID: 11400000, guid: dfaa7161300c3249bb28074fd3076708, type: 2}
+  conSo: {fileID: 11400000, guid: e03534a0f02dc33d48dc9f8e7d302d2a, type: 2}
+  graph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
+  nodeColors: {fileID: 11400000, guid: 504eee6cf71fcfbb6af3b91af5220206, type: 2}
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
+  layout: {fileID: 11400000, guid: 22eaa6a769169557ea327a3dcf50993c, type: 2}
+  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
+  applicationState: {fileID: 11400000, guid: 9675f9f884c9536b8b04d48dcfa37288, type: 2}
+  toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
+  removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
+  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
+  toggleOverlayEvent: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
+--- !u!4 &487318151
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 487318149}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &552808315 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7644496426939543078, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
@@ -305,8 +361,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   computeShader: {fileID: 7200000, guid: 3c74306bb3e84494accf6188c3892e16, type: 3}
   nodeTransforms: []
-  removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
-  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
   simulationStepsPerFrame: 10
 --- !u!1 &574136028
 GameObject:
@@ -375,12 +429,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiDocument: {fileID: 574136029}
-  removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
-  clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
-  layoutParameters: {fileID: 11400000, guid: 22eaa6a769169557ea327a3dcf50993c, type: 2}
-  toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
-  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
-  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &574136033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -503,7 +551,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095ab7057bdf46acb97e5212a5b3fc84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!1 &1365550533
 GameObject:
   m_ObjectHideFlags: 0
@@ -636,7 +683,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uiDocument: {fileID: 1770485198}
   defaultSettings: []
-  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &1770485198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1051,7 +1097,13 @@ PrefabInstance:
       propertyPath: parentNode
       value: 
       objectReference: {fileID: 108217077}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 1748416101785934847, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+    - {fileID: 2761152558827232600, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
+    - {fileID: 5742035924882090109, guid: 1acaeda7175d74f6ca635486314ae346, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -1073,3 +1125,4 @@ SceneRoots:
   - {fileID: 574136030}
   - {fileID: 1770485199}
   - {fileID: 1365550536}
+  - {fileID: 487318151}

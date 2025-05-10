@@ -5,7 +5,6 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Slider))]
 public class ColorPickerController : MonoBehaviour
 {
-    public NodeGraphScriptableObject nodeGraph; // List of objects to color
     [SerializeField] private Slider slider;
     public Color col0;
     public Color col1;
@@ -37,7 +36,7 @@ public class ColorPickerController : MonoBehaviour
         Color.RGBToHSV(baseColor, out var h, out var s, out var v);
 
         // Proper hue shifting without clamping incorrectly
-        if (slider == null) return;
+        if (!slider) return;
         h = (h + 1/(slider.maxValue+1) * slider.value) % 1f;
         s = Mathf.Max(0.5f, s); // Ensure some saturation
         v = Mathf.Max(0.5f, v); // Ensure some brightness
@@ -52,11 +51,11 @@ public class ColorPickerController : MonoBehaviour
             alternativeColors: alternativeColors
         );
 
-        if (NodeConnectionManager.Instance == null || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
+        if (!NodeConnectionManager.Instance || !ScriptableObjectInventory.Instance.conSo || ScriptableObjectInventory.Instance.conSo.connections == null)
         {
             return;
         }
-        var connections = NodeConnectionManager.Instance.conSo.connections;
+        var connections = ScriptableObjectInventory.Instance.conSo.connections;
 
         // Store colors for direct access
         col0 = colors[0];
@@ -81,11 +80,11 @@ public class ColorPickerController : MonoBehaviour
         }
 
         // Apply colors to nodes
-        if (nodeGraph.AllNodes.Count > 0 && nodeGraph.AllNodes[0] == null)
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count > 0 && !ScriptableObjectInventory.Instance.graph.AllNodes[0])
         {
-            nodeGraph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+            ScriptableObjectInventory.Instance.graph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
         }
-        foreach (var node in nodeGraph.AllNodes)
+        foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
         {
             var coloredObject = node.GetComponent<ColoredObject>();
             var nodeType = node.GetComponent<NodeType>();

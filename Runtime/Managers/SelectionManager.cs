@@ -16,15 +16,8 @@ public class CubeSelector : ModularSettingsUser
     [RegisterModularStringSetting("Target Layer", "The layer against which the selection will try to select objects against", "Selection", "OverlayLayer")]
     private string targetLayerName = "OverlayLayer";
 
-    [SerializeField] private OverlaySceneScriptableObject overlay;
-
-    [Header("Node specific settings")] [SerializeField]
-    private NodeGraphScriptableObject nodeGraph;
-
     [SerializeField] private Canvas parentCanvas;
 
-    [Header("highlight settings")] [SerializeField]
-    private NodeColorsScriptableObject nodeColorsScriptableObject;
 
     [SerializeField] private Material highlightMaterial;
     private readonly HashSet<GameObject> _selectedCubes = new();
@@ -59,11 +52,9 @@ public class CubeSelector : ModularSettingsUser
     private int _selectedCubesCount;
     [UsedImplicitly] private Rect _selectionRect;
     
-    [SerializeField] private MenuState menuState;
-
     private void Start()
     {
-        _displayCamera = overlay.GetCameraOfScene();
+        _displayCamera = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
 
         if (!_displayCamera)
         {
@@ -90,7 +81,7 @@ public class CubeSelector : ModularSettingsUser
 
     private void Update()
     {
-        if (!menuState || menuState.menuOpen)
+        if (!ScriptableObjectInventory.Instance.menuState || ScriptableObjectInventory.Instance.menuState.menuOpen)
             return;
         
         // toggle this whole manager using S
@@ -100,7 +91,7 @@ public class CubeSelector : ModularSettingsUser
         if (_currentlyDraggedCube)
         {
             _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color =
-                nodeColorsScriptableObject.nodeSelectedColor;
+                ScriptableObjectInventory.Instance.nodeColors.nodeSelectedColor;
         }
 
         var image = selectionRectangle.GetComponent<Image>();
@@ -206,7 +197,7 @@ public class CubeSelector : ModularSettingsUser
                 _currentlyDraggedCube = hitObject;
 
                 // this is used in the camera handler later to focus on this object
-                nodeGraph.currentlySelectedGameObject = hitObject;
+                ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = hitObject;
 
                 SelectCube(hitObject);
 
@@ -315,8 +306,8 @@ public class CubeSelector : ModularSettingsUser
                 }
 
                 if (_selectedCubes.Count > 0)
-                    nodeGraph.currentlySelectedGameObject = _selectedCubes.ToArray()[0];
-                nodeGraph.currentlySelectedBounds = GetSelectionBounds();
+                    ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = _selectedCubes.ToArray()[0];
+                ScriptableObjectInventory.Instance.graph.currentlySelectedBounds = GetSelectionBounds();
             }
         }
 

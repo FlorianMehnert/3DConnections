@@ -19,11 +19,9 @@ public class SceneAnalyzer : MonoBehaviour
     private readonly HashSet<Object> _processingObjects = new();
     private readonly Dictionary<int, GameObject> _instanceIdToNodeLookup = new();
 
-    [Header("Resources")] [SerializeField] private NodeGraphScriptableObject nodeGraph;
     [SerializeField] private TextAsset analysisData; // Assign the JSON file here
     [SerializeField] private GameObject parentNode;
     [SerializeField] private GameObject nodePrefab;
-    [SerializeField] private OverlaySceneScriptableObject overlay;
 
     [Header("Node Settings")] [SerializeField]
     private int nodeWidth = 2;
@@ -32,12 +30,9 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int maxNodes = 1000;
     [SerializeField] private bool ignoreTransforms;
     [SerializeField] private bool scaleNodesUsingMaintainability;
-    [SerializeField] private ClearEvent clearEvent;
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
 
     [Header("Display Settings")] [SerializeField]
     internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
-    [SerializeField] NodeColorsScriptableObject nodeColorsConfig;
 
     [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
     [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
@@ -117,18 +112,18 @@ public class SceneAnalyzer : MonoBehaviour
 
     private void OnEnable()
     {
-        if (clearEvent != null)
-            clearEvent.OnEventTriggered += HandleEvent;
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
     }
 
     private void OnDisable()
     {
-        if (clearEvent != null)
-            clearEvent.OnEventTriggered -= HandleEvent;
-        if (removePhysicsEvent != null)
-            removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
     }
 
     private void TraverseScene(GameObject[] rootGameObjects)
@@ -150,11 +145,11 @@ public class SceneAnalyzer : MonoBehaviour
         foreach (var rootObject in rootGameObjects)
             TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
 
-        if (_instanceIdToNodeLookup != null && nodeGraph && nodeGraph.AllNodes is { Count: 0 })
-            nodeGraph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
+        if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph && ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
+            ScriptableObjectInventory.Instance.graph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
 
-        if (nodeGraph.AllNodes is { Count: > 0 })
-            nodeGraph.AllNodes.Add(rootNode);
+        if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 })
+            ScriptableObjectInventory.Instance.graph.AllNodes.Add(rootNode);
     }
 
     /// <summary>
@@ -165,7 +160,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// <returns></returns>
     private GameObject SpawnNode(Object obj, bool isAsset = false)
     {
-        if (!overlay.GetCameraOfScene())
+        if (!ScriptableObjectInventory.Instance.overlay.GetCameraOfScene())
         {
             Debug.Log("No camera while trying to spawn a node in NodeBuilder");
             return null;
@@ -174,7 +169,7 @@ public class SceneAnalyzer : MonoBehaviour
         // try to resolve parent gameObject
         if (!parentNode)
         {
-            parentNode = overlay.GetNodeGraph();
+            parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
             if (!parentNode)
             {
                 Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
@@ -187,7 +182,6 @@ public class SceneAnalyzer : MonoBehaviour
         nodeObject.transform.localPosition = new Vector3(0, 0, 0);
         nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
 
-        // TODO: try to make this more dynamic
         nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
 
         // set nodeType
@@ -206,7 +200,7 @@ public class SceneAnalyzer : MonoBehaviour
         textObj.transform.SetParent(nodeObject.transform);
         textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
         var text = textObj.AddComponent<TextMeshPro>();
-        text.text = obj != null ? obj.name : "null object";
+        text.text = obj ? obj.name : "null object";
         text.alignment = TextAlignmentOptions.Center;
         text.fontSize = 1.5f;
 
@@ -243,7 +237,7 @@ public class SceneAnalyzer : MonoBehaviour
         };
 
         // handle initial node
-        if (type.reference == null)
+        if (!type.reference)
         {
             nodeObject.name = "tfRoot";
             
@@ -288,7 +282,7 @@ public class SceneAnalyzer : MonoBehaviour
     private bool IsPrefab(Object obj)
     {
 #if UNITY_2018_3_OR_NEWER
-        if (obj == null) return false;
+        if (!obj) return false;
 
         // Check if it's a prefab instance in the scene (root or child)
         var status = PrefabUtility.GetPrefabInstanceStatus(obj);
@@ -304,7 +298,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             // Check root object's prefab status
             var root = go.transform.root.gameObject;
-            if (root != null && PrefabUtility.GetPrefabInstanceStatus(root) == PrefabInstanceStatus.Connected)
+            if (root && PrefabUtility.GetPrefabInstanceStatus(root) == PrefabInstanceStatus.Connected)
                 return true;
 
             // Check for prefab asset path
@@ -313,7 +307,7 @@ public class SceneAnalyzer : MonoBehaviour
                 return true;
         }
 
-        if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj) != null;
+        if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj);
         var gameObjectName = obj.name;
 
 
@@ -333,7 +327,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null, bool isAsset = false)
     {
-        if (obj == null) return null;
+        if (!obj) return null;
 
         var instanceId = obj.GetInstanceID();
 
@@ -343,7 +337,7 @@ public class SceneAnalyzer : MonoBehaviour
             // Connect existing node
             if (!parentNodeObject) return existingNode;
             if (isAsset)
-                parentNodeObject.ConnectNodes(existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
             else
             {
                 parentNodeObject.ConnectNodes(existingNode,
@@ -359,7 +353,7 @@ public class SceneAnalyzer : MonoBehaviour
                         GameObject => "parentChildConnection",
                         Component => "componentConnection",
                         _ => "referenceConnection"
-                    }, nodeColorsConfig.maxWidthHierarchy);
+                    }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
             }
 
             return existingNode;
@@ -370,7 +364,7 @@ public class SceneAnalyzer : MonoBehaviour
         _instanceIdToNodeLookup[instanceId] = newNode;
         if (!parentNodeObject) return newNode;
         if (isAsset)
-            parentNodeObject.ConnectNodes(newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+            parentNodeObject.ConnectNodes(newNode, new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1, "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
         else
         {
             parentNodeObject.ConnectNodes(newNode,
@@ -386,7 +380,7 @@ public class SceneAnalyzer : MonoBehaviour
                     GameObject => "parentChildConnection",
                     Component => "componentConnection",
                     _ => "referenceConnection"
-                }, nodeColorsConfig.maxWidthHierarchy);
+                }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
         }
 
         return newNode;
@@ -416,7 +410,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (_instanceIdToNodeLookup.TryGetValue(toTraverseGameObjectID, out var existingNode) && parentNodeObject)
             {
                 parentNodeObject.ConnectNodes(existingNode,
-                    isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection", nodeColorsConfig.maxWidthHierarchy);
+                    isReference ? referenceConnection : parentChildConnection, depth: depth, isReference ? "referenceConnection" : "parentChildConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
             }
             return;
         }
@@ -462,7 +456,7 @@ public class SceneAnalyzer : MonoBehaviour
         {
             if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
             }
 
             return;
@@ -483,7 +477,7 @@ public class SceneAnalyzer : MonoBehaviour
             while (property.NextVisible(true))
             {
                 if (property.propertyType != SerializedPropertyType.ObjectReference ||
-                    property.objectReferenceValue == null) continue;
+                    !property.objectReferenceValue) continue;
                 TraverseGameObject(property.objectReferenceValue as GameObject, depth, nodeObject);
             }
 #endif
@@ -546,7 +540,7 @@ public class SceneAnalyzer : MonoBehaviour
             // If we're in a cycle, connect to the existing node if we have one
             if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
             {
-                parentNodeObject.ConnectNodes(existingNode, componentConnection, depth: depth, "componentConnection", nodeColorsConfig.maxWidthHierarchy);
+                parentNodeObject.ConnectNodes(existingNode, componentConnection, depth: depth, "componentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
             }
 
             return;
@@ -568,14 +562,14 @@ public class SceneAnalyzer : MonoBehaviour
             var referencedObjects = GetComponentReferences(component);
             foreach (var referencedObject in referencedObjects)
             {
-                if (referencedObject == null) continue;
+                if (!referencedObject) continue;
                 if (IsAsset(referencedObject))
                 {
                     var idOfAssetObject = referencedObject.GetInstanceID();
                     if (_processingObjects.Contains(referencedObject))
                     {
                         if (_instanceIdToNodeLookup.TryGetValue(idOfAssetObject, out var existingNode) && parentNodeObject)
-                            parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", nodeColorsConfig.maxWidthHierarchy);
+                            parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth: depth, "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
                         return;
                     }
 
@@ -605,7 +599,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     private static bool IsAsset(Object obj)
     {
-        if (obj == null)
+        if (!obj)
             return false;
 
         // Check if the instance ID is negative (asset) or positive (scene object)
@@ -622,7 +616,7 @@ public class SceneAnalyzer : MonoBehaviour
             Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
         }
 
-        parentNode = overlay.GetNodeGraph();
+        parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
         if (!parentNode)
         {
             Debug.Log("Even after asking the overlay SO for the nodeGraph gameObject it could not be found");
@@ -646,7 +640,7 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _currentNodes = 0;
-        nodeGraph.AllNodes.Clear();
+        ScriptableObjectInventory.Instance.graph.AllNodes.Clear();
     }
 
     private static IEnumerable<Object> GetComponentReferences(Component component)
@@ -663,7 +657,8 @@ public class SceneAnalyzer : MonoBehaviour
     private void HandleEvent()
     {
         ClearNodes();
-        nodeGraph.Initialize();
+        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = false;
+        ScriptableObjectInventory.Instance.graph.Initialize();
     }
 
     private void HandleRemovePhysicsEvent()
@@ -676,6 +671,6 @@ public class SceneAnalyzer : MonoBehaviour
         var parentObject = SceneHandler.GetParentObject();
         if (!parentObject)
             return;
-        nodeGraph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
+        ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
     }
 }

@@ -31,16 +31,6 @@ public class SettingsMenuGeneral : MonoBehaviour
     private TextField _textField;
     
     // Event
-    [SerializeField] private RemovePhysicsEvent removePhysicsEvent;
-    [SerializeField] private ClearEvent clearEvent;
-    
-    // Config - ScriptableObjects
-    [SerializeField] private LayoutParameters layoutParameters;
-    [SerializeField] private ToAnalyzeScene toAnalyzeScene;
-    
-    // Data - ScriptableObjects
-    [SerializeField] private NodeGraphScriptableObject nodeGraph;
-    [SerializeField] private MenuState menuState;
     
     // Internal
     private System.Action[] _actions;
@@ -51,15 +41,15 @@ public class SettingsMenuGeneral : MonoBehaviour
         if (!SceneManager.GetSceneAt(0).isLoaded)
             SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
         
-        nodeGraph.Initialize();
+        ScriptableObjectInventory.Instance.graph.Initialize();
         
         // grab all ui elements
         GrabUIElements(uiDocument.rootVisualElement);
         
         if (_clearButton != null)
-            _clearButton.clicked += () => clearEvent.TriggerEvent();
+            _clearButton.clicked += () => ScriptableObjectInventory.Instance.clearEvent.TriggerEvent();
         if (_removePhysicsButton != null)
-            _removePhysicsButton.clicked += () => removePhysicsEvent.TriggerEvent();
+            _removePhysicsButton.clicked += () => ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         if (_sceneDropdown != null)
             PopulateSceneDropdown();
         
@@ -71,12 +61,14 @@ public class SettingsMenuGeneral : MonoBehaviour
 
         _textField?.RegisterValueChangedCallback(evt =>
         {
-            if (menuState.menuOpen) nodeGraph.SearchNodes(evt.newValue);
+            if (ScriptableObjectInventory.Instance.menuState.menuOpen) ScriptableObjectInventory.Instance.graph.SearchNodes(evt.newValue);
         });
 
         PopulateActions();
         InitializeAnalyzeButton();
         
+        // since this is a scriptable object, in edit mode this is not reset
+        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = false;
     }
 
     private void GrabUIElements(VisualElement root)
@@ -98,18 +90,24 @@ public class SettingsMenuGeneral : MonoBehaviour
         var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
         _actions = new System.Action[]
         {
-            StaticLayout,
             () =>
             {
                 StaticLayout();
-                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+            },
+            () =>
+            {
+                StaticLayout();
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
             },
             () =>
             {
                 StaticLayout();
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
                 if (springSimulation)
                     springSimulation.Simulate();
@@ -120,8 +118,9 @@ public class SettingsMenuGeneral : MonoBehaviour
             {
                 if (!gpuSpringSim) return;
                 StaticLayout();
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 NodeConnectionManager.Instance.ConvertToNativeArray();
-                nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
                 gpuSpringSim.Initialize();
             },
@@ -129,16 +128,17 @@ public class SettingsMenuGeneral : MonoBehaviour
             {
                 var layout = GetComponent<ForceDirectedLayoutV2>();
                 if (!layout) layout = gameObject.AddComponent<ForceDirectedLayoutV2>();
-                layout.nodeGraph = nodeGraph;
                 StaticLayout();
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 layout.Initialize();
             },
             () =>
             {
             var gpuSim = GetComponent<MinimalForceDirectedSimulation>();
             if (!gpuSim) gpuSim = gameObject.AddComponent<MinimalForceDirectedSimulation>();
-            gpuSim.nodeTransforms = nodeGraph.AllNodeTransforms2D;
+            gpuSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodeTransforms2D;
             StaticLayout();
+            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
             gpuSim.Initialize();
             }
         };
@@ -171,38 +171,35 @@ public class SettingsMenuGeneral : MonoBehaviour
     public void StaticLayout()
     {
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
-        removePhysicsEvent.TriggerEvent();
-        if (sceneAnalyzer)
-        {
-            sceneAnalyzer.AnalyzeScene();
-            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
-        }
-        else
-            Debug.Log("did not find");
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+        if (!sceneAnalyzer || ScriptableObjectInventory.Instance.applicationState.spawnedNodes) return;
+        sceneAnalyzer.AnalyzeScene();
+        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+        NodeLayoutManagerV2.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
     }
     
     public void ApplyStaticLayout()
     {
-        if (nodeGraph.AllNodes.Count <= 0) return;
-        removePhysicsEvent.TriggerEvent();
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         var springSimulation = FindFirstObjectByType<SpringSimulation>();
         if (springSimulation)
             springSimulation.CleanupNativeArrays();
-        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
+        NodeLayoutManagerV2.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
     }
     
     public void ApplyComponentPhysics()
     {
-        if (nodeGraph.AllNodes.Count <= 0) return;
-        removePhysicsEvent.TriggerEvent();
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         var springSimulation = FindFirstObjectByType<SpringSimulation>();
         if (springSimulation)
             springSimulation.CleanupNativeArrays();
 
-        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
-        foreach (var boxCollider2D in nodeGraph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()))
+        foreach (var boxCollider2D in ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()))
         {
             boxCollider2D.isTrigger = false;
             boxCollider2D.size = Vector2.one * 5;
@@ -217,10 +214,10 @@ public class SettingsMenuGeneral : MonoBehaviour
         var springSimulation = FindFirstObjectByType<SpringSimulation>();
         if (springSimulation)
         {
-            if (nodeGraph.AllNodes.Count <= 0) return;
-            removePhysicsEvent.TriggerEvent();
+            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
             NodeConnectionManager.Instance.UseNativeArray();
-            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
             NodeConnectionManager.Instance.ResizeNativeArray();
             NodeConnectionManager.Instance.ConvertToNativeArray();
@@ -238,10 +235,10 @@ public class SettingsMenuGeneral : MonoBehaviour
         var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
         if (gpuSpringSim)
         {
-            if (nodeGraph.AllNodes.Count <= 0) return;
-            removePhysicsEvent.TriggerEvent();
+            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
             NodeConnectionManager.Instance.UseNativeArray();
-            nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
             NodeConnectionManager.Instance.ResizeNativeArray();
             NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
@@ -261,10 +258,10 @@ public class SettingsMenuGeneral : MonoBehaviour
     {
         var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
         if (!forceDirectedSim) return;
-        if (nodeGraph.AllNodes.Count <= 0) return;
-        removePhysicsEvent.TriggerEvent();
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         NodeConnectionManager.Instance.UseNativeArray();
-        nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
+        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
         NodeConnectionManager.Instance.AddSpringsToConnections();
         NodeConnectionManager.Instance.ResizeNativeArray();
         NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
@@ -272,17 +269,17 @@ public class SettingsMenuGeneral : MonoBehaviour
         var springSimulation = GetComponent<SpringSimulation>();
         if (springSimulation)
             springSimulation.Disable();
-        forceDirectedSim.nodeTransforms = nodeGraph.AllNodes.Select(node => node.transform).ToArray();
+        forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
         forceDirectedSim.Initialize();
     }
     
     public void ApplyForceDirectedComponentPhysics()
     {
         var forceDirectedSim = gameObject.AddComponent<ForceDirectedLayoutV2>();
-        forceDirectedSim.nodeGraph = nodeGraph;
+        ScriptableObjectInventory.Instance.graph = ScriptableObjectInventory.Instance.graph;
         if (!forceDirectedSim) return;
-        if (nodeGraph.AllNodes.Count <= 0) return;
-        removePhysicsEvent.TriggerEvent();
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         forceDirectedSim.Initialize();
     }
     
@@ -307,11 +304,11 @@ public class SettingsMenuGeneral : MonoBehaviour
             alternativeColors: false
         );
 
-        if (!NodeConnectionManager.Instance || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
+        if (!NodeConnectionManager.Instance || !ScriptableObjectInventory.Instance.conSo || ScriptableObjectInventory.Instance.conSo.connections == null)
         {
             return;
         }
-        var connections = NodeConnectionManager.Instance.conSo.connections;
+        var connections = ScriptableObjectInventory.Instance.conSo.connections;
 
         // Assign colors based on connection types
         foreach (var connection in connections)
@@ -327,11 +324,11 @@ public class SettingsMenuGeneral : MonoBehaviour
         }
 
         // Apply colors to nodes
-        if (nodeGraph.AllNodes.Count > 0 && !nodeGraph.AllNodes[0])
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count > 0 && !ScriptableObjectInventory.Instance.graph.AllNodes[0])
         {
-            nodeGraph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+            ScriptableObjectInventory.Instance.graph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
         }
-        foreach (var node in nodeGraph.AllNodes)
+        foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
         {
             var coloredObject = node.GetComponent<ColoredObject>();
             var nodeType = node.GetComponent<NodeType>();
@@ -368,13 +365,13 @@ public class SettingsMenuGeneral : MonoBehaviour
     private void ShowMenu()
     {
         _panel.RemoveFromClassList("hidden");
-        menuState.menuOpen = true;
+        ScriptableObjectInventory.Instance.menuState.menuOpen = true;
     }
 
     private void HideMenu()
     {
         _panel.AddToClassList("hidden");
-        menuState.menuOpen = false;
+        ScriptableObjectInventory.Instance.menuState.menuOpen = false;
     }
 
     public void ToggleMenu()

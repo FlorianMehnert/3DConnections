@@ -1,10 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ForceDirectedLayoutV2 : MonoBehaviour
 {
     [Header("References")]
-    public NodeGraphScriptableObject nodeGraph;
     public float repulsionStrength = 10f;
     public float attractionStrength = 0.1f;
     public float dampingFactor = 0.9f;
@@ -14,19 +14,31 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
     private List<GameObject> _nodes;
     private Dictionary<GameObject, Vector3> _velocities;
     private float _timer;
+    public bool activated = true;
 
     public void Initialize()
     {
-        _nodes = nodeGraph.AllNodes;
+        _nodes = ScriptableObjectInventory.Instance.graph.AllNodes;
         _velocities = new Dictionary<GameObject, Vector3>();
         foreach (var node in _nodes)
         {
             _velocities[node] = Vector3.zero;
         }
+        activated = true;
+    }
+    
+    private void OnEnable()
+    {
+        activated = true;
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
     }
 
     private void Update()
     {
+        if (!activated) return;
         _timer += Time.deltaTime;
         if (!(_timer >= updateInterval)) return;
         _timer -= updateInterval;
@@ -72,7 +84,7 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
         }
 
         // Calculate attractive forces
-        foreach (var connection in NodeConnectionManager.Instance.conSo.connections)
+        foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections)
         {
             if (!_nodes.Contains(connection.startNode) || !_nodes.Contains(connection.endNode)) continue;
             var direction = connection.endNode.transform.position - connection.startNode.transform.position;
@@ -96,5 +108,18 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
         {
             node.transform.position += _velocities[node] * updateInterval;
         }
+    }
+
+    private void OnDisable()
+    {
+        if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
+        if (ScriptableObjectInventory.Instance.clearEvent)
+            ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+    }
+    
+    private void HandleEvent()
+    {
+        activated = false;
     }
 }

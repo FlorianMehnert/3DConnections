@@ -22,10 +22,9 @@ public class CameraController : ModularSettingsUser
     private float _worldWidth;
     private float _worldHeight;
 
-    [RegisterModularFloatSetting("Center padding", "When centering (g) use some padding", "Camera", 1.1f, 0f, 2f)] [SerializeField]
-    private float padding = 1.1f; // Extra space when centering on selection
+    [RegisterModularFloatSetting("Center padding", "When centering (g) use some padding", "Camera", 1.1f, 0f, 2f)] 
+    [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
 
-    [SerializeField] public NodeGraphScriptableObject nodeGraph;
     [SerializeField] private GameObject parentObject;
     private Vector2 _moveAmountGamepad;
     private float _zoomGamepad;
@@ -37,12 +36,9 @@ public class CameraController : ModularSettingsUser
 
     public string filePath = "Assets/screenshot.png";
 
-    [SerializeField] private OverlaySceneScriptableObject overlay;
-    [SerializeField] private MenuState menuState;
-
     private void Start()
     {
-        _cam = overlay.GetCameraOfScene();
+        _cam = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
         AddLayerToCamera("OverlayScene");
 
         // Calculate world dimensions based on current orthographic size
@@ -75,12 +71,12 @@ public class CameraController : ModularSettingsUser
 
     private void Update()
     {
-        if (!menuState || menuState.menuOpen) return;
+        if (!ScriptableObjectInventory.Instance.menuState || ScriptableObjectInventory.Instance.menuState.menuOpen) return;
         // Recalculate world dimensions if zoom changes
         if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
         {
             // Disable all nodes
-            foreach (var node in nodeGraph.AllNodes)
+            foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
             {
                 if (!node) continue;
                 var meshRenderer = node.GetComponent<MeshRenderer>();
@@ -93,24 +89,24 @@ public class CameraController : ModularSettingsUser
             }
 
             // Disable all connections
-            foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
+            foreach (var lineRenderer in ScriptableObjectInventory.Instance.conSo.connections.Select(node => node.lineRenderer))
                 lineRenderer.enabled = false;
 
             // reenable all nodes that are connected with deep
-            nodeGraph.ReenableConnectedNodes(nodeGraph.currentlySelectedGameObject, 0);
-            EnableOutgoingLines(nodeGraph.currentlySelectedGameObject);
+            ScriptableObjectInventory.Instance.graph.ReenableConnectedNodes(ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject, 0);
+            EnableOutgoingLines(ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject);
             return;
         }
 
         if (Input.GetKeyDown(KeyCode.F))
         {
-            CenterOnTarget(nodeGraph.currentlySelectedGameObject, true);
+            CenterOnTarget(ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject, true);
             return;
         }
 
         if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G) && parentObject)
         {
-            foreach (var node in nodeGraph.AllNodes)
+            foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
             {
                 if (!node) continue;
                 var meshRenderer = node.GetComponent<MeshRenderer>();
@@ -122,7 +118,7 @@ public class CameraController : ModularSettingsUser
                 }
             }
 
-            foreach (var lineRenderer in NodeConnectionManager.Instance.conSo.connections.Select(node => node.lineRenderer))
+            foreach (var lineRenderer in ScriptableObjectInventory.Instance.conSo.connections.Select(node => node.lineRenderer))
                 lineRenderer.enabled = true;
         }
 
@@ -132,7 +128,7 @@ public class CameraController : ModularSettingsUser
             return;
         }
 
-        if (!menuState) return;
+        if (!ScriptableObjectInventory.Instance.menuState) return;
         HandleZoom();
         HandlePan();
 
@@ -186,13 +182,13 @@ public class CameraController : ModularSettingsUser
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        if (menuState.menuOpen) return;
+        if (ScriptableObjectInventory.Instance.menuState.menuOpen) return;
         _moveAmountGamepad = context.ReadValue<Vector2>();
     }
 
     private void CenterOnTarget(GameObject targetObject, bool useEditorSelection = false)
     {
-        if (!targetObject && nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
+        if (!targetObject && ScriptableObjectInventory.Instance.graph.currentlySelectedBounds.size == Vector3.zero) return;
 #if UNITY_EDITOR
         switch (useEditorSelection)
         {
@@ -201,7 +197,7 @@ public class CameraController : ModularSettingsUser
                 break;
 
             // center on bounds of orange highlighted nodes
-            case true when nodeGraph.currentlySelectedBounds.size != Vector3.zero:
+            case true when ScriptableObjectInventory.Instance.graph.currentlySelectedBounds.size != Vector3.zero:
                 break;
 
             // when no selection bounds nor an editor selection is available
@@ -223,23 +219,23 @@ public class CameraController : ModularSettingsUser
             highlight.Highlight(Color.red, 2f);
 
             var bounds = lineRenderer.bounds;
-            if (nodeGraph.currentlySelectedBounds.size != Vector3.zero)
+            if (ScriptableObjectInventory.Instance.graph.currentlySelectedBounds.size != Vector3.zero)
             {
-                bounds.Encapsulate(nodeGraph.currentlySelectedBounds);
+                bounds.Encapsulate(ScriptableObjectInventory.Instance.graph.currentlySelectedBounds);
             }
 
             SetCameraToBounds(bounds);
         }
         else if (targetObject && targetObject.GetComponent<Collider2D>())
         {
-            var bounds = nodeGraph.currentlySelectedBounds;
-            if (nodeGraph.currentlySelectedBounds.size == Vector3.zero) return;
-            bounds.Encapsulate(nodeGraph.currentlySelectedBounds);
+            var bounds = ScriptableObjectInventory.Instance.graph.currentlySelectedBounds;
+            if (ScriptableObjectInventory.Instance.graph.currentlySelectedBounds.size == Vector3.zero) return;
+            bounds.Encapsulate(ScriptableObjectInventory.Instance.graph.currentlySelectedBounds);
             SetCameraToBounds(bounds);
         }
-        else if (nodeGraph.currentlySelectedBounds.size != Vector3.zero)
+        else if (ScriptableObjectInventory.Instance.graph.currentlySelectedBounds.size != Vector3.zero)
         {
-            SetCameraToBounds(nodeGraph.currentlySelectedBounds);
+            SetCameraToBounds(ScriptableObjectInventory.Instance.graph.currentlySelectedBounds);
         }
         else // catch gameObjects without collider2D
         {
@@ -339,13 +335,13 @@ public class CameraController : ModularSettingsUser
     [ContextMenu("Capture Node Graph Screenshot")]
     public void Capture()
     {
-        if (nodeGraph.AllNodes == null || nodeGraph.AllNodes.Count == 0 || !_cam)
+        if (ScriptableObjectInventory.Instance.graph.AllNodes == null || ScriptableObjectInventory.Instance.graph.AllNodes.Count == 0 || !_cam)
         {
             Debug.LogError("Missing camera or nodes");
             return;
         }
 
-        var positions = nodeGraph.AllNodes.Select(go => go.transform.position).ToArray();
+        var positions = ScriptableObjectInventory.Instance.graph.AllNodes.Select(go => go.transform.position).ToArray();
         var min = positions.Aggregate(Vector3.Min);
         var max = positions.Aggregate(Vector3.Max);
         var center = (min + max) * 0.5f;
@@ -362,7 +358,6 @@ public class CameraController : ModularSettingsUser
         };
         rt.Create();
 
-        // --- Create temporary camera ---
         var camGo = new GameObject("TempCaptureCamera");
         var tempCam = camGo.AddComponent<Camera>();
         tempCam.cullingMask = ~(1 << LayerMask.NameToLayer("OverlayScene"));
@@ -372,10 +367,8 @@ public class CameraController : ModularSettingsUser
         tempCam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
         tempCam.targetTexture = rt;
 
-        // --- Render ---
         tempCam.Render();
 
-        // --- Save to PNG ---
         RenderTexture.active = rt;
         var image = new Texture2D(width, outputHeight, TextureFormat.RGB24, false);
         image.ReadPixels(new Rect(0, 0, width, outputHeight), 0, 0);
@@ -384,7 +377,6 @@ public class CameraController : ModularSettingsUser
         File.WriteAllBytes(filePath, image.EncodeToPNG());
         Debug.Log("Saved screenshot to: " + filePath);
 
-        // --- Cleanup ---
         tempCam.targetTexture = null;
         RenderTexture.active = null;
         DestroyImmediate(rt);

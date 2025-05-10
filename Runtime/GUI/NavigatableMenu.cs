@@ -13,7 +13,6 @@ public class NavigatableMenu : MonoBehaviour
     private List<Tab> _tabButtons;
     private List<Button> _currentTabButtons;
     private int _currentButtonIndex = -1;
-    [SerializeField] private MenuState menuState;
 
     private void Awake()
     {
