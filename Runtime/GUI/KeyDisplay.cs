@@ -164,9 +164,8 @@ public class KeyDisplay : ModularSettingsUser
             {
                 if (_inputString == "")
                 {
-                    var gui = gameObject.GetComponent<GUIBuilder>();
                     var nodeGraph = GetNodeGraph();
-                    if (gui && nodeGraph && nodeGraph.IsEmpty())
+                    if (nodeGraph && nodeGraph.IsEmpty())
                     {
                         var menu = FindFirstObjectByType<SettingsMenuGeneral>();
                         if (menu)
@@ -241,11 +240,7 @@ public class KeyDisplay : ModularSettingsUser
                     
             }else if (_inputString.Contains("clear") && IsConfirm() || _inputString.Contains("reset") && IsConfirm())
             {
-                var gui = gameObject.GetComponent<GUIBuilder>();
-                if (gui)
-                {
-                    clearEvent.TriggerEvent();
-                }
+                clearEvent.TriggerEvent();
             }
 
             // Limit the input string length to avoid overflow

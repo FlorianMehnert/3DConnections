@@ -34,9 +34,9 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     private void OnDisable()
     {
         _isShuttingDown = true;
-        if (removePhysicsEvent != null)
+        if (removePhysicsEvent)
             removePhysicsEvent.OnEventTriggered -= HandleEvent;
-        if (clearEvent != null)
+        if (clearEvent)
             clearEvent.OnEventTriggered -= HandleEvent;
     }
 
@@ -75,9 +75,9 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     private void OnEnable()
     {
         _isShuttingDown = false;
-        if (removePhysicsEvent != null)
+        if (removePhysicsEvent)
             removePhysicsEvent.OnEventTriggered += HandleEvent;
-        if (clearEvent != null)
+        if (clearEvent)
             clearEvent.OnEventTriggered += HandleEvent;
     }
 
@@ -86,7 +86,7 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
         if (_nodeBuffer == null || !Application.isPlaying || _isShuttingDown) return;
         
         // Set simulation parameters
-        float timeStep = Time.deltaTime / simulationStepsPerFrame; // Smaller time step for stability
+        float timeStep = Time.deltaTime;
         computeShader.SetFloat(DeltaTime, timeStep);
         computeShader.SetFloat(RepulsionStrength, 100.0f);
         computeShader.SetFloat(AttractionStrength, 0.01f);

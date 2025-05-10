@@ -17,13 +17,6 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
 
     public void Initialize()
     {
-        // if (!nodeGraph || nodeGraph.AllNodes == null || !NodeConnectionManager.Instance || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
-        // {
-        //     Debug.LogError("Please ensure NodeGraph and NodeConnectionManager are properly referenced and initialized.");
-        //     enabled = false;
-        //     return;
-        // }
-
         _nodes = nodeGraph.AllNodes;
         _velocities = new Dictionary<GameObject, Vector3>();
         foreach (var node in _nodes)

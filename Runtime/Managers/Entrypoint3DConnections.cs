@@ -39,7 +39,7 @@ public class Entrypoint3DConnections : MonoBehaviour
 
     private void OnEnable()
     {
-        if (overlayEvent != null)
+        if (overlayEvent)
             overlayEvent.OnEventTriggered += HandleEvent;
         if (sceneToLoad != default)
         {
@@ -61,7 +61,7 @@ public class Entrypoint3DConnections : MonoBehaviour
 
     private void OnDisable()
     {
-        if (overlayEvent != null)
+        if (overlayEvent)
             overlayEvent.OnEventTriggered -= HandleEvent;
     }
 

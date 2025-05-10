@@ -48,23 +48,6 @@ public static class SceneHandler
     }
 
 
-    /// <summary>
-    /// Required for the tree spanning where all root transforms form the basis of the tree
-    /// </summary>
-    /// <returns></returns>
-    public static Transform[] GetSceneRootObjects()
-    {
-        var scene = GetOverlayedScene();
-        if (scene != null)
-        {
-            return ((Scene)scene).GetRootGameObjects()
-                .Select(go => go.transform)
-                .ToArray();
-        }
-
-        return Array.Empty<Transform>();
-    }
-
     private static IEnumerator<AsyncOperation> LoadSceneCoroutine(string sceneName, Action onComplete)
     {
         var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);

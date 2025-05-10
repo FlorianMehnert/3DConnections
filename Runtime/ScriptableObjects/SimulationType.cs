@@ -3,5 +3,7 @@ public enum SimulationType
     Static,
     Default,
     Burst,
-    GPU
+    GPU,
+    ComponentV2,
+    MinimalGPU
 }

@@ -307,6 +307,7 @@ MonoBehaviour:
   nodeTransforms: []
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
   clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
+  simulationStepsPerFrame: 10
 --- !u!1 &574136028
 GameObject:
   m_ObjectHideFlags: 0

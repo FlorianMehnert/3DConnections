@@ -39,6 +39,7 @@ public class CubeSelector : ModularSettingsUser
     private int _indexOfCurrentlyDraggedCube;
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
+    private bool _isActive;
 
     [RegisterModularFloatSetting("Double Click Treshold", "How long you can wait for the double click to be recognized", "Selection", 0.3f, 0, 1f)]
     public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
@@ -64,7 +65,7 @@ public class CubeSelector : ModularSettingsUser
     {
         _displayCamera = overlay.GetCameraOfScene();
 
-        if (_displayCamera == null)
+        if (!_displayCamera)
         {
             Debug.LogError("No camera found for Display 2!");
             return;
@@ -78,7 +79,7 @@ public class CubeSelector : ModularSettingsUser
         }
 
         // Initialize selection rectangle
-        if (selectionRectangle == null) return;
+        if (!selectionRectangle) return;
         selectionRectangle.gameObject.SetActive(false);
     }
 
@@ -91,6 +92,10 @@ public class CubeSelector : ModularSettingsUser
     {
         if (!menuState || menuState.menuOpen)
             return;
+        
+        // toggle this whole manager using S
+        if (Input.GetKeyDown(KeyCode.S)) _isActive = !_isActive;
+        if (!_isActive) return;
         if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) && !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) && !Input.GetKeyDown(KeyCode.I)) return;
         if (_currentlyDraggedCube)
         {

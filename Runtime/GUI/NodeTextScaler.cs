@@ -55,14 +55,14 @@ public class NodeTextScaler : ModularSettingsUser
 
     private void InitializeOriginalFontSizes()
     {
-        if (nodeGraph == null || nodeGraph.AllNodes == null)
+        if (!nodeGraph || nodeGraph.AllNodes == null)
             return;
 
         foreach (var textComponent in from node in nodeGraph.AllNodes 
-                 where node != null
+                 where node
                  select node.GetComponentInChildren<TMP_Text>() 
                  into textComponent 
-                 where textComponent != null
+                 where textComponent
                  select textComponent)
         {
             _originalFontSizes[textComponent] = textComponent.fontSize;
@@ -154,14 +154,14 @@ public class NodeTextScaler : ModularSettingsUser
     
     private void ResetAllTextSizes()
     {
-        if (nodeGraph == null || nodeGraph.AllNodes == null)
+        if (!nodeGraph || nodeGraph.AllNodes == null)
             return;
             
         foreach (var node in nodeGraph.AllNodes)
         {
-            if (node == null) continue;
+            if (!node) continue;
             var textComponent = node.GetComponentInChildren<TMP_Text>();
-            if (textComponent != null && _originalFontSizes.TryGetValue(textComponent, out var originalSize))
+            if (textComponent && _originalFontSizes.TryGetValue(textComponent, out var originalSize))
             {
                 nodeGraph.ChangeTextSize(node, originalSize);
             }

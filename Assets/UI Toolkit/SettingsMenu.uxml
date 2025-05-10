@@ -12,7 +12,7 @@
             </ui:Tab>
             <ui:Tab label="Sim" name="SimTab">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
+                    <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GPU,ComponentV2,MinimalGPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
                         <Bindings>
                             <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>

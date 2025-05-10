@@ -1,5 +1,4 @@
 using System;
-using System.Drawing;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
@@ -70,8 +69,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private bool showTrails = true;
 
     [SerializeField] private int trailHistoryLength = 30;
-    [SerializeField] private Color gameObjectTrailColor = new Color(0.2f, 0.2f, 0.8f, 0.5f);
-    [SerializeField] private Color componentTrailColor = new Color(0.2f, 0.8f, 0.2f, 0.5f);
+    [SerializeField] private Color gameObjectTrailColor = new(0.2f, 0.2f, 0.8f, 0.5f);
+    [SerializeField] private Color componentTrailColor = new(0.2f, 0.8f, 0.2f, 0.5f);
     [SerializeField] private float trailWidth = 0.15f;
     private Vector2[][] _positionHistory;
     private int _currentHistoryIndex;
@@ -103,18 +102,18 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private void OnDisable()
     {
         _isShuttingDown = true;
-        if (removePhysicsEvent != null)
+        if (removePhysicsEvent)
             removePhysicsEvent.OnEventTriggered -= HandleEvent;
-        if (clearEvent != null)
+        if (clearEvent)
             clearEvent.OnEventTriggered -= HandleEvent;
     }
 
     private void OnEnable()
     {
         _isShuttingDown = false;
-        if (removePhysicsEvent != null)
+        if (removePhysicsEvent)
             removePhysicsEvent.OnEventTriggered += HandleEvent;
-        if (clearEvent != null)
+        if (clearEvent)
             clearEvent.OnEventTriggered += HandleEvent;
     }
 
@@ -251,7 +250,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
             var nodeType = typeComp ? typeComp.nodeTypeName : NodeTypeName.GameObject;
             int parentId = -1;
 
-            if (nodeType == NodeTypeName.Component && typeComp != null)
+            if (nodeType == NodeTypeName.Component && typeComp)
             {
                 var parent = typeComp.GetParentOfComponentNode();
                 if (parent && gameObjectIndices.TryGetValue(parent, out var index))
@@ -418,7 +417,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         var deltaTime = Time.deltaTime;
 
         // Update relaxation timer if enabled
-        float currentRelaxFactor = 1.0f;
+        var currentRelaxFactor = 1.0f;
         float currentMaxVelocity = finalMaxVelocity;
 
         if (enableRelaxation)
@@ -552,9 +551,9 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
             for (var i = 0; i < _nodes.Length; i++)
             {
-                if (nodeGraph.AllNodes[i] == null) continue;
+                if (!nodeGraph.AllNodes[i]) continue;
 
-                // Get node type to determine trail color
+                // Get the node type to determine trail color
                 var isComponent = nodeGraph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component;
                 var trailColor = isComponent ? componentTrailColor : gameObjectTrailColor;
 
@@ -574,9 +573,8 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
                     // Adjust width based on distance from current position
                     var widthScale = 1.0f - (float)h / historyCount;
-                    var segmentWidth = trailWidth * widthScale;
 
-                    // Draw line segment
+                    // Draw a line segment
                     Gizmos.DrawLine(current, prev);
                 }
             }

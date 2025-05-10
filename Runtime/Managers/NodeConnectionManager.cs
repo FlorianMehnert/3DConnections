@@ -69,7 +69,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         _isShuttingDown = true;
     }
 
-    // Make sure to clean up the native array when the component is destroyed
     private void OnDestroy()
     {
         if (conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
@@ -139,7 +138,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             conSo.usingNativeArray = false;
         }
 
-        foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer != null))
+        foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer))
         {
             Destroy(connection.lineRenderer.gameObject);
         }
@@ -319,7 +318,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             foreach (var node in cycle)
             {
                 var rb = node.GetComponent<Rigidbody2D>();
-                if (rb == null) continue;
+                if (!rb) continue;
                 var forceDirection = (rb.position - (Vector2)center).normalized;
                 rb.AddForce(forceDirection * 5f, ForceMode2D.Impulse);
             }

@@ -98,17 +98,12 @@ public class SettingsMenuGeneral : MonoBehaviour
         var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
         _actions = new System.Action[]
         {
-            () =>
-            {
-                StaticLayout();
-                Debug.Log("Execute 0 static");
-            },
+            StaticLayout,
             () =>
             {
                 StaticLayout();
                 nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
-                Debug.Log("Execute 1 component");
             },
             () =>
             {
@@ -116,21 +111,35 @@ public class SettingsMenuGeneral : MonoBehaviour
                 NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
                 nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
-                if (springSimulation != null)
+                if (springSimulation)
                     springSimulation.Simulate();
                 else
                     Debug.Log("missing springSimulation Script on the Manager");
-                Debug.Log("Execute 2 burst");
             },
             () =>
             {
-                if (gpuSpringSim == null) return;
+                if (!gpuSpringSim) return;
                 StaticLayout();
                 NodeConnectionManager.Instance.ConvertToNativeArray();
                 nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
                 gpuSpringSim.Initialize();
-                Debug.Log("Execute 3 gpu");
+            },
+            () =>
+            {
+                var layout = GetComponent<ForceDirectedLayoutV2>();
+                if (!layout) layout = gameObject.AddComponent<ForceDirectedLayoutV2>();
+                layout.nodeGraph = nodeGraph;
+                StaticLayout();
+                layout.Initialize();
+            },
+            () =>
+            {
+            var gpuSim = GetComponent<MinimalForceDirectedSimulation>();
+            if (!gpuSim) gpuSim = gameObject.AddComponent<MinimalForceDirectedSimulation>();
+            gpuSim.nodeTransforms = nodeGraph.AllNodeTransforms2D;
+            StaticLayout();
+            gpuSim.Initialize();
             }
         };
     }
@@ -162,6 +171,7 @@ public class SettingsMenuGeneral : MonoBehaviour
     public void StaticLayout()
     {
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
+        removePhysicsEvent.TriggerEvent();
         if (sceneAnalyzer)
         {
             sceneAnalyzer.AnalyzeScene();
@@ -198,7 +208,6 @@ public class SettingsMenuGeneral : MonoBehaviour
             boxCollider2D.size = Vector2.one * 5;
         }
 
-        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
         NodeConnectionManager.Instance.AddSpringsToConnections();
     }
     
@@ -210,7 +219,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             removePhysicsEvent.TriggerEvent();
-            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
@@ -232,7 +240,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         {
             if (nodeGraph.AllNodes.Count <= 0) return;
             removePhysicsEvent.TriggerEvent();
-            NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
             NodeConnectionManager.Instance.UseNativeArray();
             nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
             NodeConnectionManager.Instance.AddSpringsToConnections();
@@ -256,7 +263,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         if (!forceDirectedSim) return;
         if (nodeGraph.AllNodes.Count <= 0) return;
         removePhysicsEvent.TriggerEvent();
-        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
         NodeConnectionManager.Instance.UseNativeArray();
         nodeGraph.NodesAddComponent(typeof(Rigidbody2D));
         NodeConnectionManager.Instance.AddSpringsToConnections();
@@ -277,7 +283,6 @@ public class SettingsMenuGeneral : MonoBehaviour
         if (!forceDirectedSim) return;
         if (nodeGraph.AllNodes.Count <= 0) return;
         removePhysicsEvent.TriggerEvent();
-        NodeLayoutManagerV2.Layout(layoutParameters, nodeGraph);
         forceDirectedSim.Initialize();
     }
     
@@ -302,7 +307,7 @@ public class SettingsMenuGeneral : MonoBehaviour
             alternativeColors: false
         );
 
-        if (NodeConnectionManager.Instance == null || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
+        if (!NodeConnectionManager.Instance || !NodeConnectionManager.Instance.conSo || NodeConnectionManager.Instance.conSo.connections == null)
         {
             return;
         }
@@ -322,7 +327,7 @@ public class SettingsMenuGeneral : MonoBehaviour
         }
 
         // Apply colors to nodes
-        if (nodeGraph.AllNodes.Count > 0 && nodeGraph.AllNodes[0] == null)
+        if (nodeGraph.AllNodes.Count > 0 && !nodeGraph.AllNodes[0])
         {
             nodeGraph.AllNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
         }
