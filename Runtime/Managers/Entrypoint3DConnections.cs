@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 
 public class Entrypoint3DConnections : MonoBehaviour
 {
+    [SerializeField] private OverlaySceneScriptableObject overlay;
+    [SerializeField] private ToggleOverlayEvent overlayEvent;
     [SerializeField] private bool disableSceneOnOverlay = true;
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private Scene sceneToLoad;
@@ -37,15 +39,15 @@ public class Entrypoint3DConnections : MonoBehaviour
 
     private void OnEnable()
     {
-        if (ScriptableObjectInventory.Instance.toggleOverlayEvent)
-            ScriptableObjectInventory.Instance.toggleOverlayEvent.OnEventTriggered += HandleEvent;
+        if (!overlayEvent) return;
+        overlayEvent.OnEventTriggered += HandleEvent;
         if (sceneToLoad != default)
         {
             var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
             sceneReference.scene = sceneToLoad;
-            ScriptableObjectInventory.Instance.overlay.overlayScene = sceneReference;
+            overlay.overlayScene = sceneReference;
         }
-        _sceneName = ScriptableObjectInventory.Instance.overlay.overlayScene.Name;
+        _sceneName = overlay.overlayScene.Name;
         if (SceneManager.GetSceneByName(_sceneName).isLoaded)
         {
             return;
@@ -59,13 +61,13 @@ public class Entrypoint3DConnections : MonoBehaviour
 
     private void OnDisable()
     {
-        if (ScriptableObjectInventory.Instance.toggleOverlayEvent)
-            ScriptableObjectInventory.Instance.toggleOverlayEvent.OnEventTriggered -= HandleEvent;
+        if (!overlayEvent) return;
+        overlayEvent.OnEventTriggered -= HandleEvent;
     }
 
     private void HandleEvent()
     {
         if (disableSceneOnOverlay)
-            ToggleRootObjectsInSceneWhileOverlay(!ScriptableObjectInventory.Instance.overlay.OverlayIsActive());
+            ToggleRootObjectsInSceneWhileOverlay(!overlay.OverlayIsActive());
     }
 }
