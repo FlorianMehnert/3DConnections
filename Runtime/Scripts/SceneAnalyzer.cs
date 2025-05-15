@@ -48,6 +48,8 @@ public class SceneAnalyzer : MonoBehaviour
     [Header("Performance Settings")] [SerializeField]
     private bool searchForPrefabsUsingNames;
 
+    public bool spawnRootNode;
+    
     [Header("Ignored Types Settings")] public List<string> ignoredTypes = new();
 
     /// <summary>
@@ -134,12 +136,15 @@ public class SceneAnalyzer : MonoBehaviour
             return;
         }
 
-        var rootNode = SpawnNode(null);
-
-        if (!rootNode)
+        GameObject rootNode = null;
+        if (spawnRootNode)
         {
-            Debug.Log("Root Node could not be spawned");
-            return;
+            rootNode = SpawnNode(null);
+            if (!rootNode)
+            {
+                Debug.Log("Root Node could not be spawned");
+                return;
+            }
         }
 
         foreach (var rootObject in rootGameObjects)
@@ -148,8 +153,9 @@ public class SceneAnalyzer : MonoBehaviour
         if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph && ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
             ScriptableObjectInventory.Instance.graph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
 
-        if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 })
+        if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && rootNode)
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(rootNode);
+            
     }
 
     /// <summary>
@@ -397,7 +403,7 @@ public class SceneAnalyzer : MonoBehaviour
     private void TraverseGameObject(GameObject toTraverseGameObject, int depth, GameObject parentNodeObject = null,
         bool isReference = false)
     {
-        // do not investigate gameobject when node count is too large or when the gameobject is a "node" gameobject
+        // do not investigate the game object when node count is too large or when the gameobject is a "node" gameobject
         if (!toTraverseGameObject || _currentNodes >= maxNodes) return;
         if (toTraverseGameObject.GetComponent<ArtificialGameObject>()) return;
 
