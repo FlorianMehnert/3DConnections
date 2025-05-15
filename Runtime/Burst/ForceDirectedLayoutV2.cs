@@ -30,6 +30,9 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
     private void OnEnable()
     {
         activated = true;
+        if (_velocities == null)
+            Initialize();
+
         if (ScriptableObjectInventory.Instance.removePhysicsEvent)
             ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
         if (ScriptableObjectInventory.Instance.clearEvent)
