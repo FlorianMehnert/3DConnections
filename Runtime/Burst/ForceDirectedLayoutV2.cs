@@ -116,6 +116,7 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
 
     private void OnDisable()
     {
+        if (!ScriptableObjectInventory.InstanceExists) return; 
         if (ScriptableObjectInventory.Instance.removePhysicsEvent)
             ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
         if (ScriptableObjectInventory.Instance.clearEvent)

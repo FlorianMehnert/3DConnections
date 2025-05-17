@@ -32,6 +32,7 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
     private void OnDisable()
     {
         _isShuttingDown = true;
+        if (!ScriptableObjectInventory.InstanceExists) return; 
         if (ScriptableObjectInventory.Instance.removePhysicsEvent)
             ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
         if (ScriptableObjectInventory.Instance.clearEvent)

@@ -20,6 +20,7 @@ public class SpringSimulation : MonoBehaviour, ILogable
 
     private void OnDisable()
     {
+        if (!ScriptableObjectInventory.InstanceExists) return;
         if (ScriptableObjectInventory.Instance.removePhysicsEvent)
             ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
         CleanupNativeArrays();

@@ -16,7 +16,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private static bool _isShuttingDown;
     public GameObject lineRendererPrefab;
-    
+
     private JobHandle _connectionJobHandle;
     private NativeArray<Vector3> _startNodePositions;
     private NativeArray<Vector3> _endNodePositions;
@@ -60,7 +60,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
         if (rootEdgeTransform) return;
         var rootEdgeGameObject = GameObject.Find("ParentEdgesObject");
         rootEdgeTransform = rootEdgeGameObject.transform ? rootEdgeGameObject.transform : new GameObject("ParentEdgesObject").transform;
-        ScriptableObjectInventory.Instance.edgeRoot = rootEdgeTransform;        
+        ScriptableObjectInventory.Instance.edgeRoot = rootEdgeTransform;
     }
 
     private void Update()
@@ -82,14 +82,13 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (!ScriptableObjectInventory.InstanceExists) return;
+        _isShuttingDown = true;
         try
         {
-            if (ScriptableObjectInventory.InstanceExists)
+            if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
             {
-                if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
-                {
-                    ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
-                }
+                ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
             }
         }
         catch (Exception e)
@@ -101,7 +100,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         {
             if (_instance != this) return;
             ClearConnections();
-            _instance = null;
         }
         catch (Exception e)
         {
@@ -111,10 +109,9 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void OnDisable()
     {
-        if (_instance == this)
-        {
-            ClearConnections();
-        }
+        if (_instance != this) return;
+        if (!ScriptableObjectInventory.InstanceExists) return;
+        ClearConnections();
     }
 
     public NodeConnection AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 1f, float saturation = 1f, string connectionType = "parentChildConnection")
@@ -159,25 +156,26 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public static void ClearConnections()
     {
-        if (ScriptableObjectInventory.InstanceExists && ScriptableObjectInventory.Instance&& ScriptableObjectInventory.Instance.conSo && ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+        var conSo = ScriptableObjectInventory.Instance.conSo;
+        if (conSo && conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
         {
-            ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
-            ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
+            conSo.NativeConnections.Dispose();
+            conSo.usingNativeArray = false;
         }
 
         try
         {
             if (!ScriptableObjectInventory.InstanceExists) return;
             if (!ScriptableObjectInventory.Instance.conSo) return;
-            foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection => connection.lineRenderer))
+            foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer))
             {
                 Destroy(connection.lineRenderer.gameObject);
             }
 
-            ScriptableObjectInventory.Instance.conSo.connections.Clear();
-            ScriptableObjectInventory.Instance.conSo.currentConnectionCount = 0;
+            conSo.connections.Clear();
+            conSo.currentConnectionCount = 0;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             Debug.Log("trying to access object in clear connections");
         }
@@ -351,7 +349,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
             }
         }
     }
-    
+
     public NodeConnection GetConnection(GameObject start, GameObject end)
     {
         if (!start || !end) return null;

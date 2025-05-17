@@ -142,6 +142,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     private void OnDisable()
     {
+        if (!ScriptableObjectInventory.InstanceExists) return;
         if (ScriptableObjectInventory.Instance.clearEvent)
             ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
         if (ScriptableObjectInventory.Instance.removePhysicsEvent)
@@ -682,6 +683,7 @@ public class SceneAnalyzer : MonoBehaviour
 
     private void HandleEvent()
     {
+        if (!ScriptableObjectInventory.InstanceExists) return;
         ClearNodes();
         ScriptableObjectInventory.Instance.applicationState.spawnedNodes = false;
         ScriptableObjectInventory.Instance.graph.Initialize();

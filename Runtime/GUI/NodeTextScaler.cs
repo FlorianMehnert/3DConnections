@@ -142,12 +142,14 @@ public class NodeTextScaler : ModularSettingsUser
 
     private void OnDisable()
     {
-        ResetAllTextSizes();
+        if (ScriptableObjectInventory.InstanceExists)
+            ResetAllTextSizes();
     }
     
     private void OnDestroy()
     {
-        ResetAllTextSizes();
+        if (ScriptableObjectInventory.InstanceExists)
+            ResetAllTextSizes();
     }
     
     private void ResetAllTextSizes()
