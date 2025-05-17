@@ -52,7 +52,7 @@ public class ModularSettingsManager : MonoBehaviour, IMenu
                 OnMenuOpen();
             }
             
-            Debug.Log($"ModularSettingsManager initialized with keybind {menuKeybind}");
+            Debug.Log($"ModularSettingsManager registered with keybind {menuKeybind}");
         }
         catch (Exception e)
         {

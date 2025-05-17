@@ -8,8 +8,8 @@ using Unity.Jobs;
 public class ForceDirectedLayoutV2 : MonoBehaviour
 {
     [Header("References")]
-    public float repulsionStrength = 10f;
-    public float attractionStrength = 0.1f;
+    public float repulsionStrength = 1000f;
+    public float attractionStrength = 10f;
     public float dampingFactor = 0.9f;
     public float minDistanceToRepel = 1f;
     public float updateInterval = 0.02f; // Time in seconds between layout updates
@@ -37,7 +37,7 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
         _velocities = new NativeArray<float3>(_nodes.Count, Allocator.Persistent);
 
         // Initialize positions and velocities
-        for (int i = 0; i < _nodes.Count; i++)
+        for (var i = 0; i < _nodes.Count; i++)
         {
             _positions[i] = _nodes[i].transform.position;
             _velocities[i] = float3.zero;
@@ -48,7 +48,7 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
         _connectionStartIndices = new NativeArray<int>(connections.Count, Allocator.Persistent);
         _connectionEndIndices = new NativeArray<int>(connections.Count, Allocator.Persistent);
 
-        for (int i = 0; i < connections.Count; i++)
+        for (var i = 0; i < connections.Count; i++)
         {
             _connectionStartIndices[i] = _nodes.IndexOf(connections[i].startNode);
             _connectionEndIndices[i] = _nodes.IndexOf(connections[i].endNode);
@@ -158,36 +158,36 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
 
         public void Execute()
         {
-            int nodeCount = Positions.Length;
+            var nodeCount = Positions.Length;
             
             // Temporary array for storing forces
             var forces = new NativeArray<float3>(nodeCount, Allocator.Temp);
             
             // Calculate repulsive forces
-            for (int i = 0; i < nodeCount; i++)
+            for (var i = 0; i < nodeCount; i++)
             {
-                for (int j = i + 1; j < nodeCount; j++)
+                for (var j = i + 1; j < nodeCount; j++)
                 {
-                    float3 direction = Positions[i] - Positions[j];
-                    float distance = math.length(direction);
+                    var direction = Positions[i] - Positions[j];
+                    var distance = math.length(direction);
                     
                     // Skip if distance is zero to avoid division by zero
                     if (distance <= float.Epsilon) continue;
                     
-                    float3 normalizedDirection = direction / distance;
+                    var normalizedDirection = direction / distance;
                     
                     // Apply repulsion only if nodes are close enough
                     if (distance < MinDistanceToRepel)
                     {
-                        float forceMagnitude = RepulsionStrength / (distance * distance);
-                        float3 force = normalizedDirection * forceMagnitude;
+                        var forceMagnitude = RepulsionStrength / (distance * distance);
+                        var force = normalizedDirection * forceMagnitude;
                         forces[i] += force;
                         forces[j] -= force;
                     }
                     else // Add a weak long-range repulsion to help spread out initially
                     {
-                        float weakRepulsionMagnitude = RepulsionStrength / (distance * distance * distance * 0.1f);
-                        float3 weakRepulsion = normalizedDirection * weakRepulsionMagnitude;
+                        var weakRepulsionMagnitude = RepulsionStrength / (distance * distance * distance * 0.1f);
+                        var weakRepulsion = normalizedDirection * weakRepulsionMagnitude;
                         forces[i] += weakRepulsion;
                         forces[j] -= weakRepulsion;
                     }
@@ -195,30 +195,30 @@ public class ForceDirectedLayoutV2 : MonoBehaviour
             }
             
             // Calculate attractive forces
-            for (int i = 0; i < ConnectionStartIndices.Length; i++)
+            for (var i = 0; i < ConnectionStartIndices.Length; i++)
             {
-                int startIndex = ConnectionStartIndices[i];
-                int endIndex = ConnectionEndIndices[i];
+                var startIndex = ConnectionStartIndices[i];
+                var endIndex = ConnectionEndIndices[i];
                 
                 // Skip invalid connections
                 if (startIndex < 0 || startIndex >= nodeCount || endIndex < 0 || endIndex >= nodeCount)
                     continue;
                 
-                float3 direction = Positions[endIndex] - Positions[startIndex];
-                float distance = math.length(direction);
+                var direction = Positions[endIndex] - Positions[startIndex];
+                var distance = math.length(direction);
                 
-                // Skip if distance is zero
+                // Skip if the distance is zero
                 if (distance <= float.Epsilon) continue;
                 
-                float forceMagnitude = AttractionStrength * distance;
-                float3 force = (direction / distance) * forceMagnitude;
+                var forceMagnitude = AttractionStrength * distance;
+                var force = (direction / distance) * forceMagnitude;
                 
                 forces[startIndex] += force;
                 forces[endIndex] -= force;
             }
             
             // Apply calculated forces to velocities and update positions
-            for (int i = 0; i < nodeCount; i++)
+            for (var i = 0; i < nodeCount; i++)
             {
                 Velocities[i] += forces[i] * DeltaTime;
                 Velocities[i] *= DampingFactor; // Apply damping

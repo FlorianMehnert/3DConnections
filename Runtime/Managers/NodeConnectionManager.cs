@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Color = UnityEngine.Color;
@@ -11,10 +12,15 @@ using Color = UnityEngine.Color;
 public sealed class NodeConnectionManager : MonoBehaviour
 {
     private static NodeConnectionManager _instance;
-
+    [SerializeField] private Transform rootEdgeTransform;
 
     private static bool _isShuttingDown;
     public GameObject lineRendererPrefab;
+    
+    private JobHandle _connectionJobHandle;
+    private NativeArray<Vector3> _startNodePositions;
+    private NativeArray<Vector3> _endNodePositions;
+    private NativeArray<Vector3> _connectionLinePoints; // Output from the job
 
     public static NodeConnectionManager Instance
     {
@@ -49,6 +55,14 @@ public sealed class NodeConnectionManager : MonoBehaviour
         _instance = this;
     }
 
+    private void OnEnable()
+    {
+        if (rootEdgeTransform) return;
+        var rootEdgeGameObject = GameObject.Find("ParentEdgesObject");
+        rootEdgeTransform = rootEdgeGameObject.transform ? rootEdgeGameObject.transform : new GameObject("ParentEdgesObject").transform;
+        ScriptableObjectInventory.Instance.edgeRoot = rootEdgeTransform;        
+    }
+
     private void Update()
     {
         if (ScriptableObjectInventory.Instance.conSo.usingNativeArray)
@@ -70,15 +84,17 @@ public sealed class NodeConnectionManager : MonoBehaviour
     {
         try
         {
-            if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+            if (ScriptableObjectInventory.InstanceExists)
             {
-                ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+                if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+                {
+                    ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+                }
             }
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
         }
 
         try
@@ -90,7 +106,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
         }
     }
 
@@ -106,7 +121,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
     {
         if (_isShuttingDown) return null;
 
-        var lineObj = Instantiate(lineRendererPrefab, transform);
+        var lineObj = Instantiate(lineRendererPrefab, rootEdgeTransform);
         var lineRenderer = lineObj.GetComponent<LineRenderer>();
         lineObj.AddComponent<ArtificialGameObject>();
         lineRenderer.name = startNode.name + "-" + endNode.name;
@@ -125,7 +140,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
             connectionType = connectionType
         };
 
-        // Configure line renderer
         newConnection.ApplyConnection();
         lineRenderer.positionCount = 2;
 
@@ -145,7 +159,7 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     public static void ClearConnections()
     {
-        if (ScriptableObjectInventory.Instance&& ScriptableObjectInventory.Instance.conSo && ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+        if (ScriptableObjectInventory.InstanceExists && ScriptableObjectInventory.Instance&& ScriptableObjectInventory.Instance.conSo && ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
         {
             ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
             ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
@@ -153,6 +167,8 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
         try
         {
+            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (!ScriptableObjectInventory.Instance.conSo) return;
             foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection => connection.lineRenderer))
             {
                 Destroy(connection.lineRenderer.gameObject);
@@ -163,15 +179,8 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
+            Debug.Log("trying to access object in clear connections");
         }
-    }
-
-    public void ClearNativeArray()
-    {
-        if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray || !ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated) return;
-        ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
-        ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
     }
 
     public void AddSpringsToConnections()
@@ -185,12 +194,10 @@ public sealed class NodeConnectionManager : MonoBehaviour
             SpringJoint2D springComponent = null;
             foreach (var existingSpring in existingSprings)
             {
-                if (existingSpring.connectedBody.gameObject == connection.endNode.gameObject)
-                {
-                    alreadyExists = true;
-                    springComponent = existingSpring;
-                    break;
-                }
+                if (existingSpring.connectedBody.gameObject != connection.endNode.gameObject) continue;
+                alreadyExists = true;
+                springComponent = existingSpring;
+                break;
             }
 
             var spring = (alreadyExists && springComponent) ? springComponent : alreadyExists ? null : connection.startNode.AddComponent<SpringJoint2D>();

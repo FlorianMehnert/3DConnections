@@ -67,7 +67,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     [SerializeField] private int trailHistoryLength = 30;
     [SerializeField] private Color gameObjectTrailColor = new(0.2f, 0.2f, 0.8f, 0.5f);
     [SerializeField] private Color componentTrailColor = new(0.2f, 0.8f, 0.2f, 0.5f);
-    [SerializeField] private float trailWidth = 0.15f;
     private Vector2[][] _positionHistory;
     private int _currentHistoryIndex;
     private bool _historyFilled;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -73,11 +74,17 @@ public class ConnectionsBasedForestManager
 
     private void LayoutSingleTree(TreeNode root, Vector3 position)
     {
-        root.GameObject.transform.position = position;
-
-        var levelCounts = new Dictionary<int, int>();
-        CalculateLevelCounts(root, 0, levelCounts, new HashSet<TreeNode>());
-        LayoutChildren(root, 0, 0, 360, levelCounts, new HashSet<TreeNode>());
+        try
+        {
+            root.GameObject.transform.position = position;
+            var levelCounts = new Dictionary<int, int>();
+            CalculateLevelCounts(root, 0, levelCounts, new HashSet<TreeNode>());
+            LayoutChildren(root, 0, 0, 360, levelCounts, new HashSet<TreeNode>());
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 
     private static void CalculateLevelCounts(TreeNode node, int level, Dictionary<int, int> levelCounts, HashSet<TreeNode> visited)
@@ -216,7 +223,7 @@ public class ConnectionsBasedForestManager
 
     private static void FlattenNodeAndChildren(TreeNode node, HashSet<TreeNode> processedNodes)
     {
-        if (node == null || !processedNodes.Add(node)) return;
+        if (node == null  || !node.GameObject || !processedNodes.Add(node)) return;
 
         // Keep X and Y, set Z to 0
         var currentPos = node.GameObject.transform.position;

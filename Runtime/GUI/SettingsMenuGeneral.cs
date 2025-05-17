@@ -74,7 +74,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         // Register with menu manager
         MenuManager.Instance.RegisterMenu(menuKeybind, this);
         
-        Debug.Log($"SettingsMenuGeneral initialized with keybind {menuKeybind}");
+        Debug.Log($"SettingsMenuGeneral registered with keybind {menuKeybind}");
     }
 
     private void SetupUICallbacks()
@@ -127,13 +127,6 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _colorSlider = root.Q<SliderInt>("ColorSlider");
         _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
         _textField = root.Q<TextField>("SearchField");
-        
-        // Log what elements were found/not found for debugging
-        Debug.Log($"UI Elements found: Panel={_panel != null}, Clear={_clearButton != null}, " +
-                  $"RemovePhysics={_removePhysicsButton != null}, DropdownScene={_sceneDropdown != null}, " +
-                  $"DropdownSimType={_simDropdown != null}, AnalyzeScene={_startButton != null}, " +
-                  $"ColorSlider={_colorSlider != null}, AlternativeColorsToggle={_alternativeColorsButton != null}, " +
-                  $"SearchField={_textField != null}");
     }
 
     private void PopulateActions()
@@ -207,8 +200,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             },
             () =>
             {
-                var layout = GetComponent<ForceDirectedLayoutV2>();
-                if (!layout) layout = gameObject.AddComponent<ForceDirectedLayoutV2>();
+                var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedLayoutV2>();
+                if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedLayoutV2>();
                 StaticLayout();
                 
                 if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
@@ -295,12 +288,13 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
     
     public void ApplyForceDirectedComponentPhysics()
     {
-        var forceDirectedSim = gameObject.AddComponent<ForceDirectedLayoutV2>();
-        ScriptableObjectInventory.Instance.graph = ScriptableObjectInventory.Instance.graph;
-        if (!forceDirectedSim) return;
+        var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedLayoutV2>();
+        if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedLayoutV2>();
+        
+        if (!layout) return;
         if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
         ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        forceDirectedSim.Initialize();
+        layout.Initialize();
     }
     
     private void UpdateColor(int sliderValue)

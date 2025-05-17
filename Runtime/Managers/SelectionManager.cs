@@ -33,6 +33,8 @@ public class CubeSelector : ModularSettingsUser
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
     private bool _isActive;
+    
+    private readonly RaycastHit2D[] _raycastBuffer = new RaycastHit2D[16];  
 
     [RegisterModularFloatSetting("Double Click Treshold", "How long you can wait for the double click to be recognized", "Selection", 0.3f, 0, 1f)]
     public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
@@ -130,21 +132,44 @@ public class CubeSelector : ModularSettingsUser
 #endif
         }
     }
-
-    private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, Vector2 point)
+    
+    private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, int hitCount, Vector2 origin)
     {
-        var closestHit = hits[0];
-        var closestDistance = Vector2.Distance(point, hits[0].point);
+        var closest = hits[0];
+        var minSqr = (hits[0].point - origin).sqrMagnitude;
 
-        for (var i = 1; i < hits.Length; i++)
+        for (var i = 1; i < hitCount; i++)
         {
-            var distance = Vector2.Distance(point, hits[i].point);
-            if (!(distance < closestDistance)) continue;
-            closestDistance = distance;
-            closestHit = hits[i];
+            var sqr = (hits[i].point - origin).sqrMagnitude;
+            if (!(sqr < minSqr)) continue;
+            minSqr = sqr;
+            closest = hits[i];
+        }
+        return closest;
+    }
+    
+    private RaycastHit2D RaycastForClosest(Vector2 mousePosition)
+    {
+        // Cast without allocations
+        var hitCount = Physics2D.RaycastNonAlloc(
+            mousePosition,
+            Vector2.zero,
+            _raycastBuffer,
+            Mathf.Infinity,
+            _targetLayerMask);
+
+        if (hitCount > 0)
+        {
+            // Find the closest of the hits that were written into the buffer
+            return GetClosestHit(_raycastBuffer, hitCount, mousePosition);
         }
 
-        return closestHit;
+        // No hit stored in buffer – do a single Raycast exactly like before
+        return Physics2D.Raycast(
+            mousePosition,
+            Vector2.zero,
+            Mathf.Infinity,
+            _targetLayerMask);
     }
 
     private void HandleMouseInput()
@@ -163,12 +188,8 @@ public class CubeSelector : ModularSettingsUser
             }
         }
 
-        // Cast a ray from the mouse position
         Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
-        var hits = Physics2D.RaycastAll(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
-        var hit = hits.Length > 0
-            ? GetClosestHit(hits, mousePosition)
-            : Physics2D.Raycast(mousePosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+        var hit = RaycastForClosest(mousePosition);
 
         if (Input.GetMouseButtonDown(0))
         {

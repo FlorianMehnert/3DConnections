@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -48,9 +49,12 @@ public static class SceneHandler
     }
 
 
-    private static IEnumerator<AsyncOperation> LoadSceneCoroutine(string sceneName, Action onComplete)
+    /// <summary>
+    /// Loads a scene additively and invokes a callback after it is fully activated.
+    /// </summary>
+    public static IEnumerator LoadSceneCoroutine(string sceneName, Action onComplete)
     {
-        var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
         if (asyncLoad == null)
         {
@@ -58,15 +62,16 @@ public static class SceneHandler
             yield break;
         }
 
-        while (!asyncLoad.isDone)
-        {
-            if (asyncLoad.progress >= 0.9f)
-            {
-                asyncLoad.allowSceneActivation = true; // Activate the scene
-            }
+        // Prevent the scene from activating too early
+        asyncLoad.allowSceneActivation = false;
 
+        // Wait until the loading bar is 90 % (Unity’s “done” threshold)
+        while (asyncLoad.progress < 0.9f)
             yield return null;
-        }
+
+        // Now allow activation and wait one more frame so Awake/OnEnable run
+        asyncLoad.allowSceneActivation = true;
+        yield return null;
 
         Debug.Log($"Scene {sceneName} loaded successfully.");
         onComplete?.Invoke();

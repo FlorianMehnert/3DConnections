@@ -31,6 +31,15 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
 
         private static bool _isShuttingDown;
 
+        public Transform simulationRoot;
+        public Transform managerRoot;
+        public Transform nodeRoot;
+        public Transform edgeRoot;
+
+        /// <summary>
+        /// If this is used in OnDestroy make sure to delete this object again
+        /// or even better check if this exists using InstanceExists
+        /// </summary>
         public static ScriptableObjectInventory Instance
         {
             get
@@ -50,6 +59,8 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
                 return _instance;
             }
         }
+        
+        public static bool InstanceExists => _instance;
 
 
         private void Awake()

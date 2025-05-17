@@ -83,22 +83,42 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _instanceIdToNodeLookup.Clear();
+
 #if UNITY_EDITOR
-        _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+    _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
-        var scene = SceneManager.GetSceneByBuildIndex(toAnalyzeScene.sceneIndex);
-        if (!scene.IsValid())
+
+        // Get scene name from build index
+        var scenePath = SceneUtility.GetScenePathByBuildIndex(toAnalyzeScene.sceneIndex);
+        if (string.IsNullOrEmpty(scenePath))
         {
-            Debug.Log("scene is not valid");
+            Debug.LogError($"No scene found at build index {toAnalyzeScene.sceneIndex}");
             return;
         }
 
-        Debug.Log(scene.name + " " + toAnalyzeScene.sceneIndex);
-        LoadComplexityMetrics(analysisData.ToString());
-        _cachedPrefabPaths.Clear();
-        var rootGameObjects = scene.GetRootGameObjects();
-        TraverseScene(rootGameObjects);
+        var sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        var scene = SceneManager.GetSceneByName(sceneName);
+
+        void Analyze()
+        {
+            scene = SceneManager.GetSceneByName(sceneName); // re-fetch after loading
+            Debug.Log($"{scene.name} (build index {toAnalyzeScene.sceneIndex})");
+
+            LoadComplexityMetrics(analysisData.ToString());
+            _cachedPrefabPaths.Clear();
+            TraverseScene(scene.GetRootGameObjects());
+        }
+
+        if (!scene.isLoaded)
+        {
+            Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
+            StartCoroutine(SceneHandler.LoadSceneCoroutine(sceneName, Analyze));
+            return;
+        }
+
+        Analyze();
     }
+
 
     private void OnValidate()
     {

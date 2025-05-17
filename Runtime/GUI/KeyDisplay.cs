@@ -197,6 +197,9 @@ public class KeyDisplay : ModularSettingsUser
                 message += "connection count is: " + ScriptableObjectInventory.Instance.conSo.connections.Count;
                 Debug.Log(message);
                 Log(message);
+            }else if (_inputString.Contains("clear") && IsConfirm() || _inputString.Contains("reset") && IsConfirm())
+            {
+                clearEvent.TriggerEvent();
             }else if (IsConfirm())
             {
                 var menu = FindFirstObjectByType<SettingsMenuGeneral>();
@@ -238,9 +241,6 @@ public class KeyDisplay : ModularSettingsUser
                     Debug.Log("did not find SettingMenuGeneral script");
                 }
                     
-            }else if (_inputString.Contains("clear") && IsConfirm() || _inputString.Contains("reset") && IsConfirm())
-            {
-                clearEvent.TriggerEvent();
             }
 
             // Limit the input string length to avoid overflow

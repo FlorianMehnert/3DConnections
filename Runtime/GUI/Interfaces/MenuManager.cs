@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -48,6 +49,15 @@ public class MenuManager : MonoBehaviour
         
         _activeMenu.OnMenuClose();
         _activeMenu = null;
+    }
+
+    private void Start()
+    {
+        foreach (var menuKeybind in _menuKeybinds)
+        {
+            menuKeybind.Value.OnMenuClose();
+            _activeMenu = null;
+        }
     }
 
     private void Update()
