@@ -25,7 +25,6 @@ public class NavigatableMenu : MonoBehaviour
         
         _tabView = root.Q<TabView>("tabs");
         _tabButtons = _tabView.Query<Tab>().ToList(); 
-        Debug.Log(_tabButtons.Count);
     }
 
     public void OnTabSwitchPerformed(InputAction.CallbackContext context)
@@ -59,11 +58,11 @@ public class NavigatableMenu : MonoBehaviour
     public void OnMenuToggle(InputAction.CallbackContext context)
     {
         var settingsMenuGeneral = GetComponent<SettingsMenuGeneral>();
-        if (settingsMenuGeneral == null)
+        if (!settingsMenuGeneral)
         {
             Debug.Log("did not find settingsMenuGeneral on menuToggle");
         };
-        settingsMenuGeneral.ToggleMenu();
+        MenuManager.Instance.ActivateMenu(settingsMenuGeneral);
     }
 
     public void OnNavigationPerformed(InputAction.CallbackContext context)
@@ -101,6 +100,5 @@ public class NavigatableMenu : MonoBehaviour
         using var e = new NavigationSubmitEvent();
         e.target = button;
         button.SendEvent(e);
-        ;
     }
 }

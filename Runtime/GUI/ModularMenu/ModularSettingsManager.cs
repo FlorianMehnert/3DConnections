@@ -1,91 +1,91 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-
-public class ModularSettingsManager : MonoBehaviour
+public class ModularSettingsManager : MonoBehaviour, IMenu
 {
     public UIDocument uiDocument;
-    public List<ModularMenuData> defaultSettings = new();
+    public List<ModularMenuData> defaultSettings = new List<ModularMenuData>();
+    
+    [Header("Menu Settings")]
+    public KeyCode menuKeybind = KeyCode.F4;
+    public bool showOnStart = true;
 
-    private readonly Dictionary<string, List<ModularMenuData>> _categorySettingsMap = new();
-    private readonly List<ModularMenuData> _allSettings = new();
+    private readonly Dictionary<string, List<ModularMenuData>> _categorySettingsMap = new Dictionary<string, List<ModularMenuData>>();
+    private readonly List<ModularMenuData> _allSettings = new List<ModularMenuData>();
     private VisualElement _settingsWindow;
-    private Button _cancelButton;
     private Button _resetButton;
-    private bool _isTransitioning;
+    private bool _isMenuVisible = true;
 
     private void Awake()
     {
+        if (uiDocument == null)
+        {
+            uiDocument = GetComponent<UIDocument>();
+            if (uiDocument == null)
+            {
+                Debug.LogError("ModularSettingsManager requires a UIDocument component");
+                enabled = false;
+            }
+        }
+    }
+    
+    private void Start()
+    {
+        // Initialize UI
+        try
+        {
+            InitializeUI();
+            
+            // Register this menu with the MenuManager
+            MenuManager.Instance.RegisterMenu(menuKeybind, this);
+            
+            // Set initial visibility
+            if (!showOnStart)
+            {
+                OnMenuClose();
+            }
+            else
+            {
+                OnMenuOpen();
+            }
+            
+            Debug.Log($"ModularSettingsManager initialized with keybind {menuKeybind}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error initializing ModularSettingsManager: {e.Message}\n{e.StackTrace}");
+        }
+    }
+
+    private void InitializeUI()
+    {
+        // Register settings
         foreach (var setting in defaultSettings)
         {
             RegisterSetting(setting);
         }
 
-        GenerateSettingsUI();
-    }
-
-    private void OnEnable()
-    {
-        GenerateSettingsUI();
-        try
+        // Find UI elements
+        var rootElement = uiDocument.rootVisualElement;
+        _settingsWindow = rootElement.Q<VisualElement>("settings-window");
+        
+        if (_settingsWindow == null)
         {
-            GrabUIElements(uiDocument.rootVisualElement);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
+            Debug.LogError("Could not find 'settings-window' element in the UI Document");
+            return;
         }
         
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.F4) && !_isTransitioning)
+        _resetButton = rootElement.Q<Button>("reset-button");
+        if (_resetButton != null)
         {
-            ToggleMenu();
+            _resetButton.clicked += ResetAllSettings;
         }
-    }
-    
-    private void GrabUIElements(VisualElement root)
-    {
-        _settingsWindow = root.Q<VisualElement>("settings-window");
-        _cancelButton = root.Q<Button>("cancel-button");
-        _resetButton = root.Q<Button>("reset-button");
-        _resetButton.clicked += ResetAllSettings;
-        _cancelButton.clicked += HideMenu;
-    }
-
-    private void ToggleMenu()
-    {
-        if (_settingsWindow.ClassListContains("hidden"))
-            ShowMenu();
-        else
-            HideMenu();
-    }
-    private void ShowMenu()
-    {
-        _settingsWindow.style.display = DisplayStyle.Flex;
-        _settingsWindow.RemoveFromClassList("hidden");
-        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = true;
-    }
-    
-    private void HideMenu()
-    {
-        _isTransitioning = true;
-        StartCoroutine(HideMenuAfterDelay());
-        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = false;
-    }
-
-    private IEnumerator HideMenuAfterDelay()
-    {
-        _settingsWindow.AddToClassList("hidden");
-        yield return new WaitForSeconds(0.3f);
-        _settingsWindow.style.display = DisplayStyle.None;
-        _isTransitioning = false;
+        
+        // Generate settings UI
+        GenerateSettingsUI();
     }
 
     public void RegisterSetting(ModularMenuData modularMenu)
@@ -112,7 +112,7 @@ public class ModularSettingsManager : MonoBehaviour
 
         if (settingsContainer == null)
         {
-            Debug.LogError("Settings container not found in UI Document");
+            Debug.LogError("Settings container not found in UI Document. Make sure your UI has an element with the name 'settings-container'");
             return;
         }
 
@@ -144,5 +144,56 @@ public class ModularSettingsManager : MonoBehaviour
         }
 
         GenerateSettingsUI();
+    }
+    
+    public void OnMenuOpen()
+    {
+        if (_settingsWindow == null)
+        {
+            Debug.LogError("Settings window not found. Make sure your UI has an element with the name 'settings-window'");
+            return;
+        }
+        
+        _settingsWindow.RemoveFromClassList("hidden");
+        _settingsWindow.style.display = DisplayStyle.Flex;
+        _isMenuVisible = true;
+        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = true;
+    }
+    
+    public void OnMenuClose()
+    {
+        if (_settingsWindow == null)
+        {
+            Debug.LogError("Settings window not found. Make sure your UI has an element with the name 'settings-window'");
+            return;
+        }
+        
+        _settingsWindow.AddToClassList("hidden");
+        _settingsWindow.style.display = DisplayStyle.None;
+        _isMenuVisible = false;
+        ScriptableObjectInventory.Instance.menuState.modularMenuOpen = false;
+        
+    }
+    
+    // Toggle menu visibility directly (for testing)
+    public void ToggleMenu()
+    {
+        if (_isMenuVisible)
+        {
+            OnMenuClose();
+        }
+        else
+        {
+            OnMenuOpen();
+        }
+    }
+    
+    // For debugging - toggle menu with a key press without going through MenuManager
+    private void Update()
+    {
+        // Only for debugging - remove in production
+        if (!Input.GetKeyDown(KeyCode.F12)) return;
+        Debug.Log("Debug toggle menu");
+        ToggleMenu();
     }
 }

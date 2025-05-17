@@ -635,7 +635,7 @@ public class SceneAnalyzer : MonoBehaviour
         }
 
         if (NodeConnectionManager.Instance)
-            NodeConnectionManager.Instance.ClearConnections();
+            NodeConnectionManager.ClearConnections();
         var springSimulation = GetComponent<SpringSimulation>();
         if (springSimulation)
         {

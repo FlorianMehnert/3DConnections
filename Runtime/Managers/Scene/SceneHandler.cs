@@ -74,7 +74,15 @@ public static class SceneHandler
 
     public static GameObject GetParentObject()
     {
-        return GameObject.Find("ParentNodesObject");
+        try
+        {
+            return GameObject.Find("ParentNodesObject");
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.LogError(e);
+        }
+        return null;
     }
 
     public static List<GameObject> GetNodesUsingTheNodegraphParentObject()

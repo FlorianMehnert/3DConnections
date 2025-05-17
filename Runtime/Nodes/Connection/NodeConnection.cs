@@ -16,6 +16,7 @@ public class NodeConnection
 
     public void ApplyConnection()
     {
+        if (!lineRenderer) return;
         var color = new Color(connectionColor.r, connectionColor.g, connectionColor.b, 0.5f);
         lineRenderer.startColor = color;
         lineRenderer.endColor = color;

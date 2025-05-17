@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -67,14 +68,30 @@ public sealed class NodeConnectionManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+        try
         {
-            ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+            if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+            {
+                ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
 
-        if (_instance != this) return;
-        ClearConnections();
-        _instance = null;
+        try
+        {
+            if (_instance != this) return;
+            ClearConnections();
+            _instance = null;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     private void OnDisable()
@@ -126,21 +143,28 @@ public sealed class NodeConnectionManager : MonoBehaviour
         }
     }
 
-    public void ClearConnections()
+    public static void ClearConnections()
     {
-        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
+        if (ScriptableObjectInventory.Instance&& ScriptableObjectInventory.Instance.conSo && ScriptableObjectInventory.Instance.conSo.usingNativeArray && ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated)
         {
             ScriptableObjectInventory.Instance.conSo.NativeConnections.Dispose();
             ScriptableObjectInventory.Instance.conSo.usingNativeArray = false;
         }
 
-        foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection => connection.lineRenderer))
+        try
         {
-            Destroy(connection.lineRenderer.gameObject);
-        }
+            foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection => connection.lineRenderer))
+            {
+                Destroy(connection.lineRenderer.gameObject);
+            }
 
-        ScriptableObjectInventory.Instance.conSo.connections.Clear();
-        ScriptableObjectInventory.Instance.conSo.currentConnectionCount = 0;
+            ScriptableObjectInventory.Instance.conSo.connections.Clear();
+            ScriptableObjectInventory.Instance.conSo.currentConnectionCount = 0;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
 
     public void ClearNativeArray()
