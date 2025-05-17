@@ -52,7 +52,6 @@ public class MinimalForceDirectedSimulation : MonoBehaviour
 
         _nodeBuffer = new ComputeBuffer(data.Length, sizeof(float) * 4);
         _nodeBuffer.SetData(data);
-
         computeShader.SetBuffer(_kernel, Nodes, _nodeBuffer);
         computeShader.SetInt(NodeCount, data.Length);
         computeShader.SetInt(StepsPerDispatch, simulationStepsPerFrame);

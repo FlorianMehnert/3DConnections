@@ -5,7 +5,7 @@ using Unity.Collections;
 using Unity.Burst;
 using Unity.Jobs;
 
-public class ForceDirectedLayoutV2 : MonoBehaviour
+public class ForceDirectedSimulationV2 : MonoBehaviour
 {
     [Header("References")]
     public float repulsionStrength = 1000f;

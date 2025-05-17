@@ -137,13 +137,15 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         {
             () =>
             {
-                StaticLayout();
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout();
                 if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
                     ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
             },
             () =>
             {
-                StaticLayout();
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout();
                 if (ScriptableObjectInventory.Instance)
                 {
                     if (ScriptableObjectInventory.Instance.applicationState)
@@ -156,7 +158,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             },
             () =>
             {
-                StaticLayout();
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout();
 
                 if (ScriptableObjectInventory.Instance)
                 {
@@ -180,7 +183,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             () =>
             {
                 if (!gpuSpringSim) return;
-                StaticLayout();
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout();
                 
                 if (ScriptableObjectInventory.Instance)
                 {
@@ -200,29 +204,33 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             },
             () =>
             {
-                var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedLayoutV2>();
-                if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedLayoutV2>();
-                StaticLayout();
+                var forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedSimulationV2>();
+                if (!forceDirected) forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedSimulationV2>();
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout();
                 
                 if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
                     ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 
-                layout.Initialize();
+                forceDirected.Initialize();
             },
             () =>
             {
-                var gpuSim = GetComponent<MinimalForceDirectedSimulation>();
-                if (!gpuSim) gpuSim = gameObject.AddComponent<MinimalForceDirectedSimulation>();
-                
-                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.graph)
-                    gpuSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodeTransforms2D;
-                
-                StaticLayout();
-                
-                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                    ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                
-                gpuSim.Initialize();
+                var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
+                if (!forceDirectedSim) return;
+                if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+                ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+                NodeConnectionManager.Instance.UseNativeArray();
+                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+                NodeConnectionManager.Instance.AddSpringsToConnections();
+                NodeConnectionManager.Instance.ResizeNativeArray();
+                NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
+                Debug.Log("initializing gpu physics");
+                var springSimulation = GetComponent<SpringSimulation>();
+                if (springSimulation)
+                    springSimulation.Disable();
+                forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
+                forceDirectedSim.Initialize();
             }
         };
     }
@@ -260,41 +268,6 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _sceneDropdown.choices = sceneNames;
         if (sceneNames.Count > 0)
             _sceneDropdown.value = sceneNames[0];
-    }
-
-    public void StaticLayout()
-    {
-        var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
-        
-        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.removePhysicsEvent)
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        
-        if (!sceneAnalyzer || 
-            !ScriptableObjectInventory.Instance || 
-            !ScriptableObjectInventory.Instance.applicationState || 
-            ScriptableObjectInventory.Instance.applicationState.spawnedNodes) 
-            return;
-        
-        sceneAnalyzer.AnalyzeScene();
-
-        if (!ScriptableObjectInventory.Instance) return;
-        if (ScriptableObjectInventory.Instance.applicationState)
-            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                
-        if (ScriptableObjectInventory.Instance.layout && 
-            ScriptableObjectInventory.Instance.graph)
-            NodeLayoutManagerV2.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
-    }
-    
-    public void ApplyForceDirectedComponentPhysics()
-    {
-        var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedLayoutV2>();
-        if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedLayoutV2>();
-        
-        if (!layout) return;
-        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        layout.Initialize();
     }
     
     private void UpdateColor(int sliderValue)
@@ -416,98 +389,5 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     }
 
-    public void ApplyComponentPhysics()
-    {
-        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        var springSimulation = FindFirstObjectByType<SpringSimulation>();
-        if (springSimulation)
-            springSimulation.CleanupNativeArrays();
-
-        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-
-        // required to avoid intersections when using components
-        foreach (var boxCollider2D in ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()))
-        {
-            boxCollider2D.isTrigger = false;
-            boxCollider2D.size = Vector2.one * 5;
-        }
-
-        NodeConnectionManager.Instance.AddSpringsToConnections();
-    }
-
-    public void ApplyBurstPhysics()
-    {
-        Debug.Log("apply burst physics");
-        var springSimulation = FindFirstObjectByType<SpringSimulation>();
-        if (springSimulation)
-        {
-            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-            NodeConnectionManager.Instance.UseNativeArray();
-            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-            NodeConnectionManager.Instance.AddSpringsToConnections();
-            NodeConnectionManager.Instance.ResizeNativeArray();
-            NodeConnectionManager.Instance.ConvertToNativeArray();
-            springSimulation.Simulate();
-        }
-        else
-        {
-            Debug.Log("missing springSimulation Script on the Manager");
-        }
-    }
-
-    public void ApplyGPUPhysics()
-    {
-        Debug.Log("apply gpu physics");
-        var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
-        if (gpuSpringSim)
-        {
-            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-            NodeConnectionManager.Instance.UseNativeArray();
-            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-            NodeConnectionManager.Instance.AddSpringsToConnections();
-            NodeConnectionManager.Instance.ResizeNativeArray();
-            NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-            Debug.Log("initializing gpu physics");
-            var springSimulation = GetComponent<SpringSimulation>();
-            if (springSimulation)
-                springSimulation.Disable();
-            gpuSpringSim.Initialize();
-        }
-        else
-        {
-            Debug.Log("missing ComputeSpringSimulation Script on the Manager");
-        }
-    }
-
-    public void ApplySimpleGPUPhysics()
-    {
-        var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
-        if (!forceDirectedSim) return;
-        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        NodeConnectionManager.Instance.UseNativeArray();
-        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-        NodeConnectionManager.Instance.AddSpringsToConnections();
-        NodeConnectionManager.Instance.ResizeNativeArray();
-        NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-        Debug.Log("initializing gpu physics");
-        var springSimulation = GetComponent<SpringSimulation>();
-        if (springSimulation)
-            springSimulation.Disable();
-        forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
-        forceDirectedSim.Initialize();
-    }
     
-    public void ApplyStaticLayout()
-    {
-        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        var springSimulation = FindFirstObjectByType<SpringSimulation>();
-        if (springSimulation)
-            springSimulation.CleanupNativeArrays();
-        NodeLayoutManagerV2.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
-    }
 }

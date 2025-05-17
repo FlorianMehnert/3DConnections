@@ -871,6 +871,7 @@ GameObject:
   - component: {fileID: 6102272224801615629}
   - component: {fileID: 552808328}
   - component: {fileID: 8045642725482905533}
+  - component: {fileID: 8714438898851022660}
   m_Layer: 6
   m_Name: Manager
   m_TagString: Untagged
@@ -1268,7 +1269,6 @@ MonoBehaviour:
   trailHistoryLength: 30
   gameObjectTrailColor: {r: 0.2, g: 0.2, b: 0.8, a: 0.5}
   componentTrailColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.5}
-  trailWidth: 0.05
   enableRelaxation: 1
   relaxationDuration: 2
   relaxationStrength: 0.2
@@ -1287,7 +1287,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e997bb88bd44d52aa3000df1dc6965b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rootEdgeTransform: {fileID: 0}
+  rootEdgeTransform: {fileID: 2027617127}
   lineRendererPrefab: {fileID: 5150301223516620771, guid: 26b88daf4a4249798bfa34467d5f7107, type: 3}
 --- !u!114 &8045642725482905533
 MonoBehaviour:
@@ -1302,6 +1302,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rootSimulation: {fileID: 1470742721}
+  nodePrefab: {fileID: 0}
 --- !u!114 &8704381143363689667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1324,6 +1325,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f884fc9e816e4bfdb912d2047bc80852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &8714438898851022660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410225113034936725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 729a630b19a54ccc89bd8b89b9e13286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807

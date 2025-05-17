@@ -98,9 +98,9 @@ public static class Colorpalette
         if (hex.Length != 6)
             throw new ArgumentException("Invalid hex color format");
 
-        byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
-        byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-        byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+        var r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        var g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        var b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
 
         return new Color(r / 255f, g / 255f, b / 255f);
     }

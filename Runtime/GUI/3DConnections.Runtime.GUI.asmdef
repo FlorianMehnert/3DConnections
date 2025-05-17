@@ -18,7 +18,8 @@
         "GUID:edd4afdf07bb476987603d81a3d796d5",
         "GUID:7f93272ad2cf4802801fbf3c7e07d3ac",
         "GUID:577a0febf14c435a9f5ae7679ca580ba",
-        "GUID:34049322dde346ff946bdd4f18453456"
+        "GUID:34049322dde346ff946bdd4f18453456",
+        "3DConnections.Runtime.Simulations"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

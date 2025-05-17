@@ -1,13 +1,12 @@
 {
-    "name": "3DConnections.Runtime.Burst",
-    "rootNamespace": "3DConnections.Runtime.Burst",
+    "name": "3DConnections.Runtime.Simulations",
+    "rootNamespace": "3DConnections.Runtime.Simulations",
     "references": [
         "GUID:407d9f5d313b4d20b83d06c1f10def66",
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:7d9d183d4bd44dbf921dcc470f619338",
         "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
-        "GUID:f373597d47624f6d907847f70cac6b71",
         "GUID:f4eb26c44d5d41ef825a8424c949fb63",
         "GUID:577a0febf14c435a9f5ae7679ca580ba"
     ],

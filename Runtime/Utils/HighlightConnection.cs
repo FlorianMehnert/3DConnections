@@ -14,7 +14,7 @@
         private void Awake()
         {
             _lineRenderer = GetComponent<LineRenderer>();
-            if (_lineRenderer != null && _lineRenderer.material != null)
+            if (_lineRenderer && _lineRenderer.material)
             {
                 _originalColor = _lineRenderer.startColor;
             }
@@ -49,10 +49,8 @@
         /// </summary>
         private void ResetColor()
         {
-            if (_lineRenderer && _lineRenderer.material)
-            {
-                _lineRenderer.startColor = _originalColor;
-                _lineRenderer.endColor = _originalColor;
-            }
+            if (!_lineRenderer || !_lineRenderer.material) return;
+            _lineRenderer.startColor = _originalColor;
+            _lineRenderer.endColor = _originalColor;
         }
     }

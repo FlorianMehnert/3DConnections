@@ -51,7 +51,7 @@ public class ColorPickerController : MonoBehaviour
             alternativeColors: alternativeColors
         );
 
-        if (!NodeConnectionManager.Instance || !ScriptableObjectInventory.Instance.conSo || ScriptableObjectInventory.Instance.conSo.connections == null)
+        if (!ScriptableObjectInventory.Instance.conSo || ScriptableObjectInventory.Instance.conSo.connections == null)
         {
             return;
         }

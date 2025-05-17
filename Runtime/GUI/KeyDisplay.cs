@@ -167,9 +167,9 @@ public class KeyDisplay : ModularSettingsUser
                     var nodeGraph = GetNodeGraph();
                     if (nodeGraph && nodeGraph.IsEmpty())
                     {
-                        var menu = FindFirstObjectByType<SettingsMenuGeneral>();
-                        if (menu)
-                            menu.StaticLayout();    
+                        var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                        if (layout)
+                            layout.StaticLayout();
                         var overlayedScene = SceneHandler.GetOverlayedScene();
                         if (overlayedScene.Value != null)
                             SceneManager.SetActiveScene(overlayedScene.Value);
@@ -202,7 +202,7 @@ public class KeyDisplay : ModularSettingsUser
                 clearEvent.TriggerEvent();
             }else if (IsConfirm())
             {
-                var menu = FindFirstObjectByType<SettingsMenuGeneral>();
+                var menu = FindFirstObjectByType<SimulationManager>();
                 if (menu)
                 {
                     if (_inputString.StartsWith("0"))

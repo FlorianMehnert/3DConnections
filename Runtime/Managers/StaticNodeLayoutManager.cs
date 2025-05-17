@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class NodeLayoutManagerV2 : MonoBehaviour
+public class StaticNodeLayoutManager : MonoBehaviour
 {
     /// <summary>
     /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
@@ -137,7 +137,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
         foreach (var node in nextLevelNodes)
         {
             var bounds = node.GameObject.GetComponent<Renderer>().bounds;
-            Vector3 newPosition = new Vector3(xOffset, (currentLevel + 1) * -50f, 0);
+            var newPosition = new Vector3(xOffset, (currentLevel + 1) * -50f, 0);
             node.GameObject.transform.position = newPosition;
             xOffset += bounds.size.x + padding;
         }
@@ -153,7 +153,7 @@ public class NodeLayoutManagerV2 : MonoBehaviour
 
         var totalWidth = nodes.Select(node => node.GameObject.GetComponent<Renderer>().bounds).Select(bounds => bounds.size.x + padding).Sum();
 
-        totalWidth -= padding; // Remove extra padding from last node
+        totalWidth -= padding; // Remove extra padding from the last node
 
         var centerOffset = -totalWidth / 2f;
 
@@ -170,4 +170,29 @@ public class NodeLayoutManagerV2 : MonoBehaviour
             centerOffset += bounds.size.x + padding;
         }
     }
+    
+    public void StaticLayout()
+    {
+        var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
+        
+        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+        
+        if (!sceneAnalyzer || 
+            !ScriptableObjectInventory.Instance || 
+            !ScriptableObjectInventory.Instance.applicationState || 
+            ScriptableObjectInventory.Instance.applicationState.spawnedNodes) 
+            return;
+        
+        sceneAnalyzer.AnalyzeScene();
+
+        if (!ScriptableObjectInventory.Instance) return;
+        if (ScriptableObjectInventory.Instance.applicationState)
+            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                
+        if (ScriptableObjectInventory.Instance.layout && 
+            ScriptableObjectInventory.Instance.graph)
+            StaticNodeLayoutManager.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
+    }
+
 }
