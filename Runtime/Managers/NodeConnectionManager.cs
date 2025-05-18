@@ -17,11 +17,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
     private static bool _isShuttingDown;
     public GameObject lineRendererPrefab;
 
-    private JobHandle _connectionJobHandle;
-    private NativeArray<Vector3> _startNodePositions;
-    private NativeArray<Vector3> _endNodePositions;
-    private NativeArray<Vector3> _connectionLinePoints; // Output from the job
-
     public static NodeConnectionManager Instance
     {
         get
@@ -95,23 +90,6 @@ public sealed class NodeConnectionManager : MonoBehaviour
         {
             Console.WriteLine(e);
         }
-
-        try
-        {
-            if (_instance != this) return;
-            ClearConnections();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (_instance != this) return;
-        if (!ScriptableObjectInventory.InstanceExists) return;
-        ClearConnections();
     }
 
     public NodeConnection AddConnection(GameObject startNode, GameObject endNode, Color? color = null, float lineWidth = 1f, float saturation = 1f, string connectionType = "parentChildConnection")
@@ -355,4 +333,38 @@ public sealed class NodeConnectionManager : MonoBehaviour
         if (!start || !end) return null;
         return ScriptableObjectInventory.Instance.conSo.connections.FirstOrDefault(connection => connection.startNode == start && connection.endNode == end);
     }
+    
+    #if UNITY_EDITOR
+    /// <summary>
+    /// One update step where the line width is set as well
+    /// </summary>
+    [ContextMenu("Apply Line widths")]
+    public void ApplyChangedNodeConnections()
+    {
+        if (ScriptableObjectInventory.Instance.conSo.usingNativeArray)
+        {
+            if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray || !ScriptableObjectInventory.Instance.conSo.NativeConnections.IsCreated) return;
+
+            for (var i = 0; i < ScriptableObjectInventory.Instance.conSo.currentConnectionCount; i++)
+            {
+                if (!ScriptableObjectInventory.Instance.conSo.connections[i].startNode || !ScriptableObjectInventory.Instance.conSo.connections[i].endNode || !ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer) continue;
+                ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.startWidth = ScriptableObjectInventory.Instance.conSo.connections[i].lineWidth; 
+                ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.endWidth = ScriptableObjectInventory.Instance.conSo.connections[i].lineWidth; 
+            }
+
+            UpdateConnectionPositionsNative();
+        }
+        else if (ScriptableObjectInventory.Instance.conSo.connections.Count > 0)
+        {
+            foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection =>
+                         connection.startNode && connection.endNode && connection.lineRenderer))
+            {
+                if (!connection.lineRenderer) return;
+                connection.lineRenderer.startWidth = connection.lineWidth;
+                connection.lineRenderer.endWidth = connection.lineWidth;
+            }
+            UpdateConnectionPositions();
+        }
+    }
+    #endif
 }
