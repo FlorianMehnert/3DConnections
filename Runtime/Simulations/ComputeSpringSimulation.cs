@@ -189,7 +189,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     private void InitializeHistory()
     {
         _positionHistory = new Vector2[trailHistoryLength][];
-        for (int i = 0; i < trailHistoryLength; i++)
+        for (var i = 0; i < trailHistoryLength; i++)
         {
             _positionHistory[i] = new Vector2[_nodes.Length];
         }
@@ -239,12 +239,12 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     {
         var data = new NodeData[_nodes.Length];
 
-        for (int i = 0; i < _nodes.Length; i++)
+        for (var i = 0; i < _nodes.Length; i++)
         {
             var obj = ScriptableObjectInventory.Instance.graph.AllNodes[i];
             var typeComp = obj.GetComponent<NodeType>();
             var nodeType = typeComp ? typeComp.nodeTypeName : NodeTypeName.GameObject;
-            int parentId = -1;
+            var parentId = -1;
 
             if (nodeType == NodeTypeName.Component && typeComp)
             {
@@ -267,7 +267,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                 ParentId = parentId
             };
 
-            for (int h = 0; h < trailHistoryLength; h++)
+            for (var h = 0; h < trailHistoryLength; h++)
             {
                 _positionHistory[h][i] = pos;
             }
@@ -393,15 +393,15 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
     /// <summary>
     /// hierarchy number based on the inspectors transform hierarchy
     /// </summary>
-    /// <param name="transform"></param>
+    /// <param name="rootTransform"></param>
     /// <returns></returns>
-    private int GetHierarchyDepth(Transform transform)
+    private int GetHierarchyDepth(Transform rootTransform)
     {
         var depth = 0;
-        while (transform.parent)
+        while (rootTransform.parent)
         {
             depth++;
-            transform = transform.parent;
+            rootTransform = rootTransform.parent;
         }
 
         return depth;
@@ -414,7 +414,7 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         // Update relaxation timer if enabled
         var currentRelaxFactor = 1.0f;
-        float currentMaxVelocity = finalMaxVelocity;
+        var currentMaxVelocity = finalMaxVelocity;
 
         if (enableRelaxation)
         {
@@ -450,11 +450,9 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
 
         // Calculate thread groups
         var threadGroups = Mathf.CeilToInt(_nodes.Length / 64f);
-        var threadGroupsConnections = Mathf.CeilToInt(Mathf.Pow(_nodes.Length, 2) / 64f);
 
-        // Dispatch compute shader
+        // Dispatch the compute shader
         computeShader.Dispatch(_springKernel, threadGroups, 1, 1);
-        //computeShader.Dispatch(_springConnectionsKernel, threadGroupsConnections, 1, 1);
         computeShader.Dispatch(_collisionKernel, threadGroups, 1, 1);
         computeShader.Dispatch(_integrationKernel, threadGroups, 1, 1);
 
@@ -504,39 +502,37 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
         // Draw force arrows
         if (showForceArrows && _arrowData != null)
         {
-            for (int i = 0; i < _arrowData.Length; i++)
+            for (var i = 0; i < _arrowData.Length; i++)
             {
                 if (i >= _nodes.Length) continue;
 
                 var start = new Vector3(_arrowData[i].Start.x, _arrowData[i].Start.y, _nodes[i].position.z);
                 var end = new Vector3(_arrowData[i].End.x, _arrowData[i].End.y, _nodes[i].position.z);
 
-                // Determine arrow color based on node type
-                Color arrowColor = i < _nodes.Length && ScriptableObjectInventory.Instance.graph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component
+                // Determine arrow color based on a node type
+                var arrowColor = i < _nodes.Length && ScriptableObjectInventory.Instance.graph.AllNodes[i].GetComponent<NodeType>()?.nodeTypeName == NodeTypeName.Component
                     ? componentArrowColor
                     : gameObjectArrowColor;
 
                 // Scale alpha based on force strength
-                float normalizedStrength = Mathf.Clamp01(_arrowData[i].Strength / 10.0f); // Adjust divisor as needed
+                var normalizedStrength = Mathf.Clamp01(_arrowData[i].Strength / 10.0f); // Adjust divisor as needed
                 arrowColor.a = Mathf.Lerp(minArrowAlpha, maxArrowAlpha, normalizedStrength);
 
                 // Draw arrow line
                 Gizmos.color = arrowColor;
                 Gizmos.DrawLine(start, end);
 
-                // Draw arrow head if line is long enough
-                Vector3 direction = end - start;
-                float magnitude = direction.magnitude;
+                // Draw arrow head if the line is long enough
+                var direction = end - start;
+                var magnitude = direction.magnitude;
 
-                if (magnitude > 0.1f)
-                {
-                    direction.Normalize();
-                    Vector3 right = Vector3.Cross(direction, Vector3.forward).normalized;
+                if (!(magnitude > 0.1f)) continue;
+                direction.Normalize();
+                var right = Vector3.Cross(direction, Vector3.forward).normalized;
 
-                    // Draw arrowhead
-                    Gizmos.DrawLine(end, end - direction * arrowHeadSize + right * arrowHeadSize * 0.5f);
-                    Gizmos.DrawLine(end, end - direction * arrowHeadSize - right * arrowHeadSize * 0.5f);
-                }
+                // Draw arrowhead
+                Gizmos.DrawLine(end, end - direction * arrowHeadSize + right * arrowHeadSize * 0.5f);
+                Gizmos.DrawLine(end, end - direction * arrowHeadSize - right * arrowHeadSize * 0.5f);
             }
         }
 
@@ -567,8 +563,6 @@ public class ComputeSpringSimulation : MonoBehaviour, ILogable
                     var current = new Vector3(_positionHistory[currentIndex][i].x, _positionHistory[currentIndex][i].y, _nodes[i].position.z);
                     var prev = new Vector3(_positionHistory[prevIndex][i].x, _positionHistory[prevIndex][i].y, _nodes[i].position.z);
 
-                    // Adjust width based on distance from current position
-                    var widthScale = 1.0f - (float)h / historyCount;
 
                     // Draw a line segment
                     Gizmos.DrawLine(current, prev);
