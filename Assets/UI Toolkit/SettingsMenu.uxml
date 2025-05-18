@@ -41,7 +41,7 @@
             </ui:Tab>
             <ui:Tab label="Vis" name="VisTab" closeable="false">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="0">
+                    <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="1">
                         <Bindings>
                             <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
                         </Bindings>
