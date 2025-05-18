@@ -17,7 +17,7 @@ public class PhysicsSimulationConfiguration : ScriptableObject
     public float damping = 2f;
     public float colliderRadius = 5f;
 
-    [SerializeField] private SimulationType simulationType = SimulationType.Burst;
+    [SerializeField] private SimulationType simulationType = SimulationType.Static;
     
     [CreateProperty]
     public SimulationType SimulationType
