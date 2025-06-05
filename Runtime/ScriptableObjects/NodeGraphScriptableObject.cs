@@ -31,11 +31,8 @@ public class NodeGraphScriptableObject : ScriptableObject
                     _parentObject ??= SceneHandler.GetParentObject();
                     if (!_parentObject)
                         return new List<GameObject>();
-                    else
-                    {
-                        _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
-                        return _allNodes;
-                    }
+                    _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
+                    return _allNodes;
                 }
 
                 _parentObject ??= SceneHandler.GetParentObject();

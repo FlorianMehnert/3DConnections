@@ -54,7 +54,7 @@ public static class SceneHandler
     /// </summary>
     public static IEnumerator LoadSceneCoroutine(string sceneName, Action onComplete)
     {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
         if (asyncLoad == null)
         {
@@ -79,15 +79,11 @@ public static class SceneHandler
 
     public static GameObject GetParentObject()
     {
-        try
-        {
-            return GameObject.Find("ParentNodesObject");
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.LogError(e);
-        }
+        var parent = GameObject.Find("ParentNodesObject");
+        if (parent && parent.activeInHierarchy) return parent;
+        Debug.LogWarning("ParentNodesObject is null or inactive.");
         return null;
+
     }
 
     public static List<GameObject> GetNodesUsingTheNodegraphParentObject()
