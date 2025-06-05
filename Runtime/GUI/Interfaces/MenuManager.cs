@@ -25,7 +25,10 @@ public class MenuManager : MonoBehaviour
 
     public void RegisterMenu(KeyCode keyCode, IMenu menu)
     {
-        _menuKeybinds[keyCode] = menu;
+        if (!_menuKeybinds.TryAdd(keyCode, menu))
+        {
+            Debug.LogWarning($"KeyCode {keyCode} is already registered to a menu.");
+        }
     }
 
     public void ActivateMenu(IMenu menu)
