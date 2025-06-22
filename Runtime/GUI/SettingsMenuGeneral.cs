@@ -133,73 +133,74 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             {
                 // Static 
                 var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                layout.StaticLayout();
-                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                    ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                layout.StaticLayout(() =>
+                {
+                    if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
+                        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                });
             },
             () =>
             {
                 // default
                 var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                layout.StaticLayout();
-                if (ScriptableObjectInventory.Instance)
+                layout.StaticLayout(() =>
                 {
-                    if (ScriptableObjectInventory.Instance.applicationState)
+                    if (ScriptableObjectInventory.Instance?.applicationState)
                         ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                    if (ScriptableObjectInventory.Instance.graph)
-                        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                }
 
-                if (NodeConnectionManager.Instance)
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
+                    ScriptableObjectInventory.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
+                    NodeConnectionManager.Instance?.AddSpringsToConnections();
+                });
             },
             () =>
             {
                 // burst
                 var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                layout.StaticLayout();
-
-                if (ScriptableObjectInventory.Instance)
+                layout.StaticLayout(() =>
                 {
-                    if (ScriptableObjectInventory.Instance.applicationState)
-                        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                    if (ScriptableObjectInventory.Instance.graph)
-                        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                }
+                    if (ScriptableObjectInventory.Instance)
+                    {
+                        if (ScriptableObjectInventory.Instance.applicationState)
+                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                        if (ScriptableObjectInventory.Instance.graph)
+                            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+                    }
 
-                if (NodeConnectionManager.Instance)
-                {
-                    NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                }
+                    if (NodeConnectionManager.Instance)
+                    {
+                        NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
+                        NodeConnectionManager.Instance.AddSpringsToConnections();
+                    }
 
-                if (springSimulation)
-                    springSimulation.Simulate();
-                else
-                    Debug.Log("missing springSimulation Script on the Manager");
+                    if (springSimulation)
+                        springSimulation.Simulate();
+                    else
+                        Debug.Log("missing springSimulation Script on the Manager");
+                });
             },
             () =>
             {
                 // gpu
                 if (!gpuSpringSim) return;
                 var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                layout.StaticLayout();
-
-                if (ScriptableObjectInventory.Instance)
+                layout.StaticLayout(() =>
                 {
-                    if (ScriptableObjectInventory.Instance.applicationState)
-                        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                    if (ScriptableObjectInventory.Instance.graph)
-                        ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                }
+                    if (ScriptableObjectInventory.Instance)
+                    {
+                        if (ScriptableObjectInventory.Instance.applicationState)
+                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                        if (ScriptableObjectInventory.Instance.graph)
+                            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+                    }
 
-                if (NodeConnectionManager.Instance)
-                {
-                    NodeConnectionManager.Instance.ConvertToNativeArray();
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                }
+                    if (NodeConnectionManager.Instance)
+                    {
+                        NodeConnectionManager.Instance.ConvertToNativeArray();
+                        NodeConnectionManager.Instance.AddSpringsToConnections();
+                    }
 
-                gpuSpringSim.Initialize();
+                    gpuSpringSim.Initialize();
+                });
             },
             () =>
             {
@@ -209,15 +210,15 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
                 // static layout using manager if found
                 var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                Debug.Log(layout ? "layout manager found" : "static layout manager not found");
-                layout.StaticLayout();
+                layout.StaticLayout(() =>
+                {
+                    // set state to spawnedNodes
+                    if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
+                        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
 
-                // set state to spawnedNodes
-                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                    ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                // start simulation
-                forceDirected.Initialize();
+                    // start simulation
+                    forceDirected.Initialize();
+                });
             },
             () =>
             {
@@ -230,13 +231,17 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
                 NodeConnectionManager.Instance.AddSpringsToConnections();
                 NodeConnectionManager.Instance.ResizeNativeArray();
-                NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-                Debug.Log("initializing gpu physics");
-                var springSimulation = GetComponent<SpringSimulation>();
-                if (springSimulation)
-                    springSimulation.Disable();
-                forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
-                forceDirectedSim.Initialize();
+                NodeConnectionManager.Instance.ConvertToNativeArray();
+
+                // layouting
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout(() =>
+                {
+                    if (springSimulation)
+                        springSimulation.Disable();
+                    forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
+                    forceDirectedSim.Initialize();
+                });
             }
         };
     }

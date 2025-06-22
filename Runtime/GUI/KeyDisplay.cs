@@ -6,8 +6,10 @@ public class KeyDisplay : ModularSettingsUser
 {
     private string _inputString = "";
     private string _debugString = "";
-   [RegisterModularFloatSetting("Clear delay", "Timespan for which the current letters will stay on the screen", "KeyDisplay", 1f, 0f, 1f)]
+
+    [RegisterModularFloatSetting("Clear delay", "Timespan for which the current letters will stay on the screen", "KeyDisplay", 1f, 0f, 1f)]
     private const float ClearDelay = 1f;
+
     private float _lastInputTime;
     private float _lastDebugTime;
     private GUIStyle _style;
@@ -41,7 +43,7 @@ public class KeyDisplay : ModularSettingsUser
         RegisterModularSettings();
     }
 
-    private void Log(string message, float extendDelay=0f)
+    private void Log(string message, float extendDelay = 0f)
     {
         _lastDebugTime = Time.time + extendDelay;
         _debugString = message;
@@ -57,7 +59,7 @@ public class KeyDisplay : ModularSettingsUser
 
         // Draw the input string on the screen
         GUI.Label(new Rect(x, y, width, height), _inputString, _style);
-        GUI.Label(new Rect(x, y-height, width, height), _debugString, _debugStyle);
+        GUI.Label(new Rect(x, y - height, width, height), _debugString, _debugStyle);
     }
 
     private NodeGraphScriptableObject GetNodeGraph()
@@ -94,9 +96,8 @@ public class KeyDisplay : ModularSettingsUser
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
                 if (Input.GetKey(KeyCode.Backspace))
-                    _inputString  = "";
+                    _inputString = "";
                 else
-                {
                     _inputString += keyCode switch
                     {
                         // Convert Shift + key to uppercase
@@ -122,7 +123,6 @@ public class KeyDisplay : ModularSettingsUser
                         KeyCode.Period => ":",
                         _ => ""
                     };
-                }
             }
             else
             {
@@ -169,38 +169,44 @@ public class KeyDisplay : ModularSettingsUser
                     {
                         var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
                         if (layout)
-                            layout.StaticLayout();
-                        var overlayedScene = SceneHandler.GetOverlayedScene();
-                        if (overlayedScene.Value != null)
-                            SceneManager.SetActiveScene(overlayedScene.Value);
-                        Log("Showing static circular layout", 2f);
-                        return;
+                            layout.StaticLayout(() =>
+                            {
+                                var overlayedScene = SceneHandler.GetOverlayedScene();
+                                if (overlayedScene != null)
+                                    SceneManager.SetActiveScene(overlayedScene.Value);
+                                Log("Showing static circular layout", 2f);
+                            });
                     }
                 }
+
                 _style.normal.textColor = Color.green;
             }
-                
+
             // Check for the ":q" sequence
             if (_inputString.Contains(":q") && IsConfirm())
             {
                 ExitApplication();
-            }else if (_inputString.Contains("loadscene") && IsConfirm())
+            }
+            else if (_inputString.Contains("loadscene") && IsConfirm())
             {
                 if (!SceneManager.GetSceneAt(0).isLoaded)
                     SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
                 else
                     Log(SceneManager.GetSceneAt(0).name + " is already loaded", 2f);
-            }else if (_inputString.Contains("stats") && IsConfirm())
+            }
+            else if (_inputString.Contains("stats") && IsConfirm())
             {
                 var nodeGraph = GetNodeGraph();
                 var message = nodeGraph ? "nodeCount is: " + nodeGraph.AllNodes.Count + " " : "there exists no nodeGraph scriptable object ";
                 message += "connection count is: " + ScriptableObjectInventory.Instance.conSo.connections.Count;
                 Debug.Log(message);
                 Log(message);
-            }else if (_inputString.Contains("clear") && IsConfirm() || _inputString.Contains("reset") && IsConfirm())
+            }
+            else if ((_inputString.Contains("clear") && IsConfirm()) || (_inputString.Contains("reset") && IsConfirm()))
             {
                 clearEvent.TriggerEvent();
-            }else if (IsConfirm())
+            }
+            else if (IsConfirm())
             {
                 var menu = FindFirstObjectByType<SimulationManager>();
                 if (menu)
@@ -220,7 +226,7 @@ public class KeyDisplay : ModularSettingsUser
                         Log("Executing physics sim (Method: Burst)");
                         menu.ApplyBurstPhysics();
                     }
-                        
+
                     else if (_inputString.StartsWith("3"))
                     {
                         Log("Executing physics sim (Method: GPU)");
@@ -234,20 +240,17 @@ public class KeyDisplay : ModularSettingsUser
                     {
                         menu.ApplyForceDirectedComponentPhysics();
                     }
+
                     _inputString = "";
                 }
                 else
                 {
                     Debug.Log("did not find SettingMenuGeneral script");
                 }
-                    
             }
 
             // Limit the input string length to avoid overflow
-            if (_inputString.Length > 50)
-            {
-                _inputString = _inputString[^50..];
-            }
+            if (_inputString.Length > 50) _inputString = _inputString[^50..];
         }
     }
 
@@ -258,10 +261,10 @@ public class KeyDisplay : ModularSettingsUser
 
     private static void ExitApplication()
     {
-        #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-        #else
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
             Application.Quit();
-        #endif
+#endif
     }
 }

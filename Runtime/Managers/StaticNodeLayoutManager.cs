@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -170,7 +171,7 @@ public class StaticNodeLayoutManager : MonoBehaviour
     /// <summary>
     /// Triggers on removePhysicsEvent
     /// </summary>
-    public void StaticLayout()
+    public void StaticLayout(Action onComplete = null)
     {
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
 
@@ -180,15 +181,27 @@ public class StaticNodeLayoutManager : MonoBehaviour
         if (!sceneAnalyzer ||
             !ScriptableObjectInventory.Instance?.applicationState ||
             ScriptableObjectInventory.Instance.applicationState.spawnedNodes)
+        {
+            onComplete?.Invoke();
             return;
+        }
 
         Debug.Log("start analyze scene");
         sceneAnalyzer.AnalyzeScene(() =>
         {
-            Debug.Log("after analyze scene (callback)");
-            ContinueStaticLayout(); // do layout after the scene is analyzed
+            Debug.Log("after analyze scene (in callback)");
+
+            if (ScriptableObjectInventory.Instance.applicationState)
+                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+
+            if (ScriptableObjectInventory.Instance.layout &&
+                ScriptableObjectInventory.Instance.graph)
+                Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
+
+            onComplete?.Invoke(); // continue chain
         });
     }
+
 
     /// <summary>
     /// Continuation function for StaticLayout required in case of the scene not yet being loaded

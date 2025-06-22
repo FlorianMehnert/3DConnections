@@ -88,7 +88,6 @@ public class SceneAnalyzer : MonoBehaviour
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
 
-        // Get scene name from build index
         var scenePath = SceneUtility.GetScenePathByBuildIndex(toAnalyzeScene.sceneIndex);
         if (string.IsNullOrEmpty(scenePath))
         {
@@ -101,17 +100,19 @@ public class SceneAnalyzer : MonoBehaviour
 
         void Analyze()
         {
-            scene = SceneManager.GetSceneByName(sceneName); // re-fetch after loading
+            scene = SceneManager.GetSceneByName(sceneName);
             Debug.Log($"{scene.name} (build index {toAnalyzeScene.sceneIndex})");
 
             LoadComplexityMetrics(analysisData.ToString());
             _cachedPrefabPaths.Clear();
             TraverseScene(scene.GetRootGameObjects());
+
             onComplete?.Invoke();
         }
 
         if (!scene.isLoaded)
         {
+            Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
             StartCoroutine(SceneHandler.LoadSceneCoroutine(sceneName, Analyze));
             return;
         }
