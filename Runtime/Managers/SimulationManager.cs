@@ -5,9 +5,7 @@ using UnityEngine;
 public class SimulationManager : MonoBehaviour
 {
     [SerializeField] private Transform rootSimulation;
-    [SerializeField] private GameObject nodePrefab;
-    
-    public static event EventHandler<ApplySimulationEventArgs> OnApplySimulation;
+
     private void OnEnable()
     {
         if (rootSimulation) return;
@@ -15,7 +13,7 @@ public class SimulationManager : MonoBehaviour
         rootSimulation = rootEdgeGameObject.transform ? rootEdgeGameObject.transform : new GameObject("ParentEdgesObject").transform;
         ScriptableObjectInventory.Instance.simulationRoot = rootSimulation;
     }
-    
+
     public void ApplyComponentPhysics()
     {
         if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
@@ -100,7 +98,7 @@ public class SimulationManager : MonoBehaviour
         forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
         forceDirectedSim.Initialize();
     }
-    
+
     public void ApplyStaticLayout()
     {
         if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
@@ -110,12 +108,12 @@ public class SimulationManager : MonoBehaviour
             springSimulation.CleanupNativeArrays();
         StaticNodeLayoutManager.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
     }
-    
+
     public void ApplyForceDirectedComponentPhysics()
     {
         var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<ForceDirectedSimulationV2>();
         if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<ForceDirectedSimulationV2>();
-        
+
         if (!layout) return;
         if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
         ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
