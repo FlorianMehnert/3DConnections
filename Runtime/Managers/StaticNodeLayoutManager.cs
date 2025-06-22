@@ -90,10 +90,7 @@ public class StaticNodeLayoutManager : MonoBehaviour
 
         // Initialize dictionary to track levels
         Dictionary<TreeNode, int> nodeLevels = new();
-        foreach (var node in treeNodes)
-        {
-            nodeLevels[node] = int.MaxValue;
-        }
+        foreach (var node in treeNodes) nodeLevels[node] = int.MaxValue;
 
         // Set root level
         var rootTreeNode = gameObjectToTreeNode[rootNode];
@@ -103,14 +100,12 @@ public class StaticNodeLayoutManager : MonoBehaviour
         {
             var currentLevelNodes = treeNodes.Where(n => nodeLevels[n] == currentLevel).ToList();
             var level = currentLevel;
-            foreach (var child in from node in currentLevelNodes from child in node.Children where nodeLevels[child] > level + 1 select child)
-            {
-                nodeLevels[child] = currentLevel + 1;
-            }
+            foreach (var child in from node in currentLevelNodes from child in node.Children where nodeLevels[child] > level + 1 select child) nodeLevels[child] = currentLevel + 1;
 
             // Layout current level and next level without overlap
             LayoutLevels(treeNodes, nodeLevels, currentLevel);
         }
+
         return treeNodes;
     }
 
@@ -141,6 +136,7 @@ public class StaticNodeLayoutManager : MonoBehaviour
             node.GameObject.transform.position = newPosition;
             xOffset += bounds.size.x + padding;
         }
+
         CenterNodes(currentLevelNodes);
         CenterNodes(nextLevelNodes);
     }
@@ -170,29 +166,42 @@ public class StaticNodeLayoutManager : MonoBehaviour
             centerOffset += bounds.size.x + padding;
         }
     }
-    
+
+    /// <summary>
+    /// Triggers on removePhysicsEvent
+    /// </summary>
     public void StaticLayout()
     {
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
-        
-        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.removePhysicsEvent)
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-        
-        if (!sceneAnalyzer || 
-            !ScriptableObjectInventory.Instance || 
-            !ScriptableObjectInventory.Instance.applicationState || 
-            ScriptableObjectInventory.Instance.applicationState.spawnedNodes) 
-            return;
-        
-        sceneAnalyzer.AnalyzeScene();
 
-        if (!ScriptableObjectInventory.Instance) return;
-        if (ScriptableObjectInventory.Instance.applicationState)
-            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                
-        if (ScriptableObjectInventory.Instance.layout && 
-            ScriptableObjectInventory.Instance.graph)
-            StaticNodeLayoutManager.Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
+        if (ScriptableObjectInventory.Instance?.removePhysicsEvent)
+            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+
+        if (!sceneAnalyzer ||
+            !ScriptableObjectInventory.Instance?.applicationState ||
+            ScriptableObjectInventory.Instance.applicationState.spawnedNodes)
+            return;
+
+        Debug.Log("start analyze scene");
+        sceneAnalyzer.AnalyzeScene(() =>
+        {
+            Debug.Log("after analyze scene (callback)");
+            ContinueStaticLayout(); // do layout after the scene is analyzed
+        });
     }
 
+    /// <summary>
+    /// Continuation function for StaticLayout required in case of the scene not yet being loaded
+    /// </summary>
+    private void ContinueStaticLayout()
+    {
+        if (!ScriptableObjectInventory.Instance) return;
+
+        if (ScriptableObjectInventory.Instance.applicationState)
+            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+
+        if (ScriptableObjectInventory.Instance.layout &&
+            ScriptableObjectInventory.Instance.graph)
+            Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
+    }
 }
