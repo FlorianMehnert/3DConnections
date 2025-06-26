@@ -15,5 +15,5 @@ MonoBehaviour:
   stiffness: 0.000016982436
   damping: 2
   colliderRadius: 1
-  simulationType: 3
+  simulationType: 4
   collisionResponseStrength: 1
