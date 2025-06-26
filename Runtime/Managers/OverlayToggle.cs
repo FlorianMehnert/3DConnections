@@ -34,6 +34,7 @@ public class OverlayToggle : MonoBehaviour
             {
                 foreach (Transform child in gameObject.transform)
                 {
+                    if (child.name is "SettingsMenu" or "ModularMenu" or "GUIManager") continue;
                     child.gameObject.SetActive(value);
                 }
             }

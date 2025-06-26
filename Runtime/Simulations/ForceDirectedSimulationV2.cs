@@ -121,8 +121,6 @@ public class ForceDirectedSimulationV2 : MonoBehaviour
             ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
         if (ScriptableObjectInventory.Instance.clearEvent)
             ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
-            
-        DisposeNativeArrays();
     }
     
     private void HandleEvent()

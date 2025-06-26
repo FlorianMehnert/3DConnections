@@ -154,9 +154,14 @@ public class ModularSettingsManager : MonoBehaviour, IMenu
             return;
         }
         
+        // TODO: remove since this is deprecated
         _settingsWindow.RemoveFromClassList("hidden");
         _settingsWindow.style.display = DisplayStyle.Flex;
         _isMenuVisible = true;
+        
+        var menuGameObject = GetComponent<UIDocument>();
+        if (menuGameObject) menuGameObject.enabled = true;
+        
         ScriptableObjectInventory.Instance.menuState.modularMenuOpen = true;
     }
     
@@ -168,9 +173,13 @@ public class ModularSettingsManager : MonoBehaviour, IMenu
             return;
         }
         
+        // TODO: remove since this is deprecated
         _settingsWindow.AddToClassList("hidden");
         _settingsWindow.style.display = DisplayStyle.None;
         _isMenuVisible = false;
+        
+        var menuGameObject = GetComponent<UIDocument>();
+        if (menuGameObject) menuGameObject.enabled = false;
         ScriptableObjectInventory.Instance.menuState.modularMenuOpen = false;
         
     }

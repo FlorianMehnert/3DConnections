@@ -21,7 +21,8 @@ public class Entrypoint3DConnections : MonoBehaviour
     }
 
     /// <summary>
-    /// Enable/Disable root objects of all gameObjects in the scene except this one
+    /// Enable/Disable root objects of all gameObjects in the scene except this one.
+    /// Makes an exception for ui menus since they are handled using the GUIManger
     /// </summary>
     /// <param name="value">true for enable/false for disabling all gameObjects</param>
     private void ToggleRootObjectsInSceneWhileOverlay(bool value = false)
@@ -47,6 +48,7 @@ public class Entrypoint3DConnections : MonoBehaviour
             sceneReference.scene = sceneToLoad;
             overlay.overlayScene = sceneReference;
         }
+
         _sceneName = overlay.overlayScene.Name;
         if (SceneManager.GetSceneByName(_sceneName).isLoaded)
         {

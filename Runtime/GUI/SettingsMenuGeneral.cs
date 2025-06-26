@@ -44,8 +44,10 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             SceneManager.LoadSceneAsync(0, LoadSceneMode.Additive);
 
         if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.graph) ScriptableObjectInventory.Instance.graph.Initialize();
+    }
 
-        // Ensure the UIDocument is available
+    private void OnEnable()
+    {
         if (!uiDocument)
         {
             uiDocument = GetComponent<UIDocument>();
@@ -385,14 +387,29 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
     public void OnMenuOpen()
     {
         if (_panel == null) return;
-        _panel.RemoveFromClassList("hidden");
+        
+        // TODO: remove since this is deprecated
+        //_panel.RemoveFromClassList("hidden");
+        uiDocument.rootVisualElement.style.display = DisplayStyle.Flex;
+        // var menuGameObject = GetComponent<UIDocument>();
+        // if (menuGameObject) menuGameObject.enabled = true;
         ScriptableObjectInventory.Instance.menuState.menuOpen = true;
     }
 
     public void OnMenuClose()
     {
         if (_panel == null) return;
-        _panel.AddToClassList("hidden");
+        
+        // TODO: remove since this is deprecated
+        // _panel.AddToClassList("hidden"); 
+        uiDocument.rootVisualElement.style.display = DisplayStyle.None;
+        // var menuGameObject = GetComponent<UIDocument>();
+        // if (menuGameObject) menuGameObject.enabled = false;
         ScriptableObjectInventory.Instance.menuState.menuOpen = false;
+    }
+
+    public void DebugSelf()
+    {
+        UnityEngine.Debug.Log(this);
     }
 }
