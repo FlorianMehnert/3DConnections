@@ -11,6 +11,7 @@ public class ColoredObject : MonoBehaviour
 
     private bool _isHighlighting;
     private float _highlightDuration = 1.0f;
+    private bool _highlightForever = false;
     private float _timer;
     private UnityAction _actionAfterHighlight;
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -52,8 +53,17 @@ public class ColoredObject : MonoBehaviour
 
         if (!_isHighlighting) return;
         _timer += Time.deltaTime;
+        if (_highlightForever) return;
         if (!(_timer >= _highlightDuration)) return;
         _isHighlighting = false;
+        _actionAfterHighlight?.Invoke();
+        ResetColor();
+    }
+
+    public void ManualClearHighlight()
+    {
+        _isHighlighting = false;
+        _highlightForever = false;
         _actionAfterHighlight?.Invoke();
         ResetColor();
     }
@@ -70,7 +80,7 @@ public class ColoredObject : MonoBehaviour
         {
             var highlight = gameObject.GetComponent<ColoredObject>();
             if (!highlight) return;
-            highlight.Highlight(Color.red, 1f, DeleteNode);
+            highlight.Highlight(Color.red, 1f, actionAfterHighlight:DeleteNode);
         }
     }
 
@@ -79,7 +89,7 @@ public class ColoredObject : MonoBehaviour
         foreach (var nodeRenderer in _nodeConnections.inConnections.Select(node => node.GetComponent<Renderer>()).Where(nodeRendererIncoming => nodeRendererIncoming != null))
         {
             var coloredObject = nodeRenderer.gameObject.GetComponent<ColoredObject>();
-            coloredObject.Highlight(Color.red, .5f, ResetColor);
+            coloredObject.Highlight(Color.red, .5f, actionAfterHighlight:ResetColor);
         }
     }
 
@@ -127,7 +137,7 @@ public class ColoredObject : MonoBehaviour
     /// <summary>
     /// Highlights the LineRenderer by changing its color temporarily.
     /// </summary>
-    public void Highlight(Color highlightColor, float duration, UnityAction actionAfterHighlight = null, Color emissionColor = default)
+    public void Highlight(Color highlightColor, float duration, bool highlightForever = false, UnityAction actionAfterHighlight = null, Color emissionColor = default)
     {
         if (!_objectRenderer || !_objectRenderer.material) return;
         _objectRenderer.material.color = highlightColor;
@@ -135,6 +145,8 @@ public class ColoredObject : MonoBehaviour
         _timer = 0f;
         _isHighlighting = true;
         _objectRenderer.material.EnableKeyword("_EMISSION");
+        if (highlightForever)
+            _highlightForever = true;
         if (emissionColor == default)
         {
             emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;

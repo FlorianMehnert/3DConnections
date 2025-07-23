@@ -10,6 +10,10 @@ static class NodeOverlaySearchProvider
 {
     const string providerId = "nodeoverlay";
     const string filterId = "node:";
+    const string highlightPrefix = "highlight:";
+    
+    // Keep track of highlighted objects for cleanup
+    private static List<GameObject> highlightedObjects = new List<GameObject>();
 
     [SearchItemProvider]
     internal static SearchProvider CreateProvider()
@@ -26,8 +30,21 @@ static class NodeOverlaySearchProvider
                 if (parent == null)
                     return null;
 
+                // Check if this is a highlight query
+                bool shouldHighlight = context.searchQuery.StartsWith(highlightPrefix);
+                string actualQuery = shouldHighlight ? 
+                    context.searchQuery.Substring(highlightPrefix.Length).Trim() : 
+                    context.searchQuery;
+
+                // Clear previous highlights if this is a new search
+                if (shouldHighlight)
+                {
+                    ClearHighlights();
+                }
+
                 // Parse query tokens like "name:Foo", "type:Trigger", etc.
-                var tokens = ParseQuery(context.searchQuery);
+                var tokens = ParseQuery(actualQuery);
+                var matchingObjects = new List<GameObject>();
 
                 foreach (Transform child in parent.transform)
                 {
@@ -43,6 +60,9 @@ static class NodeOverlaySearchProvider
                     // Match query tokens
                     if (!MatchesTokens(tokens, nodeName, connType, inNames + "," + outNames))
                         continue;
+
+                    // Add to matching objects for highlighting
+                    matchingObjects.Add(go);
 
                     string label = go.name;
                     string description = $"→ [{outNames}]\n← [{inNames}]";
@@ -61,6 +81,12 @@ static class NodeOverlaySearchProvider
                     items.Add(item);
                 }
 
+                // Highlight all matching objects if highlight prefix was used
+                if (shouldHighlight)
+                {
+                    HighlightObjects(matchingObjects);
+                }
+
                 return null;
             },
 
@@ -68,15 +94,106 @@ static class NodeOverlaySearchProvider
             fetchDescription = (item, context) => item.description,
             fetchThumbnail = (item, context) => item.thumbnail,
             toObject = (item, type) => item.data as GameObject,
+            
             trackSelection = (item, context) =>
             {
+                if (item.data is not GameObject go) return;
+                EditorGUIUtility.PingObject(go);
+                Selection.activeGameObject = go;
+            },
+
+            // Add context actions for highlighting
+            fetchPropositions = (context, options) =>
+            {
+                if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(highlightPrefix))
+                    return null;
+
+                return new SearchProposition[]
+                {
+                    new SearchProposition(
+                        category: "Actions",
+                        label: "Highlight Results",
+                        replacement: highlightPrefix + context.searchQuery,
+                        help: "Highlight all matching nodes in the scene",
+                        priority: 100,
+                        icon: EditorGUIUtility.FindTexture("d_winbtn_mac_max")
+                    ),
+                    new SearchProposition(
+                        category: "Actions", 
+                        label: "Clear Highlights",
+                        replacement: "clear:highlights",
+                        help: "Clear all highlighted nodes",
+                        priority: 99,
+                        icon: EditorGUIUtility.FindTexture("d_winbtn_mac_close")
+                    )
+                };
+            },
+
+            // Handle special commands
+            startDrag = (item, context) =>
+            {
+                // Handle clear highlights command
+                if (context.searchQuery == "clear:highlights")
+                {
+                    ClearHighlights();
+                    return;
+                }
+
+                // Handle individual item highlighting on drag start
                 if (item.data is GameObject go)
                 {
-                    EditorGUIUtility.PingObject(go);
-                    Selection.activeGameObject = go;
+                    HighlightSingleObject(go);
                 }
             }
         };
+    }
+
+    // Highlight all matching objects
+    private static void HighlightObjects(List<GameObject> objects)
+    {
+        ClearHighlights(); // Clear previous highlights first
+        
+        foreach (var go in objects)
+        {
+            var coloredObject = go.GetComponent<ColoredObject>();
+            if (coloredObject != null)
+            {
+                coloredObject.Highlight(Color.red, highlightForever:true, duration:1);
+                highlightedObjects.Add(go);
+            }
+        }
+        
+        Debug.Log($"Highlighted {objects.Count} matching nodes");
+    }
+
+    // Highlight a single object (for context actions)
+    private static void HighlightSingleObject(GameObject go)
+    {
+        var coloredObject = go.GetComponent<ColoredObject>();
+        if (coloredObject != null)
+        {
+            coloredObject.Highlight(Color.yellow, -1, highlightForever:true);
+            if (!highlightedObjects.Contains(go))
+                highlightedObjects.Add(go);
+        }
+    }
+
+    // Clear all highlights
+    private static void ClearHighlights()
+    {
+        foreach (var go in highlightedObjects)
+        {
+            if (go != null)
+            {
+                var coloredObject = go.GetComponent<ColoredObject>();
+                if (coloredObject != null)
+                {
+                    coloredObject.ManualClearHighlight(); // Assuming this method exists
+                }
+            }
+        }
+        highlightedObjects.Clear();
+        Debug.Log("Cleared all highlights");
     }
 
     // Utility: Parse query like "name:foo type:bar end:baz" into key-value pairs
