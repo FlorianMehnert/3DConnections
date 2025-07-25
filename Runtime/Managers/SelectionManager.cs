@@ -12,8 +12,7 @@ using UnityEngine.UI;
 
 public class CubeSelector : ModularSettingsUser
 {
-    [Header("Layer settings")] [SerializeField]
-    [RegisterModularStringSetting("Target Layer", "The layer against which the selection will try to select objects against", "Selection", "OverlayLayer")]
+    [Header("Layer settings")] [SerializeField] [RegisterModularStringSetting("Target Layer", "The layer against which the selection will try to select objects against", "Selection", "OverlayLayer")]
     private string targetLayerName = "OverlayLayer";
 
     [SerializeField] private Canvas parentCanvas;
@@ -33,8 +32,8 @@ public class CubeSelector : ModularSettingsUser
     private GameObject _toBeDeselectedCube;
     private GameObject _currentContextMenu;
     private bool _isActive;
-    
-    private readonly RaycastHit2D[] _raycastBuffer = new RaycastHit2D[16];  
+
+    private readonly RaycastHit2D[] _raycastBuffer = new RaycastHit2D[16];
 
     [RegisterModularFloatSetting("Double Click Treshold", "How long you can wait for the double click to be recognized", "Selection", 0.3f, 0, 1f)]
     public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
@@ -42,8 +41,8 @@ public class CubeSelector : ModularSettingsUser
     private float _timer; // Timer to track time between clicks
     private int _clickCount; // Number of clicks
 
-    [RegisterModularBoolSetting("Ping Object in the Editor", "When you select the object should it be pinged while in the editor", "Selection", false)]
-    [SerializeField] private bool pingObjectInEditor;
+    [RegisterModularBoolSetting("Ping Object in the Editor", "When you select the object should it be pinged while in the editor", "Selection", false)] [SerializeField]
+    private bool pingObjectInEditor;
 
     [Header("Selection Rectangle")] [SerializeField]
     private RectTransform selectionRectangle;
@@ -53,7 +52,7 @@ public class CubeSelector : ModularSettingsUser
     private bool _isDrawingSelectionRect;
     private int _selectedCubesCount;
     [UsedImplicitly] private Rect _selectionRect;
-    
+
     private void Start()
     {
         _displayCamera = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
@@ -66,10 +65,7 @@ public class CubeSelector : ModularSettingsUser
 
         _targetLayerMask = LayerMask.GetMask(targetLayerName);
 
-        if (_targetLayerMask == 0)
-        {
-            Debug.LogError($"Layer '{targetLayerName}' not found!");
-        }
+        if (_targetLayerMask == 0) Debug.LogError($"Layer '{targetLayerName}' not found!");
 
         // Initialize selection rectangle
         if (!selectionRectangle) return;
@@ -85,16 +81,15 @@ public class CubeSelector : ModularSettingsUser
     {
         if (!ScriptableObjectInventory.Instance.menuState || ScriptableObjectInventory.Instance.menuState.menuOpen)
             return;
-        
+
         // toggle this whole manager using S
         if (Input.GetKeyDown(KeyCode.S)) _isActive = !_isActive;
         if (!_isActive) return;
+        if (Input.GetKeyDown(KeyCode.P)) pingObjectInEditor = !pingObjectInEditor;
         if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) && !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) && !Input.GetKeyDown(KeyCode.I)) return;
         if (_currentlyDraggedCube)
-        {
             _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color =
                 ScriptableObjectInventory.Instance.nodeColors.nodeSelectedColor;
-        }
 
         var image = selectionRectangle.GetComponent<Image>();
         if (image)
@@ -119,9 +114,7 @@ public class CubeSelector : ModularSettingsUser
             foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<LocalNodeConnections>())
                          .Where(connections => connections).Select(connections => connections.outConnections)
                          .SelectMany(outConnections => outConnections))
-            {
                 SelectCube(outgoingNode, false, false);
-            }
         }
         else if (Input.GetKeyDown(KeyCode.M))
         {
@@ -132,7 +125,7 @@ public class CubeSelector : ModularSettingsUser
 #endif
         }
     }
-    
+
     private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, int hitCount, Vector2 origin)
     {
         var closest = hits[0];
@@ -145,9 +138,10 @@ public class CubeSelector : ModularSettingsUser
             minSqr = sqr;
             closest = hits[i];
         }
+
         return closest;
     }
-    
+
     private RaycastHit2D RaycastForClosest(Vector2 mousePosition)
     {
         // Cast without allocations
@@ -159,10 +153,8 @@ public class CubeSelector : ModularSettingsUser
             _targetLayerMask);
 
         if (hitCount > 0)
-        {
             // Find the closest of the hits that were written into the buffer
             return GetClosestHit(_raycastBuffer, hitCount, mousePosition);
-        }
 
         // No hit stored in buffer – do a single Raycast exactly like before
         return Physics2D.Raycast(
@@ -204,7 +196,7 @@ public class CubeSelector : ModularSettingsUser
                 {
                     case 1:
                         _timer = 0f;
-                        break;
+                    break;
                     case 2:
                         HandleDoubleClick(hit.collider.gameObject);
                         _clickCount = 0;
@@ -223,7 +215,6 @@ public class CubeSelector : ModularSettingsUser
                 SelectCube(hitObject);
 
                 foreach (var cube in _selectedCubes)
-                {
                     try
                     {
                         _selectedCubesStartPositions[cube] = cube.transform.position;
@@ -232,7 +223,6 @@ public class CubeSelector : ModularSettingsUser
                     {
                         Debug.Log("trying to access destroyed gameobject");
                     }
-                }
             }
             else
             {
@@ -269,8 +259,7 @@ public class CubeSelector : ModularSettingsUser
 
         // the mouseDownFunction is only called once to set up the drag afterward we will work with the start values and add the current position
         if (Input.GetMouseButton(0))
-        {
-            if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && hit || _isDragging)
+            if ((!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && hit) || _isDragging)
             {
                 _dragEnd = mousePosition;
                 _isDragging = true;
@@ -279,22 +268,16 @@ public class CubeSelector : ModularSettingsUser
                     if (_dragStart == null || _dragEnd == null) return;
                     var drag = _dragEnd - _dragStart;
                     foreach (var cube in _selectedCubes.Where(_ => _selectedCubesStartPositions.Count > 1))
-                    {
                         cube.transform.position = Only2D(_selectedCubesStartPositions[cube] + (Vector3)drag,
                             cube.transform.position.z);
-                    }
 
-                    foreach (var toBeUnselectedCube in _markUnselect.Keys.ToArray())
-                    {
-                        _markUnselect[toBeUnselectedCube] = false;
-                    }
+                    foreach (var toBeUnselectedCube in _markUnselect.Keys.ToArray()) _markUnselect[toBeUnselectedCube] = false;
 
                     _currentlyDraggedCube.transform.position = Only2D(
                         _selectedCubesStartPositions[_currentlyDraggedCube] + (Vector3)drag,
                         _currentlyDraggedCube.transform.position.z);
                 }
             }
-        }
 
         foreach (var toBeUnselectedCube in _markUnselect.Keys.Where(toBeUnselectedCube =>
                      _markUnselect[toBeUnselectedCube]))
@@ -304,33 +287,22 @@ public class CubeSelector : ModularSettingsUser
             if (!toBeUnselectedCube || !toBeUnselectedCube.GetComponent<Collider2D>()) continue;
             var selectable = toBeUnselectedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
             selectable.SetToOriginalColor();
-            foreach (Transform child in toBeUnselectedCube.transform)
-            {
-                Destroy(child.gameObject);
-            }
+            foreach (Transform child in toBeUnselectedCube.transform) Destroy(child.gameObject);
         }
 
-        if (_markUnselect.Count > 0)
-        {
-            CloseContextMenu();
-        }
+        if (_markUnselect.Count > 0) CloseContextMenu();
 
         // Reset dragging when mouse button is released
         if (Input.GetMouseButtonUp(0))
-        {
             if (_isDrawingSelectionRect)
             {
                 _isDrawingSelectionRect = false;
-                if (selectionRectangle)
-                {
-                    selectionRectangle.gameObject.SetActive(false);
-                }
+                if (selectionRectangle) selectionRectangle.gameObject.SetActive(false);
 
                 if (_selectedCubes.Count > 0)
                     ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = _selectedCubes.ToArray()[0];
                 ScriptableObjectInventory.Instance.graph.currentlySelectedBounds = GetSelectionBounds();
             }
-        }
 
         if (!Input.GetMouseButtonUp(0)) return;
         if (_currentlyDraggedCube)
@@ -429,12 +401,8 @@ public class CubeSelector : ModularSettingsUser
         // If shift is pressed, add to selection without deselecting others
         if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && !_isDrawingSelectionRect &&
             unselect)
-        {
             foreach (var highlightedCube in _selectedCubes)
-            {
                 _markUnselect[highlightedCube] = true;
-            }
-        }
 
         if (!_selectedCubes.Add(cube)) return;
 #if UNITY_EDITOR
@@ -467,9 +435,7 @@ public class CubeSelector : ModularSettingsUser
                  where cube.GetComponent<Collider2D>()
                  where cube.GetComponent<ColoredObject>()
                  select cube.GetComponent<Collider2D>().GetComponent<ColoredObject>())
-        {
             selectable.SetToOriginalColor();
-        }
 
         _selectedCubes.Clear();
     }
@@ -483,10 +449,7 @@ public class CubeSelector : ModularSettingsUser
         for (var i = 1; i < _selectedCubes.Count; i++)
         {
             var currentCollider2D = selectedCubesArray[i].GetComponent<Collider2D>();
-            if (currentCollider2D)
-            {
-                selectionBounds.Encapsulate(currentCollider2D.bounds);
-            }
+            if (currentCollider2D) selectionBounds.Encapsulate(currentCollider2D.bounds);
         }
 
         return selectionBounds;
@@ -495,10 +458,7 @@ public class CubeSelector : ModularSettingsUser
 
     private void CloseContextMenu()
     {
-        if (_currentContextMenu)
-        {
-            Destroy(_currentContextMenu);
-        }
+        if (_currentContextMenu) Destroy(_currentContextMenu);
     }
 
     private void SetColorToInvertedSelectionColor(GameObject cube)
