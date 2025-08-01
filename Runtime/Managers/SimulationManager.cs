@@ -25,10 +25,23 @@ public class SimulationManager : MonoBehaviour
         ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
 
         // required to avoid intersections when using components
-        foreach (var boxCollider2D in ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.GetComponent<BoxCollider2D>()))
+        foreach (var nodeCollider2D in ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.GetComponent<Collider2D>()))
         {
-            boxCollider2D.isTrigger = false;
-            boxCollider2D.size = Vector2.one * 5;
+            try
+            {
+                nodeCollider2D.isTrigger = false;
+                if (typeof(BoxCollider2D).IsAssignableFrom(nodeCollider2D.GetType()))
+                {
+                    ((BoxCollider2D) nodeCollider2D).size = Vector2.one * 5;                    
+                }else 
+                {
+                    // skip cluster nodes that have the circle collider
+                }
+            }
+            catch (MissingComponentException e)
+            {
+                Debug.LogError(e);
+            }
         }
 
         NodeConnectionManager.Instance.AddSpringsToConnections();
