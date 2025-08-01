@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Manages Level-of-Detail rendering for the node graph visualization
@@ -14,7 +16,7 @@ public class GraphLODManager : MonoBehaviour
     [SerializeField] private float nodeAggregationThreshold = 2f;
     
     [Header("Visual Settings")]
-    private GameObject _clusterNodePrefab; // Prefab for aggregated nodes
+    [SerializeField] private GameObject clusterNodePrefab; // Prefab for aggregated nodes
     private Material _aggregatedEdgeMaterial;
     private const float AggregatedEdgeWidth = 2f;
 
@@ -40,12 +42,6 @@ public class GraphLODManager : MonoBehaviour
         _clusterNodes = new Dictionary<Vector2Int, GameObject>();
         _aggregatedEdges = new Dictionary<string, GameObject>();
         
-        if (!_clusterNodePrefab)
-        {
-            // Create a default cluster node prefab if none provided
-            CreateDefaultClusterNodePrefab();
-        }
-        
         if (_isLODActive)
         {
             RestoreFullDetail();
@@ -56,15 +52,13 @@ public class GraphLODManager : MonoBehaviour
     {
         if (!_camera || !ScriptableObjectInventory.Instance.graph) return;
         
-        float currentZoom = _camera.orthographicSize;
-        float newLODLevel = CalculateLODLevel(currentZoom);
+        var currentZoom = _camera.orthographicSize;
+        var newLODLevel = CalculateLODLevel(currentZoom);
         
         // Only update if LOD level changed significantly
-        if (Mathf.Abs(newLODLevel - _currentLODLevel) > 0.1f)
-        {
-            _currentLODLevel = newLODLevel;
-            UpdateLOD();
-        }
+        if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > 0.1f)) return;
+        _currentLODLevel = newLODLevel;
+        UpdateLOD();
     }
     
     private float CalculateLODLevel(float zoom)
@@ -118,13 +112,13 @@ public class GraphLODManager : MonoBehaviour
     {
         _spatialGrid.Clear();
         
-        float cellSize = gridCellSize * (1 + lodLevel * 2); // Increase cell size with LOD
+        var cellSize = gridCellSize * (1 + lodLevel * 2); // Increase cell size with LOD
         
         foreach (var node in _originalNodes)
         {
             if (!node) continue;
             
-            Vector2Int gridPos = GetGridPosition(node.transform.position, cellSize);
+            var gridPos = GetGridPosition(node.transform.position, cellSize);
             
             if (!_spatialGrid.ContainsKey(gridPos))
             {
@@ -135,7 +129,7 @@ public class GraphLODManager : MonoBehaviour
         }
     }
     
-    private Vector2Int GetGridPosition(Vector3 worldPos, float cellSize)
+    private static Vector2Int GetGridPosition(Vector3 worldPos, float cellSize)
     {
         return new Vector2Int(
             Mathf.FloorToInt(worldPos.x / cellSize),
@@ -145,7 +139,7 @@ public class GraphLODManager : MonoBehaviour
     
     private void CreateClusterNodes(float lodLevel)
     {
-        float threshold = nodeAggregationThreshold * (1 + lodLevel);
+        var threshold = nodeAggregationThreshold * (1 + lodLevel);
         
         foreach (var cell in _spatialGrid)
         {
@@ -167,15 +161,11 @@ public class GraphLODManager : MonoBehaviour
     private GameObject CreateClusterNode(Vector2Int gridPos, List<GameObject> nodes)
     {
         // Calculate cluster center
-        Vector3 center = Vector3.zero;
-        foreach (var node in nodes)
-        {
-            center += node.transform.position;
-        }
+        Vector3 center = nodes.Aggregate(Vector3.zero, (current, node) => current + node.transform.position);
         center /= nodes.Count;
         
         // Create cluster node
-        GameObject cluster = Instantiate(_clusterNodePrefab, center, Quaternion.identity);
+        GameObject cluster = Instantiate(clusterNodePrefab, center, Quaternion.identity);
         cluster.name = $"Cluster_{gridPos.x}_{gridPos.y}";
         cluster.transform.SetParent(ScriptableObjectInventory.Instance.graph.AllNodes[0].transform.parent);
         
@@ -210,7 +200,7 @@ public class GraphLODManager : MonoBehaviour
             // Skip if both nodes are in the same cluster
             if (startGrid == endGrid) continue;
             
-            string key = GetEdgeGroupKey(startGrid, endGrid);
+            var key = GetEdgeGroupKey(startGrid, endGrid);
             
             if (!edgeGroups.ContainsKey(key))
             {
@@ -227,12 +217,9 @@ public class GraphLODManager : MonoBehaviour
         }
         
         // Create aggregated edges
-        foreach (var group in edgeGroups)
+        foreach (var group in edgeGroups.Where(group => group.Value.Count > 0))
         {
-            if (group.Value.Count > 0)
-            {
-                CreateAggregatedEdge(group.Key, group.Value);
-            }
+            CreateAggregatedEdge(group.Key, group.Value);
         }
     }
     
@@ -303,11 +290,7 @@ public class GraphLODManager : MonoBehaviour
         }
         
         // Set color based on average of connections
-        Color avgColor = Color.white;
-        foreach (var conn in connections)
-        {
-            avgColor += conn.connectionColor;
-        }
+        Color avgColor = connections.Aggregate(Color.white, (current, conn) => current + conn.connectionColor);
         avgColor /= connections.Count;
         avgColor.a = 0.7f;
         lr.startColor = avgColor;
@@ -365,38 +348,15 @@ public class GraphLODManager : MonoBehaviour
         _clusterNodes.Clear();
         
         // Remove aggregated edges
-        foreach (var edge in _aggregatedEdges.Values)
+        foreach (var edge in _aggregatedEdges.Values.Where(edge => edge))
         {
-            if (edge) Destroy(edge);
+            Destroy(edge);
         }
         _aggregatedEdges.Clear();
         
         _spatialGrid.Clear();
     }
-    
-    private void CreateDefaultClusterNodePrefab()
-    {
-        // Create a simple sphere as default cluster representation
-        _clusterNodePrefab = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        _clusterNodePrefab.name = "ClusterNodePrefab";
-        
-        // Add necessary components
-        _clusterNodePrefab.AddComponent<ArtificialGameObject>();
-        _clusterNodePrefab.AddComponent<NodeType>();
-        _clusterNodePrefab.AddComponent<LocalNodeConnections>();
-        
-        // Set visual properties
-        var coloredObject = _clusterNodePrefab.GetComponent<ColoredObject>();
-        if (coloredObject)
-        {
-            coloredObject.SetOriginalColor( new Color(0.5f, 0.7f, 1f, 0.8f));
-            coloredObject.SetToOriginalColor();
-        }
-        
-        // Make it a prefab
-        _clusterNodePrefab.SetActive(false);
-    }
-    
+
     private void OnDestroy()
     {
         if (_isLODActive)

@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 2237390801319845235}
   - component: {fileID: 4675278670998173507}
   - component: {fileID: 260993916698367870}
-  - component: {fileID: 3801693567301433424}
   m_Layer: 0
   m_Name: OverlayCamera
   m_TagString: Untagged
@@ -270,19 +269,4 @@ MonoBehaviour:
   maxZoomForMinDetail: 150
   gridCellSize: 2
   nodeAggregationThreshold: 2
---- !u!114 &3801693567301433424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2167307905950667471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d7c7b0af44091a4597638f31116fc27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minZoomForFullDetail: 5
-  maxZoomForMinDetail: 50
-  gridCellSize: 5
-  nodeAggregationThreshold: 5
+  clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
