@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
@@ -55,6 +56,9 @@ public class ForceDirectedSimulationV2 : MonoBehaviour
         }
 
         activated = true;
+    
+        // Notify LOD manager to refresh
+        ScriptableObjectInventory.Instance.updateLOD.TriggerEvent();
     }
     
     private void OnEnable()
@@ -80,7 +84,14 @@ public class ForceDirectedSimulationV2 : MonoBehaviour
         _currentlyCalculating = true;
         for (var i = 0; i < _nodes.Count; i++)
         {
-            _positions[i] = _nodes[i].transform.position;
+            try
+            {
+                _positions[i] = _nodes[i].transform.position;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                
+            }
         }
         
         // Schedule and run the force calculation job
@@ -88,7 +99,14 @@ public class ForceDirectedSimulationV2 : MonoBehaviour
         
         for (var i = 0; i < _nodes.Count; i++)
         {
-            _nodes[i].transform.position = _positions[i];
+            try
+            {
+                _nodes[i].transform.position = _positions[i];
+            }
+            catch (IndexOutOfRangeException)
+            {
+                
+            }
         }
 
         _currentlyCalculating = false;
