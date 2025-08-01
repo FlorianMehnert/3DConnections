@@ -175,8 +175,8 @@ public class GraphLODManager : MonoBehaviour
         clusterData.nodeCount = nodes.Count;
         
         // Scale based on node count
-        float scale = Mathf.Sqrt(nodes.Count) * 0.5f;
-        cluster.transform.localScale = Vector3.one * scale;
+        float scale = Mathf.Sqrt(nodes.Count);
+        cluster.transform.localScale = Vector3.one + new Vector3(1,1,0) * (scale*scale);
         
         // Add to node list so connections can find it
         ScriptableObjectInventory.Instance.graph.AllNodes.Add(cluster);
