@@ -21,6 +21,7 @@ public class CameraController : ModularSettingsUser
     private float _screenHeight;
     private float _worldWidth;
     private float _worldHeight;
+    private GraphLODManager _lodManager;
 
     [RegisterModularFloatSetting("Center padding", "When centering (g) use some padding", "Camera", 1.1f, 0f, 2f)] 
     [SerializeField] private float padding = 1.1f; // Extra space when centering on selection
@@ -40,7 +41,14 @@ public class CameraController : ModularSettingsUser
     {
         _cam = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
         AddLayerToCamera("OverlayScene");
-
+    
+        // Find or create LOD manager
+        _lodManager = FindObjectOfType<GraphLODManager>();
+        if (!_lodManager)
+        {
+            _lodManager = gameObject.AddComponent<GraphLODManager>();
+        }
+    
         // Calculate world dimensions based on current orthographic size
         CalculateWorldDimensions();
     }
