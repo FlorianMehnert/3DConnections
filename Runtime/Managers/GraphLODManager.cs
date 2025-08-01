@@ -56,7 +56,7 @@ public class GraphLODManager : MonoBehaviour
         var newLODLevel = CalculateLODLevel(currentZoom);
         
         // Only update if LOD level changed significantly
-        if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > 0.1f)) return;
+        // if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > 0.1f)) return;
         _currentLODLevel = newLODLevel;
         UpdateLOD();
     }
@@ -139,7 +139,7 @@ public class GraphLODManager : MonoBehaviour
     
     private void CreateClusterNodes(float lodLevel)
     {
-        var threshold = nodeAggregationThreshold * (1 + lodLevel);
+        var threshold = Mathf.Max(1, nodeAggregationThreshold - lodLevel * nodeAggregationThreshold * 0.5f);
         
         foreach (var cell in _spatialGrid)
         {
