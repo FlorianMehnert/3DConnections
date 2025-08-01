@@ -230,11 +230,6 @@ RectTransform:
   m_AnchoredPosition: {x: -2.6008043, y: -0.96733904}
   m_SizeDelta: {x: 1390.0001, y: 915}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &311138221 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-  m_PrefabInstance: {fileID: 315801065}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &315801065
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -294,10 +289,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 907117484}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
 --- !u!1 &487318149
 GameObject:
@@ -340,6 +332,7 @@ MonoBehaviour:
   removePhysicsEvent: {fileID: 11400000, guid: 4953f2aaa84619d24bd66070532afdd7, type: 2}
   clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
   toggleOverlayEvent: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
+  updateLOD: {fileID: 11400000, guid: a38a836db92a8e343bb6c7ba28f58e5c, type: 2}
   simulationRoot: {fileID: 1470742721}
   managerRoot: {fileID: 4630647389690195313}
   nodeRoot: {fileID: 108217078}
@@ -626,25 +619,6 @@ Camera:
   m_CorrespondingSourceObject: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
   m_PrefabInstance: {fileID: 315801065}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &907117484
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 311138221}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01a1c329d5eb420db82cf8bbf0448ff4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minZoomForFullDetail: 5
-  maxZoomForMinDetail: 50
-  gridCellSize: 10
-  nodeAggregationThreshold: 5
-  clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
-  aggregatedEdgeMaterial: {fileID: 2100000, guid: 6cd8422c3c99ef0d6ad67a9ba7b889f4, type: 2}
-  aggregatedEdgeWidth: 2
 --- !u!1 &1365550533
 GameObject:
   m_ObjectHideFlags: 0

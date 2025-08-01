@@ -28,6 +28,8 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
         public ClearEvent clearEvent;
         
         public ToggleOverlayEvent toggleOverlayEvent;
+        
+        public UpdateLOD updateLOD;
 
         private static bool _isShuttingDown;
 

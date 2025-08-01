@@ -140,6 +140,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
                         ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             },
             () =>
             {
@@ -153,6 +155,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     ScriptableObjectInventory.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
                     NodeConnectionManager.Instance?.AddSpringsToConnections();
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             },
             () =>
             {
@@ -179,6 +183,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     else
                         Debug.Log("missing springSimulation Script on the Manager");
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             },
             () =>
             {
@@ -203,6 +209,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
                     gpuSpringSim.Initialize();
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             },
             () =>
             {
@@ -221,6 +229,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     // start simulation
                     forceDirected.Initialize();
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             },
             () =>
             {
@@ -244,6 +254,8 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
                     forceDirectedSim.Initialize();
                 });
+                var lod = FindFirstObjectByType<GraphLODManager>();
+                lod.Initialize();
             }
         };
     }

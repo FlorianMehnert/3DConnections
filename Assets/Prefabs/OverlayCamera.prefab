@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 1241412518822067057}
   - component: {fileID: 2237390801319845235}
   - component: {fileID: 4675278670998173507}
+  - component: {fileID: 260993916698367870}
+  - component: {fileID: 3801693567301433424}
   m_Layer: 0
   m_Name: OverlayCamera
   m_TagString: Untagged
@@ -101,12 +103,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zoomSpeed: 10
   padding: 1.1
-  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
   parentObject: {fileID: 0}
   width: 2000
   filePath: Assets/wide_screenshot.png
-  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
-  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
 --- !u!114 &1241412518822067057
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -249,10 +248,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16963c766c514f87b8be9ff1e0420b52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enableTextScaling: 0
   detectionRadius: 5
   minFontSize: 12
   maxFontSize: 24
   smoothTime: 0.1
-  nodeGraph: {fileID: 11400000, guid: 65cb83372087c6600a62ed4f9d45d3d9, type: 2}
-  mainCamera: {fileID: 0}
-  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
+  mainCamera: {fileID: 6810327768359966640}
+--- !u!114 &260993916698367870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2167307905950667471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7c7b0af44091a4597638f31116fc27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minZoomForFullDetail: 50
+  maxZoomForMinDetail: 150
+  gridCellSize: 2
+  nodeAggregationThreshold: 2
+--- !u!114 &3801693567301433424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2167307905950667471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7c7b0af44091a4597638f31116fc27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minZoomForFullDetail: 5
+  maxZoomForMinDetail: 50
+  gridCellSize: 5
+  nodeAggregationThreshold: 5
