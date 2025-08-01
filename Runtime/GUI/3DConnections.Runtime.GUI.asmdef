@@ -2,7 +2,6 @@
     "name": "3DConnections.Runtime.GUI",
     "rootNamespace": "3DConnections.Runtime.GUI",
     "references": [
-        "GUID:40b69349343e4adbbbce2ca25f9f4998",
         "GUID:407d9f5d313b4d20b83d06c1f10def66",
         "GUID:5f4232b03ae34ec982cf4da3976cf8ce",
         "GUID:f373597d47624f6d907847f70cac6b71",
