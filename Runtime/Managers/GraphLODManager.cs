@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -9,16 +8,16 @@ using UnityEngine;
 public class GraphLODManager : MonoBehaviour
 {
     [Header("LOD Settings")]
-    [SerializeField] private float minZoomForFullDetail = 5f;
-    [SerializeField] private float maxZoomForMinDetail = 50f;
-    [SerializeField] private int gridCellSize = 10;
-    [SerializeField] private float nodeAggregationThreshold = 5f;
+    [SerializeField] private float minZoomForFullDetail = 50f;
+    [SerializeField] private float maxZoomForMinDetail = 150f;
+    [SerializeField] private int gridCellSize = 2;
+    [SerializeField] private float nodeAggregationThreshold = 2f;
     
     [Header("Visual Settings")]
-    [SerializeField] private GameObject clusterNodePrefab; // Prefab for aggregated nodes
-    [SerializeField] private Material aggregatedEdgeMaterial;
-    [SerializeField] private float aggregatedEdgeWidth = 2f;
-    
+    private GameObject _clusterNodePrefab; // Prefab for aggregated nodes
+    private Material _aggregatedEdgeMaterial;
+    private const float AggregatedEdgeWidth = 2f;
+
     private Camera _camera;
     private Dictionary<Vector2Int, List<GameObject>> _spatialGrid;
     private Dictionary<Vector2Int, GameObject> _clusterNodes;
@@ -31,15 +30,25 @@ public class GraphLODManager : MonoBehaviour
     
     private void Start()
     {
+        Initialize();
+    }
+
+    public void Initialize()
+    {
         _camera = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
         _spatialGrid = new Dictionary<Vector2Int, List<GameObject>>();
         _clusterNodes = new Dictionary<Vector2Int, GameObject>();
         _aggregatedEdges = new Dictionary<string, GameObject>();
         
-        if (!clusterNodePrefab)
+        if (!_clusterNodePrefab)
         {
             // Create a default cluster node prefab if none provided
             CreateDefaultClusterNodePrefab();
+        }
+        
+        if (_isLODActive)
+        {
+            RestoreFullDetail();
         }
     }
     
@@ -102,7 +111,7 @@ public class GraphLODManager : MonoBehaviour
         CreateClusterNodes(lodLevel);
         
         // Apply edge cumulation
-        ApplyEdgeCumulation(lodLevel);
+        ApplyEdgeCumulation();
     }
     
     private void BuildSpatialGrid(float lodLevel)
@@ -166,7 +175,7 @@ public class GraphLODManager : MonoBehaviour
         center /= nodes.Count;
         
         // Create cluster node
-        GameObject cluster = Instantiate(clusterNodePrefab, center, Quaternion.identity);
+        GameObject cluster = Instantiate(_clusterNodePrefab, center, Quaternion.identity);
         cluster.name = $"Cluster_{gridPos.x}_{gridPos.y}";
         cluster.transform.SetParent(ScriptableObjectInventory.Instance.graph.AllNodes[0].transform.parent);
         
@@ -185,7 +194,7 @@ public class GraphLODManager : MonoBehaviour
         return cluster;
     }
     
-    private void ApplyEdgeCumulation(float lodLevel)
+    private void ApplyEdgeCumulation()
     {
         // Group edges by their connected clusters
         Dictionary<string, List<NodeConnection>> edgeGroups = new Dictionary<string, List<NodeConnection>>();
@@ -262,12 +271,12 @@ public class GraphLODManager : MonoBehaviour
         Vector2Int startGrid = new Vector2Int(int.Parse(start[0]), int.Parse(start[1]));
         Vector2Int endGrid = new Vector2Int(int.Parse(end[0]), int.Parse(end[1]));
         
-        GameObject startNode = _clusterNodes.ContainsKey(startGrid) 
-            ? _clusterNodes[startGrid] 
+        GameObject startNode = _clusterNodes.TryGetValue(startGrid, out var node) 
+            ? node 
             : connections[0].startNode;
             
-        GameObject endNode = _clusterNodes.ContainsKey(endGrid) 
-            ? _clusterNodes[endGrid] 
+        GameObject endNode = _clusterNodes.TryGetValue(endGrid, out var clusterNode) 
+            ? clusterNode 
             : connections[0].endNode;
         
         if (!startNode || !endNode) return;
@@ -284,13 +293,13 @@ public class GraphLODManager : MonoBehaviour
         lr.SetPosition(1, endNode.transform.position);
         
         // Set visual properties based on aggregation
-        float width = Mathf.Sqrt(connections.Count) * aggregatedEdgeWidth * 0.5f;
+        float width = Mathf.Sqrt(connections.Count) * AggregatedEdgeWidth * 0.5f;
         lr.startWidth = width;
         lr.endWidth = width;
         
-        if (aggregatedEdgeMaterial)
+        if (_aggregatedEdgeMaterial)
         {
-            lr.material = aggregatedEdgeMaterial;
+            lr.material = _aggregatedEdgeMaterial;
         }
         
         // Set color based on average of connections
@@ -368,23 +377,24 @@ public class GraphLODManager : MonoBehaviour
     private void CreateDefaultClusterNodePrefab()
     {
         // Create a simple sphere as default cluster representation
-        clusterNodePrefab = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        clusterNodePrefab.name = "ClusterNodePrefab";
+        _clusterNodePrefab = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        _clusterNodePrefab.name = "ClusterNodePrefab";
         
         // Add necessary components
-        clusterNodePrefab.AddComponent<ArtificialGameObject>();
-        clusterNodePrefab.AddComponent<NodeType>();
-        clusterNodePrefab.AddComponent<LocalNodeConnections>();
+        _clusterNodePrefab.AddComponent<ArtificialGameObject>();
+        _clusterNodePrefab.AddComponent<NodeType>();
+        _clusterNodePrefab.AddComponent<LocalNodeConnections>();
         
         // Set visual properties
-        var renderer = clusterNodePrefab.GetComponent<MeshRenderer>();
-        if (renderer)
+        var coloredObject = _clusterNodePrefab.GetComponent<ColoredObject>();
+        if (coloredObject)
         {
-            renderer.material.color = new Color(0.5f, 0.7f, 1f, 0.8f);
+            coloredObject.SetOriginalColor( new Color(0.5f, 0.7f, 1f, 0.8f));
+            coloredObject.SetToOriginalColor();
         }
         
         // Make it a prefab
-        clusterNodePrefab.SetActive(false);
+        _clusterNodePrefab.SetActive(false);
     }
     
     private void OnDestroy()
