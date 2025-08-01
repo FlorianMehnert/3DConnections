@@ -267,6 +267,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minZoomForFullDetail: 50
   maxZoomForMinDetail: 150
-  gridCellSize: 2
-  nodeAggregationThreshold: 2
+  gridCellSize: 10
+  nodeAggregationThreshold: 5
   clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}

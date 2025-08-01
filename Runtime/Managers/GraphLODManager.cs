@@ -143,17 +143,15 @@ public class GraphLODManager : MonoBehaviour
         
         foreach (var cell in _spatialGrid)
         {
-            if (cell.Value.Count >= threshold)
-            {
-                // Create cluster node for this cell
-                GameObject clusterNode = CreateClusterNode(cell.Key, cell.Value);
-                _clusterNodes[cell.Key] = clusterNode;
+            if (!(cell.Value.Count >= threshold)) continue;
+            // Create cluster node for this cell
+            var clusterNode = CreateClusterNode(cell.Key, cell.Value);
+            _clusterNodes[cell.Key] = clusterNode;
                 
-                // Hide individual nodes
-                foreach (var node in cell.Value)
-                {
-                    node.SetActive(false);
-                }
+            // Hide individual nodes
+            foreach (var node in cell.Value)
+            {
+                node.SetActive(false);
             }
         }
     }
@@ -163,26 +161,50 @@ public class GraphLODManager : MonoBehaviour
         // Calculate cluster center
         Vector3 center = nodes.Aggregate(Vector3.zero, (current, node) => current + node.transform.position);
         center /= nodes.Count;
-        
+
         // Create cluster node
         GameObject cluster = Instantiate(clusterNodePrefab, center, Quaternion.identity);
         cluster.name = $"Cluster_{gridPos.x}_{gridPos.y}";
         cluster.transform.SetParent(ScriptableObjectInventory.Instance.graph.AllNodes[0].transform.parent);
-        
+
         // Store cluster data
         var clusterData = cluster.AddComponent<ClusterNodeData>();
         clusterData.containedNodes = new List<GameObject>(nodes);
         clusterData.nodeCount = nodes.Count;
-        
+
         // Scale based on node count
-        float scale = Mathf.Sqrt(nodes.Count);
-        cluster.transform.localScale = Vector3.one + new Vector3(1,1,0) * (scale*scale);
-        
-        // Add to node list so connections can find it
+        cluster.transform.localScale = Vector3.one + new Vector3(1,1,0) * nodes.Count;
+
+        // Compute and assign average color
+        var avgColor = Color.black;
+        var count = 0;
+
+        foreach (var node in nodes)
+        {
+            if (!node.TryGetComponent<Renderer>(out var rendererOfContainedNode)) continue;
+            avgColor += rendererOfContainedNode.material.color;
+            count++;
+        }
+
+        if (count > 0)
+        {
+            avgColor /= count;
+            avgColor.a = 1f;
+            if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
+            {
+                // Ensure we are not modifying a shared material
+                clusterRenderer.material = new Material(clusterRenderer.material)
+                {
+                    color = avgColor
+                };
+            }
+        }
+
         ScriptableObjectInventory.Instance.graph.AllNodes.Add(cluster);
-        
+
         return cluster;
     }
+
     
     private void ApplyEdgeCumulation()
     {
@@ -290,7 +312,8 @@ public class GraphLODManager : MonoBehaviour
         }
         
         // Set color based on average of connections
-        Color avgColor = connections.Aggregate(Color.white, (current, conn) => current + conn.connectionColor);
+        Color avgColor = connections.Aggregate(Color.black, (current, conn) => current + conn.connectionColor);
+
         avgColor /= connections.Count;
         avgColor.a = 0.7f;
         lr.startColor = avgColor;
