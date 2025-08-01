@@ -56,9 +56,6 @@ public class ForceDirectedSimulationV2 : MonoBehaviour
         }
 
         activated = true;
-    
-        // Notify LOD manager to refresh
-        ScriptableObjectInventory.Instance.updateLOD.TriggerEvent();
     }
     
     private void OnEnable()
