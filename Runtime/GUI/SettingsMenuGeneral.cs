@@ -128,7 +128,6 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
     private void PopulateActions()
     {
         var springSimulation = FindFirstObjectByType<SpringSimulation>();
-        var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
         _actions = new System.Action[]
         {
             () =>
@@ -188,29 +187,6 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
             },
             () =>
             {
-                // gpu
-                if (!gpuSpringSim) return;
-                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
-                layout.StaticLayout(() =>
-                {
-                    if (ScriptableObjectInventory.Instance)
-                    {
-                        if (ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                        if (ScriptableObjectInventory.Instance.graph)
-                            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                    }
-
-                    if (NodeConnectionManager.Instance)
-                    {
-                        NodeConnectionManager.Instance.ConvertToNativeArray();
-                        NodeConnectionManager.Instance.AddSpringsToConnections();
-                    }
-
-                    gpuSpringSim.Initialize();
-                });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
             },
             () =>
             {

@@ -229,8 +229,7 @@ public class KeyDisplay : ModularSettingsUser
 
                     else if (_inputString.StartsWith("3"))
                     {
-                        Log("Executing physics sim (Method: GPU)");
-                        menu.ApplyGPUPhysics();
+                        Debug.Log("GPU physics is currently not supported");
                     }
                     else if (_inputString.StartsWith("4"))
                     {

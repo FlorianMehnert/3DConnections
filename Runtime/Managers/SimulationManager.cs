@@ -68,31 +68,6 @@ public class SimulationManager : MonoBehaviour
         }
     }
 
-    public void ApplyGPUPhysics()
-    {
-        Debug.Log("apply gpu physics");
-        var gpuSpringSim = FindFirstObjectByType<ComputeSpringSimulation>();
-        if (gpuSpringSim)
-        {
-            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-            NodeConnectionManager.Instance.UseNativeArray();
-            ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-            NodeConnectionManager.Instance.AddSpringsToConnections();
-            NodeConnectionManager.Instance.ResizeNativeArray();
-            NodeConnectionManager.Instance.ConvertToNativeArray(); // convert connections to a burst array
-            Debug.Log("initializing gpu physics");
-            var springSimulation = GetComponent<SpringSimulation>();
-            if (springSimulation)
-                springSimulation.Disable();
-            gpuSpringSim.Initialize();
-        }
-        else
-        {
-            Debug.Log("missing ComputeSpringSimulation Script on the Manager");
-        }
-    }
-
     public void ApplySimpleGPUPhysics()
     {
         var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
