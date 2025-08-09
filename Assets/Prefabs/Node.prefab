@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7087576258737610794}
   - component: {fileID: 2555002601821885252}
   - component: {fileID: 2338787585022304638}
+  - component: {fileID: 4986270450240496833}
   m_Layer: 6
   m_Name: Node
   m_TagString: Untagged
@@ -134,7 +135,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.5, y: 1.5}
+  m_Size: {x: 3, y: 3}
   m_EdgeRadius: 0
 --- !u!114 &7087576258737610794
 MonoBehaviour:
@@ -148,7 +149,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1159194e4c104386ba26ebc8ae950192, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  overlay: {fileID: 11400000, guid: 7f9400981af8eb96b8e388fc0521b84c, type: 2}
 --- !u!114 &2555002601821885252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,7 +161,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 872cecaae28543339865b428ad579313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeTypeName: 
+  nodeTypeName: 0
   reference: {fileID: 0}
 --- !u!114 &2338787585022304638
 MonoBehaviour:
@@ -177,3 +177,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inConnections: []
   outConnections: []
+--- !u!114 &4986270450240496833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5666332458060235577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d2b10b26f334d97bbff59eb8d68cdad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  particlePrefab: {fileID: 1025285306637258, guid: d8f0099df63275647a8bcf646df1ca00, type: 3}
