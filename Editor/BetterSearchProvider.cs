@@ -5,7 +5,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-[InitializeOnLoad]
 static class NodeOverlaySearchProvider
 {
     const string providerId = "nodeoverlay";
