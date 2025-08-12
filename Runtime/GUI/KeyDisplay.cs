@@ -229,7 +229,7 @@ public class KeyDisplay : ModularSettingsUser
 
                     else if (_inputString.StartsWith("3"))
                     {
-                        Debug.Log("GPU physics is currently not supported");
+                        menu.ApplyGRIP();
                     }
                     else if (_inputString.StartsWith("4"))
                     {
