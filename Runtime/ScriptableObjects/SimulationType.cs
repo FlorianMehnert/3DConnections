@@ -3,7 +3,8 @@ public enum SimulationType
     Static,
     Default,
     Burst,
-    GPU,
+    // ReSharper disable once InconsistentNaming
+    GRIP,
     ComponentV2,
     MinimalGPU
 }

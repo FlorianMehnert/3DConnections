@@ -139,8 +139,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
                         ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                 });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
+                GraphLODManager.Init();
             },
             () =>
             {
@@ -154,8 +153,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     ScriptableObjectInventory.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
                     NodeConnectionManager.Instance?.AddSpringsToConnections();
                 });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
+                GraphLODManager.Init();
             },
             () =>
             {
@@ -182,11 +180,26 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     else
                         Debug.Log("missing springSimulation Script on the Manager");
                 });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
+                GraphLODManager.Init();
             },
             () =>
             {
+                // GRIP (check if the simulation component is already added and add if not)
+                var sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<GRIP>();
+                if (!sim) sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
+
+                // static layout using manager if found
+                var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                layout.StaticLayout(() =>
+                {
+                    // set state to spawnedNodes
+                    if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
+                        ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+
+                    // start simulation
+                    sim.Initialize();
+                });
+                GraphLODManager.Init();
             },
             () =>
             {
@@ -205,8 +218,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     // start simulation
                     forceDirected.Initialize();
                 });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
+                GraphLODManager.Init();
             },
             () =>
             {
@@ -230,8 +242,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                     forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes.Select(node => node.transform).ToArray();
                     forceDirectedSim.Initialize();
                 });
-                var lod = FindFirstObjectByType<GraphLODManager>();
-                lod.Initialize();
+                GraphLODManager.Init();
             }
         };
     }

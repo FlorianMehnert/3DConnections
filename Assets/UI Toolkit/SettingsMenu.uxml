@@ -12,29 +12,29 @@
             </ui:Tab>
             <ui:Tab label="Sim" name="SimTab">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GPU,ComponentV2,MinimalGPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
+                    <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GRIP,ComponentV2,MinimalGPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
                         <Bindings>
-                            <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:DropdownField>
                     <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Damping" value="42" high-value="1" name="SliderDamping">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Radius" value="42" high-value="10" name="SliderRadius" low-value="2">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Response" value="42" high-value="1" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                 </ui:VisualElement>
@@ -43,27 +43,27 @@
                 <ui:VisualElement name="Container" class="menu">
                     <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="1">
                         <Bindings>
-                            <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
+                            <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:DropdownField>
                     <ui:DropdownField label="Layout" choices="Grid,Tree,Radial" index="2" name="DropdownLayout">
                         <Bindings>
-                            <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:DropdownField>
                     <ui:SliderInt label="Colors" value="42" high-value="4" name="ColorSlider">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:SliderInt>
                     <ui:Toggle label="Use Preset Colors" toggle-on-label-click="true" name="AlternativeColorsToggle">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Toggle>
                     <ui:UnsignedIntegerField label="Max width hierarchy" value="9" name="MaxWidtHierarchy">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="maxWidthHierarchy" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="maxWidthHierarchy" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:UnsignedIntegerField>
                 </ui:VisualElement>
@@ -72,37 +72,37 @@
                 <ui:VisualElement name="Container" class="menu">
                     <ui:Slider label="MinDistance" value="42" high-value="10">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="minDistance" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="minDistance" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Start Radius" value="42" high-value="100">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="startRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="startRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Radius Inc" value="42" high-value="10" low-value="1">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="radiusInc" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="radiusInc" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Root Spacing" value="42" high-value="100">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="rootSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="rootSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Level Spacing" value="42" high-value="100">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="levelSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="levelSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Node Spacing" value="42" high-value="10">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="nodeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="nodeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                     <ui:Slider label="Subtree Spacing" value="42" high-value="10">
                         <Bindings>
-                            <ui:DataBinding property="value" data-source-path="subtreeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/Configurations/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            <ui:DataBinding property="value" data-source-path="subtreeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Slider>
                 </ui:VisualElement>
