@@ -1,6 +1,6 @@
 {
   "name": "com.florian-mehnert.3d-connections",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "displayName": "3DConnections",
   "description": "This package will add an overlay to visualize your unity scenes",
   "unity": "2023.2",
