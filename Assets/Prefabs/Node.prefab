@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 7087576258737610794}
   - component: {fileID: 2555002601821885252}
   - component: {fileID: 2338787585022304638}
-  - component: {fileID: 4986270450240496833}
   m_Layer: 6
   m_Name: Node
   m_TagString: Untagged
@@ -177,16 +176,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inConnections: []
   outConnections: []
---- !u!114 &4986270450240496833
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5666332458060235577}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d2b10b26f334d97bbff59eb8d68cdad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  particlePrefab: {fileID: 1025285306637258, guid: d8f0099df63275647a8bcf646df1ca00, type: 3}
