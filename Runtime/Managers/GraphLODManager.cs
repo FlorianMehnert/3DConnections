@@ -387,6 +387,12 @@ public class GraphLODManager : MonoBehaviour
             RestoreFullDetail();
         }
     }
+
+    public static void Init()
+    {
+        var lod = FindFirstObjectByType<GraphLODManager>();
+        lod.Initialize();
+    } 
 }
 
 // Helper component to store cluster data
