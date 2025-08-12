@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 public abstract class SimulationBase : MonoBehaviour
 {
@@ -8,11 +9,11 @@ public abstract class SimulationBase : MonoBehaviour
     [Header("Temperature Settings")]
     public float coolingFactor = 0.95f;
     public float minTemperature = 0.05f;
-    public float startTemperature = 1.0f;
+    public float startTemperature = 1f;
 
     protected float CurrentTemperature { get; set; }
     private float _timer;
-    protected bool Activated = true;
+    [FormerlySerializedAs("Activated")] public bool activated = true;
     private bool _runningStep;
 
     public virtual void OnEnable()
@@ -31,7 +32,7 @@ public abstract class SimulationBase : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (!Activated || _runningStep) return;
+        if (!activated || _runningStep) return;
 
         _timer += Time.deltaTime;
         if (!(_timer >= updateInterval)) return;

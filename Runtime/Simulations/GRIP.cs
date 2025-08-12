@@ -29,7 +29,7 @@ public class GRIP : SimulationBase
     private List<GameObject> _nodes;
     private List<GRIPLevel> _levels;
     private int _currentLevel;
-    private float _currentTemperature = 1.0f;
+    private float _currentTemperature = 0.01f;
     private float _timer;
     private bool _currentlyCalculating;
     
@@ -56,7 +56,6 @@ public class GRIP : SimulationBase
     {
         _currentlyCalculating = false;
         _nodes = ScriptableObjectInventory.Instance.graph.AllNodes;
-        _currentTemperature = 1.0f;
         
         // Build multi-level hierarchy
         BuildHierarchy();
@@ -67,7 +66,7 @@ public class GRIP : SimulationBase
         // Initial placement for coarsest level
         InitializeCoarsestLevel();
         
-        Activated = true;
+        activated = true;
     }
     
     private void BuildHierarchy()
@@ -264,7 +263,7 @@ public class GRIP : SimulationBase
 
     protected override void AdditionalEnableSteps()
     {
-        Activated = true;
+        activated = true;
         if (_nodes == null || _nodes.Count == 0)
             Initialize();
 
@@ -290,11 +289,12 @@ public class GRIP : SimulationBase
                 {
                     RefineToNextLevel();
                     _currentLevel--;
-                    CurrentTemperature = startTemperature;
+                    CurrentTemperature = startTemperature; // reset for new level
                 }
                 else
                 {
                     UpdateNodePositions();
+                    activated = false;
                 }
             }
         }
@@ -302,11 +302,12 @@ public class GRIP : SimulationBase
         _currentlyCalculating = false;
     }
 
+
     private bool ShouldRefine()
     {
-        // Refine when temperature is low enough or after certain iterations
-        return _currentTemperature < 0.1f;
+        return CurrentTemperature < 0.1f;
     }
+
     
     private void RefineToNextLevel()
     {
@@ -387,12 +388,12 @@ public class GRIP : SimulationBase
             Velocities = level.Velocities,
             ConnectionStartIndices = level.ConnectionStartIndices,
             ConnectionEndIndices = level.ConnectionEndIndices,
-            RepulsionStrength = repulsionStrength * _currentTemperature,
+            RepulsionStrength = repulsionStrength * CurrentTemperature,
             AttractionStrength = attractionStrength,
             DampingFactor = dampingFactor,
             MinDistanceToRepel = minDistanceToRepel,
             DeltaTime = updateInterval,
-            Temperature = _currentTemperature,
+            Temperature = CurrentTemperature,
             FixedZPosition = fixedZPosition
         };
 
@@ -410,7 +411,7 @@ public class GRIP : SimulationBase
     
     private void HandleEvent()
     {
-        Activated = false;
+        activated = false;
     }
     
     private void OnDestroy()
