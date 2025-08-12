@@ -107,4 +107,16 @@ public class SimulationManager : MonoBehaviour
         ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
         layout.Initialize();
     }
+
+    // ReSharper disable once InconsistentNaming
+    public void ApplyGRIP()
+    {
+        var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<GRIP>();
+        if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
+
+        if (!layout) return;
+        if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+        layout.Initialize();
+    }
 }
