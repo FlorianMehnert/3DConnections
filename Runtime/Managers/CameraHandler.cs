@@ -305,6 +305,7 @@ public class CameraController : ModularSettingsUser
 
         // Adjust orthographic size
         var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
+        if (size == 0) size = 1;
         _cam.orthographicSize = size * padding;
     }
 
