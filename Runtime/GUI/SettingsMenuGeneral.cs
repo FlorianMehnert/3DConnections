@@ -28,9 +28,9 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     // Toggle
     private Toggle _alternativeColorsButton;
-
-    // Text input
-    private TextField _textField;
+    private Toggle _levelOfDetailToggle;
+    
+    public GameObject clusterNodePrefab;
 
     // Internal
     private System.Action[] _actions;
@@ -95,14 +95,29 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _simDropdown?.RegisterValueChangedCallback(evt => { OnSimulationTypeChanged(evt.newValue); });
 
         _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
-
-        _textField?.RegisterValueChangedCallback(evt =>
+        _levelOfDetailToggle?.RegisterValueChangedCallback(evt =>
         {
-            if (ScriptableObjectInventory.Instance &&
-                ScriptableObjectInventory.Instance.menuState &&
-                ScriptableObjectInventory.Instance.menuState.menuOpen &&
-                ScriptableObjectInventory.Instance.graph)
-                ScriptableObjectInventory.Instance.graph.SearchNodes(evt.newValue);
+            var cam = SceneHandler.GetCameraOfOverlayedScene();
+            var component = cam?.GetComponent<GraphLODManager>();
+            if (component && component != null)
+            {
+                if (_levelOfDetailToggle.value == false)
+                {
+                    component.enabled = true;
+                    component.enabled = false;
+                }
+                else
+                {
+                    component.enabled = false;
+                    component.enabled = true;
+                }
+                
+            }
+            else
+            {
+                var lodManager = cam?.gameObject.AddComponent<GraphLODManager>();
+                if (lodManager != null) lodManager.clusterNodePrefab = clusterNodePrefab;
+            }
         });
     }
 
@@ -122,7 +137,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _startButton = root.Q<Button>("AnalyzeScene");
         _colorSlider = root.Q<SliderInt>("ColorSlider");
         _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
-        _textField = root.Q<TextField>("SearchField");
+        _levelOfDetailToggle = root.Q<Toggle>("LOD");
     }
 
     private void PopulateActions()
@@ -304,8 +319,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         var colors = Colorpalette.GeneratePaletteFromBaseColor(
             baseColor,
             sliderValue,
-            _alternativeColorsButton.value,
-            false
+            _alternativeColorsButton.value
         );
 
         if (!NodeConnectionManager.Instance ||
@@ -409,6 +423,6 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     public void DebugSelf()
     {
-        UnityEngine.Debug.Log(this);
+        Debug.Log(this);
     }
 }

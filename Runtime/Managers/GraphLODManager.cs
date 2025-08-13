@@ -16,7 +16,7 @@ public class GraphLODManager : MonoBehaviour
     [SerializeField] private float nodeAggregationThreshold = 2f;
     
     [Header("Visual Settings")]
-    [SerializeField] private GameObject clusterNodePrefab; // Prefab for aggregated nodes
+    [SerializeField] public GameObject clusterNodePrefab; // Prefab for aggregated nodes
     private Material _aggregatedEdgeMaterial;
     private const float AggregatedEdgeWidth = 2f;
 

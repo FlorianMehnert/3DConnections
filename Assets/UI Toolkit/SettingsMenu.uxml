@@ -65,7 +65,7 @@
             </ui:Tab>
             <ui:Tab label="Layout" name="LayoutTab">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:Toggle label="Enable LOD" />
+                    <ui:Toggle label="Enable LOD" name="LOD" />
                 </ui:VisualElement>
             </ui:Tab>
         </ui:TabView>
