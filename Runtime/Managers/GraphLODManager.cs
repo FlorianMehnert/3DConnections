@@ -30,18 +30,33 @@ public class GraphLODManager : MonoBehaviour
     private float _currentLODLevel;
     private bool _isLODActive;
     
-    private void Start()
+    private void OnEnable()
     {
+        ForceClearAllState();
         Initialize();
+        RestoreFullDetail();
+    }
+    
+    private void OnDisable()
+    {
+        // Always restore original graph visuals before disabling
+        if (_isLODActive)
+        {
+            RestoreFullDetail();
+        }
+
+        // Clear all collections and temporary objects
+        ForceClearAllState();
     }
 
-    public void Initialize()
+    private void Initialize()
     {
         _camera = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
         _spatialGrid = new Dictionary<Vector2Int, List<GameObject>>();
         _clusterNodes = new Dictionary<Vector2Int, GameObject>();
         _aggregatedEdges = new Dictionary<string, GameObject>();
-        
+        _originalNodes = new List<GameObject>(ScriptableObjectInventory.Instance.graph.AllNodes);
+        _originalConnections = new List<NodeConnection>(ScriptableObjectInventory.Instance.conSo.connections);
         if (_isLODActive)
         {
             RestoreFullDetail();
@@ -61,6 +76,39 @@ public class GraphLODManager : MonoBehaviour
         UpdateLOD();
     }
     
+    private void ForceClearAllState()
+    {
+        // Clear cluster nodes
+        foreach (var cluster in _clusterNodes.Values)
+        {
+            if (cluster)
+            {
+                ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
+                DestroyImmediate(cluster);
+            }
+        }
+        _clusterNodes.Clear();
+
+        // Clear aggregated edges
+        foreach (var edge in _aggregatedEdges.Values)
+        {
+            if (edge) DestroyImmediate(edge);
+        }
+        _aggregatedEdges.Clear();
+
+        // Clear grids and lists
+        _spatialGrid?.Clear();
+        _originalNodes?.Clear();
+        _originalConnections?.Clear();
+
+        _isLODActive = false;
+    }
+    
+    /// <summary>
+    /// Calculates LOD level. Minimal zoom level is reached when Zoom is minZoomForFullDetail and Max is reached when zoom is MaxZoomForFullDetail
+    /// </summary>
+    /// <param name="zoom">Zoom of the camera currently tracking</param>
+    /// <returns>Float between 0 and 1 representing the LOD level</returns>
     private float CalculateLODLevel(float zoom)
     {
         // Return value between 0 (full detail) and 1 (minimum detail)
@@ -69,7 +117,7 @@ public class GraphLODManager : MonoBehaviour
     
     private void UpdateLOD()
     {
-        if (_currentLODLevel < 0.1f)
+        if (_currentLODLevel <= 0.01f)
         {
             // Show full detail
             if (_isLODActive)
