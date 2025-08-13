@@ -11,17 +11,37 @@ static class NodeOverlaySearchProvider
     private const string FilterId = "node:";
     private const string HighlightPrefix = "highlight:";
 
-    // Map token keys to matching logic
-    private static readonly Dictionary<string, System.Func<string, string, bool>> TokenHandlers =
+    // Extendable token handlers
+    private static readonly Dictionary<string, System.Func<GameObject, string, bool>> TokenHandlers =
         new()
         {
-            ["name"] = (val, nodeName) => nodeName.Contains(val),
-            ["type"] = (val, connType) => connType.Contains(val),
-            ["end"] = (val, endNames) => endNames.Contains(val),
-            ["any"] = (val, combined) => combined.Contains(val)
+            ["name"] = (go, val) => go.name.ToLowerInvariant().Contains(val),
+            ["type"] = (go, val) => go.tag.ToLowerInvariant().Contains(val),
+            ["end"] = (go, val) =>
+            {
+                var conn = go.GetComponent<LocalNodeConnections>();
+                if (conn == null) return false;
+                string ends = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()))
+                              + ", " +
+                              string.Join(", ",
+                                  conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
+                return ends.Contains(val);
+            },
+            ["any"] = (go, val) =>
+            {
+                string nodeName = go.name.ToLowerInvariant();
+                string connType = go.tag.ToLowerInvariant();
+                var conn = go.GetComponent<LocalNodeConnections>();
+                string endNames = conn != null
+                    ? string.Join(", ", conn.inConnections.Concat(conn.outConnections)
+                        .Where(x => x).Select(x => x.name.ToLowerInvariant()))
+                    : "";
+                return (nodeName.Contains(val) || connType.Contains(val) || endNames.Contains(val));
+            }
         };
+
     // Keep track of highlighted objects for cleanup
-    private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
+    private static readonly List<GameObject> HighlightedObjects = new();
 
     [SearchItemProvider]
     internal static SearchProvider CreateProvider()
@@ -39,6 +59,7 @@ static class NodeOverlaySearchProvider
                     ClearHighlights();
                     return null;
                 }
+
                 var parent = GameObject.Find("ParentNodesObject");
                 if (parent == null)
                     return null;
@@ -66,14 +87,14 @@ static class NodeOverlaySearchProvider
                     if (conn == null) continue;
 
                     string nodeName = go.name.ToLowerInvariant();
-                    string connType = go.tag.ToLowerInvariant(); // or from component/metadata
+                    string connType = go.tag.ToLowerInvariant();
                     string outNames = string.Join(", ",
                         conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
                     string inNames = string.Join(", ",
                         conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()));
 
                     // Match query tokens
-                    if (!MatchesTokens(tokens, nodeName, connType, inNames + "," + outNames))
+                    if (!MatchesTokens(tokens, go))
                         continue;
 
                     // Add to matching objects for highlighting
@@ -82,7 +103,19 @@ static class NodeOverlaySearchProvider
                     string label = go.name;
                     string description = $"→ [{outNames}]\n← [{inNames}]";
 
-                    var thumbnail = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
+                    Texture2D thumbnail = null;
+
+                    var nodeTypeComp = go.GetComponent<NodeType>();
+                    if (nodeTypeComp != null && nodeTypeComp.reference != null)
+                    {
+                        var refComponent = nodeTypeComp.reference;
+                        var refType = refComponent.GetType();
+                        thumbnail = EditorGUIUtility.ObjectContent(null, refType).image as Texture2D;
+                    }
+
+                    // Fallback, if nothing found
+                    if (thumbnail == null)
+                        thumbnail = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
 
                     var item = provider.CreateItem(
                         id: go.GetInstanceID().ToString(),
@@ -193,17 +226,16 @@ static class NodeOverlaySearchProvider
         }
     }
 
-    // Clear all highlights
+    
     private static void ClearHighlights()
     {
-        foreach (var go in HighlightedObjects.ToList()) // Copy to avoid modification during iteration
+        foreach (var go in HighlightedObjects.ToList())
         {
             if (go != null)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
                 if (coloredObject != null)
                 {
-                    coloredObject.Highlight(Color.white, highlightForever: false, duration: 0); // Reset to default
                     coloredObject.ManualClearHighlight();
                 }
             }
@@ -232,32 +264,21 @@ static class NodeOverlaySearchProvider
             }
             else
             {
-                tokens["any"] = part.ToLowerInvariant(); // fallback
+                tokens["any"] = part.ToLowerInvariant(); 
             }
         }
 
         return tokens;
     }
 
-    // Match node against the search tokens
-    private static bool MatchesTokens(Dictionary<string, string> tokens, string nodeName, string connType,
-        string endNames)
-    {
-        var combined = $"{nodeName},{connType},{endNames}";
 
+    private static bool MatchesTokens(Dictionary<string, string> tokens, GameObject go)
+    {
         foreach (var kvp in tokens)
         {
             if (TokenHandlers.TryGetValue(kvp.Key, out var handler))
             {
-                var targetData = kvp.Key switch
-                {
-                    "name" => nodeName,
-                    "type" => connType,
-                    "end" => endNames,
-                    _ => combined
-                };
-
-                if (!handler(kvp.Value, targetData))
+                if (!handler(go, kvp.Value))
                     return false;
             }
             else
@@ -268,6 +289,23 @@ static class NodeOverlaySearchProvider
         }
 
         return true;
+    }
+
+    private static Texture2D GetTypeIcon(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName))
+            return EditorGUIUtility.ObjectContent(null, typeof(GameObject)).image as Texture2D;
+
+        var matchingType = System.AppDomain.CurrentDomain
+            .GetAssemblies()
+            .SelectMany(a => a.GetTypes())
+            .FirstOrDefault(t => typeof(Component).IsAssignableFrom(t) &&
+                                 t.Name.Equals(typeName, System.StringComparison.OrdinalIgnoreCase));
+
+        if (matchingType != null)
+            return EditorGUIUtility.ObjectContent(null, matchingType).image as Texture2D;
+
+        return EditorGUIUtility.ObjectContent(null, typeof(GameObject)).image as Texture2D;
     }
 }
 #endif
