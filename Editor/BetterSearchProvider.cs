@@ -7,33 +7,47 @@ using System.Linq;
 
 static class NodeOverlaySearchProvider
 {
-    const string providerId = "nodeoverlay";
-    const string filterId = "node:";
-    const string highlightPrefix = "highlight:";
-    
+    private const string ProviderId = "nodeoverlay";
+    private const string FilterId = "node:";
+    private const string HighlightPrefix = "highlight:";
+
+    // Map token keys to matching logic
+    private static readonly Dictionary<string, System.Func<string, string, bool>> TokenHandlers =
+        new()
+        {
+            ["name"] = (val, nodeName) => nodeName.Contains(val),
+            ["type"] = (val, connType) => connType.Contains(val),
+            ["end"] = (val, endNames) => endNames.Contains(val),
+            ["any"] = (val, combined) => combined.Contains(val)
+        };
     // Keep track of highlighted objects for cleanup
-    private static List<GameObject> highlightedObjects = new List<GameObject>();
+    private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
 
     [SearchItemProvider]
     internal static SearchProvider CreateProvider()
     {
-        return new SearchProvider(providerId, "Node Overlay")
+        return new SearchProvider(ProviderId, "Node Overlay")
         {
-            filterId = filterId,
+            filterId = FilterId,
             priority = 500,
             isEnabledForContextualSearch = () => true,
 
             fetchItems = (context, items, provider) =>
             {
+                if (context.searchQuery.Equals("clear:highlights", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    ClearHighlights();
+                    return null;
+                }
                 var parent = GameObject.Find("ParentNodesObject");
                 if (parent == null)
                     return null;
 
                 // Check if this is a highlight query
-                bool shouldHighlight = context.searchQuery.StartsWith(highlightPrefix);
-                string actualQuery = shouldHighlight ? 
-                    context.searchQuery.Substring(highlightPrefix.Length).Trim() : 
-                    context.searchQuery;
+                bool shouldHighlight = context.searchQuery.StartsWith(HighlightPrefix);
+                string actualQuery = shouldHighlight
+                    ? context.searchQuery.Substring(HighlightPrefix.Length).Trim()
+                    : context.searchQuery;
 
                 // Clear previous highlights if this is a new search
                 if (shouldHighlight)
@@ -53,8 +67,10 @@ static class NodeOverlaySearchProvider
 
                     string nodeName = go.name.ToLowerInvariant();
                     string connType = go.tag.ToLowerInvariant(); // or from component/metadata
-                    string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
-                    string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()));
+                    string outNames = string.Join(", ",
+                        conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
+                    string inNames = string.Join(", ",
+                        conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()));
 
                     // Match query tokens
                     if (!MatchesTokens(tokens, nodeName, connType, inNames + "," + outNames))
@@ -89,12 +105,12 @@ static class NodeOverlaySearchProvider
                 return null;
             },
 
-            fetchLabel = (item, context) => item.label,
-            fetchDescription = (item, context) => item.description,
-            fetchThumbnail = (item, context) => item.thumbnail,
-            toObject = (item, type) => item.data as GameObject,
-            
-            trackSelection = (item, context) =>
+            fetchLabel = (item, _) => item.label,
+            fetchDescription = (item, _) => item.description,
+            fetchThumbnail = (item, _) => item.thumbnail,
+            toObject = (item, _) => item.data as GameObject,
+
+            trackSelection = (item, _) =>
             {
                 if (item.data is not GameObject go) return;
                 EditorGUIUtility.PingObject(go);
@@ -102,23 +118,23 @@ static class NodeOverlaySearchProvider
             },
 
             // Add context actions for highlighting
-            fetchPropositions = (context, options) =>
+            fetchPropositions = (context, _) =>
             {
-                if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(highlightPrefix))
+                if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(HighlightPrefix))
                     return null;
 
                 return new SearchProposition[]
                 {
-                    new SearchProposition(
+                    new(
                         category: "Actions",
                         label: "Highlight Results",
-                        replacement: highlightPrefix + context.searchQuery,
+                        replacement: HighlightPrefix + context.searchQuery,
                         help: "Highlight all matching nodes in the scene",
                         priority: 100,
                         icon: EditorGUIUtility.FindTexture("d_winbtn_mac_max")
                     ),
-                    new SearchProposition(
-                        category: "Actions", 
+                    new(
+                        category: "Actions",
                         label: "Clear Highlights",
                         replacement: "clear:highlights",
                         help: "Clear all highlighted nodes",
@@ -151,17 +167,17 @@ static class NodeOverlaySearchProvider
     private static void HighlightObjects(List<GameObject> objects)
     {
         ClearHighlights(); // Clear previous highlights first
-        
+
         foreach (var go in objects)
         {
             var coloredObject = go.GetComponent<ColoredObject>();
             if (coloredObject != null)
             {
-                coloredObject.Highlight(Color.red, highlightForever:true, duration:1);
-                highlightedObjects.Add(go);
+                coloredObject.Highlight(Color.red, highlightForever: true, duration: 1);
+                HighlightedObjects.Add(go);
             }
         }
-        
+
         Debug.Log($"Highlighted {objects.Count} matching nodes");
     }
 
@@ -171,29 +187,31 @@ static class NodeOverlaySearchProvider
         var coloredObject = go.GetComponent<ColoredObject>();
         if (coloredObject != null)
         {
-            coloredObject.Highlight(Color.yellow, -1, highlightForever:true);
-            if (!highlightedObjects.Contains(go))
-                highlightedObjects.Add(go);
+            coloredObject.Highlight(Color.yellow, -1, highlightForever: true);
+            if (!HighlightedObjects.Contains(go))
+                HighlightedObjects.Add(go);
         }
     }
 
     // Clear all highlights
     private static void ClearHighlights()
     {
-        foreach (var go in highlightedObjects)
+        foreach (var go in HighlightedObjects.ToList()) // Copy to avoid modification during iteration
         {
             if (go != null)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
                 if (coloredObject != null)
                 {
-                    coloredObject.ManualClearHighlight(); // Assuming this method exists
+                    coloredObject.Highlight(Color.white, highlightForever: false, duration: 0); // Reset to default
+                    coloredObject.ManualClearHighlight();
                 }
             }
         }
-        highlightedObjects.Clear();
+        HighlightedObjects.Clear();
         Debug.Log("Cleared all highlights");
     }
+
 
     // Utility: Parse query like "name:foo type:bar end:baz" into key-value pairs
     private static Dictionary<string, string> ParseQuery(string query)
@@ -217,37 +235,38 @@ static class NodeOverlaySearchProvider
                 tokens["any"] = part.ToLowerInvariant(); // fallback
             }
         }
+
         return tokens;
     }
 
     // Match node against the search tokens
-    private static bool MatchesTokens(Dictionary<string, string> tokens, string nodeName, string connType, string endNames)
+    private static bool MatchesTokens(Dictionary<string, string> tokens, string nodeName, string connType,
+        string endNames)
     {
+        var combined = $"{nodeName},{connType},{endNames}";
+
         foreach (var kvp in tokens)
         {
-            string key = kvp.Key;
-            string val = kvp.Value;
-
-            switch (key)
+            if (TokenHandlers.TryGetValue(kvp.Key, out var handler))
             {
-                case "name":
-                    if (!nodeName.Contains(val))
-                        return false;
-                    break;
-                case "type":
-                    if (!connType.Contains(val))
-                        return false;
-                    break;
-                case "end":
-                    if (!endNames.Contains(val))
-                        return false;
-                    break;
-                case "any":
-                    if (!(nodeName.Contains(val) || connType.Contains(val) || endNames.Contains(val)))
-                        return false;
-                    break;
+                var targetData = kvp.Key switch
+                {
+                    "name" => nodeName,
+                    "type" => connType,
+                    "end" => endNames,
+                    _ => combined
+                };
+
+                if (!handler(kvp.Value, targetData))
+                    return false;
+            }
+            else
+            {
+                Debug.LogWarning($"Unknown search token: {kvp.Key}");
+                return false;
             }
         }
+
         return true;
     }
 }
