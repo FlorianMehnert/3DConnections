@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 
 #if UNITY_EDITOR
@@ -113,12 +114,28 @@ public class SceneAnalyzer : MonoBehaviour
         if (!scene.isLoaded)
         {
             Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
-            StartCoroutine(SceneHandler.LoadSceneCoroutine(sceneName, Analyze));
+            StartCoroutine(LoadAndAnalyzeCoroutine(sceneName, Analyze));
             return;
         }
 
-        Analyze();
+        // Scene is already loaded
+        StartCoroutine(RunNextFrame(Analyze));
     }
+
+    private IEnumerator LoadAndAnalyzeCoroutine(string sceneName, Action analyze)
+    {
+        yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        // Wait one extra frame so everything initializes
+        yield return null;
+        analyze();
+    }
+
+    private IEnumerator RunNextFrame(Action action)
+    {
+        yield return null;
+        action();
+    }
+
 
 
     private void OnValidate()
