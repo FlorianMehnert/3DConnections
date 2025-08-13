@@ -209,7 +209,7 @@ internal static class NodeOverlaySearchProvider
                     new SearchProposition(
                         category: "Actions",
                         label: "Clear Highlights",
-                        replacement: "clear:highlights",
+                        replacement: "clearHighlights",
                         help: "Clear all highlighted nodes",
                         priority: 99,
                         icon: EditorGUIUtility.FindTexture("d_winbtn_mac_close")
