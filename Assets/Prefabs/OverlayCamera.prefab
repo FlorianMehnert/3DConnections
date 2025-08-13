@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 275891097617498144}
   - component: {fileID: 1241412518822067057}
   - component: {fileID: 2237390801319845235}
-  - component: {fileID: 4675278670998173507}
   - component: {fileID: 260993916698367870}
   m_Layer: 0
   m_Name: OverlayCamera
@@ -235,24 +234,6 @@ MonoBehaviour:
   m_DefaultActionMap: cameraMovement
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 6810327768359966640}
---- !u!114 &4675278670998173507
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2167307905950667471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16963c766c514f87b8be9ff1e0420b52, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enableTextScaling: 0
-  detectionRadius: 5
-  minFontSize: 12
-  maxFontSize: 24
-  smoothTime: 0.1
-  mainCamera: {fileID: 6810327768359966640}
 --- !u!114 &260993916698367870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,6 +248,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minZoomForFullDetail: 50
   maxZoomForMinDetail: 150
-  gridCellSize: 10
+  gridCellSize: 7
   nodeAggregationThreshold: 5
   clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}

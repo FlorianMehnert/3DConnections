@@ -238,14 +238,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 260993916698367870, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-      propertyPath: gridCellSize
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 260993916698367870, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-      propertyPath: nodeAggregationThreshold
-      value: 5
-      objectReference: {fileID: 0}
     - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: parentObject
       value: 

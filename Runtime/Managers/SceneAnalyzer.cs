@@ -19,6 +19,7 @@ public class SceneAnalyzer : MonoBehaviour
     private readonly HashSet<Object> _visitedObjects = new();
     private readonly HashSet<Object> _processingObjects = new();
     private readonly Dictionary<int, GameObject> _instanceIdToNodeLookup = new();
+    private RuntimeComponentTracker _runtimeTracker;
 
     [SerializeField] private TextAsset analysisData; // Assign the JSON file here
     [SerializeField] private GameObject parentNode;
@@ -31,6 +32,11 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private int maxNodes = 1000;
     [SerializeField] private bool ignoreTransforms;
     [SerializeField] private bool scaleNodesUsingMaintainability;
+
+    [Header("Dynamic Component Tracking")] 
+    [SerializeField] private bool enableRuntimeTracking = true;
+    [SerializeField] private bool performDeepAnalysisOnStart = true;
+    [SerializeField] private bool showDynamicReferencesInInspector = false;
 
     [Header("Display Settings")] [SerializeField]
     internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
@@ -65,12 +71,38 @@ public class SceneAnalyzer : MonoBehaviour
 
     private Dictionary<string, float> _complexityMap;
 
-
     private void Start()
     {
 #if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
+        
+        // Initialize runtime tracking after scene is fully loaded
+        if (enableRuntimeTracking && performDeepAnalysisOnStart)
+        {
+            StartCoroutine(InitializeRuntimeTrackingDelayed());
+        }
+    }
+    
+    private IEnumerator InitializeRuntimeTrackingDelayed()
+    {
+        // Wait a few frames to ensure all objects are initialized
+        yield return new WaitForSeconds(0.5f);
+        
+        if (_runtimeTracker != null)
+        {
+            _runtimeTracker.PerformDeepAnalysis();
+        }
+    }
+    
+    private void Awake()
+    {
+        // Add the runtime tracker component if it doesn't exist
+        _runtimeTracker = GetComponent<RuntimeComponentTracker>();
+        if (_runtimeTracker == null && enableRuntimeTracking)
+        {
+            _runtimeTracker = gameObject.AddComponent<RuntimeComponentTracker>();
+        }
     }
 
     private List<Type> GetIgnoredTypes()
@@ -108,6 +140,17 @@ public class SceneAnalyzer : MonoBehaviour
             _cachedPrefabPaths.Clear();
             TraverseScene(scene.GetRootGameObjects());
 
+            if (_runtimeTracker != null)
+            {
+                _runtimeTracker.RefreshDynamicEdges();
+                
+                // Perform deep analysis after scene traversal
+                if (enableRuntimeTracking)
+                {
+                    StartCoroutine(PerformRuntimeAnalysisDelayed());
+                }
+            }
+        
             onComplete?.Invoke();
         }
 
@@ -120,6 +163,15 @@ public class SceneAnalyzer : MonoBehaviour
 
         // Scene is already loaded
         StartCoroutine(RunNextFrame(Analyze));
+    }
+
+    private IEnumerator PerformRuntimeAnalysisDelayed()
+    {
+        yield return new WaitForSeconds(0.1f);
+        if (_runtimeTracker != null)
+        {
+            _runtimeTracker.DiscoverComponentReferences();
+        }
     }
 
     private IEnumerator LoadAndAnalyzeCoroutine(string sceneName, Action analyze)
@@ -135,8 +187,6 @@ public class SceneAnalyzer : MonoBehaviour
         yield return null;
         action();
     }
-
-
 
     private void OnValidate()
     {
@@ -187,13 +237,34 @@ public class SceneAnalyzer : MonoBehaviour
         }
 
         foreach (var rootObject in rootGameObjects)
+        {
             TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
+            
+            // Register with runtime tracker for monitoring
+            if (_runtimeTracker != null && enableRuntimeTracking)
+            {
+                RuntimeComponentTracker.RegisterGameObject(rootObject);
+                RegisterAllChildren(rootObject);
+            }
+        }
 
         if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph && ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
             ScriptableObjectInventory.Instance.graph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
 
         if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && rootNode)
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(rootNode);
+    }
+
+    private void RegisterAllChildren(GameObject parent)
+    {
+        foreach (Transform child in parent.transform)
+        {
+            if (child.gameObject != null)
+            {
+                RuntimeComponentTracker.RegisterGameObject(child.gameObject);
+                RegisterAllChildren(child.gameObject);
+            }
+        }
     }
 
     /// <summary>
@@ -351,7 +422,6 @@ public class SceneAnalyzer : MonoBehaviour
         if (!searchForPrefabsUsingNames) return PrefabUtility.GetPrefabInstanceHandle(obj);
         var gameObjectName = obj.name;
 
-
         return _cachedPrefabPaths.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<GameObject>)
             .Any(prefab => prefab && prefab.name == gameObjectName);
 #else
@@ -359,11 +429,11 @@ public class SceneAnalyzer : MonoBehaviour
 #endif
     }
 #else
-            private static bool IsPrefab(Object obj){
-                return false;
-            }
+    private static bool IsPrefab(Object obj)
+    {
+        return false;
+    }
 #endif
-
 
     private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null, bool isAsset = false)
     {
@@ -421,7 +491,6 @@ public class SceneAnalyzer : MonoBehaviour
 
         return newNode;
     }
-
 
     /// <summary>
     /// Recursive function to Spawn a node for the given GameObject and Traverse Components/Children of the given gameObject
@@ -493,7 +562,6 @@ public class SceneAnalyzer : MonoBehaviour
             if (!needsTraversal) return;
             _visitedObjects.Add(scriptableObject);
 
-
 #if UNITY_EDITOR
             var serializedObject = new SerializedObject(scriptableObject);
             var property = serializedObject.GetIterator();
@@ -520,7 +588,6 @@ public class SceneAnalyzer : MonoBehaviour
             : // Extract "Program" from "Program.cs"
             metricName; // Fallback in case of unexpected format
     }
-
 
     /// <summary>
     /// Function to load metrics generated by external roslyn script which analyzes code complexity and maintainability  
@@ -646,6 +713,12 @@ public class SceneAnalyzer : MonoBehaviour
         _processingObjects.Clear();
         _currentNodes = 0;
         ScriptableObjectInventory.Instance.graph.AllNodes.Clear();
+        
+        // Clear runtime tracker references
+        if (_runtimeTracker != null)
+        {
+            RuntimeComponentTracker.ClearReferences();
+        }
     }
 
     private static IEnumerable<Object> GetComponentReferences(Component component)
@@ -678,5 +751,81 @@ public class SceneAnalyzer : MonoBehaviour
         if (!parentObject)
             return;
         ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
+    }
+
+    // Public methods for runtime component tracking
+    
+    /// <summary>
+    /// Manually trigger a deep analysis of component references
+    /// </summary>
+    [ContextMenu("Perform Deep Component Analysis")]
+    public void PerformDeepComponentAnalysis()
+    {
+        if (_runtimeTracker != null)
+        {
+            _runtimeTracker.PerformDeepAnalysis();
+            _runtimeTracker.RefreshDynamicEdges();
+        }
+        else
+        {
+            Debug.LogWarning("Runtime component tracker is not available. Enable runtime tracking to use this feature.");
+        }
+    }
+
+    /// <summary>
+    /// Get debug information about currently tracked dynamic references
+    /// </summary>
+    public void PrintDynamicReferenceStats()
+    {
+        if (_runtimeTracker == null)
+        {
+            Debug.Log("Runtime component tracker is not available.");
+            return;
+        }
+
+        var references = RuntimeComponentTracker.GetAllReferences();
+        var totalReferences = references.Values.Sum(list => list.Count);
+        var getComponentCount = references.Values.SelectMany(list => list).Count(r => r.MethodType == "GetComponent");
+        var addComponentCount = references.Values.SelectMany(list => list).Count(r => r.MethodType == "AddComponent");
+
+        Debug.Log($"Dynamic Component Reference Stats:\n" +
+                  $"Total Objects Tracked: {references.Count}\n" +
+                  $"Total References: {totalReferences}\n" +
+                  $"GetComponent References: {getComponentCount}\n" +
+                  $"AddComponent References: {addComponentCount}");
+
+        if (showDynamicReferencesInInspector)
+        {
+            foreach (var kvp in references)
+            {
+                var sourceId = kvp.Key;
+                var refList = kvp.Value;
+                Debug.Log($"Object ID {sourceId}: {refList.Count} references");
+                
+                foreach (var reference in refList)
+                {
+                    Debug.Log($"  - {reference.MethodType}: {reference.Source?.name} -> {reference.Target?.name} ({reference.ComponentType?.Name})");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Enable or disable runtime component tracking
+    /// </summary>
+    public void SetRuntimeTrackingEnabled(bool enabled)
+    {
+        enableRuntimeTracking = enabled;
+        
+        if (enabled && _runtimeTracker == null)
+        {
+            _runtimeTracker = gameObject.AddComponent<RuntimeComponentTracker>();
+        }
+        else if (!enabled && _runtimeTracker != null)
+        {
+            RuntimeComponentTracker.ClearReferences();
+            Destroy(_runtimeTracker);
+            _runtimeTracker = null;
+        }
     }
 }
