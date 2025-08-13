@@ -61,55 +61,11 @@
                             <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:Toggle>
-                    <ui:UnsignedIntegerField label="Max width hierarchy" value="9" name="MaxWidtHierarchy">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="maxWidthHierarchy" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:UnsignedIntegerField>
                 </ui:VisualElement>
             </ui:Tab>
             <ui:Tab label="Layout" name="LayoutTab">
                 <ui:VisualElement name="Container" class="menu">
-                    <ui:Slider label="MinDistance" value="42" high-value="10">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="minDistance" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Start Radius" value="42" high-value="100">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="startRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Radius Inc" value="42" high-value="10" low-value="1">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="radiusInc" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Root Spacing" value="42" high-value="100">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="rootSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Level Spacing" value="42" high-value="100">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="levelSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Node Spacing" value="42" high-value="10">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="nodeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                    <ui:Slider label="Subtree Spacing" value="42" high-value="10">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="subtreeSpacing" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Slider>
-                </ui:VisualElement>
-            </ui:Tab>
-            <ui:Tab label="Tab">
-                <ui:VisualElement name="Container" class="menu">
-                    <ui:TextField label="Searchbox" name="SearchField" style="padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;" />
+                    <ui:Toggle label="Enable LOD" />
                 </ui:VisualElement>
             </ui:Tab>
         </ui:TabView>
