@@ -1,19 +1,22 @@
 #if UNITY_EDITOR
-using System.Collections;
 using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.EditorCoroutines.Editor;
+using System.Collections;
 
-static class NodeOverlaySearchProvider
+internal static class NodeOverlaySearchProvider
 {
     private const string ProviderId = "nodeoverlay";
     private const string FilterId = "node:";
     private const string HighlightPrefix = "highlight:";
+    private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
 
-    // Extendable token handlers
+    // =====================
+    // Extendable Token System
+    // =====================
     private static readonly Dictionary<string, System.Func<GameObject, string, bool>> TokenHandlers =
         new()
         {
@@ -25,8 +28,7 @@ static class NodeOverlaySearchProvider
                 if (conn == null) return false;
                 string ends = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()))
                               + ", " +
-                              string.Join(", ",
-                                  conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
+                              string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
                 return ends.Contains(val);
             },
             ["any"] = (go, val) =>
@@ -42,7 +44,7 @@ static class NodeOverlaySearchProvider
             },
             ["ref"] = (go, val) =>
             {
-                GameObject target = GameObject.Find(val);
+                GameObject target = GameObject.Find(val.Trim('"').Trim());
                 if (target == null)
                     return false;
 
@@ -62,12 +64,53 @@ static class NodeOverlaySearchProvider
                 }
                 return false;
             }
-
         };
 
-    // Keep track of highlighted objects for cleanup
-    private static readonly List<GameObject> HighlightedObjects = new();
+    private static bool MatchesTokens(Dictionary<string, string> tokens, GameObject go)
+    {
+        foreach (var kvp in tokens)
+        {
+            if (TokenHandlers.TryGetValue(kvp.Key, out var handler))
+            {
+                if (!handler(go, kvp.Value))
+                    return false;
+            }
+            else
+            {
+                Debug.LogWarning($"Unknown search token: {kvp.Key}");
+                return false;
+            }
+        }
+        return true;
+    }
 
+    private static Dictionary<string, string> ParseQuery(string query)
+    {
+        var tokens = new Dictionary<string, string>();
+        if (string.IsNullOrWhiteSpace(query))
+            return tokens;
+
+        var parts = query.Split(' ');
+        foreach (var part in parts)
+        {
+            int sep = part.IndexOf(':');
+            if (sep > 0 && sep < part.Length - 1)
+            {
+                string key = part.Substring(0, sep).ToLowerInvariant();
+                string value = part.Substring(sep + 1).Trim().Trim('"').ToLowerInvariant();
+                tokens[key] = value; // keep "ref" intact
+            }
+            else
+            {
+                tokens["any"] = part.ToLowerInvariant();
+            }
+        }
+        return tokens;
+    }
+
+    // =====================
+    // Search Provider
+    // =====================
     [SearchItemProvider]
     internal static SearchProvider CreateProvider()
     {
@@ -79,7 +122,8 @@ static class NodeOverlaySearchProvider
 
             fetchItems = (context, items, provider) =>
             {
-                if (context.searchQuery.Equals("clear:highlights", System.StringComparison.OrdinalIgnoreCase))
+                // Special case: clear highlights
+                if (context.searchQuery.Equals("clearHighlights", System.StringComparison.OrdinalIgnoreCase))
                 {
                     ClearHighlights();
                     return null;
@@ -89,19 +133,14 @@ static class NodeOverlaySearchProvider
                 if (parent == null)
                     return null;
 
-                // Check if this is a highlight query
                 bool shouldHighlight = context.searchQuery.StartsWith(HighlightPrefix);
-                string actualQuery = shouldHighlight
-                    ? context.searchQuery.Substring(HighlightPrefix.Length).Trim()
-                    : context.searchQuery;
+                string actualQuery = shouldHighlight ?
+                    context.searchQuery.Substring(HighlightPrefix.Length).Trim() :
+                    context.searchQuery;
 
-                // Clear previous highlights if this is a new search
                 if (shouldHighlight)
-                {
                     ClearHighlights();
-                }
 
-                // Parse query tokens like "name:Foo", "type:Trigger", etc.
                 var tokens = ParseQuery(actualQuery);
                 var matchingObjects = new List<GameObject>();
 
@@ -111,36 +150,17 @@ static class NodeOverlaySearchProvider
                     var conn = go.GetComponent<LocalNodeConnections>();
                     if (conn == null) continue;
 
-                    string nodeName = go.name.ToLowerInvariant();
-                    string connType = go.tag.ToLowerInvariant();
-                    string outNames = string.Join(", ",
-                        conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
-                    string inNames = string.Join(", ",
-                        conn.inConnections.Where(i => i).Select(i => i.name.ToLowerInvariant()));
-
-                    // Match query tokens
                     if (!MatchesTokens(tokens, go))
                         continue;
 
-                    // Add to matching objects for highlighting
                     matchingObjects.Add(go);
 
                     string label = go.name;
+                    string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name));
+                    string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name));
                     string description = $"→ [{outNames}]\n← [{inNames}]";
 
-                    Texture2D thumbnail = null;
-
-                    var nodeTypeComp = go.GetComponent<NodeType>();
-                    if (nodeTypeComp != null && nodeTypeComp.reference != null)
-                    {
-                        var refComponent = nodeTypeComp.reference;
-                        var refType = refComponent.GetType();
-                        thumbnail = EditorGUIUtility.ObjectContent(null, refType).image as Texture2D;
-                    }
-
-                    // Fallback, if nothing found
-                    if (thumbnail == null)
-                        thumbnail = EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
+                    Texture2D thumbnail = GetNodeTypeIcon(go);
 
                     var item = provider.CreateItem(
                         id: go.GetInstanceID().ToString(),
@@ -154,11 +174,8 @@ static class NodeOverlaySearchProvider
                     items.Add(item);
                 }
 
-                // Highlight all matching objects if highlight prefix was used
                 if (shouldHighlight)
-                {
                     HighlightObjects(matchingObjects);
-                }
 
                 return null;
             },
@@ -171,19 +188,17 @@ static class NodeOverlaySearchProvider
             trackSelection = (item, _) =>
             {
                 if (item.data is not GameObject go) return;
-                EditorGUIUtility.PingObject(go);
                 HighlightSingleObject(go);
             },
 
-            // Add context actions for highlighting
             fetchPropositions = (context, _) =>
             {
                 if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(HighlightPrefix))
                     return null;
 
-                return new SearchProposition[]
+                return new[]
                 {
-                    new(
+                    new SearchProposition(
                         category: "Actions",
                         label: "Highlight Results",
                         replacement: HighlightPrefix + context.searchQuery,
@@ -191,7 +206,7 @@ static class NodeOverlaySearchProvider
                         priority: 100,
                         icon: EditorGUIUtility.FindTexture("d_winbtn_mac_max")
                     ),
-                    new(
+                    new SearchProposition(
                         category: "Actions",
                         label: "Clear Highlights",
                         replacement: "clear:highlights",
@@ -200,33 +215,30 @@ static class NodeOverlaySearchProvider
                         icon: EditorGUIUtility.FindTexture("d_winbtn_mac_close")
                     )
                 };
-            },
-
-            // Handle special commands
-            startDrag = (item, context) =>
-            {
-                // Handle clear highlights command
-                if (context.searchQuery == "clear:highlights")
-                {
-                    ClearHighlights();
-                    return;
-                }
-
-                // Handle individual item highlighting on drag start
-                if (item.data is GameObject go)
-                {
-                    HighlightSingleObject(go);
-                }
             }
-            
         };
     }
 
-    // Highlight all matching objects
+    // =====================
+    // Icon Lookup
+    // =====================
+    private static Texture2D GetNodeTypeIcon(GameObject go)
+    {
+        var nodeTypeComp = go.GetComponent<NodeType>();
+        if (nodeTypeComp == null || nodeTypeComp.reference == null)
+            return EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
+        var refComponent = nodeTypeComp.reference;
+        if (refComponent != null)
+            return EditorGUIUtility.ObjectContent(null, refComponent.GetType()).image as Texture2D;
+        return EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
+    }
+
+    // =====================
+    // Highlight & Camera
+    // =====================
     private static void HighlightObjects(List<GameObject> objects)
     {
-        ClearHighlights(); // Clear previous highlights first
-
+        ClearHighlights();
         foreach (var go in objects)
         {
             var coloredObject = go.GetComponent<ColoredObject>();
@@ -236,11 +248,9 @@ static class NodeOverlaySearchProvider
                 HighlightedObjects.Add(go);
             }
         }
-
         Debug.Log($"Highlighted {objects.Count} matching nodes");
     }
 
-    // Highlight a single object (for context actions)
     private static void HighlightSingleObject(GameObject go)
     {
         var coloredObject = go.GetComponent<ColoredObject>();
@@ -263,7 +273,6 @@ static class NodeOverlaySearchProvider
         }
     }
 
-    
     private static IEnumerator AnimateCameraMove(Camera cam, Vector3 targetPosition, float duration = 0.5f)
     {
         Vector3 startPos = cam.transform.position;
@@ -276,100 +285,17 @@ static class NodeOverlaySearchProvider
             cam.transform.position = Vector3.Lerp(startPos, targetPosition, Mathf.SmoothStep(0f, 1f, t));
             yield return null;
         }
-
-        cam.transform.position = targetPosition; // Ensure exact final position
+        cam.transform.position = targetPosition;
     }
 
-
-    
     private static void ClearHighlights()
     {
-        foreach (var go in HighlightedObjects.ToList())
+        foreach (var coloredObject in from go in HighlightedObjects.ToList() where go != null select go.GetComponent<ColoredObject>() into coloredObject where coloredObject != null select coloredObject)
         {
-            if (go != null)
-            {
-                var coloredObject = go.GetComponent<ColoredObject>();
-                if (coloredObject != null)
-                {
-                    coloredObject.ManualClearHighlight();
-                }
-            }
+            coloredObject.ManualClearHighlight();
         }
         HighlightedObjects.Clear();
         Debug.Log("Cleared all highlights");
-    }
-
-
-    // Utility: Parse query like "name:foo type:bar end:baz" into key-value pairs
-    private static Dictionary<string, string> ParseQuery(string query)
-    {
-        var tokens = new Dictionary<string, string>();
-        if (string.IsNullOrWhiteSpace(query))
-            return tokens;
-
-        var parts = query.Split(' ');
-        foreach (var part in parts)
-        {
-            int sep = part.IndexOf(':');
-            if (sep > 0 && sep < part.Length - 1)
-            {
-                string key = part.Substring(0, sep).ToLowerInvariant();
-                string value = part.Substring(sep + 1).Trim().Trim('"').ToLowerInvariant();
-
-                // Special case for "ref" — don't let Unity override it
-                if (key == "ref")
-                {
-                    tokens[key] = value; 
-                }
-                else
-                {
-                    tokens[key] = value;
-                }
-            }
-            else
-            {
-                tokens["any"] = part.ToLowerInvariant(); // fallback
-            }
-        }
-        return tokens;
-    }
-
-
-
-    private static bool MatchesTokens(Dictionary<string, string> tokens, GameObject go)
-    {
-        foreach (var kvp in tokens)
-        {
-            if (TokenHandlers.TryGetValue(kvp.Key, out var handler))
-            {
-                if (!handler(go, kvp.Value))
-                    return false;
-            }
-            else
-            {
-                Debug.LogWarning($"Unknown search token: {kvp.Key}");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static Texture2D GetTypeIcon(string typeName)
-    {
-        if (string.IsNullOrEmpty(typeName))
-            return EditorGUIUtility.ObjectContent(null, typeof(GameObject)).image as Texture2D;
-
-        var matchingType = System.AppDomain.CurrentDomain
-            .GetAssemblies()
-            .SelectMany(a => a.GetTypes())
-            .FirstOrDefault(t => typeof(Component).IsAssignableFrom(t) &&
-                                 t.Name.Equals(typeName, System.StringComparison.OrdinalIgnoreCase));
-
-        if (matchingType != null)
-            return EditorGUIUtility.ObjectContent(null, matchingType).image as Texture2D;
-
-        return EditorGUIUtility.ObjectContent(null, typeof(GameObject)).image as Texture2D;
     }
 }
 #endif
