@@ -7,19 +7,19 @@ using System.Linq;
 
 static class NodeOverlaySearchProvider
 {
-    const string providerId = "nodeoverlay";
-    const string filterId = "node:";
-    const string highlightPrefix = "highlight:";
+    private const string ProviderId = "nodeoverlay";
+    private const string FilterId = "node:";
+    private const string HighlightPrefix = "highlight:";
     
     // Keep track of highlighted objects for cleanup
-    private static List<GameObject> highlightedObjects = new List<GameObject>();
+    private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
 
     [SearchItemProvider]
     internal static SearchProvider CreateProvider()
     {
-        return new SearchProvider(providerId, "Node Overlay")
+        return new SearchProvider(ProviderId, "Node Overlay")
         {
-            filterId = filterId,
+            filterId = FilterId,
             priority = 500,
             isEnabledForContextualSearch = () => true,
 
@@ -30,9 +30,9 @@ static class NodeOverlaySearchProvider
                     return null;
 
                 // Check if this is a highlight query
-                bool shouldHighlight = context.searchQuery.StartsWith(highlightPrefix);
+                bool shouldHighlight = context.searchQuery.StartsWith(HighlightPrefix);
                 string actualQuery = shouldHighlight ? 
-                    context.searchQuery.Substring(highlightPrefix.Length).Trim() : 
+                    context.searchQuery.Substring(HighlightPrefix.Length).Trim() : 
                     context.searchQuery;
 
                 // Clear previous highlights if this is a new search
@@ -80,7 +80,7 @@ static class NodeOverlaySearchProvider
                     items.Add(item);
                 }
 
-                // Highlight all matching objects if highlight prefix was used
+                // Highlight all matching objects if the highlight prefix was used
                 if (shouldHighlight)
                 {
                     HighlightObjects(matchingObjects);
@@ -89,12 +89,12 @@ static class NodeOverlaySearchProvider
                 return null;
             },
 
-            fetchLabel = (item, context) => item.label,
-            fetchDescription = (item, context) => item.description,
-            fetchThumbnail = (item, context) => item.thumbnail,
-            toObject = (item, type) => item.data as GameObject,
+            fetchLabel = (item, _) => item.label,
+            fetchDescription = (item, _) => item.description,
+            fetchThumbnail = (item, _) => item.thumbnail,
+            toObject = (item, _) => item.data as GameObject,
             
-            trackSelection = (item, context) =>
+            trackSelection = (item, _) =>
             {
                 if (item.data is not GameObject go) return;
                 EditorGUIUtility.PingObject(go);
@@ -102,17 +102,17 @@ static class NodeOverlaySearchProvider
             },
 
             // Add context actions for highlighting
-            fetchPropositions = (context, options) =>
+            fetchPropositions = (context, _) =>
             {
-                if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(highlightPrefix))
+                if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(HighlightPrefix))
                     return null;
 
-                return new SearchProposition[]
+                return new[]
                 {
                     new SearchProposition(
                         category: "Actions",
                         label: "Highlight Results",
-                        replacement: highlightPrefix + context.searchQuery,
+                        replacement: HighlightPrefix + context.searchQuery,
                         help: "Highlight all matching nodes in the scene",
                         priority: 100,
                         icon: EditorGUIUtility.FindTexture("d_winbtn_mac_max")
@@ -158,7 +158,7 @@ static class NodeOverlaySearchProvider
             if (coloredObject != null)
             {
                 coloredObject.Highlight(Color.red, highlightForever:true, duration:1);
-                highlightedObjects.Add(go);
+                HighlightedObjects.Add(go);
             }
         }
         
@@ -172,15 +172,15 @@ static class NodeOverlaySearchProvider
         if (coloredObject != null)
         {
             coloredObject.Highlight(Color.yellow, -1, highlightForever:true);
-            if (!highlightedObjects.Contains(go))
-                highlightedObjects.Add(go);
+            if (!HighlightedObjects.Contains(go))
+                HighlightedObjects.Add(go);
         }
     }
 
     // Clear all highlights
     private static void ClearHighlights()
     {
-        foreach (var go in highlightedObjects)
+        foreach (var go in HighlightedObjects)
         {
             if (go != null)
             {
@@ -191,7 +191,7 @@ static class NodeOverlaySearchProvider
                 }
             }
         }
-        highlightedObjects.Clear();
+        HighlightedObjects.Clear();
         Debug.Log("Cleared all highlights");
     }
 
