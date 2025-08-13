@@ -39,7 +39,30 @@ static class NodeOverlaySearchProvider
                         .Where(x => x).Select(x => x.name.ToLowerInvariant()))
                     : "";
                 return (nodeName.Contains(val) || connType.Contains(val) || endNames.Contains(val));
+            },
+            ["ref"] = (go, val) =>
+            {
+                GameObject target = GameObject.Find(val);
+                if (target == null)
+                    return false;
+
+                foreach (var comp in go.GetComponents<Component>())
+                {
+                    if (comp == null) continue;
+                    var so = new SerializedObject(comp);
+                    var prop = so.GetIterator();
+                    while (prop.NextVisible(true))
+                    {
+                        if (prop.propertyType == SerializedPropertyType.ObjectReference &&
+                            prop.objectReferenceValue == target)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
             }
+
         };
 
     // Keep track of highlighted objects for cleanup
@@ -291,17 +314,26 @@ static class NodeOverlaySearchProvider
             if (sep > 0 && sep < part.Length - 1)
             {
                 string key = part.Substring(0, sep).ToLowerInvariant();
-                string value = part.Substring(sep + 1).ToLowerInvariant();
-                tokens[key] = value;
+                string value = part.Substring(sep + 1).Trim().Trim('"').ToLowerInvariant();
+
+                // Special case for "ref" — don't let Unity override it
+                if (key == "ref")
+                {
+                    tokens[key] = value; 
+                }
+                else
+                {
+                    tokens[key] = value;
+                }
             }
             else
             {
-                tokens["any"] = part.ToLowerInvariant(); 
+                tokens["any"] = part.ToLowerInvariant(); // fallback
             }
         }
-
         return tokens;
     }
+
 
 
     private static bool MatchesTokens(Dictionary<string, string> tokens, GameObject go)
