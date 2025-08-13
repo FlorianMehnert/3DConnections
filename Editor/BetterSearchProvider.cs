@@ -1,9 +1,11 @@
 #if UNITY_EDITOR
+using System.Collections;
 using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.EditorCoroutines.Editor;
 
 static class NodeOverlaySearchProvider
 {
@@ -147,7 +149,7 @@ static class NodeOverlaySearchProvider
             {
                 if (item.data is not GameObject go) return;
                 EditorGUIUtility.PingObject(go);
-                Selection.activeGameObject = go;
+                HighlightSingleObject(go);
             },
 
             // Add context actions for highlighting
@@ -193,6 +195,7 @@ static class NodeOverlaySearchProvider
                     HighlightSingleObject(go);
                 }
             }
+            
         };
     }
 
@@ -224,7 +227,36 @@ static class NodeOverlaySearchProvider
             if (!HighlightedObjects.Contains(go))
                 HighlightedObjects.Add(go);
         }
+
+        var camObj = GameObject.Find("OverlayCamera");
+        if (camObj != null)
+        {
+            var cam = camObj.GetComponent<Camera>();
+            if (cam != null)
+            {
+                Vector3 targetPos = new Vector3(go.transform.position.x, go.transform.position.y, cam.transform.position.z);
+                EditorCoroutineUtility.StartCoroutineOwnerless(AnimateCameraMove(cam, targetPos));
+            }
+        }
     }
+
+    
+    private static IEnumerator AnimateCameraMove(Camera cam, Vector3 targetPosition, float duration = 0.5f)
+    {
+        Vector3 startPos = cam.transform.position;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            cam.transform.position = Vector3.Lerp(startPos, targetPosition, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        cam.transform.position = targetPosition; // Ensure exact final position
+    }
+
 
     
     private static void ClearHighlights()
