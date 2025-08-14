@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 using UnityEngine;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using TMPro;
 using SimpleJSON;
@@ -19,53 +22,66 @@ public class SceneAnalyzer : MonoBehaviour
     private readonly HashSet<Object> _visitedObjects = new();
     private readonly HashSet<Object> _processingObjects = new();
     private readonly Dictionary<int, GameObject> _instanceIdToNodeLookup = new();
-    private RuntimeComponentTracker _runtimeTracker;
+    
+    // Track discovered MonoBehaviour scripts for Roslyn analysis
+    private readonly HashSet<Type> _discoveredMonoBehaviours = new();
+    private readonly Dictionary<Type, List<ComponentReference>> _dynamicComponentReferences = new();
 
     [SerializeField] private TextAsset analysisData; // Assign the JSON file here
     [SerializeField] private GameObject parentNode;
     [SerializeField] private GameObject nodePrefab;
 
-    [Header("Node Settings")] [SerializeField]
-    private int nodeWidth = 2;
-
+    [Header("Node Settings")] 
+    [SerializeField] private int nodeWidth = 2;
     [SerializeField] private int nodeHeight = 1;
     [SerializeField] private int maxNodes = 1000;
     [SerializeField] private bool ignoreTransforms;
     [SerializeField] private bool scaleNodesUsingMaintainability;
 
-    [Header("Dynamic Component Tracking")] 
-    [SerializeField] private bool enableRuntimeTracking = true;
-    [SerializeField] private bool performDeepAnalysisOnStart = true;
-    [SerializeField] private bool showDynamicReferencesInInspector;
-
-    [Header("Display Settings")] [SerializeField]
-    internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
-
+    [Header("Display Settings")] 
+    [SerializeField] internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
     [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
     [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
-    [SerializeField] private Color assetColor = new(0.1f, 0.9f, 0.9f); // Purple
+    [SerializeField] private Color assetColor = new(0.1f, 0.9f, 0.9f); // Cyan
     [SerializeField] private Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
     [SerializeField] private Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-    [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Light Yellow_i
+    [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Pink
+    [SerializeField] private Color dynamicComponentConnection = new(1f, 0.6f, 0f); // Orange
     [SerializeField] private int colorPreset;
     [SerializeField] private bool generateColors;
     [SerializeField] private ToAnalyzeScene toAnalyzeScene;
     public bool setIcons;
 
-    [Header("Performance Settings")] [SerializeField]
-    private bool searchForPrefabsUsingNames;
+    [Header("Dynamic Analysis Settings")]
+    [SerializeField] private bool analyzeDynamicReferences = true;
+    [SerializeField] private bool showAddComponentCalls = true;
+    [SerializeField] private bool showGetComponentCalls = true;
 
+    [Header("Performance Settings")] 
+    [SerializeField] private bool searchForPrefabsUsingNames;
     public bool spawnRootNode;
 
-    [Header("Ignored Types Settings")] public List<string> ignoredTypes = new();
+    [Header("Ignored Types Settings")] 
+    public List<string> ignoredTypes = new();
 
     /// <summary>
-    /// used to determine if a game object is part of a prefab (will be more accurate if this is running in the editor)
+    /// Structure to hold information about dynamic component references
+    /// </summary>
+    private struct ComponentReference
+    {
+        public Type ReferencedComponentType;
+        public string MethodName; // "AddComponent" or "GetComponent"
+        public int LineNumber;
+        public string SourceFile;
+    }
+
+    /// <summary>
+    /// used to determine if a gameobject is part of a prefab (will be more accurate if this is running in the editor)
     /// </summary>
     private List<string> _cachedPrefabPaths = new();
 
     /// <summary>
-    /// Keep track of the current node amount in the generation algorithm. Easy fix for node creation leading to more game objects leading to more nodes
+    /// Keep track of the current node amount in the generation algorithm. Easy fix for node creation leading to more gameobjects leading to more nodes
     /// </summary>
     private int _currentNodes;
 
@@ -76,33 +92,6 @@ public class SceneAnalyzer : MonoBehaviour
 #if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
-        
-        // Initialize runtime tracking after a scene is fully loaded
-        if (enableRuntimeTracking && performDeepAnalysisOnStart)
-        {
-            StartCoroutine(InitializeRuntimeTrackingDelayed());
-        }
-    }
-    
-    private IEnumerator InitializeRuntimeTrackingDelayed()
-    {
-        // Wait a few frames to ensure all objects are initialized
-        yield return new WaitForSeconds(0.5f);
-        
-        if (_runtimeTracker != null)
-        {
-            _runtimeTracker.PerformDeepAnalysis();
-        }
-    }
-    
-    private void Awake()
-    {
-        // Add the runtime tracker component if it doesn't exist
-        _runtimeTracker = GetComponent<RuntimeComponentTracker>();
-        if (_runtimeTracker == null && enableRuntimeTracking)
-        {
-            _runtimeTracker = gameObject.AddComponent<RuntimeComponentTracker>();
-        }
     }
 
     private List<Type> GetIgnoredTypes()
@@ -116,6 +105,8 @@ public class SceneAnalyzer : MonoBehaviour
         _visitedObjects.Clear();
         _processingObjects.Clear();
         _instanceIdToNodeLookup.Clear();
+        _discoveredMonoBehaviours.Clear();
+        _dynamicComponentReferences.Clear();
 
 #if UNITY_EDITOR
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
@@ -128,7 +119,7 @@ public class SceneAnalyzer : MonoBehaviour
             return;
         }
 
-        var sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        var sceneName = Path.GetFileNameWithoutExtension(scenePath);
         var scene = SceneManager.GetSceneByName(sceneName);
 
         void Analyze()
@@ -139,18 +130,15 @@ public class SceneAnalyzer : MonoBehaviour
             LoadComplexityMetrics(analysisData.ToString());
             _cachedPrefabPaths.Clear();
             TraverseScene(scene.GetRootGameObjects());
-
-            if (_runtimeTracker != null)
+            
+            // Analyze dynamic component references after scene traversal
+            if (analyzeDynamicReferences)
             {
-                _runtimeTracker.RefreshDynamicEdges();
-                
-                // Perform deep analysis after scene traversal
-                if (enableRuntimeTracking)
-                {
-                    StartCoroutine(PerformRuntimeAnalysisDelayed());
-                }
+                Debug.Log($"Analyzing dynamic references for {_discoveredMonoBehaviours.Count} MonoBehaviour types");
+                AnalyzeDynamicComponentReferences();
+                CreateDynamicConnections();
             }
-        
+
             onComplete?.Invoke();
         }
 
@@ -165,13 +153,298 @@ public class SceneAnalyzer : MonoBehaviour
         StartCoroutine(RunNextFrame(Analyze));
     }
 
-    private IEnumerator PerformRuntimeAnalysisDelayed()
+    /// <summary>
+    /// Analyze MonoBehaviour scripts for AddComponent/GetComponent calls
+    /// </summary>
+    private void AnalyzeDynamicComponentReferences()
     {
-        yield return new WaitForSeconds(0.1f);
-        if (_runtimeTracker != null)
+        foreach (var monoBehaviourType in _discoveredMonoBehaviours)
         {
-            _runtimeTracker.DiscoverComponentReferences();
+            try
+            {
+                var sourceFile = FindSourceFileForType(monoBehaviourType);
+                if (string.IsNullOrEmpty(sourceFile)) continue;
+
+                var sourceCode = File.ReadAllText(sourceFile);
+                var references = AnalyzeSourceCodeForComponentReferences(sourceCode, sourceFile);
+
+                if (references.Count <= 0) continue;
+                _dynamicComponentReferences[monoBehaviourType] = references;
+                Debug.Log($"Found {references.Count} dynamic references in {monoBehaviourType.Name}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Could not analyze {monoBehaviourType.Name}: {e.Message}");
+            }
         }
+    }
+
+    /// <summary>
+    /// Find the source .cs file for a given Type
+    /// </summary>
+    /// <param name="type">type to find the source cs file for</param>
+    /// <returns></returns>
+    private string FindSourceFileForType(Type type)
+    {
+#if UNITY_EDITOR
+        // Try to find the script asset
+        var guids = AssetDatabase.FindAssets($"t:MonoScript {type.Name}");
+        foreach (var guid in guids)
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+            if (script && script.GetClass() == type)
+            {
+                return Path.GetFullPath(path);
+            }
+        }
+#endif
+        return null;
+    }
+
+    /// <summary>
+    /// Use Roslyn to analyze source code for component references
+    /// </summary>
+    /// <param name="sourceCode"></param>
+    /// <param name="sourceFile"></param>
+    /// <returns></returns>
+    private List<ComponentReference> AnalyzeSourceCodeForComponentReferences(string sourceCode, string sourceFile)
+    {
+        var references = new List<ComponentReference>();
+        
+        try
+        {
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+            var root = syntaxTree.GetRoot();
+
+            // Find all invocation expressions (method calls)
+            var invocations = root.DescendantNodes().OfType<InvocationExpressionSyntax>();
+            
+            foreach (var invocation in invocations)
+            {
+                var memberAccess = invocation.Expression as MemberAccessExpressionSyntax;
+                var identifierName = invocation.Expression as IdentifierNameSyntax;
+                
+                string methodName = null;
+                
+                if (memberAccess != null)
+                {
+                    methodName = memberAccess.Name.Identifier.ValueText;
+                }
+                else if (identifierName != null)
+                {
+                    methodName = identifierName.Identifier.ValueText;
+                }
+
+                if (methodName == null) continue;
+
+                // Check for AddComponent or GetComponent calls
+                bool isAddComponent = showAddComponentCalls && methodName.StartsWith("AddComponent");
+                bool isGetComponent = showGetComponentCalls && methodName.StartsWith("GetComponent");
+
+                if (!isAddComponent && !isGetComponent) continue;
+
+                // Extract the generic type argument or parameter
+                Type componentType = ExtractComponentTypeFromInvocation(invocation);
+                if (componentType == null) continue;
+
+                var lineNumber = syntaxTree.GetLineSpan(invocation.Span).StartLinePosition.Line + 1;
+                
+                references.Add(new ComponentReference
+                {
+                    ReferencedComponentType = componentType,
+                    MethodName = methodName,
+                    LineNumber = lineNumber,
+                    SourceFile = sourceFile
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Error analyzing source code in {sourceFile}: {e.Message}");
+        }
+
+        return references;
+    }
+
+    /// <summary>
+    /// Extract component type from AddComponent/GetComponent invocation
+    /// </summary>
+    /// <param name="invocation"></param>
+    /// <returns></returns>
+    private Type ExtractComponentTypeFromInvocation(InvocationExpressionSyntax invocation)
+    {
+        // Handle generic method calls like AddComponent<Rigidbody>()
+        if (invocation.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax genericName })
+        {
+            var typeArg = genericName.TypeArgumentList.Arguments.FirstOrDefault();
+            if (typeArg != null)
+            {
+                var typeName = typeArg.ToString();
+                return FindTypeByName(typeName);
+            }
+        }
+        
+        // Handle method calls with Type parameter like AddComponent(typeof(Rigidbody))
+        if (invocation.ArgumentList.Arguments.Count <= 0) return null;
+        {
+            var firstArg = invocation.ArgumentList.Arguments[0].Expression;
+            if (firstArg is not TypeOfExpressionSyntax typeOfExpr) return null;
+            var typeName = typeOfExpr.Type.ToString();
+            return FindTypeByName(typeName);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Find Type by name (with fallback for common Unity types)
+    /// </summary>
+    /// <param name="typeName"></param>
+    /// <returns></returns>
+    private Type FindTypeByName(string typeName)
+    {
+        // Try direct type resolution first
+        var type = Type.GetType(typeName);
+        if (type != null) return type;
+
+        // Try with UnityEngine namespace
+        type = Type.GetType($"UnityEngine.{typeName}");
+        if (type != null) return type;
+
+        // Try to find in all loaded assemblies
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            type = assembly.GetType(typeName);
+            if (type != null) return type;
+            
+            type = assembly.GetType($"UnityEngine.{typeName}");
+            if (type != null) return type;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Create visual connections for dynamic references
+    /// </summary>
+    private void CreateDynamicConnections()
+    {
+        foreach (var kvp in _dynamicComponentReferences)
+        {
+            var sourceType = kvp.Key;
+            var references = kvp.Value;
+
+            // Find the source component node
+            GameObject sourceNode = FindNodeByComponentType(sourceType);
+            if (sourceNode == null) continue;
+
+            foreach (var reference in references)
+            {
+                // Find or create target component node
+                GameObject targetNode = FindOrCreateNodeForComponentType(reference.ReferencedComponentType);
+                if (targetNode == null) continue;
+
+                // Create dynamic connection with orange color
+                var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g, dynamicComponentConnection.b, 0.7f);
+                sourceNode.ConnectNodes(targetNode, connectionColor, 0, "dynamicComponentConnection", 
+                    ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+
+                Debug.Log($"Created dynamic connection: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Find existing node by component type
+    /// </summary>
+    /// <param name="componentType"></param>
+    /// <returns></returns>
+    private GameObject FindNodeByComponentType(Type componentType)
+    {
+        foreach (var kvp in _instanceIdToNodeLookup)
+        {
+            var nodeType = kvp.Value.GetComponent<NodeType>();
+            if (nodeType?.reference is Component comp && comp.GetType() == componentType)
+            {
+                return kvp.Value;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Find existing node or create a new one for component type
+    /// </summary>
+    /// <param name="componentType"></param>
+    /// <returns></returns>
+    private GameObject FindOrCreateNodeForComponentType(Type componentType)
+    {
+        // First try to find existing node
+        var existingNode = FindNodeByComponentType(componentType);
+        if (existingNode != null) return existingNode;
+
+        // Create a virtual node for the component type
+        var virtualNode = SpawnVirtualComponentNode(componentType);
+        return virtualNode;
+    }
+
+    /// <summary>
+    /// Create a virtual node representing a component type
+    /// </summary>
+    /// <param name="componentType"></param>
+    /// <returns></returns>
+    private GameObject SpawnVirtualComponentNode(Type componentType)
+    {
+        if (!ScriptableObjectInventory.Instance.overlay.GetCameraOfScene())
+        {
+            Debug.Log("No camera while trying to spawn a virtual component node");
+            return null;
+        }
+
+        if (!parentNode)
+        {
+            parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
+            if (!parentNode) Debug.Log("Node graph game object was not found");
+        }
+
+        var nodeObject = Instantiate(nodePrefab, parentNode.transform);
+        _currentNodes++;
+        nodeObject.transform.localPosition = new Vector3(0, 0, 0);
+        nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
+        nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
+
+        // Set up as virtual component node
+        var type = nodeObject.GetComponent<NodeType>();
+        if (type)
+        {
+            type.SetNodeType(null);
+            type.reference = null;
+            type.nodeTypeName = NodeTypeName.Component;
+        }
+
+        nodeObject.AddComponent<ArtificialGameObject>();
+
+        // Add text with type name
+        var textObj = new GameObject("Text");
+        textObj.transform.SetParent(nodeObject.transform);
+        textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
+        var text = textObj.AddComponent<TextMeshPro>();
+        text.text = $"({componentType.Name})"; // Parentheses to indicate virtual node
+        text.alignment = TextAlignmentOptions.Center;
+        text.fontSize = 1.5f;
+
+        nodeObject.name = $"virtual_co_{componentType.Name}";
+
+        // Set color to a dimmed component color to indicate it's virtual
+        var dimmedColor = new Color(componentColor.r * 0.7f, componentColor.g * 0.7f, componentColor.b * 0.7f);
+        nodeObject.SetNodeColor(null, gameObjectColor, dimmedColor, scriptableObjectColor, assetColor);
+
+        // Store in lookup with a fake negative instance ID
+        var fakeInstanceId = -(componentType.GetHashCode());
+        _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
+
+        return nodeObject;
     }
 
     private IEnumerator LoadAndAnalyzeCoroutine(string sceneName, Action analyze)
@@ -221,7 +494,7 @@ public class SceneAnalyzer : MonoBehaviour
     {
         if (rootGameObjects == null)
         {
-            Debug.Log("In traverse scene, however there are not game objects in the scene");
+            Debug.Log("In traverse scene, however there are not gameobjects in the scene");
             return;
         }
 
@@ -237,30 +510,13 @@ public class SceneAnalyzer : MonoBehaviour
         }
 
         foreach (var rootObject in rootGameObjects)
-        {
             TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
-            
-            // Register with the runtime tracker for monitoring
-            if (_runtimeTracker == null || !enableRuntimeTracking) continue;
-            RuntimeComponentTracker.RegisterGameObject(rootObject);
-            RegisterAllChildren(rootObject);
-        }
 
         if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph && ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
             ScriptableObjectInventory.Instance.graph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
 
         if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && rootNode)
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(rootNode);
-    }
-
-    private void RegisterAllChildren(GameObject parent)
-    {
-        foreach (Transform child in parent.transform)
-        {
-            if (child.gameObject == null) continue;
-            RuntimeComponentTracker.RegisterGameObject(child.gameObject);
-            RegisterAllChildren(child.gameObject);
-        }
     }
 
     /// <summary>
@@ -300,7 +556,7 @@ public class SceneAnalyzer : MonoBehaviour
             type.reference = obj;
         }
 
-        // used to avoid recursive node spawning if applied to an overlay scene
+        // used to avoid recursive node spawning if applied to overlay scene
         nodeObject.AddComponent<ArtificialGameObject>();
 
         // add text
@@ -409,7 +665,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (root && PrefabUtility.GetPrefabInstanceStatus(root) == PrefabInstanceStatus.Connected)
                 return true;
 
-            // Check for a prefab asset path
+            // Check for prefab asset path
             var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(go);
             if (!string.IsNullOrEmpty(path))
                 return true;
@@ -425,10 +681,9 @@ public class SceneAnalyzer : MonoBehaviour
 #endif
     }
 #else
-    private static bool IsPrefab(Object obj)
-    {
-        return false;
-    }
+            private static bool IsPrefab(Object obj){
+                return false;
+            }
 #endif
 
     private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null, bool isAsset = false)
@@ -493,12 +748,12 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="toTraverseGameObject">To Traverse gameObject</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
-    /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as a reference, <b>False</b> if this was called from TraverseGameObject as a parent-child connection</param>
+    /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
     /// <param name="depth">Depth of the node</param>
     private void TraverseGameObject(GameObject toTraverseGameObject, int depth, GameObject parentNodeObject = null,
         bool isReference = false)
     {
-        // do not investigate the game object when the node count is too large or when the game object is a "node" game object
+        // do not investigate the game object when node count is too large or when the gameobject is a "node" gameobject
         if (!toTraverseGameObject || _currentNodes >= maxNodes) return;
         if (toTraverseGameObject.GetComponent<ArtificialGameObject>()) return;
 
@@ -586,7 +841,7 @@ public class SceneAnalyzer : MonoBehaviour
     }
 
     /// <summary>
-    /// Function to load metrics generated by an external roslyn script which analyzes code complexity and maintainability  
+    /// Function to load metrics generated by external roslyn script which analyzes code complexity and maintainability  
     /// </summary>
     /// <param name="json"></param>
     private void LoadComplexityMetrics(string json)
@@ -609,11 +864,17 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="component">To Traverse component</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
-    /// <param name="depth">Depth of a node</param>
+    /// <param name="depth">Depth of node</param>
     private void TraverseComponent(Component component, int depth, GameObject parentNodeObject = null)
     {
         if (!component || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
             (ignoreTransforms && component.GetType() == typeof(Transform))) return;
+
+        // Track MonoBehaviour types for dynamic analysis
+        if (component is MonoBehaviour && analyzeDynamicReferences)
+        {
+            _discoveredMonoBehaviours.Add(component.GetType());
+        }
 
         var instanceId = component.GetInstanceID();
 
@@ -621,7 +882,8 @@ public class SceneAnalyzer : MonoBehaviour
         if (_processingObjects.Contains(component))
         {
             // If we're in a cycle, connect to the existing node if we have one
-            if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject) parentNodeObject.ConnectNodes(existingNode, componentConnection, depth, "componentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+            if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject) 
+                parentNodeObject.ConnectNodes(existingNode, componentConnection, depth, "componentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
 
             return;
         }
@@ -707,14 +969,10 @@ public class SceneAnalyzer : MonoBehaviour
         _instanceIdToNodeLookup.Clear();
         _visitedObjects.Clear();
         _processingObjects.Clear();
+        _discoveredMonoBehaviours.Clear(); 
+        _dynamicComponentReferences.Clear(); 
         _currentNodes = 0;
         ScriptableObjectInventory.Instance.graph.AllNodes.Clear();
-        
-        // Clear runtime tracker references
-        if (_runtimeTracker != null)
-        {
-            RuntimeComponentTracker.ClearReferences();
-        }
     }
 
     private static IEnumerable<Object> GetComponentReferences(Component component)
@@ -747,61 +1005,5 @@ public class SceneAnalyzer : MonoBehaviour
         if (!parentObject)
             return;
         ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(types, SceneHandler.GetNodesUsingTheNodegraphParentObject());
-    }
-
-    // Public methods for runtime component tracking
-    
-    /// <summary>
-    /// Manually trigger a deep analysis of component references
-    /// </summary>
-    [ContextMenu("Perform Deep Component Analysis")]
-    public void PerformDeepComponentAnalysis()
-    {
-        if (_runtimeTracker != null)
-        {
-            _runtimeTracker.PerformDeepAnalysis();
-            _runtimeTracker.RefreshDynamicEdges();
-        }
-        else
-        {
-            Debug.LogWarning("Runtime component tracker is not available. Enable runtime tracking to use this feature.");
-        }
-    }
-
-    /// <summary>
-    /// Get debug information about currently tracked dynamic references
-    /// </summary>
-    [ContextMenu("Print Dynamic Reference Stats")]
-    public void PrintDynamicReferenceStats()
-    {
-        if (_runtimeTracker == null)
-        {
-            Debug.Log("Runtime component tracker is not available.");
-            return;
-        }
-
-        var references = RuntimeComponentTracker.GetAllReferences();
-        var totalReferences = references.Values.Sum(list => list.Count);
-        var getComponentCount = references.Values.SelectMany(list => list).Count(r => r.MethodType == "GetComponent");
-        var addComponentCount = references.Values.SelectMany(list => list).Count(r => r.MethodType == "AddComponent");
-
-        Debug.Log($"Dynamic Component Reference Stats:\n" +
-                  $"Total Objects Tracked: {references.Count}\n" +
-                  $"Total References: {totalReferences}\n" +
-                  $"GetComponent References: {getComponentCount}\n" +
-                  $"AddComponent References: {addComponentCount}");
-
-        if (!showDynamicReferencesInInspector) return;
-        foreach (var kvp in references)
-        {
-            var sourceId = kvp.Key;
-            var refList = kvp.Value;
-            Debug.Log($"Object ID {sourceId}: {refList.Count} references");
-                
-            foreach (var reference in refList)
-            {
-                Debug.Log($"  - {reference.MethodType}: {reference.Source?.name} -> {reference.Target?.name} ({reference.ComponentType?.Name})");
-            }
-        }
     }
 }
