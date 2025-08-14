@@ -18,6 +18,11 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
     private Button _clearButton;
     private Button _removePhysicsButton;
     private Button _startButton;
+    
+    private Button _hrButton;
+    private Button _crButton;
+    private Button _srButton;
+    private Button _drButton;
 
     // Dropdowns
     private DropdownField _sceneDropdown;
@@ -121,6 +126,31 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 if (lodManager != null) lodManager.clusterNodePrefab = clusterNodePrefab;
             }
         });
+        var hra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
+        var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
+        var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
+        var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
+        if (_hrButton != null) _hrButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("parentChildConnection", hra);
+            hra = !hra;
+        };
+        
+        if (_crButton != null) _crButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("componentConnection", cra);
+            cra = !cra;
+        };
+        if (_srButton != null) _srButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("referenceConnection", fra);
+            fra = !fra;
+        };
+        if (_drButton != null) _drButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("dynamicComponentConnection", dra);
+            dra = !dra;
+        };
     }
 
     private void GrabUIElements(VisualElement root)
@@ -140,6 +170,12 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _colorSlider = root.Q<SliderInt>("ColorSlider");
         _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
         _levelOfDetailToggle = root.Q<Toggle>("LOD");
+        
+        _hrButton = root.Q<Button>("HR");
+        _crButton = root.Q<Button>("CR");
+        _srButton = root.Q<Button>("FR");
+        _drButton = root.Q<Button>("DR");
+        
     }
 
     private void PopulateActions()
