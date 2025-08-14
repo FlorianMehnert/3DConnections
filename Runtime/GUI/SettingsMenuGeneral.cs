@@ -77,6 +77,9 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         MenuManager.Instance.RegisterMenu(menuKeybind, this);
 
         Debug.Log($"SettingsMenuGeneral registered with keybind {menuKeybind}");
+        
+        // menu is closed on start of the program
+        ScriptableObjectInventory.Instance.menuState.menuOpen = uiDocument.rootVisualElement.style.display == DisplayStyle.Flex;
     }
 
     private void SetupUICallbacks()
@@ -126,30 +129,35 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 if (lodManager != null) lodManager.clusterNodePrefab = clusterNodePrefab;
             }
         });
-        var hra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
-        var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
-        var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
-        var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
+        
+        ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.componentReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = true;
         if (_hrButton != null) _hrButton.clicked += () =>
         {
-            NodeConnectionManager.SetConnectionType("parentChildConnection", hra);
-            hra = !hra;
+            var pcra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
+            NodeConnectionManager.SetConnectionType("parentChildConnection", !pcra);
+            ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = !pcra;
         };
         
         if (_crButton != null) _crButton.clicked += () =>
         {
-            NodeConnectionManager.SetConnectionType("componentConnection", cra);
-            cra = !cra;
+            var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
+            NodeConnectionManager.SetConnectionType("componentConnection", !cra);
+            ScriptableObjectInventory.Instance.conSo.componentReferencesActive = !cra;
         };
         if (_srButton != null) _srButton.clicked += () =>
         {
-            NodeConnectionManager.SetConnectionType("referenceConnection", fra);
-            fra = !fra;
+            var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
+            NodeConnectionManager.SetConnectionType("referenceConnection", !fra);
+            ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = !fra;
         };
         if (_drButton != null) _drButton.clicked += () =>
         {
-            NodeConnectionManager.SetConnectionType("dynamicComponentConnection", dra);
-            dra = !dra;
+            var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
+            NodeConnectionManager.SetConnectionType("dynamicComponentConnection", !dra);
+            ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = !dra;
         };
     }
 
