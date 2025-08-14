@@ -380,71 +380,9 @@ public class SceneAnalyzer : MonoBehaviour
     /// <returns></returns>
     private GameObject FindOrCreateNodeForComponentType(Type componentType)
     {
-        // First try to find existing node
         var existingNode = FindNodeByComponentType(componentType);
-        if (existingNode != null) return existingNode;
-
-        // Create a virtual node for the component type
-        var virtualNode = SpawnVirtualComponentNode(componentType);
-        return virtualNode;
-    }
-
-    /// <summary>
-    /// Create a virtual node representing a component type
-    /// </summary>
-    /// <param name="componentType"></param>
-    /// <returns></returns>
-    private GameObject SpawnVirtualComponentNode(Type componentType)
-    {
-        if (!ScriptableObjectInventory.Instance.overlay.GetCameraOfScene())
-        {
-            Debug.Log("No camera while trying to spawn a virtual component node");
-            return null;
-        }
-
-        if (!parentNode)
-        {
-            parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
-            if (!parentNode) Debug.Log("Node graph game object was not found");
-        }
-
-        var nodeObject = Instantiate(nodePrefab, parentNode.transform);
-        _currentNodes++;
-        nodeObject.transform.localPosition = new Vector3(0, 0, 0);
-        nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
-        nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
-
-        // Set up as virtual component node
-        var type = nodeObject.GetComponent<NodeType>();
-        if (type)
-        {
-            type.SetNodeType(null);
-            type.reference = null;
-            type.nodeTypeName = NodeTypeName.Component;
-        }
-
-        nodeObject.AddComponent<ArtificialGameObject>();
-
-        // Add text with type name
-        var textObj = new GameObject("Text");
-        textObj.transform.SetParent(nodeObject.transform);
-        textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
-        var text = textObj.AddComponent<TextMeshPro>();
-        text.text = $"({componentType.Name})"; // Parentheses to indicate virtual node
-        text.alignment = TextAlignmentOptions.Center;
-        text.fontSize = 1.5f;
-
-        nodeObject.name = $"virtual_co_{componentType.Name}";
-
-        // Set color to a dimmed component color to indicate it's virtual
-        var dimmedColor = new Color(componentColor.r * 0.7f, componentColor.g * 0.7f, componentColor.b * 0.7f);
-        nodeObject.SetNodeColor(null, gameObjectColor, dimmedColor, scriptableObjectColor, assetColor);
-
-        // Store in lookup with a fake negative instance ID
-        var fakeInstanceId = -(componentType.GetHashCode());
-        _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
-
-        return nodeObject;
+        return existingNode != null ? existingNode :
+            SpawnNode(null, false, componentType);
     }
 
     private IEnumerator LoadAndAnalyzeCoroutine(string sceneName, Action analyze)
@@ -520,12 +458,44 @@ public class SceneAnalyzer : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn a node gameObject in the overlay scene
+    /// Spawn a node gameObject in the overlay scene.
+    /// If "virtualType" is provided, a virtual node representing that component type is created.
     /// </summary>
-    /// <param name="obj"></param>
-    /// <param name="isAsset"></param>
-    /// <returns></returns>
-    private GameObject SpawnNode(Object obj, bool isAsset = false)
+    /// <param name="obj">The object to represent; for virtual nodes this is null.</param>
+    /// <param name="isAsset">Mark as an asset if needed.</param>
+    /// <param name="virtualType">If non-null, indicates that a virtual node should be created for the given component type.</param>
+    /// <returns>The spawned node GameObject.</returns>
+    private GameObject SpawnNode(Object obj, bool isAsset = false, Type virtualType = null)
+    {
+        GameObject nodeObject = CreateNodeInstance();
+        if (nodeObject == null)
+            return null;
+
+        ConfigureNodeType(nodeObject, obj, virtualType);
+        AddArtificialGameObjectComponent(nodeObject);
+        AddTextChild(nodeObject, obj, virtualType);
+
+#if UNITY_EDITOR
+        // Only add an icon for non-virtual nodes.
+        if (virtualType == null)
+            AddIcon(nodeObject, obj);
+#endif
+
+        ConfigureNodeName(nodeObject, obj, virtualType);
+        ApplyNodeColor(nodeObject, obj, isAsset, virtualType);
+
+        // For virtual nodes, store the node using a fake negative instance ID.
+        if (virtualType == null) return nodeObject;
+        int fakeInstanceId = -(virtualType.GetHashCode());
+        _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
+
+        return nodeObject;
+    }
+    
+    /// <summary>
+    /// Creates a new node instance using the prefab and ensures the parent and camera are valid.
+    /// </summary>
+    private GameObject CreateNodeInstance()
     {
         if (!ScriptableObjectInventory.Instance.overlay.GetCameraOfScene())
         {
@@ -533,102 +503,166 @@ public class SceneAnalyzer : MonoBehaviour
             return null;
         }
 
-        // try to resolve parent gameObject
         if (!parentNode)
         {
             parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
-            if (!parentNode) Debug.Log("In SpawnTestNodeOnSecondDisplay node graph game object was not found");
+            if (!parentNode)
+                Debug.Log("Node graph game object was not found");
         }
 
-        // create node object
-        var nodeObject = Instantiate(nodePrefab, parentNode.transform);
+        GameObject nodeObject = Instantiate(nodePrefab, parentNode.transform);
         _currentNodes++;
-        nodeObject.transform.localPosition = new Vector3(0, 0, 0);
+        nodeObject.transform.localPosition = Vector3.zero;
         nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
-
         nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
-
-        // set nodeType
-        var type = nodeObject.GetComponent<NodeType>();
-        if (type)
+        return nodeObject;
+    }
+    
+    /// <summary>
+    /// Configures the NodeType component on the node.
+    /// For a virtual node (when virtualType is not null) the node is marked as a component node with no reference.
+    /// Otherwise, it is assigned based on the supplied object.
+    /// </summary>
+    private static void ConfigureNodeType(GameObject nodeObject, Object obj, Type virtualType)
+    {
+        var nodeType = nodeObject.GetComponent<NodeType>();
+        if (nodeType == null) return;
+        if (virtualType != null)
         {
-            type.SetNodeType(obj);
-            type.reference = obj;
-        }
-
-        // used to avoid recursive node spawning if applied to overlay scene
-        nodeObject.AddComponent<ArtificialGameObject>();
-
-        // add text
-        var textObj = new GameObject("Text");
-        textObj.transform.SetParent(nodeObject.transform);
-        textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
-        var text = textObj.AddComponent<TextMeshPro>();
-        text.text = obj ? obj.name : "null object";
-        text.alignment = TextAlignmentOptions.Center;
-        text.fontSize = 1.5f;
-
-#if UNITY_EDITOR
-        // set icons
-        if (obj is Component componentObject && setIcons)
-        {
-            var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
-            var iconObj = new GameObject("Icon");
-            if (componentIcon)
-            {
-                iconObj.transform.SetParent(nodeObject.transform);
-                iconObj.transform.localPosition = new Vector3(0, 0, -1f);
-                var iconRenderer = iconObj.AddComponent<SpriteRenderer>();
-                var sprite = TextureToSprite(componentIcon);
-                iconRenderer.sprite = sprite;
-                iconRenderer.sortingOrder = 1;
-                const float desiredHeight = 0.5f;
-                Vector2 spriteSize = sprite.bounds.size;
-                var scaleY = desiredHeight / spriteSize.y;
-                var scaleX = scaleY * (spriteSize.x / spriteSize.y) * .5f; // since nodes are scale 2:1
-                iconObj.transform.localScale = new Vector3(scaleX, scaleY, 1);
-            }
-        }
-#endif
-
-        // set name
-        var prefixNode = "" + type.nodeTypeName switch
-        {
-            NodeTypeName.GameObject => "go_",
-            NodeTypeName.Component => "co_",
-            NodeTypeName.ScriptableObject => "so_",
-            _ => ""
-        };
-
-        // handle initial node
-        if (!type.reference)
-        {
-            nodeObject.name = "tfRoot";
-
-            // since this is required if analyzing parent-child relations
-            var nodeType = nodeObject.AddComponent<NodeType>();
             nodeType.reference = null;
-            nodeType.nodeTypeName = NodeTypeName.GameObject;
+            nodeType.nodeTypeName = NodeTypeName.Component;
         }
         else
         {
-            var postfixNode = prefixNode != "go_" ? "_" + type.reference.GetType().Name : string.Empty;
-            nodeObject.name = prefixNode + obj.name + postfixNode;
+            nodeType.SetNodeType(obj);
+            nodeType.reference = obj;
         }
+    }
+    
+    /// <summary>
+    /// Adds the ArtificialGameObject component to prevent recursive spawns.
+    /// </summary>
+    private static void AddArtificialGameObjectComponent(GameObject nodeObject)
+    {
+        nodeObject.AddComponent<ArtificialGameObject>();
+    }
+    
+    /// <summary>
+    /// Adds a Text child (using TextMeshPro) to display a label on the node.
+    /// For a virtual node the text is set to the type name (in parentheses).
+    /// </summary>
+    private static void AddTextChild(GameObject nodeObject, Object obj, Type virtualType)
+    {
+        var textObj = new GameObject("Text");
+        textObj.transform.SetParent(nodeObject.transform);
+        textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
 
-        // handle prefabs
-        if (!IsPrefab(obj))
+        var text = textObj.AddComponent<TextMeshPro>();
+        if (virtualType != null)
         {
-            nodeObject.SetNodeColor(obj, gameObjectColor, componentColor, scriptableObjectColor, assetColor, isAsset);
-            return nodeObject;
+            text.text = $"({virtualType.Name})";
         }
+        else
+        {
+            text.text = obj ? obj.name : "null object";
+        }
+        text.alignment = TextAlignmentOptions.Center;
+        text.fontSize = 1.5f;
+    }
+    
+#if UNITY_EDITOR
+    /// <summary>
+    /// Adds an Icon child to the node when appropriate.
+    /// Only non-virtual nodes (and when setIcons is enabled) will configure an icon.
+    /// </summary>
+    private void AddIcon(GameObject nodeObject, Object obj)
+    {
+        if (obj is not Component componentObject || !setIcons) return;
+        var componentIcon = EditorGUIUtility.ObjectContent(null, componentObject.GetType()).image as Texture2D;
+        if (!componentIcon) return;
+        var iconObj = new GameObject("Icon");
+        iconObj.transform.SetParent(nodeObject.transform);
+        iconObj.transform.localPosition = new Vector3(0, 0, -1f);
 
-        var nodeRenderer = nodeObject.GetComponent<Renderer>();
-        if (!nodeRenderer) return nodeObject;
-        nodeRenderer.material.EnableKeyword("_EMISSION");
-        var emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
-        nodeRenderer.material.SetColor(EmissionColor, emissionColor);
-        return nodeObject;
+        SpriteRenderer iconRenderer = iconObj.AddComponent<SpriteRenderer>();
+        var sprite = TextureToSprite(componentIcon);
+        iconRenderer.sprite = sprite;
+        iconRenderer.sortingOrder = 1;
+
+        const float desiredHeight = 0.5f;
+        Vector2 spriteSize = sprite.bounds.size;
+        float scaleY = desiredHeight / spriteSize.y;
+        float scaleX = scaleY * (spriteSize.x / spriteSize.y) * 0.5f;  // nodes are scale 2:1
+        iconObj.transform.localScale = new Vector3(scaleX, scaleY, 1);
+    }
+#endif
+    
+    /// <summary>
+    /// Configures the node's name based on its type and reference.
+    /// For virtual nodes the name is prefixed with "virtual_co_" and the type name.
+    /// </summary>
+    private void ConfigureNodeName(GameObject nodeObject, Object obj, Type virtualType)
+    {
+        var nodeType = nodeObject.GetComponent<NodeType>();
+        if (virtualType != null)
+        {
+            nodeObject.name = $"virtual_co_{virtualType.Name}";
+        }
+        else
+        {
+            var prefixNode = "";
+            if (nodeType == null) return;
+            prefixNode = nodeType.nodeTypeName switch
+            {
+                NodeTypeName.GameObject => "go_",
+                NodeTypeName.Component => "co_",
+                NodeTypeName.ScriptableObject => "so_",
+                _ => prefixNode
+            };
+
+            // If no reference, this is the root
+            if (nodeType.reference == null)
+            {
+                nodeObject.name = "tfRoot";
+                nodeType.nodeTypeName = NodeTypeName.GameObject;
+            }
+            else
+            {
+                string postfixNode = prefixNode != "go_" ? "_" + nodeType.reference.GetType().Name : string.Empty;
+                nodeObject.name = $"{prefixNode}{obj.name}{postfixNode}";
+            }
+        }
+    }
+    
+    
+    /// <summary>
+    /// Applies colors to the node. For virtual nodes the node color is set using a dimmed version of the component color;
+    /// for a normal object the node is colored based on whether it is a prefab or not.
+    /// </summary>
+    private void ApplyNodeColor(GameObject nodeObject, Object obj, bool isAsset, Type virtualType)
+    {
+        if (virtualType != null)
+        {
+            // Use a dimmed version of the component color to denote a virtual node.
+            Color dimmedColor = dynamicComponentConnection;
+            nodeObject.SetNodeColor(obj, gameObjectColor, dimmedColor, scriptableObjectColor, assetColor, overrideColor:dimmedColor);
+        }
+        else
+        {
+            if (!IsPrefab(obj))
+            {
+                nodeObject.SetNodeColor(obj, gameObjectColor, componentColor, scriptableObjectColor, assetColor, isAsset);
+            }
+            else
+            {
+                // For prefabs, enable an emission effect.
+                var nodeRenderer = nodeObject.GetComponent<Renderer>();
+                if (!nodeRenderer) return;
+                nodeRenderer.material.EnableKeyword("_EMISSION");
+                Color emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
+                nodeRenderer.material.SetColor(EmissionColor, emissionColor);
+            }
+        }
     }
 
     [UsedImplicitly]
