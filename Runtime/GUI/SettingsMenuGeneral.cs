@@ -28,6 +28,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     // Toggle
     private Toggle _alternativeColorsButton;
+    private int _sliderValue = 0;
     private Toggle _levelOfDetailToggle;
     
     public GameObject clusterNodePrefab;
@@ -95,6 +96,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _simDropdown?.RegisterValueChangedCallback(evt => { OnSimulationTypeChanged(evt.newValue); });
 
         _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
+        _alternativeColorsButton?.RegisterValueChangedCallback(_ => UpdateColor(_sliderValue));
         _levelOfDetailToggle?.RegisterValueChangedCallback(evt =>
         {
             var cam = SceneHandler.GetCameraOfOverlayedScene();
@@ -299,6 +301,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     private void UpdateColor(int sliderValue)
     {
+        _sliderValue = sliderValue;
         if (!ScriptableObjectInventory.Instance ||
             !ScriptableObjectInventory.Instance.graph ||
             _alternativeColorsButton == null)
@@ -339,6 +342,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 "parentChildConnection" => colors[4],
                 "componentConnection" => colors[5],
                 "referenceConnection" => colors[6],
+                "dynamicComponentConnection" => colors[7],
                 _ => Color.white
             };
             connection.ApplyConnection();
