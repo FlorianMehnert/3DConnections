@@ -13,4 +13,8 @@ public class NodeConnectionsScriptableObject : ScriptableObject
     public NativeArray<float3> NativeConnections;
     public bool usingNativeArray;
     public int currentConnectionCount;
+    public bool parentChildReferencesActive;
+    public bool componentReferencesActive;
+    public bool fieldReferencesActive;
+    public bool dynamicReferencesActive;
 }

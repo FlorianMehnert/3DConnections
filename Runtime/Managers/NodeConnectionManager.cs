@@ -333,6 +333,21 @@ public sealed class NodeConnectionManager : MonoBehaviour
         if (!start || !end) return null;
         return ScriptableObjectInventory.Instance.conSo.connections.FirstOrDefault(connection => connection.startNode == start && connection.endNode == end);
     }
+
+    /// <summary>
+    /// Enables/Disables all edges of the given connection-type
+    /// </summary>
+    public static void SetConnectionType(string connectionType, bool enable)
+    {
+        ScriptableObjectInventory.Instance.conSo.connections.ForEach(connection =>
+        {
+            if (connection.connectionType != connectionType) return;
+            try { connection.lineRenderer.enabled = enable; }
+            catch (MissingReferenceException) { // ignore, happens when the connection is destroyed while this is running
+                Debug.Log("Missing reference exception");
+            }
+        });
+    }
     
     #if UNITY_EDITOR
     /// <summary>

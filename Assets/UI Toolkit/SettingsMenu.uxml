@@ -51,16 +51,27 @@
                             <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                         </Bindings>
                     </ui:DropdownField>
-                    <ui:SliderInt label="Colors" value="42" high-value="4" name="ColorSlider">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:SliderInt>
-                    <ui:Toggle label="Use Preset Colors" toggle-on-label-click="true" name="AlternativeColorsToggle">
-                        <Bindings>
-                            <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
-                        </Bindings>
-                    </ui:Toggle>
+                    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                        <ui:SliderInt label="Colors" value="42" high-value="4" name="ColorSlider" style="flex-basis: 50%;">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:SliderInt>
+                        <ui:Toggle label="generate" toggle-on-label-click="true" name="AlternativeColorsToggle" style="flex-basis: 50%;">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:Toggle>
+                    </ui:VisualElement>
+                    <ui:VisualElement style="flex-grow: 1; flex-direction: row; padding-left: 10px;">
+                        <ui:Label text="ConType" style="justify-content: flex-start; -unity-text-align: middle-left; padding-left: 2px;" />
+                        <ui:ToggleButtonGroup is-multiple-selection="true" value="000" allow-empty-selection="true" style="flex-direction: column;">
+                            <ui:Button text="HR" name="HR" style="padding-right: 10px; padding-left: 10px;" />
+                            <ui:Button text="CR" name="CR" style="padding-left: 10px; padding-right: 10px;" />
+                            <ui:Button text="FR" name="FR" style="padding-right: 10px; padding-left: 10px;" />
+                            <ui:Button text="DR" name="DR" style="padding-right: 10px; padding-left: 10px;" />
+                        </ui:ToggleButtonGroup>
+                    </ui:VisualElement>
                 </ui:VisualElement>
             </ui:Tab>
             <ui:Tab label="Layout" name="LayoutTab">

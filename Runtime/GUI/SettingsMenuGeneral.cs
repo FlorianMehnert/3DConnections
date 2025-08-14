@@ -18,6 +18,11 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
     private Button _clearButton;
     private Button _removePhysicsButton;
     private Button _startButton;
+    
+    private Button _hrButton;
+    private Button _crButton;
+    private Button _srButton;
+    private Button _drButton;
 
     // Dropdowns
     private DropdownField _sceneDropdown;
@@ -28,6 +33,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     // Toggle
     private Toggle _alternativeColorsButton;
+    private int _sliderValue = 0;
     private Toggle _levelOfDetailToggle;
     
     public GameObject clusterNodePrefab;
@@ -95,6 +101,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _simDropdown?.RegisterValueChangedCallback(evt => { OnSimulationTypeChanged(evt.newValue); });
 
         _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
+        _alternativeColorsButton?.RegisterValueChangedCallback(_ => UpdateColor(_sliderValue));
         _levelOfDetailToggle?.RegisterValueChangedCallback(evt =>
         {
             var cam = SceneHandler.GetCameraOfOverlayedScene();
@@ -119,6 +126,31 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 if (lodManager != null) lodManager.clusterNodePrefab = clusterNodePrefab;
             }
         });
+        var hra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
+        var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
+        var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
+        var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
+        if (_hrButton != null) _hrButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("parentChildConnection", hra);
+            hra = !hra;
+        };
+        
+        if (_crButton != null) _crButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("componentConnection", cra);
+            cra = !cra;
+        };
+        if (_srButton != null) _srButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("referenceConnection", fra);
+            fra = !fra;
+        };
+        if (_drButton != null) _drButton.clicked += () =>
+        {
+            NodeConnectionManager.SetConnectionType("dynamicComponentConnection", dra);
+            dra = !dra;
+        };
     }
 
     private void GrabUIElements(VisualElement root)
@@ -138,6 +170,12 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
         _colorSlider = root.Q<SliderInt>("ColorSlider");
         _alternativeColorsButton = root.Q<Toggle>("AlternativeColorsToggle");
         _levelOfDetailToggle = root.Q<Toggle>("LOD");
+        
+        _hrButton = root.Q<Button>("HR");
+        _crButton = root.Q<Button>("CR");
+        _srButton = root.Q<Button>("FR");
+        _drButton = root.Q<Button>("DR");
+        
     }
 
     private void PopulateActions()
@@ -299,6 +337,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
 
     private void UpdateColor(int sliderValue)
     {
+        _sliderValue = sliderValue;
         if (!ScriptableObjectInventory.Instance ||
             !ScriptableObjectInventory.Instance.graph ||
             _alternativeColorsButton == null)
@@ -339,6 +378,7 @@ public class SettingsMenuGeneral : MonoBehaviour, IMenu
                 "parentChildConnection" => colors[4],
                 "componentConnection" => colors[5],
                 "referenceConnection" => colors[6],
+                "dynamicComponentConnection" => colors[7],
                 _ => Color.white
             };
             connection.ApplyConnection();

@@ -238,14 +238,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 260993916698367870, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-      propertyPath: gridCellSize
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 260993916698367870, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
-      propertyPath: nodeAggregationThreshold
-      value: 5
-      objectReference: {fileID: 0}
     - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: parentObject
       value: 
@@ -842,10 +834,14 @@ MonoBehaviour:
   parentChildConnection: {r: 0.5, g: 0.5, b: 1, a: 1}
   componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
   referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
+  dynamicComponentConnection: {r: 1, g: 0.6, b: 0, a: 1}
   colorPreset: 0
   generateColors: 0
   toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
   setIcons: 1
+  analyzeDynamicReferences: 1
+  showAddComponentCalls: 1
+  showGetComponentCalls: 1
   searchForPrefabsUsingNames: 1
   spawnRootNode: 0
   ignoredTypes: []
@@ -1033,14 +1029,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1290973389945366610, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
-      propertyPath: m_VertexColorAlwaysGammaSpace
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1290973389945366610, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
-      propertyPath: m_AdditionalShaderChannelsFlag
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2148338715269070664, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
       propertyPath: m_Pivot.x
       value: 0

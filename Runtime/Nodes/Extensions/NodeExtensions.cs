@@ -18,10 +18,16 @@ public static class NodeExtensions
     /// <param name="scriptableObjectColor">Color of the node if it is representing a scriptableObject</param>
     /// <param name="assetColor">Color of the node if it is representing an asset</param>
     /// <param name="isAsset"></param>
-    public static void SetNodeColor(this GameObject go, Object obj, Color gameObjectColor, Color componentColor, Color scriptableObjectColor, Color assetColor, bool isAsset = false)
+    /// <param name="overrideColor"></param>
+    public static void SetNodeColor(this GameObject go, Object obj, Color gameObjectColor, Color componentColor, Color scriptableObjectColor, Color assetColor, bool isAsset = false, Color overrideColor = default)
     {
         var componentRenderer = go.GetComponent<Renderer>();
         if (!componentRenderer) return;
+        if (overrideColor != default)
+        {
+            componentRenderer.material.color = overrideColor;
+            return;
+        }
         if (isAsset)
         {
             componentRenderer.material.color = assetColor;

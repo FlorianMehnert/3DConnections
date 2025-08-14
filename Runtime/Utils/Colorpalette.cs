@@ -6,7 +6,7 @@ public static class Colorpalette
 {
     public static Color[] GeneratePaletteFromBaseColor(Color baseColor = default, int prebuiltChannels = 0, bool generateColors = false, bool alternativeColors = false)
 {
-    var palette = new Color[7];
+    var palette = new Color[8];
     if (!generateColors)
     {
         switch (prebuiltChannels)
@@ -20,7 +20,8 @@ public static class Colorpalette
                     new(0.1f, 0.9f, 0.9f),
                     new(0.5f, 0.5f, 1f),
                     new(0.5f, 1f, 0.5f),
-                    new(1f, 0f, 0.5f)
+                    new(1f, 0f, 0.5f),
+                    new(1f, 0.6f, 0f)
                 };
             case 1:
                 return new[]
@@ -31,7 +32,8 @@ public static class Colorpalette
                     HexToColor("#c7ecee"),
                     HexToColor("#379CA5"),
                     HexToColor("#7A723D"),
-                    HexToColor("#7A3D60")
+                    HexToColor("#7A3D60"),
+                    HexToColor("#87934A")
                 };
             case 2:
                 return new[]
@@ -43,6 +45,7 @@ public static class Colorpalette
                     HexToColor("#7ed6df"),
                     HexToColor("#e056fd"),
                     HexToColor("#686de0"),
+                    HexToColor("#CAF95D"),
                 };
             case 3:
                 return new[]
@@ -54,6 +57,7 @@ public static class Colorpalette
                     HexToColor("#B33771"),
                     HexToColor("#3B3B98"),
                     HexToColor("#FD7272"),
+                    HexToColor("#FDC972"),
                 };
         }
     }
@@ -76,6 +80,7 @@ public static class Colorpalette
     palette[4] = HSVToRGB(h % 1f, s * 0.7f, 0.7f);
     palette[5] = HSVToRGB((h + 0.3f) % 1f, s * 0.7f, 0.7f);
     palette[6] = HSVToRGB((h + 0.6f) % 1f, s * 0.7f, 0.7f);
+    palette[7] = HSVToRGB((h + 0.25f) % 1f, s * 0.5f, 0.2f);
 
     return palette;
 }
