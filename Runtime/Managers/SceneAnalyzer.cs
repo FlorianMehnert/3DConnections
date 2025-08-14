@@ -36,7 +36,7 @@ public class SceneAnalyzer : MonoBehaviour
     [Header("Dynamic Component Tracking")] 
     [SerializeField] private bool enableRuntimeTracking = true;
     [SerializeField] private bool performDeepAnalysisOnStart = true;
-    [SerializeField] private bool showDynamicReferencesInInspector = false;
+    [SerializeField] private bool showDynamicReferencesInInspector;
 
     [Header("Display Settings")] [SerializeField]
     internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
@@ -60,12 +60,12 @@ public class SceneAnalyzer : MonoBehaviour
     [Header("Ignored Types Settings")] public List<string> ignoredTypes = new();
 
     /// <summary>
-    /// used to determine if a gameobject is part of a prefab (will be more accurate if this is running in the editor)
+    /// used to determine if a game object is part of a prefab (will be more accurate if this is running in the editor)
     /// </summary>
     private List<string> _cachedPrefabPaths = new();
 
     /// <summary>
-    /// Keep track of the current node amount in the generation algorithm. Easy fix for node creation leading to more gameobjects leading to more nodes
+    /// Keep track of the current node amount in the generation algorithm. Easy fix for node creation leading to more game objects leading to more nodes
     /// </summary>
     private int _currentNodes;
 
@@ -77,7 +77,7 @@ public class SceneAnalyzer : MonoBehaviour
         _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
         
-        // Initialize runtime tracking after scene is fully loaded
+        // Initialize runtime tracking after a scene is fully loaded
         if (enableRuntimeTracking && performDeepAnalysisOnStart)
         {
             StartCoroutine(InitializeRuntimeTrackingDelayed());
@@ -221,7 +221,7 @@ public class SceneAnalyzer : MonoBehaviour
     {
         if (rootGameObjects == null)
         {
-            Debug.Log("In traverse scene, however there are not gameobjects in the scene");
+            Debug.Log("In traverse scene, however there are not game objects in the scene");
             return;
         }
 
@@ -240,12 +240,10 @@ public class SceneAnalyzer : MonoBehaviour
         {
             TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
             
-            // Register with runtime tracker for monitoring
-            if (_runtimeTracker != null && enableRuntimeTracking)
-            {
-                RuntimeComponentTracker.RegisterGameObject(rootObject);
-                RegisterAllChildren(rootObject);
-            }
+            // Register with the runtime tracker for monitoring
+            if (_runtimeTracker == null || !enableRuntimeTracking) continue;
+            RuntimeComponentTracker.RegisterGameObject(rootObject);
+            RegisterAllChildren(rootObject);
         }
 
         if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph && ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
@@ -259,11 +257,9 @@ public class SceneAnalyzer : MonoBehaviour
     {
         foreach (Transform child in parent.transform)
         {
-            if (child.gameObject != null)
-            {
-                RuntimeComponentTracker.RegisterGameObject(child.gameObject);
-                RegisterAllChildren(child.gameObject);
-            }
+            if (child.gameObject == null) continue;
+            RuntimeComponentTracker.RegisterGameObject(child.gameObject);
+            RegisterAllChildren(child.gameObject);
         }
     }
 
@@ -304,7 +300,7 @@ public class SceneAnalyzer : MonoBehaviour
             type.reference = obj;
         }
 
-        // used to avoid recursive node spawning if applied to overlay scene
+        // used to avoid recursive node spawning if applied to an overlay scene
         nodeObject.AddComponent<ArtificialGameObject>();
 
         // add text
@@ -413,7 +409,7 @@ public class SceneAnalyzer : MonoBehaviour
             if (root && PrefabUtility.GetPrefabInstanceStatus(root) == PrefabInstanceStatus.Connected)
                 return true;
 
-            // Check for prefab asset path
+            // Check for a prefab asset path
             var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(go);
             if (!string.IsNullOrEmpty(path))
                 return true;
@@ -497,12 +493,12 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="toTraverseGameObject">To Traverse gameObject</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
-    /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as reference, <b>False</b> if this was called from TraverseGameObject as parent-child connection</param>
+    /// <param name="isReference"><b>True</b> if this function was called from TraverseComponent as a reference, <b>False</b> if this was called from TraverseGameObject as a parent-child connection</param>
     /// <param name="depth">Depth of the node</param>
     private void TraverseGameObject(GameObject toTraverseGameObject, int depth, GameObject parentNodeObject = null,
         bool isReference = false)
     {
-        // do not investigate the game object when node count is too large or when the gameobject is a "node" gameobject
+        // do not investigate the game object when the node count is too large or when the game object is a "node" game object
         if (!toTraverseGameObject || _currentNodes >= maxNodes) return;
         if (toTraverseGameObject.GetComponent<ArtificialGameObject>()) return;
 
@@ -590,7 +586,7 @@ public class SceneAnalyzer : MonoBehaviour
     }
 
     /// <summary>
-    /// Function to load metrics generated by external roslyn script which analyzes code complexity and maintainability  
+    /// Function to load metrics generated by an external roslyn script which analyzes code complexity and maintainability  
     /// </summary>
     /// <param name="json"></param>
     private void LoadComplexityMetrics(string json)
@@ -613,7 +609,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// </summary>
     /// <param name="component">To Traverse component</param>
     /// <param name="parentNodeObject">node object which should be the parent of the node that is spawned for the given gameObject</param>
-    /// <param name="depth">Depth of node</param>
+    /// <param name="depth">Depth of a node</param>
     private void TraverseComponent(Component component, int depth, GameObject parentNodeObject = null)
     {
         if (!component || _currentNodes > maxNodes || GetIgnoredTypes().Contains(component.GetType()) ||
@@ -775,6 +771,7 @@ public class SceneAnalyzer : MonoBehaviour
     /// <summary>
     /// Get debug information about currently tracked dynamic references
     /// </summary>
+    [ContextMenu("Print Dynamic Reference Stats")]
     public void PrintDynamicReferenceStats()
     {
         if (_runtimeTracker == null)
@@ -794,38 +791,17 @@ public class SceneAnalyzer : MonoBehaviour
                   $"GetComponent References: {getComponentCount}\n" +
                   $"AddComponent References: {addComponentCount}");
 
-        if (showDynamicReferencesInInspector)
+        if (!showDynamicReferencesInInspector) return;
+        foreach (var kvp in references)
         {
-            foreach (var kvp in references)
-            {
-                var sourceId = kvp.Key;
-                var refList = kvp.Value;
-                Debug.Log($"Object ID {sourceId}: {refList.Count} references");
+            var sourceId = kvp.Key;
+            var refList = kvp.Value;
+            Debug.Log($"Object ID {sourceId}: {refList.Count} references");
                 
-                foreach (var reference in refList)
-                {
-                    Debug.Log($"  - {reference.MethodType}: {reference.Source?.name} -> {reference.Target?.name} ({reference.ComponentType?.Name})");
-                }
+            foreach (var reference in refList)
+            {
+                Debug.Log($"  - {reference.MethodType}: {reference.Source?.name} -> {reference.Target?.name} ({reference.ComponentType?.Name})");
             }
-        }
-    }
-
-    /// <summary>
-    /// Enable or disable runtime component tracking
-    /// </summary>
-    public void SetRuntimeTrackingEnabled(bool enabled)
-    {
-        enableRuntimeTracking = enabled;
-        
-        if (enabled && _runtimeTracker == null)
-        {
-            _runtimeTracker = gameObject.AddComponent<RuntimeComponentTracker>();
-        }
-        else if (!enabled && _runtimeTracker != null)
-        {
-            RuntimeComponentTracker.ClearReferences();
-            Destroy(_runtimeTracker);
-            _runtimeTracker = null;
         }
     }
 }

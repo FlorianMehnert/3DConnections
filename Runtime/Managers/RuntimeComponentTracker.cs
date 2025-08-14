@@ -338,6 +338,7 @@ public class RuntimeComponentTracker : MonoBehaviour
         }
     }
 
+    // TODO: this needs to spawn new edges only when analyze scene was called
     private void CreateDynamicEdge(ComponentReference reference)
     {
         if (_sceneAnalyzer == null) return;
