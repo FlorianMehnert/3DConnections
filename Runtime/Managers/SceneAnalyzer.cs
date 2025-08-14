@@ -130,7 +130,7 @@ public class SceneAnalyzer : MonoBehaviour
             LoadComplexityMetrics(analysisData.ToString());
             _cachedPrefabPaths.Clear();
             TraverseScene(scene.GetRootGameObjects());
-            
+
             // Analyze dynamic component references after scene traversal
             if (analyzeDynamicReferences)
             {
@@ -487,7 +487,11 @@ public class SceneAnalyzer : MonoBehaviour
         // For virtual nodes, store the node using a fake negative instance ID.
         if (virtualType == null) return nodeObject;
         int fakeInstanceId = -(virtualType.GetHashCode());
+        
+        // Add the virtual node immediately to all nodes.
         _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
+        if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && nodeObject)
+            ScriptableObjectInventory.Instance.graph.AllNodes.Add(nodeObject);
 
         return nodeObject;
     }
@@ -988,12 +992,12 @@ public class SceneAnalyzer : MonoBehaviour
     private void ClearNodes()
     {
         if (!parentNode) Debug.Log("nodeGraph gameObject unknown in ClearNodes for 3DConnections.SceneAnalyzer");
-
         parentNode = ScriptableObjectInventory.Instance.overlay.GetNodeGraph();
         if (!parentNode) Debug.Log("Even after asking the overlay SO for the nodeGraph gameObject it could not be found");
 
         Debug.Log("about to delete " + parentNode.transform.childCount + " nodes");
-        foreach (Transform child in parentNode.transform) Destroy(child.gameObject);
+        foreach (Transform child in parentNode.transform)
+            Destroy(child.gameObject);
 
         if (NodeConnectionManager.Instance)
             NodeConnectionManager.ClearConnections();
@@ -1003,11 +1007,12 @@ public class SceneAnalyzer : MonoBehaviour
         _instanceIdToNodeLookup.Clear();
         _visitedObjects.Clear();
         _processingObjects.Clear();
-        _discoveredMonoBehaviours.Clear(); 
-        _dynamicComponentReferences.Clear(); 
+        _discoveredMonoBehaviours.Clear();
+        _dynamicComponentReferences.Clear();
         _currentNodes = 0;
         ScriptableObjectInventory.Instance.graph.AllNodes.Clear();
     }
+
 
     private static IEnumerable<Object> GetComponentReferences(Component component)
     {
