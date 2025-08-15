@@ -4,7 +4,9 @@ using UnityEditor.Search;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+#if UNITY_EDITOR_COROUTINES
 using Unity.EditorCoroutines.Editor;
+#endif
 using System.Collections;
 
 internal static class NodeOverlaySearchProvider
@@ -262,15 +264,15 @@ internal static class NodeOverlaySearchProvider
         }
 
         var camObj = GameObject.Find("OverlayCamera");
-        if (camObj != null)
-        {
-            var cam = camObj.GetComponent<Camera>();
-            if (cam != null)
-            {
-                Vector3 targetPos = new Vector3(go.transform.position.x, go.transform.position.y, cam.transform.position.z);
-                EditorCoroutineUtility.StartCoroutineOwnerless(AnimateCameraMove(cam, targetPos));
-            }
-        }
+        if (camObj == null) return;
+        var cam = camObj.GetComponent<Camera>();
+        if (cam == null) return;
+        var targetPos = new Vector3(go.transform.position.x, go.transform.position.y, cam.transform.position.z);
+#if UNITY_EDITOR_COROUTINES
+        EditorCoroutineUtility.StartCoroutineOwnerless(AnimateCameraMove(cam, targetPos));
+#else
+        EditorApplication.delayCall += () => AnimateCameraMove(cam, targetPos);
+#endif
     }
 
     private static IEnumerator AnimateCameraMove(Camera cam, Vector3 targetPosition, float duration = 0.5f)
@@ -298,4 +300,4 @@ internal static class NodeOverlaySearchProvider
         Debug.Log("Cleared all highlights");
     }
 }
-#endif
+#endif    
