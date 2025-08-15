@@ -47,6 +47,7 @@ public class SceneAnalyzer : MonoBehaviour
     [SerializeField] private Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
     [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Pink
     [SerializeField] private Color dynamicComponentConnection = new(1f, 0.6f, 0f); // Orange
+    [SerializeField] private Color unityEventConnection = new(1f, 0.85f, 0f); // Gold
     [SerializeField] private int colorPreset;
     [SerializeField] private bool generateColors;
     [SerializeField] private ToAnalyzeScene toAnalyzeScene;
@@ -201,6 +202,31 @@ public class SceneAnalyzer : MonoBehaviour
 #endif
         return null;
     }
+    
+#if UNITY_EDITOR
+    private List<(string eventName, string typeName)> FindUnityEventsInComponent(Component component)
+    {
+        var events = new List<(string, string)>();
+
+        var so = new SerializedObject(component);
+        var property = so.GetIterator();
+
+        while (property.NextVisible(true))
+        {
+            // SerializedPropertyType.Generic is used for UnityEvent
+            if (property.propertyType == SerializedPropertyType.Generic &&
+                (property.type == "UnityEvent" || property.type.StartsWith("UnityEvent<")))
+            {
+                events.Add((property.name, property.type));
+            }
+        }
+
+        return events;
+    }
+#endif
+
+    
+
 
     /// <summary>
     /// Use Roslyn to analyze source code for component references
@@ -932,6 +958,31 @@ public class SceneAnalyzer : MonoBehaviour
         try
         {
             var nodeObject = GetOrSpawnNode(component, depth + 1, parentNodeObject);
+#if UNITY_EDITOR
+// Detect UnityEvent fields and spawn virtual event nodes
+            var unityEvents = FindUnityEventsInComponent(component);
+            foreach (var (eventName, typeName) in unityEvents)
+            {
+                // Create a virtual node for the UnityEvent
+                var eventNode = SpawnNode(null, false, typeof(UnityEngine.Events.UnityEvent));
+                if (!eventNode) continue;
+                var textObj = eventNode.transform.Find("Text");
+                if (textObj)
+                {
+                    var tmp = textObj.GetComponent<TextMeshPro>();
+                    if (tmp)
+                        tmp.text = $"(Event) {eventName}";
+                }
+
+                // Connect event node to the component node
+                component.gameObject.ConnectNodes(eventNode,
+                    unityEventConnection,
+                    depth + 1,
+                    "unityEventConnection",
+                    ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+            }
+#endif
+
             if (scaleNodesUsingMaintainability)
                 nodeObject.ScaleNodeUsingComplexityMap(component, _complexityMap);
 
