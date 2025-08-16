@@ -12,7 +12,7 @@
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
-    
+
     using Nodes;
 
     public partial class SceneAnalyzer
@@ -46,67 +46,113 @@
             }
         }
 
+        /// <summary>
+        /// Enhanced GetOrSpawnNode that can handle virtual component nodes
+        /// </summary>
+        /// <param name="obj">The Unity Object to create a node for (can be null for virtual nodes)</param>
+        /// <param name="depth">The depth in the hierarchy</param>
+        /// <param name="parentNodeObject">The parent node to connect to</param>
+        /// <param name="isAsset">Whether this represents an asset reference</param>
+        /// <param name="virtualComponentType">If provided, creates a virtual node for this component type</param>
+        /// <returns>The spawned or existing node GameObject</returns>
         private GameObject GetOrSpawnNode(Object obj, int depth, GameObject parentNodeObject = null,
-            bool isAsset = false)
+    bool isAsset = false, Type virtualComponentType = null)
+{
+    // Handle virtual component nodes
+    if (virtualComponentType != null)
+    {
+        var fakeInstanceId = -(virtualComponentType.GetHashCode());
+        
+        // Check if a virtual node already exists
+        if (_instanceIdToNodeLookup.TryGetValue(fakeInstanceId, out var existingVirtualNode))
         {
-            if (!obj) return null;
-
-            var instanceId = obj.GetInstanceID();
-
-            // Check if this node already exists
-            if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode))
-            {
-                // Connect existing node
-                if (!parentNodeObject) return existingNode;
-                if (isAsset)
-                    parentNodeObject.ConnectNodes(existingNode,
-                        new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
-                        "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
-                else
-                    parentNodeObject.ConnectNodes(existingNode,
-                        obj switch
-                        {
-                            GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
-                                parentChildConnection.b, 0.5f),
-                            Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
-                                0.5f),
-                            _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                        }, depth, obj switch
-                        {
-                            GameObject => "parentChildConnection",
-                            Component => "componentConnection",
-                            _ => "referenceConnection"
-                        }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
-
-                return existingNode;
-            }
-
-            // Create a new node
-            var newNode = SpawnNode(obj, isAsset);
-            _instanceIdToNodeLookup[instanceId] = newNode;
-            if (!parentNodeObject) return newNode;
-            if (isAsset)
-                parentNodeObject.ConnectNodes(newNode,
-                    new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
-                    "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
-            else
-                parentNodeObject.ConnectNodes(newNode,
-                    obj switch
-                    {
-                        GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
-                            parentChildConnection.b, 0.5f),
-                        Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
-                            0.5f),
-                        _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
-                    }, depth, obj switch
-                    {
-                        GameObject => "parentChildConnection",
-                        Component => "componentConnection",
-                        _ => "referenceConnection"
-                    }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
-
-            return newNode;
+            // Connect existing virtual node to parent if needed
+            if (parentNodeObject == null) return existingVirtualNode;
+            var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g,
+                dynamicComponentConnection.b, 0.7f);
+            parentNodeObject.ConnectNodes(existingVirtualNode, connectionColor, depth, 
+                "dynamicComponentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+            return existingVirtualNode;
         }
+
+        // Create a new virtual node
+        var virtualNode = SpawnNode(null, false, virtualComponentType);
+        if (virtualNode == null) return virtualNode;
+        {
+            _instanceIdToNodeLookup[fakeInstanceId] = virtualNode;
+            
+            // Connect to parent if provided
+            if (parentNodeObject == null) return virtualNode;
+            var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g,
+                dynamicComponentConnection.b, 0.7f);
+            parentNodeObject.ConnectNodes(virtualNode, connectionColor, depth, 
+                "dynamicComponentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+        }
+        return virtualNode;
+    }
+
+    // Handle regular objects (existing logic)
+    if (!obj) return null;
+
+    var instanceId = obj.GetInstanceID();
+
+    // Check if this node already exists
+    if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode))
+    {
+        // Connect existing node
+        if (parentNodeObject == null) return existingNode;
+        if (isAsset)
+            parentNodeObject.ConnectNodes(existingNode,
+                new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
+                "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+        else
+            parentNodeObject.ConnectNodes(existingNode,
+                obj switch
+                {
+                    GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
+                        parentChildConnection.b, 0.5f),
+                    Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
+                        0.5f),
+                    _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+                }, depth, obj switch
+                {
+                    GameObject => "parentChildConnection",
+                    Component => "componentConnection",
+                    _ => "referenceConnection"
+                }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+
+        return existingNode;
+    }
+
+    // Create a new node
+    var newNode = SpawnNode(obj, isAsset);
+    if (newNode == null) return newNode;
+    _instanceIdToNodeLookup[instanceId] = newNode;
+        
+    // Connect to parent if provided
+    if (parentNodeObject == null) return newNode;
+    if (isAsset)
+        parentNodeObject.ConnectNodes(newNode,
+            new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
+            "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+    else
+        parentNodeObject.ConnectNodes(newNode,
+            obj switch
+            {
+                GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
+                    parentChildConnection.b, 0.5f),
+                Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
+                    0.5f),
+                _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+            }, depth, obj switch
+            {
+                GameObject => "parentChildConnection",
+                Component => "componentConnection",
+                _ => "referenceConnection"
+            }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+
+    return newNode;
+}
 
         /// <summary>
         /// Find existing node by component type

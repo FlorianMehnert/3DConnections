@@ -101,23 +101,23 @@
         /// </summary>
         public void DiscoverComponentReferences()
         {
-            var allGameObjects = FindObjectsOfType<GameObject>();
+            var allGameObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
 
-            foreach (var gameObject in allGameObjects)
+            foreach (var go in allGameObjects)
             {
                 // Skip artificial objects
-                if (gameObject.GetComponent<ArtificialGameObject>() != null) continue;
+                if (go.GetComponent<ArtificialGameObject>() != null) continue;
 
-                RegisterGameObject(gameObject);
-                AnalyzeGameObjectForReferences(gameObject);
+                RegisterGameObject(go);
+                AnalyzeGameObjectForReferences(go);
             }
         }
 
-        private void InitializeComponentSnapshot(GameObject gameObject)
+        private void InitializeComponentSnapshot(GameObject go)
         {
-            if (gameObject == null) return;
+            if (go == null) return;
 
-            var components = gameObject.GetComponents<Component>();
+            var components = go.GetComponents<Component>();
             var componentDict = new Dictionary<Type, Component>();
 
             foreach (var component in components)
@@ -128,7 +128,7 @@
                 }
             }
 
-            _lastKnownComponents[gameObject] = componentDict;
+            _lastKnownComponents[go] = componentDict;
         }
 
         private void ScanForComponentChanges()

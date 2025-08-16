@@ -81,13 +81,7 @@
                                                  System.Reflection.BindingFlags.Public |
                                                  System.Reflection.BindingFlags.NonPublic);
 
-            foreach (var field in fields)
-            {
-                if (typeof(Delegate).IsAssignableFrom(field.FieldType))
-                {
-                    events.Add((field.Name, field.FieldType));
-                }
-            }
+            events.AddRange(from field in fields where typeof(Delegate).IsAssignableFrom(field.FieldType) select (field.Name, field.FieldType));
 
             return events;
         }
@@ -96,19 +90,21 @@
         {
             foreach (var sub in _eventSubscriptions)
             {
-                // Find or create publisher node
-                GameObject publisherNode = FindOrCreateNodeForComponentType(sub.PublisherType);
-                if (publisherNode == null) continue;
-
-                // Find subscriber node
+                // Find the subscriber node first
                 GameObject subscriberNode = FindNodeByComponentType(sub.SubscriberType);
                 if (subscriberNode == null) continue;
 
-                // Connect them
-                var connectionColor = new Color(1f, 0.85f, 0f, 0.7f); // Gold
-                publisherNode.ConnectNodes(subscriberNode,
-                    connectionColor,
-                    0,
+                // Use GetOrSpawnNode to find or create a publisher node with proper depth and parent tracking
+                int eventDepth = 1; // Event connections are typically one level deep
+        
+                // Create/find the publisher node connected to the subscriber (reverse direction for event flow)
+                GameObject publisherNode = GetOrSpawnNode(null, eventDepth, subscriberNode, false, sub.PublisherType);
+                if (publisherNode == null) continue;
+
+                // The connection was already made in GetOrSpawnNode, but we can override with event-specific styling
+                subscriberNode.ConnectNodes(publisherNode,
+                    unityEventConnection,
+                    eventDepth,
                     "eventSubscriptionConnection",
                     ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
 

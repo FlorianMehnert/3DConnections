@@ -6,6 +6,7 @@
     using UnityEngine;
     
     using ScriptableObjectInventory;
+    using Runtime.Nodes;
 
     public partial class SceneAnalyzer : MonoBehaviour
     {
@@ -103,21 +104,19 @@
                 var sourceType = kvp.Key;
                 var references = kvp.Value;
 
-                // Find the source component node
+                // Find the source component node using the existing method
                 GameObject sourceNode = FindNodeByComponentType(sourceType);
                 if (sourceNode == null) continue;
 
                 foreach (var reference in references)
                 {
-                    // Find or create target component node
-                    GameObject targetNode = FindOrCreateNodeForComponentType(reference.ReferencedComponentType);
+                    // Use the integrated GetOrSpawnNode for virtual component nodes
+                    // We can determine appropriate depth and parent based on the source node
+                    var sourceNodeType = sourceNode.GetComponent<NodeType>();
+                    int dynamicDepth = 1; // Dynamic connections are typically one level deep
+            
+                    GameObject targetNode = GetOrSpawnNode(null, dynamicDepth, sourceNode, false, reference.ReferencedComponentType);
                     if (targetNode == null) continue;
-
-                    // Create dynamic connection with orange color
-                    var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g,
-                        dynamicComponentConnection.b, 0.7f);
-                    sourceNode.ConnectNodes(targetNode, connectionColor, 0, "dynamicComponentConnection",
-                        ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
 
                     Debug.Log(
                         $"Created dynamic connection: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
