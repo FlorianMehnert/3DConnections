@@ -1,9 +1,12 @@
-using System.Collections.Generic;
-using UnityEngine;
-
-public class LocalNodeConnections : MonoBehaviour
+namespace _3DConnections.Runtime.Nodes
 {
-    [SerializeField] public List<GameObject> inConnections = new();
+    using System.Collections.Generic;
+    using UnityEngine;
 
-    [SerializeField] public List<GameObject> outConnections = new();
+    public class LocalNodeConnections : MonoBehaviour
+    {
+        [SerializeField] public List<GameObject> inConnections = new();
+
+        [SerializeField] public List<GameObject> outConnections = new();
+    }
 }

@@ -1,6 +1,9 @@
-public enum NodeTypeName
+namespace _3DConnections.Runtime.Nodes
 {
-    GameObject,
-    Component,
-    ScriptableObject,
+    public enum NodeTypeName
+    {
+        GameObject,
+        Component,
+        ScriptableObject,
+    }
 }

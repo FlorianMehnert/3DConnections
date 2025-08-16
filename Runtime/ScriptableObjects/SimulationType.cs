@@ -1,10 +1,14 @@
-public enum SimulationType
+namespace _3DConnections.Runtime.ScriptableObjects
 {
-    Static,
-    Default,
-    Burst,
-    // ReSharper disable once InconsistentNaming
-    GRIP,
-    ComponentV2,
-    MinimalGPU
+    public enum SimulationType
+    {
+        Static,
+        Default,
+        Burst,
+
+        // ReSharper disable once InconsistentNaming
+        GRIP,
+        ComponentV2,
+        MinimalGPU
+    }
 }

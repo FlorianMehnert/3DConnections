@@ -1,8 +1,10 @@
-using UnityEditor;
-using UnityEngine;
+
 
 namespace _3DConnections.Editor
 {
+    using Runtime.Managers;
+    using UnityEditor;
+    using UnityEngine;
     [CustomEditor(typeof(SettingsMenuGeneral))]
     public class SettingsMenuEditor : UnityEditor.Editor
     {

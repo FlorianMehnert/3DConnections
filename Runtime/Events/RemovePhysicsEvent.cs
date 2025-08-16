@@ -1,13 +1,16 @@
-using UnityEngine;
-using UnityEngine.Events;
-
-[CreateAssetMenu(fileName = "Remove Physics Event", menuName = "3DConnections/Events/Remove Physics Event")]
-public class RemovePhysicsEvent : ScriptableObject
+namespace _3DConnections.Runtime.Events
 {
-    public UnityAction OnEventTriggered;
+    using UnityEngine;
+    using UnityEngine.Events;
 
-    public void TriggerEvent()
+    [CreateAssetMenu(fileName = "Remove Physics Event", menuName = "3DConnections/Events/Remove Physics Event")]
+    public class RemovePhysicsEvent : ScriptableObject
     {
-        OnEventTriggered?.Invoke();
+        public UnityAction OnEventTriggered;
+
+        public void TriggerEvent()
+        {
+            OnEventTriggered?.Invoke();
+        }
     }
 }

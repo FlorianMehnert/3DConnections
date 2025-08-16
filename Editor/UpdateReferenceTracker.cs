@@ -1,12 +1,11 @@
-using System.Collections;
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-
 namespace _3DConnections.Editor
 {
+    using System.Collections;
+    using UnityEngine;
+    using UnityEditor;
+    using System.Collections.Generic;
+    using System.Reflection;
+    using System.Linq;
     public class UpdateReferenceTracker : EditorWindow
     {
         // Lists to store tracking data
@@ -26,7 +25,7 @@ namespace _3DConnections.Editor
         private GUIStyle rowStyle;
 
         // Toolbar selection
-        private int selectedTab = 0;
+        private int selectedTab;
         private readonly string[] tabOptions = { "Update Methods", "References", "Settings" };
 
         [MenuItem("Tools/Update Reference Tracker")]

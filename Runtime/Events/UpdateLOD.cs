@@ -1,13 +1,16 @@
-﻿using UnityEngine;
-using UnityEngine.Events;
-
-[CreateAssetMenu(fileName = "UpdateLOD", menuName = "3DConnections/Events/UpdateLOD")]
-public class UpdateLOD : ScriptableObject
+﻿namespace _3DConnections.Runtime.Events
 {
-    public UnityAction OnEventTriggered;
+    using UnityEngine;
+    using UnityEngine.Events;
 
-    public void TriggerEvent()
+    [CreateAssetMenu(fileName = "UpdateLOD", menuName = "3DConnections/Events/UpdateLOD")]
+    public class UpdateLOD : ScriptableObject
     {
-        OnEventTriggered?.Invoke();
+        public UnityAction OnEventTriggered;
+
+        public void TriggerEvent()
+        {
+            OnEventTriggered?.Invoke();
+        }
     }
 }

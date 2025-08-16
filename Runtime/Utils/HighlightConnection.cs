@@ -1,3 +1,5 @@
+namespace _3DConnections.Runtime.Utils
+{
     using UnityEngine;
     using UnityEngine.Events;
 
@@ -54,3 +56,4 @@
             _lineRenderer.endColor = _originalColor;
         }
     }
+}

@@ -1,21 +1,24 @@
-using UnityEngine;
-
-/// <summary>
-/// Component that holds information about the node type. Used in the component-based node approach 
-/// </summary>
-public class NodeType : MonoBehaviour
+namespace _3DConnections.Runtime.Nodes
 {
-    [SerializeField] public NodeTypeName nodeTypeName;
-    [SerializeField] public Object reference;
-    
-    public void SetNodeType(Object obj)
+    using UnityEngine;
+
+    /// <summary>
+    /// Component that holds information about the node type. Used in the component-based node approach 
+    /// </summary>
+    public class NodeType : MonoBehaviour
     {
-        nodeTypeName = obj switch
+        [SerializeField] public NodeTypeName nodeTypeName;
+        [SerializeField] public Object reference;
+
+        public void SetNodeType(Object obj)
         {
-            GameObject => NodeTypeName.GameObject,
-            Component => NodeTypeName.Component,
-            ScriptableObject => NodeTypeName.ScriptableObject,
-            _ => nodeTypeName
-        };
+            nodeTypeName = obj switch
+            {
+                GameObject => NodeTypeName.GameObject,
+                Component => NodeTypeName.Component,
+                ScriptableObject => NodeTypeName.ScriptableObject,
+                _ => nodeTypeName
+            };
+        }
     }
 }

@@ -1,4 +1,7 @@
-public interface ILogable
+namespace _3DConnections.Runtime.Simulations
 {
-    public string GetStatus();
+    public interface ILogable
+    {
+        public string GetStatus();
+    }
 }

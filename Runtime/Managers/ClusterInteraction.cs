@@ -1,48 +1,51 @@
-﻿using UnityEngine;
-using UnityEngine.EventSystems;
-
-/// <summary>
-/// Allows interactive expansion of cluster nodes
-/// </summary>
-public class ClusterInteraction : MonoBehaviour, IPointerClickHandler
+﻿namespace _3DConnections.Runtime.Managers
 {
-    private GraphLODManager _lodManager;
-    
-    private void Start()
+    using UnityEngine;
+    using UnityEngine.EventSystems;
+
+    /// <summary>
+    /// Allows interactive expansion of cluster nodes
+    /// </summary>
+    public class ClusterInteraction : MonoBehaviour, IPointerClickHandler
     {
-        _lodManager = FindObjectOfType<GraphLODManager>();
-    }
-    
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        var clusterData = GetComponent<ClusterNodeData>();
-        if (clusterData != null && _lodManager != null)
+        private GraphLODManager _lodManager;
+
+        private void Start()
         {
-            // Temporarily show contained nodes
-            StartCoroutine(ExpandCluster(clusterData));
+            _lodManager = FindObjectOfType<GraphLODManager>();
         }
-    }
-    
-    private System.Collections.IEnumerator ExpandCluster(ClusterNodeData clusterData)
-    {
-        // Hide cluster
-        gameObject.SetActive(false);
-        
-        // Show contained nodes
-        foreach (var node in clusterData.containedNodes)
+
+        public void OnPointerClick(PointerEventData eventData)
         {
-            if (node) node.SetActive(true);
+            var clusterData = GetComponent<ClusterNodeData>();
+            if (clusterData != null && _lodManager != null)
+            {
+                // Temporarily show contained nodes
+                StartCoroutine(ExpandCluster(clusterData));
+            }
         }
-        
-        // Wait for a few seconds
-        yield return new WaitForSeconds(3f);
-        
-        // Re-hide nodes and show cluster again (if still in LOD mode)
-        foreach (var node in clusterData.containedNodes)
+
+        private System.Collections.IEnumerator ExpandCluster(ClusterNodeData clusterData)
         {
-            if (node) node.SetActive(false);
+            // Hide cluster
+            gameObject.SetActive(false);
+
+            // Show contained nodes
+            foreach (var node in clusterData.containedNodes)
+            {
+                if (node) node.SetActive(true);
+            }
+
+            // Wait for a few seconds
+            yield return new WaitForSeconds(3f);
+
+            // Re-hide nodes and show cluster again (if still in LOD mode)
+            foreach (var node in clusterData.containedNodes)
+            {
+                if (node) node.SetActive(false);
+            }
+
+            gameObject.SetActive(true);
         }
-        
-        gameObject.SetActive(true);
     }
 }

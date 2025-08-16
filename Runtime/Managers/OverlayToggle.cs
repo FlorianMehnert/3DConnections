@@ -1,41 +1,46 @@
-using UnityEngine;
-
-/// <summary>
-/// Manager responsible for display switching using shortcuts
-/// </summary>
-public class OverlayToggle : MonoBehaviour
+namespace _3DConnections.Runtime.Managers
 {
-
-    private void Update()
-    {
-        // Check if F1 is pressed to switch to Display 1
-        if (!Input.GetKeyDown(KeyCode.F1)) return;
-        ScriptableObjectInventory.Instance.overlay.ToggleOverlay();
-        ToggleAnalyzedScene();
-        ToggleOverlayScene(ScriptableObjectInventory.Instance.overlay.OverlayIsActive());
-    }
-
-    private void ToggleAnalyzedScene()
-    {
-        ScriptableObjectInventory.Instance.toggleOverlayEvent?.TriggerEvent();
-    }
+    using UnityEngine;
+    
+    using ScriptableObjectInventory;
 
     /// <summary>
-    /// Enable/Disable whole overlayScene except the manager to still allowing toggling back
+    /// Manager responsible for display switching using shortcuts
     /// </summary>
-    /// <param name="value">true for enable/false for disable overlay scene</param>
-    private void ToggleOverlayScene(bool value)
+    public class OverlayToggle : MonoBehaviour
     {
-        foreach (var go in gameObject.scene.GetRootGameObjects())
+
+        private void Update()
         {
-            if (go != gameObject)
-                go.SetActive(value);
-            else
+            // Check if F1 is pressed to switch to Display 1
+            if (!Input.GetKeyDown(KeyCode.F1)) return;
+            ScriptableObjectInventory.Instance.overlay.ToggleOverlay();
+            ToggleAnalyzedScene();
+            ToggleOverlayScene(ScriptableObjectInventory.Instance.overlay.OverlayIsActive());
+        }
+
+        private void ToggleAnalyzedScene()
+        {
+            ScriptableObjectInventory.Instance.toggleOverlayEvent?.TriggerEvent();
+        }
+
+        /// <summary>
+        /// Enable/Disable whole overlayScene except the manager to still allowing toggling back
+        /// </summary>
+        /// <param name="value">true for enable/false for disable overlay scene</param>
+        private void ToggleOverlayScene(bool value)
+        {
+            foreach (var go in gameObject.scene.GetRootGameObjects())
             {
-                foreach (Transform child in gameObject.transform)
+                if (go != gameObject)
+                    go.SetActive(value);
+                else
                 {
-                    if (child.name is "SettingsMenu" or "ModularMenu" or "GUIManager") continue;
-                    child.gameObject.SetActive(value);
+                    foreach (Transform child in gameObject.transform)
+                    {
+                        if (child.name is "SettingsMenu" or "ModularMenu" or "GUIManager") continue;
+                        child.gameObject.SetActive(value);
+                    }
                 }
             }
         }
