@@ -1,9 +1,11 @@
-using UnityEditor;
+
 
 namespace _3DConnections.Editor
 {
+    using Runtime.Managers;
+    using UnityEditor;
     [CustomEditor(typeof(CubeSelector))]
-    public class SelectionManagerEditor : UnityEditor.Editor
+    public class SelectionManagerEditor : Editor
     {
         public override void OnInspectorGUI()
         {

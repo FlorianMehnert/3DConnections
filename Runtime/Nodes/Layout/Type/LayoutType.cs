@@ -1,6 +1,9 @@
-public enum LayoutType
+namespace _3DConnections.Runtime.Layout.Type
 {
-    Grid,
-    Tree,
-    Radial,
+    public enum LayoutType
+    {
+        Grid,
+        Tree,
+        Radial,
+    }
 }

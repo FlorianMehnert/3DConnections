@@ -1,13 +1,16 @@
-using UnityEngine;
-using UnityEngine.Events;
-
-[CreateAssetMenu(fileName = "Clear Nodes Event", menuName = "3DConnections/Events/Clear Nodes Event")]
-public class ClearEvent : ScriptableObject
+namespace _3DConnections.Runtime.Events
 {
-    public UnityAction OnEventTriggered;
+    using UnityEngine;
+    using UnityEngine.Events;
 
-    public void TriggerEvent()
+    [CreateAssetMenu(fileName = "Clear Nodes Event", menuName = "3DConnections/Events/Clear Nodes Event")]
+    public class ClearEvent : ScriptableObject
     {
-        OnEventTriggered?.Invoke();
+        public UnityAction OnEventTriggered;
+
+        public void TriggerEvent()
+        {
+            OnEventTriggered?.Invoke();
+        }
     }
 }

@@ -1,34 +1,41 @@
-using UnityEditor;
-using UnityEngine;
-
-[CustomEditor(typeof(NodeConnectionManager))]
-public class SceneConnectionsExecuteEditor : Editor
+namespace _3DConnections.Editor
 {
-    private NodeConnectionManager _nodeConnectionManager;
-    private Color _highlightColor = Color.red;
-    private float _duration = 5f;
-    private void OnEnable()
-    {
-        _nodeConnectionManager = (NodeConnectionManager)target;
-    }
+    using Runtime.Managers;
+    using UnityEditor;
+    using UnityEngine;
 
-    public override void OnInspectorGUI()
+    [CustomEditor(typeof(NodeConnectionManager))]
+    public class SceneConnectionsExecuteEditor : Editor
     {
-        DrawDefaultInspector();
-        EditorGUILayout.LabelField("Execute Functions of NodeConnectionsManager", EditorStyles.boldLabel);
-        EditorGUILayout.BeginHorizontal();
-        _highlightColor = EditorGUILayout.ColorField("Highlight Color", _highlightColor);
-        _duration = EditorGUILayout.FloatField(value:_duration, label:"Duration");
-        EditorGUILayout.EndHorizontal();
-        EditorGUILayout.BeginVertical();
-        if (GUILayout.Button("Highlight Cycles"))
+        private NodeConnectionManager _nodeConnectionManager;
+        private Color _highlightColor = Color.red;
+        private float _duration = 5f;
+
+        private void OnEnable()
         {
-            _nodeConnectionManager.HighlightCycles(_highlightColor, _duration);
+            _nodeConnectionManager = (NodeConnectionManager)target;
         }
-        if (GUILayout.Button("Apply Forces to Nodes"))
+
+        public override void OnInspectorGUI()
         {
-            _nodeConnectionManager.SeparateCycles();
+            DrawDefaultInspector();
+            EditorGUILayout.LabelField("Execute Functions of NodeConnectionsManager", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            _highlightColor = EditorGUILayout.ColorField("Highlight Color", _highlightColor);
+            _duration = EditorGUILayout.FloatField(value: _duration, label: "Duration");
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginVertical();
+            if (GUILayout.Button("Highlight Cycles"))
+            {
+                _nodeConnectionManager.HighlightCycles(_highlightColor, _duration);
+            }
+
+            if (GUILayout.Button("Apply Forces to Nodes"))
+            {
+                _nodeConnectionManager.SeparateCycles();
+            }
+
+            EditorGUILayout.EndVertical();
         }
-        EditorGUILayout.EndVertical();
     }
 }

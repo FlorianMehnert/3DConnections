@@ -1,9 +1,7 @@
-using UnityEditor;
-using UnityEngine;
-
 namespace _3DConnections.Editor.CustomTags
 {
-    // Custom attribute to mark a color as readonly
+    using UnityEditor;
+    using UnityEngine;
     [System.AttributeUsage(System.AttributeTargets.Field)]
     public class ReadonlyColor : PropertyAttribute { }
 

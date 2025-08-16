@@ -1,9 +1,11 @@
-using UnityEditor;
 
 namespace _3DConnections.Editor
 {
+    using UnityEditor;
+    using Runtime.ScriptableObjects;
+    
     [CustomEditor(typeof(SceneReference))]
-    public class SceneReferenceEditor : UnityEditor.Editor
+    public class SceneReferenceEditor : Editor
     {
         public override void OnInspectorGUI()
         {

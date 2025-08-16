@@ -1,75 +1,81 @@
-using System;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-
-public class Entrypoint3DConnections : MonoBehaviour
+namespace _3DConnections.Runtime.Managers
 {
-    [SerializeField] private OverlaySceneScriptableObject overlay;
-    [SerializeField] private ToggleOverlayEvent overlayEvent;
-    [SerializeField] private bool disableSceneOnOverlay = true;
-    [SerializeField] private bool loadOnStart = true;
-    [SerializeField] private Scene sceneToLoad;
-    private string _sceneName;
+    using Events;
+    using UnityEngine;
+    using UnityEngine.SceneManagement;
+    
+    using ScriptableObjects;
 
-    private void Update()
+    public class Entrypoint3DConnections : MonoBehaviour
     {
-        if (!Input.GetKeyDown(KeyCode.Return)) return;
-        if (SceneManager.GetSceneByName(_sceneName).isLoaded) return;
-        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
-        if (disableSceneOnOverlay)
-            ToggleRootObjectsInSceneWhileOverlay();
-    }
+        
+        [SerializeField] private OverlaySceneScriptableObject overlay;
+        [SerializeField] private ToggleOverlayEvent overlayEvent;
+        [SerializeField] private bool disableSceneOnOverlay = true;
+        [SerializeField] private bool loadOnStart = true;
+        [SerializeField] private UnityEngine.SceneManagement.Scene sceneToLoad;
+        private string _sceneName;
 
-    /// <summary>
-    /// Enable/Disable root objects of all gameObjects in the scene except this one.
-    /// Makes an exception for ui menus since they are handled using the GUIManger
-    /// </summary>
-    /// <param name="value">true for enable/false for disabling all gameObjects</param>
-    private void ToggleRootObjectsInSceneWhileOverlay(bool value = false)
-    {
-        foreach (var go in gameObject.scene.GetRootGameObjects())
+        private void Update()
         {
-            if (go == gameObject)
+            if (!Input.GetKeyDown(KeyCode.Return)) return;
+            if (SceneManager.GetSceneByName(_sceneName).isLoaded) return;
+            SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
+            if (disableSceneOnOverlay)
+                ToggleRootObjectsInSceneWhileOverlay();
+        }
+
+        /// <summary>
+        /// Enable/Disable root objects of all gameObjects in the scene except this one.
+        /// Makes an exception for ui menus since they are handled using the GUIManger
+        /// </summary>
+        /// <param name="value">true for enable/false for disabling all gameObjects</param>
+        private void ToggleRootObjectsInSceneWhileOverlay(bool value = false)
+        {
+            foreach (var go in gameObject.scene.GetRootGameObjects())
             {
-                continue;
+                if (go == gameObject)
+                {
+                    continue;
+                }
+
+                go.SetActive(value);
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (!overlayEvent) return;
+            overlayEvent.OnEventTriggered += HandleEvent;
+            if (sceneToLoad != default)
+            {
+                var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
+                sceneReference.scene = sceneToLoad;
+                overlay.overlayScene = sceneReference;
             }
 
-            go.SetActive(value);
-        }
-    }
+            _sceneName = overlay.overlayScene.Name;
+            if (SceneManager.GetSceneByName(_sceneName).isLoaded)
+            {
+                return;
+            }
 
-    private void OnEnable()
-    {
-        if (!overlayEvent) return;
-        overlayEvent.OnEventTriggered += HandleEvent;
-        if (sceneToLoad != default)
+            if (!loadOnStart) return;
+            SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
+            if (disableSceneOnOverlay)
+                ToggleRootObjectsInSceneWhileOverlay();
+        }
+
+        private void OnDisable()
         {
-            var sceneReference = ScriptableObject.CreateInstance<SceneReference>();
-            sceneReference.scene = sceneToLoad;
-            overlay.overlayScene = sceneReference;
+            if (!overlayEvent) return;
+            overlayEvent.OnEventTriggered -= HandleEvent;
         }
 
-        _sceneName = overlay.overlayScene.Name;
-        if (SceneManager.GetSceneByName(_sceneName).isLoaded)
+        private void HandleEvent()
         {
-            return;
+            if (disableSceneOnOverlay)
+                ToggleRootObjectsInSceneWhileOverlay(!overlay.OverlayIsActive());
         }
-
-        if (!loadOnStart) return;
-        SceneManager.LoadScene(sceneName: _sceneName, mode: LoadSceneMode.Additive);
-        if (disableSceneOnOverlay)
-            ToggleRootObjectsInSceneWhileOverlay();
-    }
-
-    private void OnDisable()
-    {
-        if (!overlayEvent) return;
-        overlayEvent.OnEventTriggered -= HandleEvent;
-    }
-
-    private void HandleEvent()
-    {
-        if (disableSceneOnOverlay)
-            ToggleRootObjectsInSceneWhileOverlay(!overlay.OverlayIsActive());
     }
 }

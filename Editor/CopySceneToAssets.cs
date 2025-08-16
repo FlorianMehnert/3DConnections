@@ -1,99 +1,102 @@
-using UnityEngine;
-using UnityEditor;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
-using System.IO;
-using System.Linq;
-
-public class CopySceneFromPackage
+namespace _3DConnections.Editor
 {
+    using UnityEngine;
+    using UnityEditor;
+    using UnityEditor.PackageManager;
+    using UnityEditor.PackageManager.Requests;
+    using System.IO;
+    using System.Linq;
+
+    public class CopySceneFromPackage
+    {
 #if UNITY_EDITOR
-    private static ListRequest _listRequest;
-    private static string packageName = "com.florian-mehnert.3d-connections";
-    private static string sceneName = "OverlayScene.unity";
+        private static ListRequest _listRequest;
+        private static string packageName = "com.florian-mehnert.3d-connections";
+        private static string sceneName = "OverlayScene.unity";
 
-    [MenuItem("Tools/3DConnections/Copy and Add Overlay Scene")]
-    public static void CopyOverlayScene()
-    {
-        _listRequest = Client.List();
-        EditorApplication.update += OnPackageListRequest;
-    }
-
-    private static void OnPackageListRequest()
-    {
-        if (_listRequest.IsCompleted)
+        [MenuItem("Tools/3DConnections/Copy and Add Overlay Scene")]
+        public static void CopyOverlayScene()
         {
-            EditorApplication.update -= OnPackageListRequest;
+            _listRequest = Client.List();
+            EditorApplication.update += OnPackageListRequest;
+        }
 
-            if (_listRequest.Status == StatusCode.Success)
+        private static void OnPackageListRequest()
+        {
+            if (_listRequest.IsCompleted)
             {
-                foreach (var package in _listRequest.Result)
+                EditorApplication.update -= OnPackageListRequest;
+
+                if (_listRequest.Status == StatusCode.Success)
                 {
-                    if (package.name == packageName)
+                    foreach (var package in _listRequest.Result)
                     {
-                        string packagePath = package.resolvedPath;
-                        string scenePath = Path.Combine(packagePath, "Assets/Scenes/", sceneName);
-                        string destinationPath = Path.Combine("Assets/Scenes/", sceneName);
-
-                        if (File.Exists(scenePath))
+                        if (package.name == packageName)
                         {
-                            if (File.Exists(destinationPath))
+                            string packagePath = package.resolvedPath;
+                            string scenePath = Path.Combine(packagePath, "Assets/Scenes/", sceneName);
+                            string destinationPath = Path.Combine("Assets/Scenes/", sceneName);
+
+                            if (File.Exists(scenePath))
                             {
-                                // Delete existing file before copying
-                                File.Delete(destinationPath);
-                                Debug.Log("Deleted existing scene file: " + destinationPath);
+                                if (File.Exists(destinationPath))
+                                {
+                                    // Delete existing file before copying
+                                    File.Delete(destinationPath);
+                                    Debug.Log("Deleted existing scene file: " + destinationPath);
+                                }
+
+                                // Ensure the target directory exists
+                                string destinationDir = Path.GetDirectoryName(destinationPath);
+                                if (!Directory.Exists(destinationDir))
+                                {
+                                    Directory.CreateDirectory(destinationDir);
+                                    Debug.Log("Created directory: " + destinationDir);
+                                }
+
+                                // Copy the scene to the Assets/Scenes folder
+                                FileUtil.CopyFileOrDirectory(scenePath, destinationPath);
+                                Debug.Log("Scene copied successfully to " + destinationPath);
+
+                                // Add the scene to build settings
+                                AddSceneToBuildSettings(destinationPath);
+
+                                // Refresh the Unity asset database
+                                AssetDatabase.Refresh();
+                            }
+                            else
+                            {
+                                Debug.LogError("Scene not found in package: " + scenePath);
                             }
 
-                            // Ensure the target directory exists
-                            string destinationDir = Path.GetDirectoryName(destinationPath);
-                            if (!Directory.Exists(destinationDir))
-                            {
-                                Directory.CreateDirectory(destinationDir);
-                                Debug.Log("Created directory: " + destinationDir);
-                            }
-
-                            // Copy the scene to the Assets/Scenes folder
-                            FileUtil.CopyFileOrDirectory(scenePath, destinationPath);
-                            Debug.Log("Scene copied successfully to " + destinationPath);
-
-                            // Add the scene to build settings
-                            AddSceneToBuildSettings(destinationPath);
-
-                            // Refresh the Unity asset database
-                            AssetDatabase.Refresh();
+                            return;
                         }
-                        else
-                        {
-                            Debug.LogError("Scene not found in package: " + scenePath);
-                        }
-
-                        return;
                     }
-                }
 
-                Debug.LogError("Package not found: " + packageName);
+                    Debug.LogError("Package not found: " + packageName);
+                }
+                else
+                {
+                    Debug.LogError("Failed to retrieve package list.");
+                }
+            }
+        }
+
+        private static void AddSceneToBuildSettings(string scenePath)
+        {
+            var scenes = EditorBuildSettings.scenes.ToList();
+
+            if (scenes.All(s => s.path != scenePath))
+            {
+                scenes.Add(new EditorBuildSettingsScene(scenePath, true));
+                EditorBuildSettings.scenes = scenes.ToArray();
+                Debug.Log("Added scene to build settings: " + scenePath);
             }
             else
             {
-                Debug.LogError("Failed to retrieve package list.");
+                Debug.Log("Scene already exists in build settings: " + scenePath);
             }
         }
-    }
-
-    private static void AddSceneToBuildSettings(string scenePath)
-    {
-        var scenes = EditorBuildSettings.scenes.ToList();
-
-        if (scenes.All(s => s.path != scenePath))
-        {
-            scenes.Add(new EditorBuildSettingsScene(scenePath, true));
-            EditorBuildSettings.scenes = scenes.ToArray();
-            Debug.Log("Added scene to build settings: " + scenePath);
-        }
-        else
-        {
-            Debug.Log("Scene already exists in build settings: " + scenePath);
-        }
-    }
 #endif
+    }
 }

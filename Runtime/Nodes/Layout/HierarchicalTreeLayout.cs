@@ -1,166 +1,170 @@
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-
-public class HierarchicalTreeLayout
+namespace _3DConnections.Runtime.Nodes
 {
-    private float _levelSpacing = 5f;  // Vertical space between levels
-    private float _nodeSpacing = 3f;   // Horizontal space between nodes
-    private float _subtreeSpacing = 2f; // Extra space between subtrees
-    
-    private readonly Dictionary<TreeNode, float> _nodeWidths = new();
-    private readonly Dictionary<TreeNode, float> _subtreeWidths = new();
-    private readonly Dictionary<TreeNode, Vector2> _preliminaryPositions = new();
-    private readonly HashSet<TreeNode> _processedNodes = new();
+    using System.Collections.Generic;
+    using System.Linq;
+    using UnityEngine;
 
-    public void LayoutTree(List<TreeNode> roots)
+    public class HierarchicalTreeLayout
     {
-        if (roots == null || roots.Count == 0) return;
+        private float _levelSpacing = 5f; // Vertical space between levels
+        private float _nodeSpacing = 3f; // Horizontal space between nodes
+        private float _subtreeSpacing = 2f; // Extra space between subtrees
 
-        _nodeWidths.Clear();
-        _subtreeWidths.Clear();
-        _preliminaryPositions.Clear();
-        _processedNodes.Clear();
-        foreach (var root in roots)
-            CalculateNodeWidths(root);
+        private readonly Dictionary<TreeNode, float> _nodeWidths = new();
+        private readonly Dictionary<TreeNode, float> _subtreeWidths = new();
+        private readonly Dictionary<TreeNode, Vector2> _preliminaryPositions = new();
+        private readonly HashSet<TreeNode> _processedNodes = new();
 
-        float currentX = 0;
-        foreach (var root in roots)
+        public void LayoutTree(List<TreeNode> roots)
         {
-            // First pass: Calculate preliminary positions
-            CalculateInitialPositions(root, currentX, 0);
-            currentX += _subtreeWidths[root] + _subtreeSpacing;
-        }
+            if (roots == null || roots.Count == 0) return;
 
-        // Second pass: Handle cycles and adjust positions
-        foreach (var root in roots)
-        {
+            _nodeWidths.Clear();
+            _subtreeWidths.Clear();
+            _preliminaryPositions.Clear();
             _processedNodes.Clear();
-            AdjustPositionsForCycles(root);
-        }
+            foreach (var root in roots)
+                CalculateNodeWidths(root);
 
-        // Final pass: Apply positions to gameObjects
-        foreach (var root in roots)
-        {
-            _processedNodes.Clear();
-            ApplyFinalPositions(root);
-        }
-    }
-
-    private void CalculateNodeWidths(TreeNode node)
-    {
-        if (node == null || _nodeWidths.ContainsKey(node)) return;
-
-        // Get node width from GameObject (assuming it has a Renderer or RectTransform)
-        var width = 1f;
-        if (node.GameObject)
-        {
-            var renderer = node.GameObject.GetComponent<Renderer>();
-            if (renderer)
-                width = renderer.bounds.size.x;
-            else
+            float currentX = 0;
+            foreach (var root in roots)
             {
-                var rectTransform = node.GameObject.GetComponent<RectTransform>();
-                if (rectTransform)
+                // First pass: Calculate preliminary positions
+                CalculateInitialPositions(root, currentX, 0);
+                currentX += _subtreeWidths[root] + _subtreeSpacing;
+            }
+
+            // Second pass: Handle cycles and adjust positions
+            foreach (var root in roots)
+            {
+                _processedNodes.Clear();
+                AdjustPositionsForCycles(root);
+            }
+
+            // Final pass: Apply positions to gameObjects
+            foreach (var root in roots)
+            {
+                _processedNodes.Clear();
+                ApplyFinalPositions(root);
+            }
+        }
+
+        private void CalculateNodeWidths(TreeNode node)
+        {
+            if (node == null || _nodeWidths.ContainsKey(node)) return;
+
+            // Get node width from GameObject (assuming it has a Renderer or RectTransform)
+            var width = 1f;
+            if (node.GameObject)
+            {
+                var renderer = node.GameObject.GetComponent<Renderer>();
+                if (renderer)
+                    width = renderer.bounds.size.x;
+                else
                 {
-                    width = rectTransform.rect.width;
+                    var rectTransform = node.GameObject.GetComponent<RectTransform>();
+                    if (rectTransform)
+                    {
+                        width = rectTransform.rect.width;
+                    }
                 }
             }
+
+            _nodeWidths[node] = width;
+
+            // Calculate subtree width
+            var subtreeWidth = width;
+            if (node.Children.Count > 0)
+            {
+                subtreeWidth = 0;
+                foreach (var child in node.Children)
+                {
+                    CalculateNodeWidths(child);
+                    subtreeWidth += _subtreeWidths.GetValueOrDefault(child, 0) + _nodeSpacing;
+                }
+
+                subtreeWidth -= _nodeSpacing; // Remove extra spacing after last child
+            }
+
+            _subtreeWidths[node] = Mathf.Max(width, subtreeWidth);
         }
 
-        _nodeWidths[node] = width;
-
-        // Calculate subtree width
-        var subtreeWidth = width;
-        if (node.Children.Count > 0)
+        private void CalculateInitialPositions(TreeNode node, float x, float y)
         {
-            subtreeWidth = 0;
+            if (node == null || _preliminaryPositions.ContainsKey(node)) return;
+
+            _preliminaryPositions[node] = new Vector2(x, y);
+
+            if (node.Children.Count == 0) return;
+
+            // Calculate children positions
+            var childrenTotalWidth = node.Children.Sum(child => _subtreeWidths.GetValueOrDefault(child, 0)) +
+                                     _nodeSpacing * (node.Children.Count - 1);
+            var startX = x - childrenTotalWidth / 2f;
+
             foreach (var child in node.Children)
             {
-                CalculateNodeWidths(child);
-                subtreeWidth += _subtreeWidths.GetValueOrDefault(child, 0) + _nodeSpacing;
+                var childX = startX + _subtreeWidths[child] / 2f;
+                CalculateInitialPositions(child, childX, y + _levelSpacing);
+                startX += _subtreeWidths[child] + _nodeSpacing;
             }
-            subtreeWidth -= _nodeSpacing; // Remove extra spacing after last child
         }
 
-        _subtreeWidths[node] = Mathf.Max(width, subtreeWidth);
-    }
-
-    private void CalculateInitialPositions(TreeNode node, float x, float y)
-    {
-        if (node == null || _preliminaryPositions.ContainsKey(node)) return;
-
-        _preliminaryPositions[node] = new Vector2(x, y);
-
-        if (node.Children.Count == 0) return;
-
-        // Calculate children positions
-        var childrenTotalWidth = node.Children.Sum(child => _subtreeWidths.GetValueOrDefault(child, 0)) + 
-                                 _nodeSpacing * (node.Children.Count - 1);
-        var startX = x - childrenTotalWidth / 2f;
-
-        foreach (var child in node.Children)
+        private void AdjustPositionsForCycles(TreeNode node)
         {
-            var childX = startX + _subtreeWidths[child] / 2f;
-            CalculateInitialPositions(child, childX, y + _levelSpacing);
-            startX += _subtreeWidths[child] + _nodeSpacing;
+            if (node == null || !_processedNodes.Add(node)) return;
+
+            // Check for cycles by looking at parents
+            foreach (var parent in node.Parents)
+            {
+                if (!_preliminaryPositions.TryGetValue(parent, out var parentPos)) continue;
+                var currentPos = _preliminaryPositions[node];
+
+                // If we find a cycle where the child is higher than or at the same level as the parent
+                if (!(currentPos.y <= parentPos.y)) continue;
+                // Move this node and its subtree down
+                var visited = new HashSet<TreeNode>();
+                ShiftSubtreeDown(node, parentPos.y + _levelSpacing - currentPos.y, visited);
+            }
+
+            foreach (var child in node.Children)
+                AdjustPositionsForCycles(child);
         }
-    }
 
-    private void AdjustPositionsForCycles(TreeNode node)
-    {
-        if (node == null || !_processedNodes.Add(node)) return;
-
-        // Check for cycles by looking at parents
-        foreach (var parent in node.Parents)
+        private void ShiftSubtreeDown(TreeNode node, float deltaY, HashSet<TreeNode> visited)
         {
-            if (!_preliminaryPositions.TryGetValue(parent, out var parentPos)) continue;
-            var currentPos = _preliminaryPositions[node];
+            if (node == null || !visited.Add(node)) return;
 
-            // If we find a cycle where the child is higher than or at the same level as the parent
-            if (!(currentPos.y <= parentPos.y)) continue;
-            // Move this node and its subtree down
-            var visited = new HashSet<TreeNode>();
-            ShiftSubtreeDown(node, parentPos.y + _levelSpacing - currentPos.y, visited);
+            if (!_preliminaryPositions.TryGetValue(node, out var position)) return;
+            _preliminaryPositions[node] = new Vector2(position.x, position.y + deltaY);
+
+            // Process children only if this node hasn't been visited
+            foreach (var child in node.Children)
+            {
+                ShiftSubtreeDown(child, deltaY, visited);
+            }
         }
 
-        foreach (var child in node.Children)
-            AdjustPositionsForCycles(child);
-    }
-
-    private void ShiftSubtreeDown(TreeNode node, float deltaY, HashSet<TreeNode> visited)
-    {
-        if (node == null || !visited.Add(node)) return;
-
-        if (!_preliminaryPositions.TryGetValue(node, out var position)) return;
-        _preliminaryPositions[node] = new Vector2(position.x, position.y + deltaY);
-
-        // Process children only if this node hasn't been visited
-        foreach (var child in node.Children)
+        private void ApplyFinalPositions(TreeNode node)
         {
-            ShiftSubtreeDown(child, deltaY, visited);
+            if (node == null || !_processedNodes.Add(node)) return;
+
+            if (_preliminaryPositions.TryGetValue(node, out var position))
+            {
+                node.GameObject.transform.position = new Vector3(position.x, position.y, 0);
+            }
+
+            foreach (var child in node.Children)
+            {
+                ApplyFinalPositions(child);
+            }
         }
-    }
 
-    private void ApplyFinalPositions(TreeNode node)
-    {
-        if (node == null || !_processedNodes.Add(node)) return;
-
-        if (_preliminaryPositions.TryGetValue(node, out var position))
+        public void SetLayoutParameters(float levelSpacing, float nodeSpacing, float subtreeSpacing)
         {
-            node.GameObject.transform.position = new Vector3(position.x, position.y, 0);
+            _levelSpacing = levelSpacing;
+            _nodeSpacing = nodeSpacing;
+            _subtreeSpacing = subtreeSpacing;
         }
-
-        foreach (var child in node.Children)
-        {
-            ApplyFinalPositions(child);
-        }
-    }
-
-    public void SetLayoutParameters(float levelSpacing, float nodeSpacing, float subtreeSpacing)
-    {
-        _levelSpacing = levelSpacing;
-        _nodeSpacing = nodeSpacing;
-        _subtreeSpacing = subtreeSpacing;
     }
 }

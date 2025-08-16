@@ -1,5 +1,8 @@
-public interface IMenu
+namespace _3DConnections.Runtime.Interfaces
 {
-    void OnMenuOpen();
-    void OnMenuClose();
+    public interface IMenu
+    {
+        void OnMenuOpen();
+        void OnMenuClose();
+    }
 }

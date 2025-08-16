@@ -1,0 +1,20 @@
+{
+  "name": "_3DConnections.Runtime.Exporters",
+  "rootNamespace": "_3DConnections.Runtime.Exporters",
+  "references": [
+    "GUID:75469ad4d38634e559750d17036d5f7c",
+    "GUID:f373597d47624f6d907847f70cac6b71",
+    "GUID:f4eb26c44d5d41ef825a8424c949fb63",
+    "GUID:407d9f5d313b4d20b83d06c1f10def66",
+    "GUID:577a0febf14c435a9f5ae7679ca580ba"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

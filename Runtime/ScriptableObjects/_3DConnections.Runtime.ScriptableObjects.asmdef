@@ -1,0 +1,23 @@
+{
+    "name": "_3DConnections.Runtime.ScriptableObjects",
+    "rootNamespace": "_3DConnections.Runtime.ScriptableObjects",
+    "references": [
+        "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
+        "GUID:776e09b4de4a427fba7608d3c91be466",
+        "GUID:7d9d183d4bd44dbf921dcc470f619338",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:d4d225d43cef45518370ff85d6b9dd9f",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:f4eb26c44d5d41ef825a8424c949fb63",
+        "GUID:a3b0b6165b21422f893d1afda1b21d65"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

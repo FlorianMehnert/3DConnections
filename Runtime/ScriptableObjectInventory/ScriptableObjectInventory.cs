@@ -1,34 +1,38 @@
-using UnityEngine;
-
-public sealed class ScriptableObjectInventory : MonoBehaviour
+namespace _3DConnections.Runtime.ScriptableObjectInventory
 {
+    using Events;
+    using UnityEngine;
+    using ScriptableObjects;
+
+    public sealed class ScriptableObjectInventory : MonoBehaviour
+    {
         private static ScriptableObjectInventory _instance;
 
         [Header("Component based physics sim")]
         public PhysicsSimulationConfiguration simConfig;
 
         public NodeConnectionsScriptableObject conSo;
-        
+
         public NodeGraphScriptableObject graph;
-        
+
         public NodeColorsScriptableObject nodeColors;
-        
+
         public MenuState menuState;
-        
+
         public LayoutParameters layout;
-        
+
         public OverlaySceneScriptableObject overlay;
-        
+
         public ApplicationState applicationState;
-        
+
         public ToAnalyzeScene toAnalyzeScene;
 
         public RemovePhysicsEvent removePhysicsEvent;
-        
+
         public ClearEvent clearEvent;
-        
+
         public ToggleOverlayEvent toggleOverlayEvent;
-        
+
         public UpdateLOD updateLOD;
 
         private static bool _isShuttingDown;
@@ -61,7 +65,7 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
                 return _instance;
             }
         }
-        
+
         public static bool InstanceExists => _instance;
 
 
@@ -82,4 +86,5 @@ public sealed class ScriptableObjectInventory : MonoBehaviour
             _instance = null;
         }
 
+    }
 }
