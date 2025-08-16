@@ -169,8 +169,9 @@ public class StaticNodeLayoutManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Triggers on removePhysicsEvent
+    /// Invoke ClearEvent, perform static layout and finally do onComplete action
     /// </summary>
+    /// <param name="onComplete">Action that is completed after static layout has been performed</param>
     public void StaticLayout(Action onComplete = null)
     {
         var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();

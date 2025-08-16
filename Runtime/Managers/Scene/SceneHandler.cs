@@ -48,33 +48,18 @@ public static class SceneHandler
         return null;
     }
 
-
     /// <summary>
-    /// Loads a scene additively and invokes a callback after it is fully activated.
+    /// Ensure clean loading of a scene after which an action will be executed
     /// </summary>
-    public static IEnumerator LoadSceneCoroutine(string sceneName, Action onComplete)
+    /// <param name="sceneName">Name of the scene that will be loaded</param>
+    /// <param name="onComplete">Action that will be executed on scene loading</param>
+    /// <returns></returns>
+    public static IEnumerator LoadSceneAndInvokeAfterCoroutine(string sceneName, Action onComplete)
     {
-        var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-
-        if (asyncLoad == null)
-        {
-            Debug.LogError($"Failed to start loading scene: {sceneName}");
-            yield break;
-        }
-
-        // Prevent the scene from activating too early
-        asyncLoad.allowSceneActivation = false;
-
-        // Wait until the loading bar is 90 % (Unity’s “done” threshold)
-        while (asyncLoad.progress < 0.9f)
-            yield return null;
-
-        // Now allow activation and wait one more frame so Awake/OnEnable run
-        asyncLoad.allowSceneActivation = true;
+        yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        // Wait one extra frame so everything initializes
         yield return null;
-
-        Debug.Log($"Scene {sceneName} loaded successfully.");
-        onComplete?.Invoke();
+        onComplete();
     }
 
     public static GameObject GetParentObject()
