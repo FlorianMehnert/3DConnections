@@ -100,6 +100,10 @@ public class SceneAnalyzer : MonoBehaviour
         return ignoredTypes.Select(Type.GetType).Where(type => type != null).ToList();
     }
 
+    /// <summary>
+    /// Function that is invoked by calling "Analyze scene" in the GUI. Entrypoint into scene analysis and graph building.
+    /// </summary>
+    /// <param name="onComplete"></param>
     public void AnalyzeScene(Action onComplete = null)
     {
         _currentNodes = 0;
