@@ -9,6 +9,8 @@ namespace _3DConnections.Editor
     using Unity.EditorCoroutines.Editor;
     using System.Collections;
     using Runtime.Nodes;
+    using Runtime.Nodes.Connection;
+    using Runtime.Nodes.Extensions;
     using System.Reflection;
 
     internal static class NodeOverlaySearchProvider
@@ -22,15 +24,13 @@ namespace _3DConnections.Editor
         // =====================
         private static readonly Dictionary<string, System.Action<List<GameObject>>> SearchActions = new()
         {
-            ["highlight"] = (objects) => HighlightObjects(objects),
+            ["highlight"] = HighlightObjects,
             ["select"] = (objects) => Selection.objects = objects.ToArray(),
-            ["focus"] = (objects) => 
+            ["focus"] = (objects) =>
             {
-                if (objects.Count > 0)
-                {
-                    Selection.activeGameObject = objects[0];
-                    SceneView.FrameLastActiveSceneView();
-                }
+                if (objects.Count <= 0) return;
+                Selection.activeGameObject = objects[0];
+                SceneView.FrameLastActiveSceneView();
             },
             ["disable"] = (objects) => 
             {
@@ -57,13 +57,31 @@ namespace _3DConnections.Editor
             new()
             {
                 ["name"] = (go, val) => go.name.ToLowerInvariant().Contains(val),
-                ["type"] = (go, val) => go.tag.ToLowerInvariant().Contains(val),
+                ["tag"] = (go, val) => go.tag.ToLowerInvariant().Contains(val),
+                ["type"] = (go, val) => go.tag.ToLowerInvariant().Contains(val), // alias for tag
+                ["layer"] = (go, val) => LayerMask.LayerToName(go.layer).ToLowerInvariant().Contains(val),
+                ["active"] = (go, val) => go.activeInHierarchy.ToString().ToLowerInvariant() == val,
                 ["t"] = (go, val) => // Component type search
                 {
                     var components = go.GetComponents<Component>();
                     return components.Any(c => c != null && c.GetType().Name.ToLowerInvariant().Contains(val.ToLowerInvariant()));
                 },
-                ["end"] = (go, val) =>
+                ["comp"] = (go, val) => // Component type search (alias)
+                {
+                    var components = go.GetComponents<Component>();
+                    return components.Any(c => c != null && c.GetType().Name.ToLowerInvariant().Contains(val.ToLowerInvariant()));
+                },
+                ["nodetype"] = (go, val) => // Search by NodeType.nodeTypeName
+                {
+                    var nodeType = go.GetComponent<NodeType>();
+                    return nodeType != null && nodeType.nodeTypeName.ToString().ToLowerInvariant().Contains(val);
+                },
+                ["edgetype"] = (go, val) => // Search by EdgeType.connectionType
+                {
+                    var edgeType = go.GetComponent<EdgeType>();
+                    return edgeType != null && edgeType.connectionType.ToLowerInvariant().Contains(val);
+                },
+                ["end"] = (go, val) => // Connection endpoints
                 {
                     var conn = go.GetComponent<LocalNodeConnections>();
                     if (conn == null) return false;
@@ -74,23 +92,77 @@ namespace _3DConnections.Editor
                                       conn.outConnections.Where(o => o).Select(o => o.name.ToLowerInvariant()));
                     return ends.Contains(val);
                 },
-                ["any"] = (go, val) =>
+                ["in"] = (go, val) => // Incoming connections
+                {
+                    var conn = go.GetComponent<LocalNodeConnections>();
+                    if (conn == null) return false;
+                    return conn.inConnections.Where(i => i).Any(i => i.name.ToLowerInvariant().Contains(val));
+                },
+                ["out"] = (go, val) => // Outgoing connections
+                {
+                    var conn = go.GetComponent<LocalNodeConnections>();
+                    if (conn == null) return false;
+                    return conn.outConnections.Where(o => o).Any(o => o.name.ToLowerInvariant().Contains(val));
+                },
+                ["hasref"] = (go, val) => // Has reference object
+                {
+                    var nodeType = go.GetComponent<NodeType>();
+                    return nodeType != null && nodeType.reference != null && 
+                           (val == "true" ? nodeType.reference != null : nodeType.reference == null);
+                },
+                ["artificial"] = (go, val) => // Is artificial game object
+                {
+                    var isArtificial = go.GetComponent<ArtificialGameObject>() != null;
+                    return val == "true" ? isArtificial : !isArtificial;
+                },
+                ["colored"] = (go, val) => // Has ColoredObject component
+                {
+                    var isColored = go.GetComponent<ColoredObject>() != null;
+                    return val == "true" ? isColored : !isColored;
+                },
+                ["any"] = (go, val) => // Search anywhere
                 {
                     string nodeName = go.name.ToLowerInvariant();
                     string connType = go.tag.ToLowerInvariant();
+                    
+                    // Check basic properties
+                    if (nodeName.Contains(val) || connType.Contains(val))
+                        return true;
+                    
+                    // Check connections
                     var conn = go.GetComponent<LocalNodeConnections>();
-                    string endNames = conn != null
-                        ? string.Join(", ", conn.inConnections.Concat(conn.outConnections)
-                            .Where(x => x).Select(x => x.name.ToLowerInvariant()))
-                        : "";
-                    return (nodeName.Contains(val) || connType.Contains(val) || endNames.Contains(val));
+                    if (conn != null)
+                    {
+                        string endNames = string.Join(", ", conn.inConnections.Concat(conn.outConnections)
+                            .Where(x => x).Select(x => x.name.ToLowerInvariant()));
+                        if (endNames.Contains(val))
+                            return true;
+                    }
+                    
+                    // Check NodeType
+                    var nodeType = go.GetComponent<NodeType>();
+                    if (nodeType != null && nodeType.nodeTypeName.ToString().ToLowerInvariant().Contains(val))
+                        return true;
+                    
+                    // Check EdgeType
+                    var edgeType = go.GetComponent<EdgeType>();
+                    if (edgeType != null && edgeType.connectionType.ToLowerInvariant().Contains(val))
+                        return true;
+                    
+                    return false;
                 },
-                ["ref"] = (go, val) =>
+                ["ref"] = (go, val) => // References specific object
                 {
                     GameObject target = GameObject.Find(val.Trim('"').Trim());
                     if (target == null)
                         return false;
 
+                    // Check NodeType reference
+                    var nodeType = go.GetComponent<NodeType>();
+                    if (nodeType != null && nodeType.reference == target)
+                        return true;
+
+                    // Check all component references
                     foreach (var comp in go.GetComponents<Component>())
                     {
                         if (comp == null) continue;
@@ -123,6 +195,8 @@ namespace _3DConnections.Editor
             public List<PropertyFilter> PropertyFilters { get; set; } = new();
             public string Action { get; set; }
             public bool UseHierarchy { get; set; }
+            public bool SearchNodes { get; set; } = true;
+            public bool SearchEdges { get; set; } = false;
         }
 
         private static ParsedQuery ParseQuery(string query)
@@ -140,17 +214,29 @@ namespace _3DConnections.Editor
                 query = actionMatch.Groups[2].Value;
             }
 
-            // Check for hierarchy prefix
+            // Check for scope prefixes
             if (query.StartsWith("h:"))
             {
                 result.UseHierarchy = true;
                 query = query.Substring(2).Trim();
             }
+            else if (query.StartsWith("edges:"))
+            {
+                result.SearchNodes = false;
+                result.SearchEdges = true;
+                query = query.Substring(6).Trim();
+            }
+            else if (query.StartsWith("all:"))
+            {
+                result.SearchNodes = true;
+                result.SearchEdges = true;
+                query = query.Substring(4).Trim();
+            }
 
             // Split by spaces but respect quoted strings
             var parts = System.Text.RegularExpressions.Regex.Matches(query, @"[\""].+?[\""]|[^ ]+")
-                .Cast<System.Text.RegularExpressions.Match>()
                 .Select(m => m.Value)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
                 .ToList();
 
             foreach (var part in parts)
@@ -178,13 +264,14 @@ namespace _3DConnections.Editor
                     string value = part.Substring(sep + 1).Trim().Trim('"');
                     
                     // Don't lowercase the value for certain tokens
-                    if (key == "ref" || key == "t")
+                    if (key == "ref" || key == "t" || key == "comp")
                         result.Tokens[key] = value;
                     else
                         result.Tokens[key] = value.ToLowerInvariant();
                 }
                 else
                 {
+                    // Default to 'any' search for plain terms
                     result.Tokens["any"] = part.ToLowerInvariant();
                 }
             }
@@ -239,13 +326,11 @@ namespace _3DConnections.Editor
                     // Try field if property not found
                     var fieldInfo = componentType.GetField(filter.PropertyName, 
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    
-                    if (fieldInfo != null)
-                    {
-                        var fieldValue = fieldInfo.GetValue(component);
-                        if (CompareValue(fieldValue, filter.Value))
-                            return true;
-                    }
+
+                    if (fieldInfo == null) continue;
+                    var fieldValue = fieldInfo.GetValue(component);
+                    if (CompareValue(fieldValue, filter.Value))
+                        return true;
                 }
                 else
                 {
@@ -298,56 +383,26 @@ namespace _3DConnections.Editor
                     var parsedQuery = ParseQuery(context.searchQuery);
                     
                     // Determine search scope
-                    GameObject[] searchScope;
-                    if (parsedQuery.UseHierarchy)
-                    {
-                        // Search entire hierarchy
-                        searchScope = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
-                    }
-                    else
-                    {
-                        // Search only in ParentNodesObject
-                        var parent = GameObject.Find("ParentNodesObject");
-                        if (parent == null)
-                            return null;
-                        searchScope = parent.GetComponentsInChildren<Transform>()
-                            .Select(t => t.gameObject)
-                            .ToArray();
-                    }
+                    GameObject[] searchScope = GetSearchScope(parsedQuery);
+                    if (searchScope == null || searchScope.Length == 0)
+                        return null;
 
                     var matchingObjects = new List<GameObject>();
 
                     foreach (var go in searchScope)
                     {
-                        // Skip if no LocalNodeConnections (unless using hierarchy search)
-                        var conn = go.GetComponent<LocalNodeConnections>();
-                        if (!parsedQuery.UseHierarchy && conn == null) 
-                            continue;
-
                         if (!MatchesTokens(parsedQuery, go))
                             continue;
 
                         matchingObjects.Add(go);
 
                         string label = go.name;
-                        string description = "";
-                        
-                        if (conn != null)
-                        {
-                            string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name));
-                            string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name));
-                            description = $"→ [{outNames}]\n← [{inNames}]";
-                        }
-                        else if (parsedQuery.UseHierarchy)
-                        {
-                            description = GetHierarchyPath(go);
-                        }
-
+                        string description = GetObjectDescription(go, parsedQuery);
                         Texture2D thumbnail = GetNodeTypeIcon(go);
 
                         var item = provider.CreateItem(
                             id: go.GetInstanceID().ToString(),
-                            score: 0,
+                            score: GetSearchScore(go, parsedQuery),
                             label: label,
                             description: description,
                             thumbnail: thumbnail,
@@ -381,7 +436,7 @@ namespace _3DConnections.Editor
                 fetchPropositions = (context, _) =>
                 {
                     if (string.IsNullOrEmpty(context.searchQuery))
-                        return null;
+                        return GetDefaultPropositions();
 
                     var propositions = new List<SearchProposition>();
 
@@ -398,7 +453,7 @@ namespace _3DConnections.Editor
                         ));
                     }
 
-                    // Add hierarchy search proposition
+                    // Add scope propositions
                     if (!context.searchQuery.StartsWith("h:"))
                     {
                         propositions.Add(new SearchProposition(
@@ -408,6 +463,30 @@ namespace _3DConnections.Editor
                             help: "Search in entire scene hierarchy",
                             priority: 90,
                             icon: EditorGUIUtility.FindTexture("d_UnityEditor.SceneHierarchyWindow")
+                        ));
+                    }
+
+                    if (!context.searchQuery.StartsWith("edges:"))
+                    {
+                        propositions.Add(new SearchProposition(
+                            category: "Scope",
+                            label: "Search Edges",
+                            replacement: $"edges: {context.searchQuery}",
+                            help: "Search only in edge objects",
+                            priority: 85,
+                            icon: EditorGUIUtility.FindTexture("d_winbtn_graph")
+                        ));
+                    }
+
+                    if (!context.searchQuery.StartsWith("all:"))
+                    {
+                        propositions.Add(new SearchProposition(
+                            category: "Scope",
+                            label: "Search All (Nodes + Edges)",
+                            replacement: $"all: {context.searchQuery}",
+                            help: "Search both nodes and edges",
+                            priority: 82,
+                            icon: EditorGUIUtility.FindTexture("d_UnityEditor.HierarchyWindow")
                         ));
                     }
 
@@ -422,6 +501,154 @@ namespace _3DConnections.Editor
 
                     return propositions;
                 }
+            };
+        }
+
+        private static GameObject[] GetSearchScope(ParsedQuery query)
+        {
+            if (query.UseHierarchy)
+            {
+                // Search entire hierarchy
+                return Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
+            }
+
+            var searchScope = new List<GameObject>();
+
+            // Search in ParentNodesObject if nodes are requested
+            if (query.SearchNodes)
+            {
+                var parentNodes = GameObject.Find("ParentNodesObject");
+                if (parentNodes != null)
+                {
+                    var nodeObjects = parentNodes.GetComponentsInChildren<Transform>()
+                        .Where(t => t != parentNodes.transform) // Exclude parent itself
+                        .Select(t => t.gameObject)
+                        .ToArray();
+                    searchScope.AddRange(nodeObjects);
+                }
+            }
+
+            // Search in ParentEdgesObject if edges are requested
+            if (query.SearchEdges)
+            {
+                var parentEdges = GameObject.Find("ParentEdgesObject");
+                if (parentEdges != null)
+                {
+                    var edgeObjects = parentEdges.GetComponentsInChildren<Transform>()
+                        .Where(t => t != parentEdges.transform) // Exclude parent itself
+                        .Select(t => t.gameObject)
+                        .ToArray();
+                    searchScope.AddRange(edgeObjects);
+                }
+            }
+
+            return searchScope.ToArray();
+        }
+
+        private static string GetObjectDescription(GameObject go, ParsedQuery query)
+        {
+            var descriptionParts = new List<string>();
+
+            // Add path if hierarchy search
+            if (query.UseHierarchy)
+            {
+                descriptionParts.Add(GetHierarchyPath(go));
+            }
+
+            // Add connection info for nodes
+            var conn = go.GetComponent<LocalNodeConnections>();
+            if (conn != null)
+            {
+                string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name));
+                string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name));
+                descriptionParts.Add($"→ [{outNames}]\n← [{inNames}]");
+            }
+
+            // Add node type info
+            var nodeType = go.GetComponent<NodeType>();
+            if (nodeType != null)
+            {
+                descriptionParts.Add($"Type: {nodeType.nodeTypeName}");
+                if (nodeType.reference != null)
+                {
+                    descriptionParts.Add($"Ref: {nodeType.reference.name}");
+                }
+            }
+
+            // Add edge type info
+            var edgeType = go.GetComponent<EdgeType>();
+            if (edgeType != null)
+            {
+                descriptionParts.Add($"Edge: {edgeType.connectionType}");
+            }
+
+            // Add component info
+            var componentNames = go.GetComponents<Component>()
+                .Where(c => c != null && !(c is Transform))
+                .Select(c => c.GetType().Name)
+                .Take(3); // Limit to avoid clutter
+            
+            if (componentNames.Any())
+            {
+                descriptionParts.Add($"Components: {string.Join(", ", componentNames)}");
+            }
+
+            return string.Join(" | ", descriptionParts);
+        }
+
+        private static int GetSearchScore(GameObject go, ParsedQuery query)
+        {
+            int score = 0;
+
+            // Boost exact name matches
+            foreach (var token in query.Tokens)
+            {
+                if (token.Key == "name" && go.name.Equals(token.Value, System.StringComparison.OrdinalIgnoreCase))
+                    score += 100;
+                else if (token.Key == "any" && go.name.ToLowerInvariant().Contains(token.Value))
+                    score += 50;
+            }
+
+            // Boost objects with more relevant components
+            if (go.GetComponent<NodeType>() != null) score += 10;
+            if (go.GetComponent<EdgeType>() != null) score += 10;
+            if (go.GetComponent<LocalNodeConnections>() != null) score += 5;
+
+            return score;
+        }
+
+        private static List<SearchProposition> GetDefaultPropositions()
+        {
+            return new List<SearchProposition>
+            {
+                new SearchProposition(
+                    category: "Examples",
+                    label: "Search by name",
+                    replacement: "name:MyNode",
+                    help: "Find objects by name",
+                    priority: 100
+                ),
+                new SearchProposition(
+                    category: "Examples",
+                    label: "Search by node type",
+                    replacement: "nodetype:Component",
+                    help: "Find nodes by their type",
+                    priority: 95
+                ),
+                new SearchProposition(
+                    category: "Examples",
+                    label: "Search edges",
+                    replacement: "edges: connectiontype:default",
+                    help: "Search edge objects",
+                    priority: 90
+                ),
+                new SearchProposition(
+                    category: "Examples",
+                    label: "Search by component",
+                    replacement: "t:ColoredObject",
+                    help: "Find objects with specific components",
+                    priority: 85
+                )
             };
         }
 
@@ -456,12 +683,22 @@ namespace _3DConnections.Editor
         // =====================
         private static Texture2D GetNodeTypeIcon(GameObject go)
         {
+            // Check for EdgeType first
+            var edgeType = go.GetComponent<EdgeType>();
+            if (edgeType != null)
+            {
+                return EditorGUIUtility.FindTexture("d_winbtn_graph") ?? 
+                       EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
+            }
+
+            // Check for NodeType
             var nodeTypeComp = go.GetComponent<NodeType>();
-            if (nodeTypeComp == null || nodeTypeComp.reference == null)
-                return EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
-            var refComponent = nodeTypeComp.reference;
-            if (refComponent != null)
-                return EditorGUIUtility.ObjectContent(null, refComponent.GetType()).image as Texture2D;
+            if (nodeTypeComp?.reference != null)
+            {
+                return EditorGUIUtility.ObjectContent(null, nodeTypeComp.reference.GetType()).image as Texture2D;
+            }
+
+            // Default icon
             return EditorGUIUtility.ObjectContent(go, typeof(GameObject)).image as Texture2D;
         }
 
@@ -474,11 +711,9 @@ namespace _3DConnections.Editor
             foreach (var go in objects)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
-                if (coloredObject != null)
-                {
-                    coloredObject.Highlight(Color.red, highlightForever: true, duration: 1);
-                    HighlightedObjects.Add(go);
-                }
+                if (coloredObject == null) continue;
+                coloredObject.Highlight(Color.red, highlightForever: true, duration: 1);
+                HighlightedObjects.Add(go);
             }
 
             Debug.Log($"Highlighted {objects.Count} matching nodes");
@@ -489,7 +724,7 @@ namespace _3DConnections.Editor
             var coloredObject = go.GetComponent<ColoredObject>();
             if (coloredObject != null)
             {
-                coloredObject.Highlight(Color.yellow, -1, highlightForever: true);
+                coloredObject.Highlight(Color.yellow, 2, highlightForever: false);
                 if (!HighlightedObjects.Contains(go))
                     HighlightedObjects.Add(go);
             }
