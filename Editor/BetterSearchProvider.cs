@@ -9,13 +9,46 @@ namespace _3DConnections.Editor
     using Unity.EditorCoroutines.Editor;
     using System.Collections;
     using Runtime.Nodes;
+    using System.Reflection;
 
     internal static class NodeOverlaySearchProvider
     {
         private const string ProviderId = "nodeoverlay";
         private const string FilterId = "node:";
-        private const string HighlightPrefix = "highlight:";
         private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
+
+        // =====================
+        // Search Actions
+        // =====================
+        private static readonly Dictionary<string, System.Action<List<GameObject>>> SearchActions = new()
+        {
+            ["highlight"] = (objects) => HighlightObjects(objects),
+            ["select"] = (objects) => Selection.objects = objects.ToArray(),
+            ["focus"] = (objects) => 
+            {
+                if (objects.Count > 0)
+                {
+                    Selection.activeGameObject = objects[0];
+                    SceneView.FrameLastActiveSceneView();
+                }
+            },
+            ["disable"] = (objects) => 
+            {
+                foreach (var go in objects)
+                    go.SetActive(false);
+            },
+            ["enable"] = (objects) => 
+            {
+                foreach (var go in objects)
+                    go.SetActive(true);
+            },
+            ["log"] = (objects) => 
+            {
+                Debug.Log($"Found {objects.Count} objects:");
+                foreach (var go in objects)
+                    Debug.Log($"  - {go.name} ({go.GetInstanceID()})");
+            }
+        };
 
         // =====================
         // Extendable Token System
@@ -25,6 +58,11 @@ namespace _3DConnections.Editor
             {
                 ["name"] = (go, val) => go.name.ToLowerInvariant().Contains(val),
                 ["type"] = (go, val) => go.tag.ToLowerInvariant().Contains(val),
+                ["t"] = (go, val) => // Component type search
+                {
+                    var components = go.GetComponents<Component>();
+                    return components.Any(c => c != null && c.GetType().Name.ToLowerInvariant().Contains(val.ToLowerInvariant()));
+                },
                 ["end"] = (go, val) =>
                 {
                     var conn = go.GetComponent<LocalNodeConnections>();
@@ -72,9 +110,92 @@ namespace _3DConnections.Editor
                 }
             };
 
-        private static bool MatchesTokens(Dictionary<string, string> tokens, GameObject go)
+        private class PropertyFilter
         {
-            foreach (var kvp in tokens)
+            public string ComponentType { get; set; }
+            public string PropertyName { get; set; }
+            public string Value { get; set; }
+        }
+
+        private class ParsedQuery
+        {
+            public Dictionary<string, string> Tokens { get; set; } = new();
+            public List<PropertyFilter> PropertyFilters { get; set; } = new();
+            public string Action { get; set; }
+            public bool UseHierarchy { get; set; }
+        }
+
+        private static ParsedQuery ParseQuery(string query)
+        {
+            var result = new ParsedQuery();
+            
+            if (string.IsNullOrWhiteSpace(query))
+                return result;
+
+            // Check for action prefix (e.g., "highlight{...}" or "select{...}")
+            var actionMatch = System.Text.RegularExpressions.Regex.Match(query, @"^(\w+)\{(.+)\}$");
+            if (actionMatch.Success)
+            {
+                result.Action = actionMatch.Groups[1].Value.ToLowerInvariant();
+                query = actionMatch.Groups[2].Value;
+            }
+
+            // Check for hierarchy prefix
+            if (query.StartsWith("h:"))
+            {
+                result.UseHierarchy = true;
+                query = query.Substring(2).Trim();
+            }
+
+            // Split by spaces but respect quoted strings
+            var parts = System.Text.RegularExpressions.Regex.Matches(query, @"[\""].+?[\""]|[^ ]+")
+                .Cast<System.Text.RegularExpressions.Match>()
+                .Select(m => m.Value)
+                .ToList();
+
+            foreach (var part in parts)
+            {
+                // Check for property filter pattern: #ComponentType.property:"value"
+                var propertyMatch = System.Text.RegularExpressions.Regex.Match(part, 
+                    @"#(\w+)\.(\w+):""?([^""]+)""?");
+                
+                if (propertyMatch.Success)
+                {
+                    result.PropertyFilters.Add(new PropertyFilter
+                    {
+                        ComponentType = propertyMatch.Groups[1].Value,
+                        PropertyName = propertyMatch.Groups[2].Value,
+                        Value = propertyMatch.Groups[3].Value.Trim('"')
+                    });
+                    continue;
+                }
+
+                // Regular token parsing
+                int sep = part.IndexOf(':');
+                if (sep > 0 && sep < part.Length - 1)
+                {
+                    string key = part.Substring(0, sep).ToLowerInvariant();
+                    string value = part.Substring(sep + 1).Trim().Trim('"');
+                    
+                    // Don't lowercase the value for certain tokens
+                    if (key == "ref" || key == "t")
+                        result.Tokens[key] = value;
+                    else
+                        result.Tokens[key] = value.ToLowerInvariant();
+                }
+                else
+                {
+                    result.Tokens["any"] = part.ToLowerInvariant();
+                }
+            }
+
+            return result;
+        }
+
+        private static bool MatchesTokens(ParsedQuery query, GameObject go)
+        {
+            // First check regular tokens
+            foreach (var kvp in query.Tokens)
             {
                 if (TokenHandlers.TryGetValue(kvp.Key, out var handler))
                 {
@@ -88,32 +209,69 @@ namespace _3DConnections.Editor
                 }
             }
 
+            // Then check property filters
+            foreach (var filter in query.PropertyFilters)
+            {
+                if (!CheckPropertyFilter(go, filter))
+                    return false;
+            }
+
             return true;
         }
 
-        private static Dictionary<string, string> ParseQuery(string query)
+        private static bool CheckPropertyFilter(GameObject go, PropertyFilter filter)
         {
-            var tokens = new Dictionary<string, string>();
-            if (string.IsNullOrWhiteSpace(query))
-                return tokens;
-
-            var parts = query.Split(' ');
-            foreach (var part in parts)
+            var components = go.GetComponents<Component>();
+            foreach (var component in components)
             {
-                int sep = part.IndexOf(':');
-                if (sep > 0 && sep < part.Length - 1)
+                if (component == null) continue;
+                
+                var componentType = component.GetType();
+                if (!componentType.Name.Equals(filter.ComponentType, System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Try to get the property value
+                var propertyInfo = componentType.GetProperty(filter.PropertyName, 
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                
+                if (propertyInfo == null)
                 {
-                    string key = part.Substring(0, sep).ToLowerInvariant();
-                    string value = part.Substring(sep + 1).Trim().Trim('"').ToLowerInvariant();
-                    tokens[key] = value; // keep "ref" intact
+                    // Try field if property not found
+                    var fieldInfo = componentType.GetField(filter.PropertyName, 
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    
+                    if (fieldInfo != null)
+                    {
+                        var fieldValue = fieldInfo.GetValue(component);
+                        if (CompareValue(fieldValue, filter.Value))
+                            return true;
+                    }
                 }
                 else
                 {
-                    tokens["any"] = part.ToLowerInvariant();
+                    var propValue = propertyInfo.GetValue(component);
+                    if (CompareValue(propValue, filter.Value))
+                        return true;
                 }
             }
 
-            return tokens;
+            return false;
+        }
+
+        private static bool CompareValue(object actualValue, string expectedValue)
+        {
+            if (actualValue == null)
+                return string.IsNullOrEmpty(expectedValue);
+
+            string actualStr = actualValue.ToString().ToLowerInvariant();
+            string expectedStr = expectedValue.ToLowerInvariant();
+            
+            // Support partial matching for strings
+            if (actualValue is string)
+                return actualStr.Contains(expectedStr);
+            
+            // Exact match for other types
+            return actualStr.Equals(expectedStr);
         }
 
         // =====================
@@ -137,36 +295,53 @@ namespace _3DConnections.Editor
                         return null;
                     }
 
-                    var parent = GameObject.Find("ParentNodesObject");
-                    if (parent == null)
-                        return null;
+                    var parsedQuery = ParseQuery(context.searchQuery);
+                    
+                    // Determine search scope
+                    GameObject[] searchScope;
+                    if (parsedQuery.UseHierarchy)
+                    {
+                        // Search entire hierarchy
+                        searchScope = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID);
+                    }
+                    else
+                    {
+                        // Search only in ParentNodesObject
+                        var parent = GameObject.Find("ParentNodesObject");
+                        if (parent == null)
+                            return null;
+                        searchScope = parent.GetComponentsInChildren<Transform>()
+                            .Select(t => t.gameObject)
+                            .ToArray();
+                    }
 
-                    bool shouldHighlight = context.searchQuery.StartsWith(HighlightPrefix);
-                    string actualQuery = shouldHighlight
-                        ? context.searchQuery.Substring(HighlightPrefix.Length).Trim()
-                        : context.searchQuery;
-
-                    if (shouldHighlight)
-                        ClearHighlights();
-
-                    var tokens = ParseQuery(actualQuery);
                     var matchingObjects = new List<GameObject>();
 
-                    foreach (Transform child in parent.transform)
+                    foreach (var go in searchScope)
                     {
-                        GameObject go = child.gameObject;
+                        // Skip if no LocalNodeConnections (unless using hierarchy search)
                         var conn = go.GetComponent<LocalNodeConnections>();
-                        if (conn == null) continue;
+                        if (!parsedQuery.UseHierarchy && conn == null) 
+                            continue;
 
-                        if (!MatchesTokens(tokens, go))
+                        if (!MatchesTokens(parsedQuery, go))
                             continue;
 
                         matchingObjects.Add(go);
 
                         string label = go.name;
-                        string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name));
-                        string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name));
-                        string description = $"→ [{outNames}]\n← [{inNames}]";
+                        string description = "";
+                        
+                        if (conn != null)
+                        {
+                            string outNames = string.Join(", ", conn.outConnections.Where(o => o).Select(o => o.name));
+                            string inNames = string.Join(", ", conn.inConnections.Where(i => i).Select(i => i.name));
+                            description = $"→ [{outNames}]\n← [{inNames}]";
+                        }
+                        else if (parsedQuery.UseHierarchy)
+                        {
+                            description = GetHierarchyPath(go);
+                        }
 
                         Texture2D thumbnail = GetNodeTypeIcon(go);
 
@@ -182,8 +357,12 @@ namespace _3DConnections.Editor
                         items.Add(item);
                     }
 
-                    if (shouldHighlight)
-                        HighlightObjects(matchingObjects);
+                    // Execute action if specified
+                    if (!string.IsNullOrEmpty(parsedQuery.Action) && 
+                        SearchActions.TryGetValue(parsedQuery.Action, out var action))
+                    {
+                        action(matchingObjects);
+                    }
 
                     return null;
                 },
@@ -201,29 +380,74 @@ namespace _3DConnections.Editor
 
                 fetchPropositions = (context, _) =>
                 {
-                    if (string.IsNullOrEmpty(context.searchQuery) || context.searchQuery.StartsWith(HighlightPrefix))
+                    if (string.IsNullOrEmpty(context.searchQuery))
                         return null;
 
-                    return new[]
+                    var propositions = new List<SearchProposition>();
+
+                    // Add action propositions
+                    foreach (var action in SearchActions.Keys)
                     {
-                        new SearchProposition(
+                        propositions.Add(new SearchProposition(
                             category: "Actions",
-                            label: "Highlight Results",
-                            replacement: HighlightPrefix + context.searchQuery,
-                            help: "Highlight all matching nodes in the scene",
+                            label: $"{char.ToUpper(action[0])}{action.Substring(1)} Results",
+                            replacement: $"{action}{{{context.searchQuery}}}",
+                            help: $"Execute {action} on all matching objects",
                             priority: 100,
-                            icon: EditorGUIUtility.FindTexture("d_winbtn_mac_max")
-                        ),
-                        new SearchProposition(
-                            category: "Actions",
-                            label: "Clear Highlights",
-                            replacement: "clearHighlights",
-                            help: "Clear all highlighted nodes",
-                            priority: 99,
-                            icon: EditorGUIUtility.FindTexture("d_winbtn_mac_close")
-                        )
-                    };
+                            icon: GetActionIcon(action)
+                        ));
+                    }
+
+                    // Add hierarchy search proposition
+                    if (!context.searchQuery.StartsWith("h:"))
+                    {
+                        propositions.Add(new SearchProposition(
+                            category: "Scope",
+                            label: "Search in Hierarchy",
+                            replacement: $"h: {context.searchQuery}",
+                            help: "Search in entire scene hierarchy",
+                            priority: 90,
+                            icon: EditorGUIUtility.FindTexture("d_UnityEditor.SceneHierarchyWindow")
+                        ));
+                    }
+
+                    propositions.Add(new SearchProposition(
+                        category: "Actions",
+                        label: "Clear Highlights",
+                        replacement: "clearHighlights",
+                        help: "Clear all highlighted nodes",
+                        priority: 80,
+                        icon: EditorGUIUtility.FindTexture("d_winbtn_mac_close")
+                    ));
+
+                    return propositions;
                 }
+            };
+        }
+
+        private static string GetHierarchyPath(GameObject go)
+        {
+            var path = go.name;
+            var parent = go.transform.parent;
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+            return path;
+        }
+
+        private static Texture2D GetActionIcon(string action)
+        {
+            return action switch
+            {
+                "highlight" => EditorGUIUtility.FindTexture("d_winbtn_mac_max"),
+                "select" => EditorGUIUtility.FindTexture("d_rectselection"),
+                "focus" => EditorGUIUtility.FindTexture("d_ViewToolZoom"),
+                "disable" => EditorGUIUtility.FindTexture("d_scenevis_hidden_hover"),
+                "enable" => EditorGUIUtility.FindTexture("d_scenevis_visible_hover"),
+                "log" => EditorGUIUtility.FindTexture("d_console.infoicon"),
+                _ => null
             };
         }
 
