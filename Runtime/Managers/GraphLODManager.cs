@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using JetBrains.Annotations;
+
+namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
     using System.Linq;
@@ -17,7 +19,7 @@
 
         [SerializeField] private float maxZoomForMinDetail = 150f;
         [SerializeField] private int gridCellSize = 2;
-        [SerializeField] private float nodeAggregationThreshold = 2f;
+        [SerializeField] private float nodeAggregationThreshold = 1f;
 
         [Header("Visual Settings")] [SerializeField]
         public GameObject clusterNodePrefab; // Prefab for aggregated nodes
@@ -31,6 +33,10 @@
         private Dictionary<string, GameObject> _aggregatedEdges;
         private List<GameObject> _originalNodes;
         private List<NodeConnection> _originalConnections;
+        
+        // Track which nodes are clustered
+        private Dictionary<GameObject, Vector2Int> _nodeToClusterMap;
+        private HashSet<GameObject> _clusteredNodes;
 
         private float _currentLODLevel;
         private bool _isLODActive;
@@ -40,6 +46,8 @@
             _spatialGrid = new Dictionary<Vector2Int, List<GameObject>>();
             _clusterNodes = new Dictionary<Vector2Int, GameObject>();
             _aggregatedEdges = new Dictionary<string, GameObject>();
+            _nodeToClusterMap = new Dictionary<GameObject, Vector2Int>();
+            _clusteredNodes = new HashSet<GameObject>();
             ForceClearAllState();
             Initialize();
             RestoreFullDetail();
@@ -75,8 +83,6 @@
             var currentZoom = _camera.orthographicSize;
             var newLODLevel = CalculateLODLevel(currentZoom);
 
-            // Only update if LOD level changed significantly
-            // if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > 0.1f)) return;
             _currentLODLevel = newLODLevel;
             UpdateLOD();
         }
@@ -84,13 +90,10 @@
         private void ForceClearAllState()
         {
             // Clear cluster nodes
-            foreach (var cluster in _clusterNodes.Values)
+            foreach (var cluster in _clusterNodes.Values.Where(cluster => cluster))
             {
-                if (cluster)
-                {
-                    ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
-                    DestroyImmediate(cluster);
-                }
+                ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
+                DestroyImmediate(cluster);
             }
 
             _clusterNodes.Clear();
@@ -106,6 +109,8 @@
             _spatialGrid?.Clear();
             _originalNodes?.Clear();
             _originalConnections?.Clear();
+            _nodeToClusterMap?.Clear();
+            _clusteredNodes?.Clear();
 
             _isLODActive = false;
         }
@@ -195,17 +200,23 @@
         {
             var threshold = Mathf.Max(1, nodeAggregationThreshold - lodLevel * nodeAggregationThreshold * 0.5f);
 
+            // Clear tracking collections
+            _nodeToClusterMap.Clear();
+            _clusteredNodes.Clear();
+
             foreach (var cell in _spatialGrid)
             {
                 if (!(cell.Value.Count >= threshold)) continue;
-                // Create cluster node for this cell
+                // Create a cluster node for this cell
                 var clusterNode = CreateClusterNode(cell.Key, cell.Value);
                 _clusterNodes[cell.Key] = clusterNode;
 
-                // Hide individual nodes
+                // Track clustered nodes
                 foreach (var node in cell.Value)
                 {
                     node.SetActive(false);
+                    _clusteredNodes.Add(node);
+                    _nodeToClusterMap[node] = cell.Key;
                 }
             }
         }
@@ -263,20 +274,23 @@
         private void ApplyEdgeCumulation()
         {
             // Group edges by their connected clusters
-            Dictionary<string, List<NodeConnection>> edgeGroups = new Dictionary<string, List<NodeConnection>>();
+            var edgeGroups = new Dictionary<string, List<NodeConnection>>();
 
             foreach (var connection in _originalConnections)
             {
                 if (!connection.startNode || !connection.endNode) continue;
 
-                // Find which cluster each node belongs to
-                Vector2Int startGrid = GetClusterForNode(connection.startNode);
-                Vector2Int endGrid = GetClusterForNode(connection.endNode);
+                // Get the actual nodes that should represent the connection endpoints
+                var startRepresentative = GetNodeRepresentative(connection.startNode);
+                var endRepresentative = GetNodeRepresentative(connection.endNode);
 
-                // Skip if both nodes are in the same cluster
-                if (startGrid == endGrid) continue;
+                // Skip if both nodes are clustered into the same cluster
+                if (startRepresentative == endRepresentative) continue;
 
-                var key = GetEdgeGroupKey(startGrid, endGrid);
+                // Skip if either representative is null (shouldn't happen, but safety check)
+                if (!startRepresentative || !endRepresentative) continue;
+
+                var key = GetEdgeGroupKey(startRepresentative, endRepresentative);
 
                 if (!edgeGroups.ContainsKey(key))
                 {
@@ -299,49 +313,34 @@
             }
         }
 
-        private Vector2Int GetClusterForNode(GameObject node)
+        private GameObject GetNodeRepresentative(GameObject node)
         {
-            float cellSize = gridCellSize * (1 + _currentLODLevel * 2);
-            Vector2Int gridPos = GetGridPosition(node.transform.position, cellSize);
-
-            // Check if this grid position has a cluster
-            if (_clusterNodes.ContainsKey(gridPos))
+            // If the node is clustered, return the cluster node
+            if (_clusteredNodes.Contains(node) && _nodeToClusterMap.TryGetValue(node, out var clusterGrid))
             {
-                return gridPos;
+                return _clusterNodes[clusterGrid];
             }
 
-            // Node is not clustered, return its own grid position
-            return gridPos;
+            // If the node is not clustered, return the original node (it should still be visible)
+            return node;
         }
 
-        private string GetEdgeGroupKey(Vector2Int start, Vector2Int end)
+        private static string GetEdgeGroupKey(GameObject startNode, GameObject endNode)
         {
-            // Ensure consistent key regardless of direction
-            if (start.x < end.x || (start.x == end.x && start.y < end.y))
-            {
-                return $"{start.x},{start.y}_{end.x},{end.y}";
-            }
+            // Create a consistent key based on the actual GameObjects
+            var startId = startNode.GetInstanceID();
+            var endId = endNode.GetInstanceID();
 
-            return $"{end.x},{end.y}_{start.x},{start.y}";
+            // Ensure a consistent key regardless of direction
+            return startId < endId ? $"{startId}_{endId}" : $"{endId}_{startId}";
         }
 
         private void CreateAggregatedEdge(string key, List<NodeConnection> connections)
         {
-            // Parse key to get grid positions
-            string[] parts = key.Split('_');
-            string[] start = parts[0].Split(',');
-            string[] end = parts[1].Split(',');
-
-            Vector2Int startGrid = new Vector2Int(int.Parse(start[0]), int.Parse(start[1]));
-            Vector2Int endGrid = new Vector2Int(int.Parse(end[0]), int.Parse(end[1]));
-
-            GameObject startNode = _clusterNodes.TryGetValue(startGrid, out var node)
-                ? node
-                : connections[0].startNode;
-
-            GameObject endNode = _clusterNodes.TryGetValue(endGrid, out var clusterNode)
-                ? clusterNode
-                : connections[0].endNode;
+            // Get the representative nodes from the first connection
+            // (all connections in this group should have the same representatives)
+            var startNode = GetNodeRepresentative(connections[0].startNode);
+            var endNode = GetNodeRepresentative(connections[0].endNode);
 
             if (!startNode || !endNode) return;
 
@@ -399,12 +398,9 @@
             // Restore all original edges
             if (_originalConnections != null)
             {
-                foreach (var connection in _originalConnections)
+                foreach (var connection in _originalConnections.Where(connection => connection.lineRenderer))
                 {
-                    if (connection.lineRenderer)
-                    {
-                        connection.lineRenderer.enabled = true;
-                    }
+                    connection.lineRenderer.enabled = true;
                 }
             }
 
@@ -415,13 +411,10 @@
         private void ClearLODState()
         {
             // Remove cluster nodes
-            foreach (var cluster in _clusterNodes.Values)
+            foreach (var cluster in _clusterNodes.Values.Where(cluster => cluster))
             {
-                if (cluster)
-                {
-                    ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
-                    Destroy(cluster);
-                }
+                ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
+                Destroy(cluster);
             }
 
             _clusterNodes.Clear();
@@ -435,6 +428,8 @@
             _aggregatedEdges.Clear();
 
             _spatialGrid.Clear();
+            _nodeToClusterMap.Clear();
+            _clusteredNodes.Clear();
         }
 
         private void OnDestroy()
@@ -452,18 +447,18 @@
         }
     }
 
-// Helper component to store cluster data
+    // Helper component to store cluster data
     public class ClusterNodeData : MonoBehaviour
     {
         public List<GameObject> containedNodes;
-        public int nodeCount;
+        [UsedImplicitly] public int nodeCount;
     }
 
-// Helper component to store aggregated edge data
+    // Helper component to store aggregated edge data - maybe use later to inspect clusters
     public class AggregatedEdgeData : MonoBehaviour
     {
-        public List<NodeConnection> originalConnections;
-        public GameObject startCluster;
-        public GameObject endCluster;
+        [UsedImplicitly] public List<NodeConnection> originalConnections;
+        [UsedImplicitly] public GameObject startCluster;
+        [UsedImplicitly] public GameObject endCluster;
     }
 }
