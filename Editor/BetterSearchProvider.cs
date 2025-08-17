@@ -1,3 +1,5 @@
+using System;
+
 namespace _3DConnections.Editor
 {
 #if UNITY_EDITOR
@@ -17,7 +19,7 @@ namespace _3DConnections.Editor
     {
         private const string ProviderId = "nodeoverlay";
         private const string FilterId = "node:";
-        private static readonly List<GameObject> HighlightedObjects = new List<GameObject>();
+        private static readonly List<GameObject> HighlightedObjects = new();
 
         // =====================
         // Search Actions
@@ -708,11 +710,39 @@ namespace _3DConnections.Editor
         private static void HighlightObjects(List<GameObject> objects)
         {
             ClearHighlights();
+
+            var parentNodes = GameObject.Find("ParentNodesObject");
+            var parentEdges = GameObject.Find("ParentEdgesObject");
+
+            var nodes = new List<GameObject>();
+            var edges = new List<GameObject>();
+
+            nodes.AddRange(from Transform child in parentNodes.transform select child.gameObject);
+            edges.AddRange(from Transform child in parentEdges.transform select child.gameObject);
+
+            // Union all objects (nodes + edges), then remove the ones we're highlighting
+            var fadeOutObjects = nodes
+                .Union(edges)
+                .Except(objects)
+                .ToList();
+
+            // Highlight selected objects
             foreach (var go in objects)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
                 if (coloredObject == null) continue;
+
                 coloredObject.Highlight(Color.red, highlightForever: true, duration: 1);
+                HighlightedObjects.Add(go);
+            }
+
+            // Fade out all others
+            foreach (var go in fadeOutObjects)
+            {
+                var coloredObject = go.GetComponent<ColoredObject>();
+                if (coloredObject == null) continue;
+
+                coloredObject.Highlight(new Color(1f, 0f, 0f, 0.1f), highlightForever: true, duration: 1);
                 HighlightedObjects.Add(go);
             }
 
