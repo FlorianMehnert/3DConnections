@@ -73,6 +73,9 @@ namespace _3DConnections.Runtime.Managers
                 }
 
                 onComplete?.Invoke();
+                
+                // update node count
+                ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
             }
 
             if (!scene.isLoaded)

@@ -1,6 +1,7 @@
+using System;
+
 namespace _3DConnections.Runtime.Managers
 {
-    using Interfaces;
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
@@ -19,10 +20,11 @@ namespace _3DConnections.Runtime.Managers
     /// <summary>
     /// Settings Menu which allows the user to adjust the scene to analyze, layout and parameters
     /// </summary>
-    public class SettingsMenuGeneral : MonoBehaviour, IMenu
+    public class SettingsMenuGeneral : MonoBehaviour
     {
         // General UI
         public UIDocument uiDocument;
+        public UIDocument uiDocumentLeft;
         private VisualElement _panel;
 
         // Buttons
@@ -34,6 +36,11 @@ namespace _3DConnections.Runtime.Managers
         private Button _crButton;
         private Button _srButton;
         private Button _drButton;
+        
+        private Button _goButton;
+        private Button _coButton;
+        private Button _soButton;
+        private Button _voButton;
 
         // Dropdowns
         private DropdownField _sceneDropdown;
@@ -50,10 +57,8 @@ namespace _3DConnections.Runtime.Managers
         public GameObject clusterNodePrefab;
 
         // Internal
-        private System.Action[] _actions;
-        private System.Action _currentAction;
-
-        public KeyCode menuKeybind = KeyCode.Escape;
+        private Action[] _actions;
+        private Action _currentAction;
 
         private void Start()
         {
@@ -76,7 +81,8 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
 
-            GrabUIElements(uiDocument.rootVisualElement);
+            GrabUIElementsSettingsMenu(uiDocument.rootVisualElement);
+            GrabUIElementsInfoPanel(uiDocumentLeft.rootVisualElement);
 
             SetupUICallbacks();
             PopulateActions();
@@ -86,14 +92,41 @@ namespace _3DConnections.Runtime.Managers
             if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
                 ScriptableObjectInventory.Instance.applicationState.spawnedNodes = false;
 
-            // Register with menu manager
-            MenuManager.Instance.RegisterMenu(menuKeybind, this);
-
-            Debug.Log($"SettingsMenuGeneral registered with keybind {menuKeybind}");
-
             // menu is closed on start of the program
             ScriptableObjectInventory.Instance.menuState.menuOpen =
                 uiDocument.rootVisualElement.style.display == DisplayStyle.Flex;
+            
+            // update node counts 
+            UpdateText();
+            ScriptableObjectInventory.Instance.graph.OnGoCountChanged += UpdateText;
+        }
+
+        private void OnDisable()
+        {
+            ScriptableObjectInventory.Instance.graph.OnGoCountChanged -= UpdateText;
+        }
+
+        private void UpdateText()
+        {
+            try
+            {
+                var goCount = ScriptableObjectInventory.Instance.graph.AllNodes.Count(n =>
+                    n.GetComponent<NodeType>().nodeTypeName == NodeTypeName.GameObject);
+                var coCount = ScriptableObjectInventory.Instance.graph.AllNodes.Count(n =>
+                    n.GetComponent<NodeType>().nodeTypeName == NodeTypeName.Component);
+                var soCount = ScriptableObjectInventory.Instance.graph.AllNodes.Count(n =>
+                    n.GetComponent<NodeType>().nodeTypeName == NodeTypeName.ScriptableObject);
+                var allNodes = goCount+coCount+soCount;
+                _goButton.text = goCount == 0 ? " 0 " : goCount.ToString();
+                _coButton.text = coCount == 0 ? " 0 " : coCount.ToString();
+                _soButton.text = soCount == 0 ? " 0 " : soCount.ToString();
+                _voButton.text = allNodes == 0 ? " 0 " : allNodes.ToString();
+            }
+            catch (Exception e)
+            {
+                
+            }
+            
         }
 
         private void SetupUICallbacks()
@@ -103,6 +136,9 @@ namespace _3DConnections.Runtime.Managers
                 {
                     if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.clearEvent)
                         ScriptableObjectInventory.Instance.clearEvent.TriggerEvent();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 };
 
             if (_removePhysicsButton != null)
@@ -178,8 +214,23 @@ namespace _3DConnections.Runtime.Managers
                     ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = !dra;
                 };
         }
+        
+        private void GrabUIElementsInfoPanel(VisualElement root)
+        {
+            if (root == null)
+            {
+                Debug.LogError("Root visual element for info panel is null!");
+                return;
+            }
 
-        private void GrabUIElements(VisualElement root)
+            _goButton = root.Q<Button>("GO");
+            _coButton = root.Q<Button>("CO");
+            _soButton = root.Q<Button>("SO");
+            _voButton = root.Q<Button>("VO");
+
+        }
+
+        private void GrabUIElementsSettingsMenu(VisualElement root)
         {
             if (root == null)
             {
@@ -201,13 +252,12 @@ namespace _3DConnections.Runtime.Managers
             _crButton = root.Q<Button>("CR");
             _srButton = root.Q<Button>("FR");
             _drButton = root.Q<Button>("DR");
-
         }
 
         private void PopulateActions()
         {
             var springSimulation = FindFirstObjectByType<SpringSimulation>();
-            _actions = new System.Action[]
+            _actions = new Action[]
             {
                 () =>
                 {
@@ -219,6 +269,9 @@ namespace _3DConnections.Runtime.Managers
                             ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
                     });
                     GraphLODManager.Init();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 },
                 () =>
                 {
@@ -233,6 +286,9 @@ namespace _3DConnections.Runtime.Managers
                         NodeConnectionManager.Instance?.AddSpringsToConnections();
                     });
                     GraphLODManager.Init();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 },
                 () =>
                 {
@@ -259,6 +315,9 @@ namespace _3DConnections.Runtime.Managers
                             springSimulation.Simulate();
                         else
                             Debug.Log("missing springSimulation Script on the Manager");
+                        
+                        // update node count
+                        ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                     });
                     GraphLODManager.Init();
                 },
@@ -280,6 +339,9 @@ namespace _3DConnections.Runtime.Managers
                         sim.Initialize();
                     });
                     GraphLODManager.Init();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 },
                 () =>
                 {
@@ -302,6 +364,9 @@ namespace _3DConnections.Runtime.Managers
                         forceDirected.Initialize();
                     });
                     GraphLODManager.Init();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 },
                 () =>
                 {
@@ -327,6 +392,9 @@ namespace _3DConnections.Runtime.Managers
                         forceDirectedSim.Initialize();
                     });
                     GraphLODManager.Init();
+                    
+                    // update node count
+                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
                 }
             };
         }

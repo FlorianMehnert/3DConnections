@@ -1,3 +1,5 @@
+using NUnit.Framework;
+
 namespace _3DConnections.Runtime.ScriptableObjects
 {
     using System;
@@ -21,34 +23,68 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private List<GameObject> _allNodes = new();
         private bool _workingOnAllNodes;
         private GameObject _parentObject;
+        
+        public event Action OnGoCountChanged;
+        public event Action OnCoCountChanged;
+        public event Action OnSoCountChanged;
+        public event Action OnVoCountChanged;
 
         private readonly object _lock = new();
 
+        private void InvokeOnGoCountChanged()
+        {
+            OnGoCountChanged?.Invoke();
+        }
+
+        private void InvokeOnCoCountChanged()
+        {
+            OnCoCountChanged?.Invoke();
+        }
+
+        private void InvokeOnSoCountChanged()
+        {
+            OnSoCountChanged?.Invoke();
+        }
+
+        private void InvokeOnVoCountChanged()
+        {
+            OnVoCountChanged?.Invoke();
+        }
+        
+        public void InvokeOnAllCountChanged()
+        {
+            InvokeOnGoCountChanged();
+            InvokeOnCoCountChanged();
+            InvokeOnSoCountChanged();
+            InvokeOnVoCountChanged();
+        }
+
+        
+        
         public List<GameObject> AllNodes
         {
             get
             {
                 lock (_lock)
                 {
-                    if (_allNodes != null)
+                    if (_allNodes == null)
+                        _allNodes = new List<GameObject>();
+
+                    // Clean up destroyed objects before returning
+                    _allNodes.RemoveAll(n => n == null);
+
+                    if (_allNodes.Count == 0)
                     {
-                        if (_allNodes.Count != 0) return _allNodes ?? new List<GameObject>();
                         _parentObject ??= SceneHandler.GetParentObject();
-                        if (!_parentObject)
-                            return new List<GameObject>();
-                        _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject();
-                        return _allNodes;
+                        if (_parentObject)
+                        {
+                            _allNodes = SceneHandler.GetNodesUsingTheNodegraphParentObject()
+                                .Where(n => n != null)
+                                .ToList();
+                        }
                     }
 
-                    _parentObject ??= SceneHandler.GetParentObject();
-                    if (!_parentObject)
-                        return new List<GameObject>();
-
-                    _allNodes = _parentObject.transform.Cast<Transform>()
-                        .Select(child => child.gameObject)
-                        .ToList();
-
-                    return _allNodes ?? new List<GameObject>();
+                    return _allNodes;
                 }
             }
             set
@@ -56,16 +92,14 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 lock (_lock)
                 {
                     if (!_workingOnAllNodes)
-                    {
-                        _allNodes = value;
-                    }
+                        _allNodes = value.Where(n => n != null).ToList();
                     else
-                    {
-                        Debug.LogWarning("Trying to alter allNodes while some other function is iterating it.");
-                    }
+                        Debug.LogWarning("Trying to alter AllNodes while iteration is in progress.");
                 }
             }
         }
+        
+        public int NodeCount => AllNodes.Count;
 
 
         public bool IsEmpty()

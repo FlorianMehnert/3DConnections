@@ -1,7 +1,7 @@
 ﻿
 namespace _3DConnections.Runtime.Managers
 {
-    using Interfaces;
+    using ScriptableObjects;
     using UnityEngine;
     using UnityEngine.UIElements;
     using UnityEngine.InputSystem;
@@ -17,6 +17,8 @@ namespace _3DConnections.Runtime.Managers
         private List<Tab> _tabButtons;
         private List<Button> _currentTabButtons;
         private int _currentButtonIndex = -1;
+        private bool _isVisible = true;
+        [SerializeField] private MenuState menuState;
 
         private void Awake()
         {
@@ -61,14 +63,28 @@ namespace _3DConnections.Runtime.Managers
 
         public void OnMenuToggle(InputAction.CallbackContext context)
         {
+            if (!context.performed) return;
             var settingsMenuGeneral = GetComponent<SettingsMenuGeneral>();
             if (!settingsMenuGeneral)
             {
                 Debug.Log("did not find settingsMenuGeneral on menuToggle");
             }
+            if (_menuDocument == null) return;
 
-            ;
-            MenuManager.Instance.ActivateMenu(settingsMenuGeneral);
+            if (_isVisible)
+            {
+                _menuDocument.rootVisualElement.RemoveFromClassList("visible");
+                _menuDocument.rootVisualElement.AddToClassList("hidden");
+                menuState.menuOpen = false;
+            }
+            else
+            {
+                _menuDocument.rootVisualElement.RemoveFromClassList("hidden");
+                _menuDocument.rootVisualElement.AddToClassList("visible");
+                menuState.menuOpen = true;
+            }
+
+            _isVisible = !_isVisible;
         }
 
         public void OnNavigationPerformed(InputAction.CallbackContext context)

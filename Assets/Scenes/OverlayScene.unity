@@ -362,9 +362,9 @@ GameObject:
   m_Component:
   - component: {fileID: 574136030}
   - component: {fileID: 574136029}
-  - component: {fileID: 574136032}
   - component: {fileID: 574136033}
   - component: {fileID: 574136034}
+  - component: {fileID: 574136035}
   m_Layer: 5
   m_Name: SettingsMenu
   m_TagString: SettingsMenu
@@ -406,21 +406,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1834842409}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &574136032
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 574136028}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f1b69723c6a4afd95642a5ea06a4f12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  uiDocument: {fileID: 574136029}
-  clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
-  menuKeybind: 27
 --- !u!114 &574136033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -526,6 +511,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
     m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
+    m_ActionName: UI/InfoPanel
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -541,6 +530,166 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 095ab7057bdf46acb97e5212a5b3fc84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  menuState: {fileID: 11400000, guid: f87a4adf8a4101c45929d4a2be652937, type: 2}
+--- !u!114 &574136035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574136028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f1b69723c6a4afd95642a5ea06a4f12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  uiDocument: {fileID: 574136029}
+  uiDocumentLeft: {fileID: 618342027}
+  clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
+--- !u!1 &618342022
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 618342023}
+  - component: {fileID: 618342027}
+  - component: {fileID: 618342025}
+  - component: {fileID: 618342028}
+  m_Layer: 5
+  m_Name: InfoPanel
+  m_TagString: SettingsMenu
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &618342023
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618342022}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -6.7811546}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1834842409}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &618342025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618342022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 4c2daa6b2bac08f4db0963352527a29b, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f33b0288-d49d-45ab-8776-5015a50eba12
+    m_ActionName: 'cameraMovement/input[/XInputControllerWindows/rightStick]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 39609140-d730-4995-89ea-3acb296162bf
+    m_ActionName: 'cameraMovement/zoom[/XInputControllerWindows/rightTrigger,/XInputControllerWindows/leftTrigger]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ae44f52d-ca96-4c80-854e-28af3fc57fce
+    m_ActionName: 'UI/Submit[/XInputControllerWindows/buttonEast]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8c597d60-34b9-4f2d-ac3b-668294d5968e
+    m_ActionName: 'UI/Navigate[/XInputControllerWindows/rightStick/up,/XInputControllerWindows/rightStick/down,/XInputControllerWindows/rightStick/left,/XInputControllerWindows/rightStick/right,/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f8c32cfa-ac4b-40c5-99f7-512114adbc47
+    m_ActionName: 'UI/Tab[/XInputControllerWindows/rightStick/up,/XInputControllerWindows/rightStick/down,/XInputControllerWindows/rightStick/left,/XInputControllerWindows/rightStick/right,/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 0cdedd1a-ff56-4aff-9116-69853e352992
+    m_ActionName: 'UI/Click[/Mouse/leftButton,/Pen/tip]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2ec20d90-8627-42e8-9e23-db67cb922d08
+    m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
+    m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 618342028}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.InfoPanelNavigation,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnInfoPanelToggle
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnInfoPanelToggle
+          m_BoolArgument: 0
+        m_CallState: 1
+    m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
+    m_ActionName: UI/InfoPanel
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: UI
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &618342027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618342022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PanelSettings: {fileID: 11400000, guid: 3e7030f7dc86f291aaef41c5f692831c, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: de75a91ef2e1866479b9f7b2b9264f12, type: 3}
+  m_SortingOrder: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+--- !u!114 &618342028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618342022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3c8f8e50ae04e72bada7059ab9e4205, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &868124760
@@ -743,9 +892,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1834842409}
-  - component: {fileID: 1834842410}
   m_Layer: 6
-  m_Name: GUIManager
+  m_Name: GUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -765,20 +913,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 574136030}
+  - {fileID: 618342023}
   m_Father: {fileID: 4630647389690195313}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1834842410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1834842408}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 000431de86d940e792f1050c9294d134, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &2027617127 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
@@ -835,6 +972,7 @@ MonoBehaviour:
   componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
   referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
   dynamicComponentConnection: {r: 1, g: 0.6, b: 0, a: 1}
+  unityEventConnection: {r: 1, g: 0.85, b: 0, a: 1}
   colorPreset: 0
   generateColors: 0
   toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
