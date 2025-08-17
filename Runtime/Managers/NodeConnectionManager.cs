@@ -117,6 +117,9 @@ namespace _3DConnections.Runtime.Managers
             
             var knownColor = color ?? Color.white;
             Color.RGBToHSV(knownColor, out var h, out _, out var v);
+            
+            var coloredObject = lineObj.GetComponent<ColoredObject>();
+            coloredObject.SetOriginalColor(knownColor);
 
             knownColor = Color.HSVToRGB(h, saturation, v);
             knownColor.a = .5f;

@@ -20,26 +20,39 @@ namespace _3DConnections.Runtime.Nodes
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
 
+        private void Awake()
+        {
+            _objectRenderer = GetComponent<Renderer>();
+            if (_objectRenderer == null || _objectRenderer.material == null) return;
+            if (_objectRenderer is LineRenderer lineRenderer)
+            {
+                _originalColor = lineRenderer.startColor;
+            }
+            else
+            {
+                _originalColor = _objectRenderer.material.color;
+            }
+        }
+
         private void Start()
         {
             _objectRenderer = GetComponent<Renderer>();
-            if (_objectRenderer != null)
+            if (_objectRenderer != null && _objectRenderer.material != null)
             {
-                _originalColor = _objectRenderer.material.color;
+                if (_objectRenderer is LineRenderer lineRenderer)
+                {
+                    _originalColor = lineRenderer.startColor;
+                }
+                else
+                {
+                    _originalColor = _objectRenderer.material.color;
+                }
             }
 
             _nodeConnections = GetComponent<LocalNodeConnections>();
             _targetLayerMask = LayerMask.GetMask("OverlayScene");
         }
 
-        private void Awake()
-        {
-            _objectRenderer = GetComponent<Renderer>();
-            if (_objectRenderer != null && _objectRenderer.material != null)
-            {
-                _originalColor = _objectRenderer.material.color;
-            }
-        }
 
         private void Update()
         {
@@ -145,24 +158,45 @@ namespace _3DConnections.Runtime.Nodes
         /// <summary>
         /// Highlights the LineRenderer by changing its color temporarily.
         /// </summary>
-        public void Highlight(Color highlightColor, float duration, bool highlightForever = false,
-            UnityAction actionAfterHighlight = null, Color emissionColor = default)
+        public void Highlight(
+            Color highlightColor,
+            float duration,
+            bool highlightForever = false,
+            UnityAction actionAfterHighlight = null,
+            Color emissionColor = default)
         {
-            if (!_objectRenderer || !_objectRenderer.material) return;
-            _objectRenderer.material.color = highlightColor;
+            if (!_objectRenderer || !_objectRenderer.material)
+                return;
+
+            // Handle LineRenderer separately
+            if (_objectRenderer is LineRenderer lineRenderer)
+            {
+                lineRenderer.startColor = highlightColor;
+                lineRenderer.endColor = highlightColor;
+
+                lineRenderer.material.EnableKeyword("_EMISSION");
+                if (emissionColor == default)
+                    emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
+
+                lineRenderer.material.SetColor(EmissionColor, emissionColor);
+            }
+            else
+            {
+                _objectRenderer.material.color = highlightColor;
+                _objectRenderer.material.EnableKeyword("_EMISSION");
+                if (emissionColor == default)
+                    emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
+                _objectRenderer.material.SetColor(EmissionColor, emissionColor);
+            }
+
+            // Common highlight logic
             _highlightDuration = duration;
             _timer = 0f;
             _isHighlighting = true;
-            _objectRenderer.material.EnableKeyword("_EMISSION");
+            _actionAfterHighlight = actionAfterHighlight;
+
             if (highlightForever)
                 _highlightForever = true;
-            if (emissionColor == default)
-            {
-                emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
-            }
-
-            _objectRenderer.material.SetColor(EmissionColor, emissionColor);
-            _actionAfterHighlight = actionAfterHighlight;
         }
     }
 }
