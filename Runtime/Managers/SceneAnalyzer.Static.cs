@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using _3DConnections.Runtime.Nodes.Extensions;
+
+namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
     using System.Linq;
@@ -186,7 +188,7 @@
                     if (!_eventPublishers.ContainsKey(scriptableObject.GetType()))
                         _eventPublishers[scriptableObject.GetType()] = new List<string>();
 
-                    foreach (var (fieldName, fieldType) in delegateEvents)
+                    foreach (var (fieldName, _) in delegateEvents)
                     {
                         if (!_eventPublishers[scriptableObject.GetType()].Contains(fieldName))
                             _eventPublishers[scriptableObject.GetType()].Add(fieldName);

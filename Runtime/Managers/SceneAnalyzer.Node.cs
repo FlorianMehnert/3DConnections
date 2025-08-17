@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using _3DConnections.Runtime.Nodes.Extensions;
+
+namespace _3DConnections.Runtime.Managers
 {
     using ScriptableObjectInventory;
     using System;
@@ -199,7 +201,6 @@
                 return null;
 
             ConfigureNodeType(nodeObject, obj, virtualType);
-            AddArtificialGameObjectComponent(nodeObject);
             AddTextChild(nodeObject, obj, virtualType);
 
 #if UNITY_EDITOR
@@ -269,14 +270,6 @@
                 nodeType.SetNodeType(obj);
                 nodeType.reference = obj;
             }
-        }
-
-        /// <summary>
-        /// Adds the ArtificialGameObject component to prevent recursive spawns on analyzing the overlay scene itself.
-        /// </summary>
-        private static void AddArtificialGameObjectComponent(GameObject nodeObject)
-        {
-            nodeObject.AddComponent<ArtificialGameObject>();
         }
 
         /// <summary>

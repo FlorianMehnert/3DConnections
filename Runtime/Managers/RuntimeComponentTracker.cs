@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using _3DConnections.Runtime.Nodes.Extensions;
+
+namespace _3DConnections.Runtime.Managers
 {
     using System;
     using System.Collections.Generic;
