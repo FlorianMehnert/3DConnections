@@ -27,6 +27,7 @@ namespace _3DConnections.Runtime.Simulations
 
         private bool _currentlyCalculating;
 
+        [ContextMenu( "Refresh" )]
         public void Initialize()
         {
             _currentlyCalculating = false;
@@ -39,11 +40,18 @@ namespace _3DConnections.Runtime.Simulations
             _positions = new NativeArray<float3>(_nodes.Count, Allocator.Persistent);
             _velocities = new NativeArray<float3>(_nodes.Count, Allocator.Persistent);
 
-            // Initialize positions and velocities
-            for (var i = 0; i < _nodes.Count; i++)
+            try
             {
-                _positions[i] = _nodes[i].transform.position;
-                _velocities[i] = float3.zero;
+                // Initialize positions and velocities
+                for (var i = 0; i < _nodes.Count; i++)
+                {
+                    _positions[i] = _nodes[i].transform.position;
+                    _velocities[i] = float3.zero;
+                }
+            }
+            catch (Exception e)
+            {
+                
             }
 
             // Create connection arrays
@@ -63,8 +71,7 @@ namespace _3DConnections.Runtime.Simulations
         private void OnEnable()
         {
             activated = true;
-            if (_nodes == null || _nodes.Count == 0)
-                Initialize();
+            Initialize();
 
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
@@ -91,6 +98,14 @@ namespace _3DConnections.Runtime.Simulations
                 {
 
                 }
+                catch (MissingReferenceException)
+                {
+
+                }
+                catch (NullReferenceException)
+                {
+                    
+                }
             }
 
             // Schedule and run the force calculation job
@@ -105,6 +120,10 @@ namespace _3DConnections.Runtime.Simulations
                 catch (IndexOutOfRangeException)
                 {
 
+                }
+                catch (MissingReferenceException)
+                {
+                    
                 }
             }
 
