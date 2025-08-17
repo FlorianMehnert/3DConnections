@@ -1,10 +1,10 @@
-﻿using JetBrains.Annotations;
-
-namespace _3DConnections.Runtime.Managers
+﻿namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
+    using _3DConnections.Runtime.Nodes;
+    using JetBrains.Annotations;
     
     using ScriptableObjectInventory;
 
@@ -264,9 +264,10 @@ namespace _3DConnections.Runtime.Managers
                     };
                 }
             }
+            var coloredObject = cluster.GetComponent<ColoredObject>();
+            coloredObject.SetOriginalColor(avgColor);
 
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(cluster);
-
             return cluster;
         }
 
@@ -365,13 +366,16 @@ namespace _3DConnections.Runtime.Managers
                 lr.material = _aggregatedEdgeMaterial;
             }
 
-            // Set color based on average of connections
-            Color avgColor = connections.Aggregate(Color.black, (current, conn) => current + conn.connectionColor);
+            // Set color based on average of actual lineRenderer materials
+            Color avgColor = connections.Aggregate(Color.black, (current, conn) => current + conn.lineRenderer.startColor);
 
             avgColor /= connections.Count;
             avgColor.a = 0.7f;
             lr.startColor = avgColor;
             lr.endColor = avgColor;
+            
+            var coloredObject = edgeObj.GetComponent<ColoredObject>();
+            coloredObject.SetOriginalColor(avgColor);            
 
             // Store aggregated edge data
             var edgeData = edgeObj.AddComponent<AggregatedEdgeData>();

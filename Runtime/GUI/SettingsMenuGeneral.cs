@@ -1,7 +1,6 @@
-using System;
-
 namespace _3DConnections.Runtime.Managers
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
@@ -103,7 +102,13 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnDisable()
         {
-            ScriptableObjectInventory.Instance.graph.OnGoCountChanged -= UpdateText;
+            try
+            {
+                ScriptableObjectInventory.Instance.graph.OnGoCountChanged -= UpdateText;
+            }catch(Exception e)
+            {
+                
+            }
         }
 
         private void UpdateText()

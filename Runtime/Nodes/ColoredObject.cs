@@ -82,6 +82,7 @@ namespace _3DConnections.Runtime.Nodes
         {
             _isHighlighting = false;
             _highlightForever = false;
+            _timer = 0f;
             _actionAfterHighlight?.Invoke();
             ResetColor();
         }
@@ -126,17 +127,30 @@ namespace _3DConnections.Runtime.Nodes
 
         private void ResetColor()
         {
-            if (_objectRenderer && _objectRenderer.material)
+            if (!_objectRenderer || !_objectRenderer.material) return;
+            if (_objectRenderer is LineRenderer lineRenderer)
+            {
+                lineRenderer.startColor = _originalColor;
+                lineRenderer.endColor = _originalColor;
+                lineRenderer.material.DisableKeyword("_EMISSION");
+            }
+            else
             {
                 _objectRenderer.material.color = _originalColor;
+                _objectRenderer.material.DisableKeyword("_EMISSION");
             }
-
-            _objectRenderer.material.DisableKeyword("_EMISSION");
         }
 
         public void SetColor(Color color)
         {
-            if (_objectRenderer && _objectRenderer.material)
+            if (!_objectRenderer || !_objectRenderer.material) return;
+
+            if (_objectRenderer is LineRenderer lineRenderer)
+            {
+                lineRenderer.startColor = color;
+                lineRenderer.endColor = color;
+            }
+            else
             {
                 _objectRenderer.material.color = color;
             }
@@ -144,7 +158,14 @@ namespace _3DConnections.Runtime.Nodes
 
         public void SetToOriginalColor()
         {
-            if (_objectRenderer && _objectRenderer.material)
+            if (!_objectRenderer || !_objectRenderer.material) return;
+
+            if (_objectRenderer is LineRenderer lineRenderer)
+            {
+                lineRenderer.startColor = _originalColor;
+                lineRenderer.endColor = _originalColor;
+            }
+            else
             {
                 _objectRenderer.material.color = _originalColor;
             }

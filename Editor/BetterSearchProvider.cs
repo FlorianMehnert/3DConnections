@@ -714,19 +714,24 @@ namespace _3DConnections.Editor
             var parentNodes = GameObject.Find("ParentNodesObject");
             var parentEdges = GameObject.Find("ParentEdgesObject");
 
-            var nodes = new List<GameObject>();
-            var edges = new List<GameObject>();
+            var allObjects = new List<GameObject>();
 
-            nodes.AddRange(from Transform child in parentNodes.transform select child.gameObject);
-            edges.AddRange(from Transform child in parentEdges.transform select child.gameObject);
+            // Get all nodes
+            if (parentNodes != null)
+            {
+                allObjects.AddRange(from Transform child in parentNodes.transform select child.gameObject);
+            }
+            
+            // Get all edges
+            if (parentEdges != null)
+            {
+                allObjects.AddRange(from Transform child in parentEdges.transform select child.gameObject);
+            }
 
-            // Union all objects (nodes + edges), then remove the ones we're highlighting
-            var fadeOutObjects = nodes
-                .Union(edges)
-                .Except(objects)
-                .ToList();
+            // Objects that should be faded out (all objects minus the ones we're highlighting)
+            var fadeOutObjects = allObjects.Except(objects).ToList();
 
-            // Highlight selected objects
+            // Highlight selected objects in bright red
             foreach (var go in objects)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
@@ -736,17 +741,18 @@ namespace _3DConnections.Editor
                 HighlightedObjects.Add(go);
             }
 
-            // Fade out all others
+            // Fade out all others with a dimmed color
             foreach (var go in fadeOutObjects)
             {
                 var coloredObject = go.GetComponent<ColoredObject>();
                 if (coloredObject == null) continue;
 
-                coloredObject.Highlight(new Color(1f, 0f, 0f, 0.1f), highlightForever: true, duration: 1);
+                var dimColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
+                coloredObject.Highlight(dimColor, highlightForever: true, duration: 1);
                 HighlightedObjects.Add(go);
             }
 
-            Debug.Log($"Highlighted {objects.Count} matching nodes");
+            Debug.Log($"Highlighted {objects.Count} matching objects, faded out {fadeOutObjects.Count} others");
         }
 
         private static void HighlightSingleObject(GameObject go)
@@ -785,12 +791,10 @@ namespace _3DConnections.Editor
 
         private static void ClearHighlights()
         {
-            foreach (var coloredObject in from go in HighlightedObjects.ToList()
-                     where go != null
-                     select go.GetComponent<ColoredObject>()
-                     into coloredObject
-                     where coloredObject != null
-                     select coloredObject)
+            // Create a copy of the list to avoid modification during iteration
+            var objectsToProcess = new List<GameObject>(HighlightedObjects);
+            
+            foreach (ColoredObject coloredObject in from go in objectsToProcess where go != null select go.GetComponent<ColoredObject>() into coloredObject where coloredObject != null select coloredObject)
             {
                 coloredObject.ManualClearHighlight();
             }
