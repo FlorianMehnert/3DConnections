@@ -1,0 +1,162 @@
+﻿// NodeScalingCompute.compute
+// Compute shader for calculating minimum pixel size scaling for nodes
+
+#pragma kernel CSMain
+
+struct NodeData
+{
+    float3 worldPosition;
+    float3 originalScale;
+    float3 currentScale;
+    float minPixelSize;
+    int nodeType; // 0: regular, 1: cluster, 2: important
+    float priority;
+};
+
+RWStructuredBuffer<NodeData> nodeBuffer;
+
+// Camera parameters
+float4x4 viewProjectionMatrix;
+float2 screenSize;
+float cameraOrthoSize;
+
+// Animation parameters
+float deltaTime;
+float transitionSpeed;
+bool enableSmoothTransitions;
+
+// Constants
+static const float MIN_SCALE_FACTOR = 0.1;
+static const float MAX_SCALE_FACTOR = 10.0;
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint bufferLength;
+    nodeBuffer.GetDimensions(bufferLength);
+    
+    if (index >= bufferLength) 
+        return;
+    
+    NodeData node = nodeBuffer[index];
+    
+    // Calculate screen space size
+    float4 worldPos = float4(node.worldPosition, 1.0);
+    
+    // For orthographic camera, we can calculate screen size directly
+    // The world size of one pixel at the current zoom level
+    float worldPixelSize = (cameraOrthoSize * 2.0) / screenSize.y;
+    
+    // Get the maximum dimension of the original scale
+    float maxOriginalScale = max(max(node.originalScale.x, node.originalScale.y), node.originalScale.z);
+    
+    // Calculate how many pixels this node would occupy
+    float currentPixelSize = maxOriginalScale / worldPixelSize;
+    
+    // Determine target scale
+    float3 targetScale = node.originalScale;
+    
+    if (currentPixelSize < node.minPixelSize)
+    {
+        // Node is too small, scale it up
+        float scaleFactor = node.minPixelSize / currentPixelSize;
+        
+        // Clamp scale factor to reasonable limits
+        scaleFactor = clamp(scaleFactor, MIN_SCALE_FACTOR, MAX_SCALE_FACTOR);
+        
+        targetScale = node.originalScale * scaleFactor;
+    }
+    else
+    {
+        // Node is large enough, use original scale
+        targetScale = node.originalScale;
+    }
+    
+    // Apply smooth transitions if enabled
+    if (enableSmoothTransitions)
+    {
+        float3 scaleDifference = targetScale - node.currentScale;
+        float transitionAmount = transitionSpeed * deltaTime;
+        
+        // Use different transition speeds based on node type/priority
+        float priorityMultiplier = lerp(0.5, 2.0, node.priority);
+        transitionAmount *= priorityMultiplier;
+        
+        node.currentScale = node.currentScale + scaleDifference * min(transitionAmount, 1.0);
+    }
+    else
+    {
+        // Instant scaling
+        node.currentScale = targetScale;
+    }
+    
+    // Ensure scale doesn't go below minimum or above maximum
+    node.currentScale = clamp(node.currentScale, 
+                            node.originalScale * MIN_SCALE_FACTOR, 
+                            node.originalScale * MAX_SCALE_FACTOR);
+    
+    // Write back to buffer
+    nodeBuffer[index] = node;
+}
+
+// Alternative kernel for overlap resolution (future enhancement)
+#pragma kernel CSOverlapResolution
+
+float overlapDistance;
+float overlapStrength;
+
+[numthreads(64, 1, 1)]
+void CSOverlapResolution(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint bufferLength;
+    nodeBuffer.GetDimensions(bufferLength);
+    
+    if (index >= bufferLength) 
+        return;
+    
+    NodeData currentNode = nodeBuffer[index];
+    float3 adjustmentForce = float3(0, 0, 0);
+    
+    // Check against nearby nodes for overlap
+    for (uint i = 0; i < bufferLength; i++)
+    {
+        if (i == index) continue;
+        
+        NodeData otherNode = nodeBuffer[i];
+        float3 direction = currentNode.worldPosition - otherNode.worldPosition;
+        float distance = length(direction);
+        
+        // Calculate combined radius of both nodes
+        float currentRadius = max(currentNode.currentScale.x, currentNode.currentScale.y) * 0.5;
+        float otherRadius = max(otherNode.currentScale.x, otherNode.currentScale.y) * 0.5;
+        float combinedRadius = currentRadius + otherRadius + overlapDistance;
+        
+        // If nodes are overlapping
+        if (distance < combinedRadius && distance > 0.001)
+        {
+            // Calculate repulsion force based on priority
+            float forceStrength = (combinedRadius - distance) / combinedRadius;
+            forceStrength *= overlapStrength;
+            
+            // Higher priority nodes push away lower priority nodes more
+            if (currentNode.priority < otherNode.priority)
+            {
+                forceStrength *= 2.0;
+            }
+            
+            float3 repulsionDirection = normalize(direction);
+            adjustmentForce += repulsionDirection * forceStrength;
+        }
+    }
+    
+    // Apply adjustment (this would need to be integrated with positioning system)
+    // For now, we just reduce scale slightly if there's overlap
+    if (length(adjustmentForce) > 0.1)
+    {
+        currentNode.currentScale *= 0.95; // Slightly reduce scale if overlapping
+    }
+    
+    nodeBuffer[index] = currentNode;
+}

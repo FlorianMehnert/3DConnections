@@ -447,12 +447,7 @@ namespace _3DConnections.Runtime.Managers
         }
     }
 
-    // Helper component to store cluster data
-    public class ClusterNodeData : MonoBehaviour
-    {
-        public List<GameObject> containedNodes;
-        [UsedImplicitly] public int nodeCount;
-    }
+    
 
     // Helper component to store aggregated edge data - maybe use later to inspect clusters
     public class AggregatedEdgeData : MonoBehaviour
