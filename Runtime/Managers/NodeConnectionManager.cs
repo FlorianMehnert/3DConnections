@@ -1,3 +1,5 @@
+using _3DConnections.Runtime.Nodes.Connection;
+
 namespace _3DConnections.Runtime.Managers
 {
     using System;
@@ -108,8 +110,11 @@ namespace _3DConnections.Runtime.Managers
 
             var lineObj = Instantiate(lineRendererPrefab, rootEdgeTransform);
             var lineRenderer = lineObj.GetComponent<LineRenderer>();
-            lineObj.AddComponent<ArtificialGameObject>();
             lineRenderer.name = startNode.name + "-" + endNode.name;
+            
+            var type = lineObj.GetComponent<EdgeType>();
+            if (type) type.connectionType = connectionType;
+            
             var knownColor = color ?? Color.white;
             Color.RGBToHSV(knownColor, out var h, out _, out var v);
 
