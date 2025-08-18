@@ -1,10 +1,11 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using System;
+
+namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
     using Nodes;
-    
     using ScriptableObjectInventory;
     using Clusters;
 
@@ -33,7 +34,7 @@
         private Dictionary<string, GameObject> _aggregatedEdges;
         private List<GameObject> _originalNodes;
         private List<NodeConnection> _originalConnections;
-        
+
         // Track which nodes are clustered
         private Dictionary<GameObject, Vector2Int> _nodeToClusterMap;
         private HashSet<GameObject> _clusteredNodes;
@@ -116,7 +117,7 @@
         }
 
         /// <summary>
-        /// Calculates LOD level. Minimal zoom level is reached when Zoom is minZoomForFullDetail and Max is reached when zoom is MaxZoomForFullDetail
+        /// Calculates LOD level. Minimal zoom level is reached when Zoom is minZoomForFullDetail and Max is reached when Zoom is MaxZoomForFullDetail
         /// </summary>
         /// <param name="zoom">Zoom of the camera currently tracking</param>
         /// <returns>Float between 0 and 1 representing the LOD level</returns>
@@ -154,7 +155,7 @@
                 _originalConnections = new List<NodeConnection>(ScriptableObjectInventory.Instance.conSo.connections);
             }
 
-            // Clear previous LOD state
+            // Clear the previous LOD state
             ClearLODState();
 
             // Build spatial grid for node aggregation
@@ -240,36 +241,69 @@
             // Scale based on node count
             cluster.transform.localScale = Vector3.one + new Vector3(1, 1, 0) * nodes.Count;
 
-            // Compute and assign average color
-            var avgColor = Color.black;
-            var count = 0;
+            // Compute average HSV color
+            var avgColor = CalculateAverageColor(nodes, 
+                node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, 
+                useHSV: true);
 
-            foreach (var node in nodes)
+            if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
             {
-                if (!node.TryGetComponent<Renderer>(out var rendererOfContainedNode)) continue;
-                avgColor += rendererOfContainedNode.material.color;
-                count++;
-            }
-
-            if (count > 0)
-            {
-                avgColor /= count;
-                avgColor.a = 1f;
-                if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
+                // Ensure we are not modifying a shared material
+                clusterRenderer.material = new Material(clusterRenderer.material)
                 {
-                    // Ensure we are not modifying a shared material
-                    clusterRenderer.material = new Material(clusterRenderer.material)
-                    {
-                        color = avgColor
-                    };
-                }
+                    color = avgColor
+                };
             }
+
             var coloredObject = cluster.GetComponent<ColoredObject>();
             coloredObject.SetOriginalColor(avgColor);
 
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(cluster);
             return cluster;
         }
+
+        private static Color CalculateAverageColor<T>(IEnumerable<T> items, Func<T, Color> colorSelector, bool useHSV = true)
+        {
+            int count = 0;
+
+            if (useHSV)
+            {
+                float sumH = 0f, sumS = 0f, sumV = 0f;
+
+                foreach (var item in items)
+                {
+                    var col = colorSelector(item);
+                    Color.RGBToHSV(col, out float h, out float s, out float v);
+
+                    sumH += h;
+                    sumS += s;
+                    sumV += v;
+                    count++;
+                }
+
+                if (count == 0) return Color.black;
+
+                float avgH = sumH / count;
+                float avgS = sumS / count;
+                float avgV = sumV / count;
+
+                return Color.HSVToRGB(avgH, avgS, avgV);
+            }
+            else
+            {
+                // RGB mixing
+                Color sum = Color.black;
+                foreach (var item in items)
+                {
+                    sum += colorSelector(item);
+                    count++;
+                }
+
+                if (count == 0) return Color.black;
+                return sum / count;
+            }
+        }
+
 
 
         private void ApplyEdgeCumulation()
@@ -366,16 +400,16 @@
                 lr.material = _aggregatedEdgeMaterial;
             }
 
-            // Set color based on average of actual lineRenderer materials
-            Color avgColor = connections.Aggregate(Color.black, (current, conn) => current + conn.lineRenderer.startColor);
+            var avgColor = CalculateAverageColor(connections, 
+                conn => conn.lineRenderer.startColor, 
+                useHSV: true);
 
-            avgColor /= connections.Count;
-            avgColor.a = 0.7f;
+            avgColor.a = 0.7f; // slightly transparent
             lr.startColor = avgColor;
             lr.endColor = avgColor;
-            
+
             var coloredObject = edgeObj.GetComponent<ColoredObject>();
-            coloredObject.SetOriginalColor(avgColor);            
+            coloredObject.SetOriginalColor(avgColor);
 
             // Store aggregated edge data
             var edgeData = edgeObj.AddComponent<AggregatedEdgeData>();
