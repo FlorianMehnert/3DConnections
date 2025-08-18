@@ -525,7 +525,7 @@ namespace _3DConnections.Runtime.Managers
 
             _startButton.clicked -= _currentAction;
 
-            if (System.Enum.TryParse(newValue, out SimulationType simType))
+            if (Enum.TryParse(newValue, out SimulationType simType))
             {
                 var index = (int)simType;
                 if (index >= 0 && index < _actions.Length)
@@ -542,30 +542,6 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.LogError($"Failed to parse simulation type: {newValue}");
             }
-        }
-
-        public void OnMenuOpen()
-        {
-            if (_panel == null) return;
-
-            // TODO: remove since this is deprecated
-            //_panel.RemoveFromClassList("hidden");
-            uiDocument.rootVisualElement.style.display = DisplayStyle.Flex;
-            // var menuGameObject = GetComponent<UIDocument>();
-            // if (menuGameObject) menuGameObject.enabled = true;
-            ScriptableObjectInventory.Instance.menuState.menuOpen = true;
-        }
-
-        public void OnMenuClose()
-        {
-            if (_panel == null) return;
-
-            // TODO: remove since this is deprecated
-            // _panel.AddToClassList("hidden"); 
-            uiDocument.rootVisualElement.style.display = DisplayStyle.None;
-            // var menuGameObject = GetComponent<UIDocument>();
-            // if (menuGameObject) menuGameObject.enabled = false;
-            ScriptableObjectInventory.Instance.menuState.menuOpen = false;
         }
 
         public void DebugSelf()

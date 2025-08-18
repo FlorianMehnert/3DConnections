@@ -1,30 +1,37 @@
 namespace _3DConnections.Runtime.Managers
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using JetBrains.Annotations;
-
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
+    using System.Collections.Generic;
+    using System.Linq;
+    using JetBrains.Annotations;
     using UnityEngine;
     using UnityEngine.EventSystems;
-    using Vector3 = UnityEngine.Vector3;
+    using UnityEngine.InputSystem;
     using UnityEngine.UI;
-    
     using ScriptableObjectInventory;
     using Nodes;
-
     public class CubeSelector : MonoBehaviour
     {
         [Header("Layer settings")]
-        [SerializeField]
-        private string targetLayerName = "OverlayLayer";
-
+        [SerializeField] private string targetLayerName = "OverlayLayer";
         [SerializeField] private Canvas parentCanvas;
-
-
         [SerializeField] private Material highlightMaterial;
+        
+        [Header("Input Settings")]
+        [SerializeField] private InputActionAsset inputActions;
+        
+        // Input Actions - these will be set up in the InputActionAsset
+        private InputAction _selectAction;
+        private InputAction _contextMenuAction;
+        private InputAction _toggleActiveAction;
+        private InputAction _togglePingAction;
+        private InputAction _selectOutgoingAction;
+        private InputAction _pingEditorAction;
+        private InputAction _shiftModifier;
+        private InputAction _mousePosition;
+
         private readonly HashSet<GameObject> _selectedCubes = new();
         private readonly Dictionary<GameObject, Vector3> _selectedCubesStartPositions = new();
         private readonly Dictionary<GameObject, bool> _markUnselect = new();
@@ -34,29 +41,67 @@ namespace _3DConnections.Runtime.Managers
         private Vector3? _dragEnd;
         private bool _isDragging;
         private GameObject _currentlyDraggedCube;
-        private int _indexOfCurrentlyDraggedCube;
-        private GameObject _toBeDeselectedCube;
         private GameObject _currentContextMenu;
         private bool _isActive;
 
         private readonly RaycastHit2D[] _raycastBuffer = new RaycastHit2D[16];
 
-        public float doubleClickThreshold = 0.3f; // Time window for detecting a double click
+        public float doubleClickThreshold = 0.3f;
+        private float _timer;
+        private int _clickCount;
 
-        private float _timer; // Timer to track time between clicks
-        private int _clickCount; // Number of clicks
+        [SerializeField] private bool pingObjectInEditor;
 
-        [SerializeField]
-        private bool pingObjectInEditor;
-
-        [Header("Selection Rectangle")] [SerializeField]
-        private RectTransform selectionRectangle;
-
+        [Header("Selection Rectangle")]
+        [SerializeField] private RectTransform selectionRectangle;
         [SerializeField] private Color selectionRectColor = new(0.3f, 0.5f, 0.8f, 0.3f);
+        
         private Vector2 _selectionStartPos;
         private bool _isDrawingSelectionRect;
         private int _selectedCubesCount;
         [UsedImplicitly] private Rect _selectionRect;
+
+        private void SetupInputActions()
+        {
+            if (inputActions == null)
+            {
+                Debug.LogError("InputActionAsset is not assigned!");
+                return;
+            }
+
+            // Get references to input actions
+            _selectAction = inputActions.FindAction("Select");
+            _contextMenuAction = inputActions.FindAction("ContextMenu");
+            _toggleActiveAction = inputActions.FindAction("ToggleActive");
+            _togglePingAction = inputActions.FindAction("TogglePing");
+            _selectOutgoingAction = inputActions.FindAction("SelectOutgoing");
+            _pingEditorAction = inputActions.FindAction("PingEditor");
+            _shiftModifier = inputActions.FindAction("ShiftModifier");
+            _mousePosition = inputActions.FindAction("MousePosition");
+
+            // Subscribe to events
+            if (_selectAction != null)
+            {
+                _selectAction.started += OnSelectStarted;
+                _selectAction.performed += OnSelectPerformed;
+                _selectAction.canceled += OnSelectCanceled;
+            }
+
+            if (_contextMenuAction != null)
+                _contextMenuAction.performed += OnContextMenu;
+
+            if (_toggleActiveAction != null)
+                _toggleActiveAction.performed += OnToggleActive;
+
+            if (_togglePingAction != null)
+                _togglePingAction.performed += OnTogglePing;
+
+            if (_selectOutgoingAction != null)
+                _selectOutgoingAction.performed += OnSelectOutgoing;
+
+            if (_pingEditorAction != null)
+                _pingEditorAction.performed += OnPingEditor;
+        }
 
         private void Start()
         {
@@ -70,109 +115,33 @@ namespace _3DConnections.Runtime.Managers
 
             _targetLayerMask = LayerMask.GetMask(targetLayerName);
 
-            if (_targetLayerMask == 0) Debug.LogError($"Layer '{targetLayerName}' not found!");
+            if (_targetLayerMask == 0) 
+                Debug.LogError($"Layer '{targetLayerName}' not found!");
 
             // Initialize selection rectangle
-            if (!selectionRectangle) return;
-            selectionRectangle.gameObject.SetActive(false);
+            if (selectionRectangle != null)
+                selectionRectangle.gameObject.SetActive(false);
+        }
+
+        private void OnEnable()
+        {
+            inputActions?.Enable();
+            SetupInputActions();
+        }
+
+        private void OnDisable()
+        {
+            inputActions?.Disable();
         }
 
         private void Update()
         {
-            if (!ScriptableObjectInventory.Instance.menuState || ScriptableObjectInventory.Instance.menuState.menuOpen)
-                return;
+            if (!ShouldProcessInput()) return;
 
-            // toggle this whole manager using S
-            if (Input.GetKeyDown(KeyCode.S)) _isActive = !_isActive;
-            if (!_isActive) return;
-            if (Input.GetKeyDown(KeyCode.P)) pingObjectInEditor = !pingObjectInEditor;
-            if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) &&
-                !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) &&
-                !Input.GetKeyDown(KeyCode.I)) return;
-
-            var image = selectionRectangle.GetComponent<Image>();
-            if (image)
-            {
-                image.color = selectionRectColor;
-                highlightMaterial.color =
-                    new Color(selectionRectColor.r, selectionRectColor.g, selectionRectColor.b, 255);
-            }
-
-            HandleMouseInput();
-            HandleOtherHotkeys();
-        }
-
-        /// <summary>
-        /// LCtrl+I, M
-        /// </summary>
-        private void HandleOtherHotkeys()
-        {
-            // check for keydown first
-            if (Input.GetKeyDown(KeyCode.I) && Input.GetKey(KeyCode.LeftControl))
-            {
-                var selectedCubes = _selectedCubes.ToList();
-                foreach (var outgoingNode in selectedCubes.Select(node => node.GetComponent<LocalNodeConnections>())
-                             .Where(connections => connections).Select(connections => connections.outConnections)
-                             .SelectMany(outConnections => outConnections))
-                    SelectCube(outgoingNode, false, false);
-            }
-            else if (Input.GetKeyDown(KeyCode.M))
-            {
-#if UNITY_EDITOR
-                if (!pingObjectInEditor || _isDrawingSelectionRect || !pingObjectInEditor) return;
-                EditorGUIUtility.PingObject(gameObject);
-                Selection.activeGameObject = gameObject;
-#endif
-            }
-        }
-
-        private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, int hitCount, Vector2 origin)
-        {
-            var closest = hits[0];
-            var minSqr = (hits[0].point - origin).sqrMagnitude;
-
-            for (var i = 1; i < hitCount; i++)
-            {
-                var sqr = (hits[i].point - origin).sqrMagnitude;
-                if (!(sqr < minSqr)) continue;
-                minSqr = sqr;
-                closest = hits[i];
-            }
-
-            return closest;
-        }
-
-        private RaycastHit2D RaycastForClosest(Vector2 mousePosition)
-        {
-            // Cast without allocations
-            var hitCount = Physics2D.RaycastNonAlloc(
-                mousePosition,
-                Vector2.zero,
-                _raycastBuffer,
-                Mathf.Infinity,
-                _targetLayerMask);
-
-            if (hitCount > 0)
-                // Find the closest of the hits that were written into the buffer
-                return GetClosestHit(_raycastBuffer, hitCount, mousePosition);
-
-            // No hit stored in buffer – do a single Raycast exactly like before
-            return Physics2D.Raycast(
-                mousePosition,
-                Vector2.zero,
-                Mathf.Infinity,
-                _targetLayerMask);
-        }
-
-        private void HandleMouseInput()
-        {
-            if (!_displayCamera || _targetLayerMask == 0) return;
-
+            // Handle double-click timing
             if (_clickCount > 0)
             {
                 _timer += Time.deltaTime;
-
-                // Reset click count and timer if threshold exceeded
                 if (_timer > doubleClickThreshold)
                 {
                     _clickCount = 0;
@@ -180,134 +149,242 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
 
-            Vector2 mousePosition = _displayCamera.ScreenToWorldPoint(Input.mousePosition);
-            var hit = RaycastForClosest(mousePosition);
-
-            if (Input.GetMouseButtonDown(0))
+            // Handle ongoing drag operations - this is the key fix
+            if (_selectAction != null && _selectAction.IsPressed())
             {
-                _selectedCubesStartPositions.Clear();
-                _dragStart = null;
-
-                if (hit)
+                Vector2 mousePosition = GetMouseWorldPosition();
+                RaycastForClosest(mousePosition);
+        
+                // Start dragging if we haven't already
+                if (!_isDragging && _currentlyDraggedCube && _dragStart != null)
                 {
-                    _clickCount++;
-
-                    switch (_clickCount)
-                    {
-                        case 1:
-                            _timer = 0f;
-                            break;
-                        case 2:
-                            HandleDoubleClick(hit.collider.gameObject);
-                            _clickCount = 0;
-                            return;
-                    }
-
-                    // prepare drag vector estimation
-                    _dragStart = mousePosition;
-
-                    var hitObject = hit.collider.gameObject;
-                    _currentlyDraggedCube = hitObject;
-
-                    // this is used in the camera handler later to focus on this object
-                    ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = hitObject;
-
-                    SelectCube(hitObject);
-
-                    foreach (var cube in _selectedCubes)
-                        try
-                        {
-                            _selectedCubesStartPositions[cube] = cube.transform.position;
-                        }
-                        finally
-                        {
-                            Debug.Log("trying to access destroyed gameobject");
-                        }
+                    _isDragging = true;
                 }
-                else
+        
+                // Continue dragging
+                if (_isDragging)
                 {
-                    // Do nothing on a button click
-                    if (!EventSystem.current.IsPointerOverGameObject())
-                    {
-                        // Start drawing the selection rectangle
-                        _isDrawingSelectionRect = true;
-                        _selectionStartPos = Input.mousePosition;
-                        if (selectionRectangle)
-                        {
-                            selectionRectangle.gameObject.SetActive(true);
-                            UpdateSelectionRectangle();
-                        }
-
-                        // Deselect all if shift is not pressed
-                        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
-                        {
-                            DeselectAllCubes();
-
-                            // unset currentlySelectedGO for camera handler to allow for editor selection
-                            CloseContextMenu();
-                        }
-                    }
+                    HandleDragUpdate();
                 }
             }
 
+            // Handle selection rectangle drawing
             if (_isDrawingSelectionRect)
             {
                 UpdateSelectionRectangle();
                 SelectObjectsInRectangle();
             }
 
+            // Handle deselection cleanup
+            HandleDeselectCleanup();
 
-            // the mouseDownFunction is only called once to set up the drag afterward we will work with the start values and add the current position
-            if (Input.GetMouseButton(0))
-                if ((!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && hit) || _isDragging)
-                {
-                    _dragEnd = mousePosition;
-                    _isDragging = true;
-                    if (_currentlyDraggedCube)
-                    {
-                        if (_dragStart == null || _dragEnd == null) return;
-                        var drag = _dragEnd - _dragStart;
-                        foreach (var cube in _selectedCubes.Where(_ => _selectedCubesStartPositions.Count > 1))
-                            cube.transform.position = Only2D(_selectedCubesStartPositions[cube] + (Vector3)drag,
-                                cube.transform.position.z);
+            // Update selection rectangle color
+            UpdateSelectionRectangleColor();
+        }
 
-                        foreach (var toBeUnselectedCube in _markUnselect.Keys.ToArray())
-                            _markUnselect[toBeUnselectedCube] = false;
+        #region Input Event Handlers
 
-                        _currentlyDraggedCube.transform.position = Only2D(
-                            _selectedCubesStartPositions[_currentlyDraggedCube] + (Vector3)drag,
-                            _currentlyDraggedCube.transform.position.z);
-                    }
-                }
+        private void OnSelectStarted(InputAction.CallbackContext context)
+        {
+            if (!ShouldProcessInput()) return;
 
-            foreach (var toBeUnselectedCube in _markUnselect.Keys.Where(toBeUnselectedCube =>
-                         _markUnselect[toBeUnselectedCube]))
+            Vector2 mousePosition = GetMouseWorldPosition();
+            var hit = RaycastForClosest(mousePosition);
+
+            _selectedCubesStartPositions.Clear();
+            _dragStart = null;
+
+            if (hit)
             {
-                // RemoveOutlineCube(toBeUnselectedCube);
-                _selectedCubes.Remove(toBeUnselectedCube);
-                if (!toBeUnselectedCube || !toBeUnselectedCube.GetComponent<Collider2D>()) continue;
-                var selectable = toBeUnselectedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
-                selectable.SetToOriginalColor();
-                foreach (Transform child in toBeUnselectedCube.transform) Destroy(child.gameObject);
+                HandleObjectClick(hit, mousePosition);
+            }
+            else
+            {
+                HandleEmptySpaceClick();
+            }
+        }
+
+        private void OnSelectPerformed(InputAction.CallbackContext context)
+        {
+            // This event is triggered only when the button is initially pressed, not held
+            // continuous dragging is handled in update()
+        }
+
+        private void OnSelectCanceled(InputAction.CallbackContext context)
+        {
+            if (!ShouldProcessInput()) return;
+            HandleSelectRelease();
+        }
+
+        private void OnContextMenu(InputAction.CallbackContext context)
+        {
+            if (!ShouldProcessInput()) return;
+            // Handle a right-click context menu
+        }
+
+        private void OnToggleActive(InputAction.CallbackContext context)
+        {
+            _isActive = !_isActive;
+        }
+
+        private void OnTogglePing(InputAction.CallbackContext context)
+        {
+            if (!_isActive) return;
+            pingObjectInEditor = !pingObjectInEditor;
+        }
+
+        private void OnSelectOutgoing(InputAction.CallbackContext context)
+        {
+            if (!ShouldProcessInput()) return;
+    
+            var selectedCubes = _selectedCubes.ToList();
+            foreach (var cube in selectedCubes)
+            {
+                if (cube == null) continue;
+        
+                var connections = cube.GetComponent<LocalNodeConnections>();
+                if (connections == null || connections.outConnections == null) continue;
+        
+                foreach (var outgoingNode in connections.outConnections.Where(outgoingNode => outgoingNode != null))
+                {
+                    SelectCube(outgoingNode, false, false);
+                }
+            }
+        }
+
+
+        private void OnPingEditor(InputAction.CallbackContext context)
+        {
+            if (!ShouldProcessInput()) return;
+            
+#if UNITY_EDITOR
+            if (!pingObjectInEditor || _isDrawingSelectionRect) return;
+            EditorGUIUtility.PingObject(gameObject);
+            Selection.activeGameObject = gameObject;
+#endif
+        }
+
+        #endregion
+
+        #region Input Handling Logic
+
+        private bool ShouldProcessInput()
+        {
+            if (!ScriptableObjectInventory.Instance.menuState || ScriptableObjectInventory.Instance.menuState.menuOpen)
+                return false;
+            
+            return _isActive;
+        }
+
+        private Vector2 GetMouseWorldPosition()
+        {
+            if (_mousePosition == null) return Vector2.zero;
+            Vector2 screenPos = _mousePosition.ReadValue<Vector2>();
+            return _displayCamera.ScreenToWorldPoint(screenPos);
+        }
+
+        private bool IsShiftPressed()
+        {
+            return _shiftModifier?.IsPressed() ?? false;
+        }
+
+        private void HandleObjectClick(RaycastHit2D hit, Vector2 mousePosition)
+        {
+            _clickCount++;
+
+            switch (_clickCount)
+            {
+                case 1:
+                    _timer = 0f;
+                    break;
+                case 2:
+                    HandleDoubleClick(hit.collider.gameObject);
+                    _clickCount = 0;
+                    return;
             }
 
-            if (_markUnselect.Count > 0) CloseContextMenu();
+            // Prepare drag
+            _dragStart = mousePosition;
+            var hitObject = hit.collider.gameObject;
+            _currentlyDraggedCube = hitObject;
 
-            // Reset dragging when mouse button is released
-            if (Input.GetMouseButtonUp(0))
-                if (_isDrawingSelectionRect)
+            ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = hitObject;
+            SelectCube(hitObject);
+
+            foreach (var cube in _selectedCubes)
+            {
+                try
                 {
-                    _isDrawingSelectionRect = false;
-                    if (selectionRectangle) selectionRectangle.gameObject.SetActive(false);
-
-                    if (_selectedCubes.Count > 0)
-                        ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject =
-                            _selectedCubes.ToArray()[0];
-                    ScriptableObjectInventory.Instance.graph.currentlySelectedBounds = GetSelectionBounds();
+                    _selectedCubesStartPositions[cube] = cube.transform.position;
                 }
+                catch
+                {
+                    Debug.Log("trying to access destroyed gameobject");
+                }
+            }
+        }
 
-            if (!Input.GetMouseButtonUp(0)) return;
-            if (_currentlyDraggedCube)
+        private void HandleEmptySpaceClick()
+        {
+            if (EventSystem.current.IsPointerOverGameObject()) return;
+            // Start drawing selection rectangle
+            _isDrawingSelectionRect = true;
+            _selectionStartPos = _mousePosition.ReadValue<Vector2>();
+                
+            if (selectionRectangle != null)
+            {
+                selectionRectangle.gameObject.SetActive(true);
+                UpdateSelectionRectangle();
+            }
+
+            // Deselect all if shift is not pressed
+            if (IsShiftPressed()) return;
+            DeselectAllCubes();
+            CloseContextMenu();
+        }
+
+        private void HandleDragUpdate()
+        {
+            if (!_currentlyDraggedCube || _dragStart == null) 
+                return;
+
+            // Update drag end position in real time
+            Vector2 currentMousePosition = GetMouseWorldPosition();
+            _dragEnd = currentMousePosition;
+
+            if (_dragEnd != null)
+            {
+                var drag = (Vector3)_dragEnd - (Vector3)_dragStart;
+    
+                // Update positions for all selected cubes
+                foreach (var cube in _selectedCubes.Where(cube => _selectedCubesStartPositions.ContainsKey(cube)))
+                {
+                    cube.transform.position = Only2D(_selectedCubesStartPositions[cube] + drag,
+                        cube.transform.position.z);
+                }
+            }
+
+            // Clear unselect marks during drag
+            foreach (var toBeUnselectedCube in _markUnselect.Keys.ToArray())
+                _markUnselect[toBeUnselectedCube] = false;
+        }
+
+
+        private void HandleSelectRelease()
+        {
+            if (_isDrawingSelectionRect)
+            {
+                _isDrawingSelectionRect = false;
+                if (selectionRectangle != null) 
+                    selectionRectangle.gameObject.SetActive(false);
+
+                if (_selectedCubes.Count > 0)
+                    ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject = _selectedCubes.ToArray()[0];
+                
+                ScriptableObjectInventory.Instance.graph.currentlySelectedBounds = GetSelectionBounds();
+            }
+
+            if (_currentlyDraggedCube != null)
             {
                 if (_dragStart != null && _dragEnd != null && (Vector3)_dragEnd - (Vector3)_dragStart == Vector3.zero)
                 {
@@ -328,11 +405,79 @@ namespace _3DConnections.Runtime.Managers
             _isDragging = false;
         }
 
+        private void HandleDeselectCleanup()
+        {
+            foreach (var toBeUnselectedCube in _markUnselect.Keys.Where(toBeUnselectedCube =>
+                         _markUnselect[toBeUnselectedCube]))
+            {
+                _selectedCubes.Remove(toBeUnselectedCube);
+                if (!toBeUnselectedCube || !toBeUnselectedCube.GetComponent<Collider2D>()) continue;
+                var selectable = toBeUnselectedCube.GetComponent<Collider2D>().GetComponent<ColoredObject>();
+                selectable.SetToOriginalColor();
+                foreach (Transform child in toBeUnselectedCube.transform) 
+                    Destroy(child.gameObject);
+            }
+
+            if (_markUnselect.Count > 0) CloseContextMenu();
+        }
+
+        private void UpdateSelectionRectangleColor()
+        {
+            if (!selectionRectangle) return;
+            
+            var image = selectionRectangle.GetComponent<Image>();
+            if (!image) return;
+            image.color = selectionRectColor;
+            if (highlightMaterial)
+            {
+                highlightMaterial.color = new Color(selectionRectColor.r, selectionRectColor.g, selectionRectColor.b, 255);
+            }
+        }
+
+        #endregion
+
+        #region Misc
+
+        private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, int hitCount, Vector2 origin)
+        {
+            var closest = hits[0];
+            var minSqr = (hits[0].point - origin).sqrMagnitude;
+
+            for (var i = 1; i < hitCount; i++)
+            {
+                var sqr = (hits[i].point - origin).sqrMagnitude;
+                if (!(sqr < minSqr)) continue;
+                minSqr = sqr;
+                closest = hits[i];
+            }
+
+            return closest;
+        }
+
+        private RaycastHit2D RaycastForClosest(Vector2 mousePosition)
+        {
+            var hitCount = Physics2D.RaycastNonAlloc(
+                mousePosition,
+                Vector2.zero,
+                _raycastBuffer,
+                Mathf.Infinity,
+                _targetLayerMask);
+
+            if (hitCount > 0)
+                return GetClosestHit(_raycastBuffer, hitCount, mousePosition);
+
+            return Physics2D.Raycast(
+                mousePosition,
+                Vector2.zero,
+                Mathf.Infinity,
+                _targetLayerMask);
+        }
+
         private void UpdateSelectionRectangle()
         {
             if (!selectionRectangle) return;
 
-            Vector2 currentMousePos = Input.mousePosition;
+            Vector2 currentMousePos = _mousePosition.ReadValue<Vector2>();
             var center = (_selectionStartPos + currentMousePos) / 2f;
             selectionRectangle.anchoredPosition = center;
 
@@ -345,16 +490,16 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!selectionRectangle) return;
 
-            //DeselectAllCubes();
-
             var screenHeight = Screen.height;
+            var currentMousePos = _mousePosition.ReadValue<Vector2>();
 
             var selectionRect = new Rect(
-                Mathf.Min(_selectionStartPos.x, Input.mousePosition.x),
-                Mathf.Min(screenHeight - _selectionStartPos.y, screenHeight - Input.mousePosition.y),
-                Mathf.Abs(Input.mousePosition.x - _selectionStartPos.x),
-                Mathf.Abs(Input.mousePosition.y - _selectionStartPos.y)
+                Mathf.Min(_selectionStartPos.x, currentMousePos.x),
+                Mathf.Min(screenHeight - _selectionStartPos.y, screenHeight - currentMousePos.y),
+                Mathf.Abs(currentMousePos.x - _selectionStartPos.x),
+                Mathf.Abs(currentMousePos.y - _selectionStartPos.y)
             );
+            
             _selectionRect = selectionRect;
             var objects = FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID)
                 .Where(obj => obj.layer == LayerMask.NameToLayer(targetLayerName));
@@ -363,14 +508,15 @@ namespace _3DConnections.Runtime.Managers
 
             foreach (var obj in objects)
             {
-                // Ensure object has a Collider2D and skip others
                 var objectsCollider = obj.GetComponent<Collider2D>();
                 if (!objectsCollider) continue;
 
                 var worldPosition = objectsCollider.bounds.center;
                 var screenPosition = _displayCamera.WorldToScreenPoint(worldPosition);
                 var rectAdjustedPosition = new Vector2(screenPosition.x, screenHeight - screenPosition.y);
+                
                 if (!selectionRect.Contains(rectAdjustedPosition)) continue;
+                
                 SelectCube(obj);
                 selectedNodes++;
             }
@@ -378,11 +524,9 @@ namespace _3DConnections.Runtime.Managers
             _selectedCubesCount = selectedNodes;
         }
 
-
         private void HandleDoubleClick(GameObject hitObject)
         {
             if (!hitObject) return;
-            // Change the state of the selected object
             DeselectAllCubes();
             CloseContextMenu();
             SelectCube(hitObject);
@@ -393,20 +537,18 @@ namespace _3DConnections.Runtime.Managers
             return new Vector3(position.x, position.y, z);
         }
 
-        /// <summary>
-        /// Marking cubes for deselection that will cause deselection/removal of the outline if not dragged
-        /// </summary>
-        /// <param name="cube"></param>
-        /// <param name="unselect">this parameter is required to be true for cubes to be unselected</param>
         private void SelectCube(GameObject cube, bool pingObject = true, bool unselect = true)
         {
-            // If shift is pressed, add to selection without deselecting others
-            if (!(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && !_isDrawingSelectionRect &&
-                unselect)
+            if (!cube) return;
+            
+            if (!IsShiftPressed() && !_isDrawingSelectionRect && unselect)
+            {
                 foreach (var highlightedCube in _selectedCubes)
                     _markUnselect[highlightedCube] = true;
+            }
 
             if (!_selectedCubes.Add(cube)) return;
+
 #if UNITY_EDITOR
             if (pingObjectInEditor && !_isDrawingSelectionRect && pingObject)
             {
@@ -414,8 +556,8 @@ namespace _3DConnections.Runtime.Managers
                 Selection.activeGameObject = cube;
             }
 #endif
-            var coRenderer = cube.GetComponent<Renderer>();
 
+            var coRenderer = cube.GetComponent<Renderer>();
             if (coRenderer)
             {
                 var coloredObject = cube.GetComponent<ColoredObject>();
@@ -428,7 +570,6 @@ namespace _3DConnections.Runtime.Managers
             }
 
             SetColorToInvertedSelectionColor(cube);
-            // CreateOutlineCube(cube);
         }
 
         private void DeselectAllCubes()
@@ -445,31 +586,34 @@ namespace _3DConnections.Runtime.Managers
         private Bounds GetSelectionBounds()
         {
             if (_selectedCubes.Count == 0) return new Bounds();
+            
             var selectedCubesArray = _selectedCubes.ToArray();
             var selectionBounds = selectedCubesArray[0].GetComponent<Collider2D>().bounds;
 
             for (var i = 1; i < _selectedCubes.Count; i++)
             {
                 var currentCollider2D = selectedCubesArray[i].GetComponent<Collider2D>();
-                if (currentCollider2D) selectionBounds.Encapsulate(currentCollider2D.bounds);
+                if (currentCollider2D) 
+                    selectionBounds.Encapsulate(currentCollider2D.bounds);
             }
 
             return selectionBounds;
         }
 
-
         private void CloseContextMenu()
         {
-            if (_currentContextMenu) Destroy(_currentContextMenu);
+            if (_currentContextMenu) 
+                Destroy(_currentContextMenu);
         }
 
         private void SetColorToInvertedSelectionColor(GameObject cube)
         {
-            var meshRenderer = cube.GetComponent<MeshRenderer>();
+            var meshRenderer = cube.GetComponent<ColoredObject>();
             if (!meshRenderer) return;
-            Color.RGBToHSV(selectionRectColor, out var h, out var s, out var v);
+            
+            Color.RGBToHSV(selectionRectColor, out var h, out _, out _);
             var invertedColor = Color.HSVToRGB((h + .5f) % 1f, 1f, 1f);
-            meshRenderer.material.color = invertedColor;
+            meshRenderer.Highlight(invertedColor, -1f, true);
         }
 
         public int GetSelectionCount()
@@ -481,5 +625,7 @@ namespace _3DConnections.Runtime.Managers
         {
             return _selectionRect;
         }
+
+        #endregion
     }
 }

@@ -98,6 +98,8 @@ namespace _3DConnections.Runtime.Nodes
             {
                 _objectRenderer.material.color = _originalColor;
             }
+            _isHighlighting = false;
+            _highlightForever = false;
         }
 
         public void SetOriginalColor(Color color)

@@ -515,6 +515,42 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
     m_ActionName: UI/InfoPanel
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2f41ee54-8f47-4a9b-85f8-c819c6d10a05
+    m_ActionName: 'CubeSelection/Select[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 18448764-e9b3-409a-8d20-0c0b9382934c
+    m_ActionName: 'CubeSelection/ContextMenu[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88474b37-0d33-402a-a999-1709909cb51e
+    m_ActionName: 'CubeSelection/ToggleActive[/Keyboard/s]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 21ccd759-2552-4775-a797-0b6649736c94
+    m_ActionName: 'CubeSelection/TogglePing[/Keyboard/p]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 85283933-92d1-445c-ba36-f030dc41d411
+    m_ActionName: 'CubeSelection/SelectOutgoing[/Keyboard/i]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c25e655d-ec73-4c96-b076-d9e12fb98b84
+    m_ActionName: 'CubeSelection/PingEditor[/Keyboard/m]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8ffd139b-911c-4182-8c23-41ae4a0a9bd1
+    m_ActionName: 'CubeSelection/ShiftModifier[/Keyboard/shift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f8cecb2a-2e33-46e7-ad69-dd6b82343012
+    m_ActionName: 'CubeSelection/CtrlModifier[/Keyboard/leftCtrl]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: eb4c45ca-d4e7-40fe-b69d-7baca70e0918
+    m_ActionName: 'CubeSelection/MousePosition[/Mouse/position]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -656,6 +692,42 @@ MonoBehaviour:
         m_CallState: 1
     m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
     m_ActionName: UI/InfoPanel
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2f41ee54-8f47-4a9b-85f8-c819c6d10a05
+    m_ActionName: 'CubeSelection/Select[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 18448764-e9b3-409a-8d20-0c0b9382934c
+    m_ActionName: 'CubeSelection/ContextMenu[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88474b37-0d33-402a-a999-1709909cb51e
+    m_ActionName: 'CubeSelection/ToggleActive[/Keyboard/s]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 21ccd759-2552-4775-a797-0b6649736c94
+    m_ActionName: 'CubeSelection/TogglePing[/Keyboard/p]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 85283933-92d1-445c-ba36-f030dc41d411
+    m_ActionName: 'CubeSelection/SelectOutgoing[/Keyboard/i]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c25e655d-ec73-4c96-b076-d9e12fb98b84
+    m_ActionName: 'CubeSelection/PingEditor[/Keyboard/m]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8ffd139b-911c-4182-8c23-41ae4a0a9bd1
+    m_ActionName: 'CubeSelection/ShiftModifier[/Keyboard/shift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f8cecb2a-2e33-46e7-ad69-dd6b82343012
+    m_ActionName: 'CubeSelection/CtrlModifier[/Keyboard/leftCtrl]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: eb4c45ca-d4e7-40fe-b69d-7baca70e0918
+    m_ActionName: 'CubeSelection/MousePosition[/Mouse/position]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -964,15 +1036,6 @@ MonoBehaviour:
   maxNodes: 1000
   ignoreTransforms: 0
   scaleNodesUsingMaintainability: 0
-  gameObjectColor: {r: 0.2, g: 0.6, b: 1, a: 1}
-  componentColor: {r: 0.4, g: 0.8, b: 0.4, a: 1}
-  scriptableObjectColor: {r: 0.8, g: 0.4, b: 0.8, a: 1}
-  assetColor: {r: 0.1, g: 0.9, b: 0.9, a: 1}
-  parentChildConnection: {r: 0.5, g: 0.5, b: 1, a: 1}
-  componentConnection: {r: 0.5, g: 1, b: 0.5, a: 1}
-  referenceConnection: {r: 1, g: 0, b: 0.5, a: 1}
-  dynamicComponentConnection: {r: 1, g: 0.6, b: 0, a: 1}
-  unityEventConnection: {r: 1, g: 0.85, b: 0, a: 1}
   colorPreset: 0
   generateColors: 0
   toAnalyzeScene: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
@@ -1112,6 +1175,7 @@ MonoBehaviour:
   targetLayerName: OverlayScene
   parentCanvas: {fileID: 148513507}
   highlightMaterial: {fileID: 2100000, guid: c97c0b6f87487e34ca122a2aeb0a9201, type: 2}
+  inputActions: {fileID: -944628639613478452, guid: 4c2daa6b2bac08f4db0963352527a29b, type: 3}
   doubleClickThreshold: 0.3
   pingObjectInEditor: 0
   selectionRectangle: {fileID: 1594128251}
