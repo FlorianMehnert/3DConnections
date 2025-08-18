@@ -84,7 +84,14 @@ namespace _3DConnections.Runtime.ScriptableObjectInventory
         {
             if (_instance != this) return;
             _instance = null;
-        }
 
+            // Making sure this is not recreated it during shutdown
+            _isShuttingDown = true;
+        }
+        
+        private void OnApplicationQuit()
+        {
+            _isShuttingDown = true;
+        }
     }
 }
