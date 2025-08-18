@@ -4,7 +4,6 @@
     using System.Linq;
     using UnityEngine;
     using Nodes;
-    using JetBrains.Annotations;
     
     using ScriptableObjectInventory;
     using Clusters;
@@ -451,10 +450,4 @@
             lod.Initialize();
         }
     }
-
-    // Helper component to store cluster data
-    
-
-    // Helper component to store aggregated edge data - maybe use later to inspect clusters
-    
 }
