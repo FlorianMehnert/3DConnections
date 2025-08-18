@@ -3,10 +3,11 @@
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
-    using _3DConnections.Runtime.Nodes;
+    using Nodes;
     using JetBrains.Annotations;
     
     using ScriptableObjectInventory;
+    using Clusters;
 
     /// <summary>
     /// Manages Level-of-Detail rendering for the node graph visualization
@@ -452,17 +453,8 @@
     }
 
     // Helper component to store cluster data
-    public class ClusterNodeData : MonoBehaviour
-    {
-        public List<GameObject> containedNodes;
-        [UsedImplicitly] public int nodeCount;
-    }
+    
 
     // Helper component to store aggregated edge data - maybe use later to inspect clusters
-    public class AggregatedEdgeData : MonoBehaviour
-    {
-        [UsedImplicitly] public List<NodeConnection> originalConnections;
-        [UsedImplicitly] public GameObject startCluster;
-        [UsedImplicitly] public GameObject endCluster;
-    }
+    
 }

@@ -1,7 +1,10 @@
 ﻿namespace _3DConnections.Runtime.Managers
 {
+    
     using UnityEngine;
     using UnityEngine.EventSystems;
+    using Clusters;
+    
 
     /// <summary>
     /// Allows interactive expansion of cluster nodes
