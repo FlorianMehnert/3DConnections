@@ -6,9 +6,7 @@ namespace _3DConnections.Runtime.Managers
     using System.Linq;
     using UnityEditor;
     using UnityEngine;
-    
-    using ScriptableObjectInventory;
-
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
     public partial class SceneAnalyzer
 
     {
@@ -35,9 +33,9 @@ namespace _3DConnections.Runtime.Managers
                 if (_instanceIdToNodeLookup.TryGetValue(toTraverseGameObjectID, out var existingNode) &&
                     parentNodeObject)
                     parentNodeObject.ConnectNodes(existingNode,
-                        isReference ? referenceConnection : parentChildConnection, depth,
+                        isReference ? cols.ReferenceConnection : cols.ParentChildConnection, depth,
                         isReference ? "referenceConnection" : "parentChildConnection",
-                        ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                        cols.MaxWidthHierarchy);
                 return;
             }
 
@@ -90,8 +88,8 @@ namespace _3DConnections.Runtime.Managers
             {
                 // If we're in a cycle, connect to the existing node if we have one
                 if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
-                    parentNodeObject.ConnectNodes(existingNode, componentConnection, depth, "componentConnection",
-                        ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                    parentNodeObject.ConnectNodes(existingNode, cols.ComponentConnection, depth, "componentConnection",
+                        cols.MaxWidthHierarchy);
 
                 return;
             }
@@ -120,9 +118,9 @@ namespace _3DConnections.Runtime.Managers
                         {
                             if (_instanceIdToNodeLookup.TryGetValue(idOfAssetObject, out var existingNode) &&
                                 parentNodeObject)
-                                parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth,
+                                parentNodeObject.ConnectNodes(existingNode, cols.ReferenceConnection, depth,
                                     "referenceConnection",
-                                    ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                                    cols.MaxWidthHierarchy);
                             return;
                         }
 
@@ -169,8 +167,8 @@ namespace _3DConnections.Runtime.Managers
             if (_processingObjects.Contains(scriptableObject))
             {
                 if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode) && parentNodeObject)
-                    parentNodeObject.ConnectNodes(existingNode, referenceConnection, depth, "referenceConnection",
-                        ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                    parentNodeObject.ConnectNodes(existingNode, cols.ReferenceConnection, depth, "referenceConnection",
+                        cols.MaxWidthHierarchy);
 
                 return;
             }

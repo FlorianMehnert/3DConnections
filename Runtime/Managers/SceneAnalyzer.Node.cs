@@ -1,8 +1,5 @@
-﻿using _3DConnections.Runtime.Nodes.Extensions;
-
-namespace _3DConnections.Runtime.Managers
+﻿namespace _3DConnections.Runtime.Managers
 {
-    using ScriptableObjectInventory;
     using System;
     using System.Collections.Generic;
     using JetBrains.Annotations;
@@ -10,6 +7,10 @@ namespace _3DConnections.Runtime.Managers
     using TMPro;
     using UnityEngine;
     using Object = UnityEngine.Object;
+    using ScriptableObjectInventory;
+    using Nodes.Extensions;
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
+
 
 #if UNITY_EDITOR
     using UnityEditor;
@@ -69,26 +70,25 @@ namespace _3DConnections.Runtime.Managers
         if (_instanceIdToNodeLookup.TryGetValue(fakeInstanceId, out var existingVirtualNode))
         {
             // Connect existing virtual node to parent if needed
-            if (parentNodeObject == null) return existingVirtualNode;
-            var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g,
-                dynamicComponentConnection.b, 0.7f);
+            if (!parentNodeObject) return existingVirtualNode;
+            var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
             parentNodeObject.ConnectNodes(existingVirtualNode, connectionColor, depth, 
-                "dynamicComponentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                "dynamicComponentConnection", cols.MaxWidthHierarchy);
             return existingVirtualNode;
         }
 
         // Create a new virtual node
         var virtualNode = SpawnNode(null, false, virtualComponentType);
-        if (virtualNode == null) return virtualNode;
+        if (!virtualNode) return virtualNode;
         {
             _instanceIdToNodeLookup[fakeInstanceId] = virtualNode;
             
             // Connect to parent if provided
-            if (parentNodeObject == null) return virtualNode;
-            var connectionColor = new Color(dynamicComponentConnection.r, dynamicComponentConnection.g,
-                dynamicComponentConnection.b, 0.7f);
+            if (!parentNodeObject) return virtualNode;
+            var connectionColor = new Color(cols.DynamicComponentConnection.r, cols.DynamicComponentConnection.g,
+                cols.DynamicComponentConnection.b, 0.7f);
             parentNodeObject.ConnectNodes(virtualNode, connectionColor, depth, 
-                "dynamicComponentConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                "dynamicComponentConnection", cols.MaxWidthHierarchy);
         }
         return virtualNode;
     }
@@ -105,23 +105,23 @@ namespace _3DConnections.Runtime.Managers
         if (parentNodeObject == null) return existingNode;
         if (isAsset)
             parentNodeObject.ConnectNodes(existingNode,
-                new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
-                "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f), depth + 1,
+                "referenceConnection", cols.MaxWidthHierarchy);
         else
             parentNodeObject.ConnectNodes(existingNode,
                 obj switch
                 {
-                    GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
-                        parentChildConnection.b, 0.5f),
-                    Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
+                    GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g,
+                        cols.ParentChildConnection.b, 0.5f),
+                    Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b,
                         0.5f),
-                    _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+                    _ => new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f)
                 }, depth, obj switch
                 {
                     GameObject => "parentChildConnection",
                     Component => "componentConnection",
                     _ => "referenceConnection"
-                }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                }, cols.MaxWidthHierarchy);
 
         return existingNode;
     }
@@ -135,23 +135,23 @@ namespace _3DConnections.Runtime.Managers
     if (parentNodeObject == null) return newNode;
     if (isAsset)
         parentNodeObject.ConnectNodes(newNode,
-            new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f), depth + 1,
-            "referenceConnection", ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+            new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f), depth + 1,
+            "referenceConnection", cols.MaxWidthHierarchy);
     else
         parentNodeObject.ConnectNodes(newNode,
             obj switch
             {
-                GameObject => new Color(parentChildConnection.r, parentChildConnection.g,
-                    parentChildConnection.b, 0.5f),
-                Component => new Color(componentConnection.r, componentConnection.g, componentConnection.b,
+                GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g,
+                    cols.ParentChildConnection.b, 0.5f),
+                Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b,
                     0.5f),
-                _ => new Color(referenceConnection.r, referenceConnection.g, referenceConnection.b, 0.5f)
+                _ => new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f)
             }, depth, obj switch
             {
                 GameObject => "parentChildConnection",
                 Component => "componentConnection",
                 _ => "referenceConnection"
-            }, ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+            }, cols.MaxWidthHierarchy);
 
     return newNode;
 }
@@ -368,15 +368,15 @@ namespace _3DConnections.Runtime.Managers
             if (virtualType != null)
             {
                 // Use a dimmed version of the component color to denote a virtual node.
-                Color dimmedColor = dynamicComponentConnection;
-                nodeObject.SetNodeColor(obj, gameObjectColor, dimmedColor, scriptableObjectColor, assetColor,
+                Color dimmedColor = cols.DynamicComponentConnection;
+                nodeObject.SetNodeColor(obj, cols.GameObjectColor, dimmedColor, cols.ScriptableObjectColor, cols.AssetColor,
                     overrideColor: dimmedColor);
             }
             else
             {
                 if (!IsPrefab(obj))
                 {
-                    nodeObject.SetNodeColor(obj, gameObjectColor, componentColor, scriptableObjectColor, assetColor,
+                    nodeObject.SetNodeColor(obj, cols.GameObjectColor, cols.ComponentColor, cols.ScriptableObjectColor, cols.AssetColor,
                         isAsset);
                 }
                 else

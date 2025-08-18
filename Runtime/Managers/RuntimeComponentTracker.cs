@@ -1,15 +1,13 @@
-﻿using _3DConnections.Runtime.Nodes.Extensions;
-
-namespace _3DConnections.Runtime.Managers
+﻿namespace _3DConnections.Runtime.Managers
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using UnityEngine;
+    using Nodes.Extensions;
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
     
-    using ScriptableObjectInventory;
-
     /// <summary>
     /// Tracks dynamic component references using runtime type discovery and reflection
     /// </summary>
@@ -382,7 +380,7 @@ namespace _3DConnections.Runtime.Managers
             if (NodeConnectionManager.Instance == null) return;
 
             var depth = 0;
-            var maxWidth = ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy;
+            var maxWidth = cols.MaxWidthHierarchy;
 
             NodeConnectionManager.Instance.AddConnection(
                 sourceNode,

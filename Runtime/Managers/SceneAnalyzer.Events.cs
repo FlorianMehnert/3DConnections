@@ -11,7 +11,7 @@
     using UnityEngine;
     using Events;
     using ScriptableObjects;
-
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
     public partial class SceneAnalyzer
     {
         // Enhanced event tracking structures
@@ -671,24 +671,24 @@
 
                 int eventDepth = 1;
                 GameObject publisherNode = GetOrSpawnNode(null, eventDepth, subscriberNode, false, sub.PublisherType);
-                if (publisherNode == null) continue;
+                if (!publisherNode) continue;
 
-                // Use different colors based on subscription type
-                Color connectionColor = sub.Type switch
+                // Use different colors based on a subscription type
+                var connectionColor = sub.Type switch
                 {
-                    SubscriptionType.DirectSubscription => unityEventConnection,
-                    SubscriptionType.InstanceAccess => new Color(unityEventConnection.r * 0.8f,
-                        unityEventConnection.g * 0.8f, unityEventConnection.b, 0.7f),
-                    SubscriptionType.ConditionalAccess => new Color(unityEventConnection.r,
-                        unityEventConnection.g * 0.6f, unityEventConnection.b * 0.6f, 0.8f),
-                    _ => unityEventConnection
+                    SubscriptionType.DirectSubscription => cols.UnityEventConnection,
+                    SubscriptionType.InstanceAccess => new Color(cols.UnityEventConnection.r * 0.8f,
+                        cols.UnityEventConnection.g * 0.8f, cols.UnityEventConnection.b, 0.7f),
+                    SubscriptionType.ConditionalAccess => new Color(cols.UnityEventConnection.r,
+                        cols.UnityEventConnection.g * 0.6f, cols.UnityEventConnection.b * 0.6f, 0.8f),
+                    _ => cols.UnityEventConnection
                 };
 
                 subscriberNode.ConnectNodes(publisherNode,
                     connectionColor,
                     eventDepth,
                     $"eventSubscription_{sub.Type}_{sub.IntermediateField ?? "direct"}",
-                    ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                    cols.MaxWidthHierarchy);
 
                 Debug.Log($"Connected event subscription: {sub.AccessPattern} -> {sub.SubscriberType.Name} (Type: {sub.Type}, Field: {sub.IntermediateField})");
             }
@@ -709,16 +709,16 @@
 
                 // Use a distinct color for invocations, with variation for indirect access
                 Color invocationColor = invocation.IsIndirect
-                    ? new Color(dynamicComponentConnection.r * 1.2f, dynamicComponentConnection.g * 0.8f,
-                        dynamicComponentConnection.b, 0.9f)
-                    : new Color(dynamicComponentConnection.r, dynamicComponentConnection.g * 1.2f,
-                        dynamicComponentConnection.b, 0.9f);
+                    ? new Color(cols.DynamicComponentConnection.r * 1.2f, cols.DynamicComponentConnection.g * 0.8f,
+                        cols.DynamicComponentConnection.b, 0.9f)
+                    : new Color(cols.DynamicComponentConnection.r, cols.DynamicComponentConnection.g * 1.2f,
+                        cols.DynamicComponentConnection.b, 0.9f);
 
                 invokerNode.ConnectNodes(targetNode,
                     invocationColor,
                     1,
                     invocation.IsIndirect ? "indirectEventInvocation" : "eventInvocation",
-                    ScriptableObjectInventory.Instance.nodeColors.maxWidthHierarchy);
+                    cols.MaxWidthHierarchy);
 
                 Debug.Log(
                     $"Connected event invocation: {invocation.MethodPattern} from {invocation.InvokerType.Name} to {invocation.TargetType.Name} (Indirect: {invocation.IsIndirect}, Path: {invocation.AccessPath})");

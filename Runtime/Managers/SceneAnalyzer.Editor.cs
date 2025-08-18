@@ -6,7 +6,8 @@
     using UnityEngine;
     
     using Utils;
-
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
+    
     public partial class SceneAnalyzer : MonoBehaviour
     {
         /// <summary>
@@ -21,14 +22,14 @@
 
         private void OnValidate()
         {
-            var palette = Colorpalette.GeneratePaletteFromBaseColor(gameObjectColor, colorPreset, generateColors);
-            gameObjectColor = palette[0];
-            componentColor = palette[1];
-            scriptableObjectColor = palette[2];
-            assetColor = palette[3];
-            parentChildConnection = palette[4];
-            componentConnection = palette[5];
-            referenceConnection = palette[6];
+            var palette = Colorpalette.GeneratePaletteFromBaseColor(cols.GameObjectColor, cols.ColorPreset, cols.GenerateColors);
+            cols.GameObjectColor = palette[0];
+            cols.ComponentColor = palette[1];
+            cols.ScriptableObjectColor = palette[2];
+            cols.AssetColor = palette[3];
+            cols.ParentChildConnection = palette[4];
+            cols.ComponentConnection = palette[5];
+            cols.ReferenceConnection = palette[6];
         }
     }
 }

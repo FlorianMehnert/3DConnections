@@ -47,18 +47,7 @@
         [SerializeField] private int maxNodes = 1000;
         [SerializeField] private bool ignoreTransforms;
         [SerializeField] private bool scaleNodesUsingMaintainability;
-
-        [Header("Display Settings")] [SerializeField]
-        internal Color gameObjectColor = new(0.2f, 0.6f, 1f); // Blue
-
-        [SerializeField] private Color componentColor = new(0.4f, 0.8f, 0.4f); // Green
-        [SerializeField] private Color scriptableObjectColor = new(0.8f, 0.4f, 0.8f); // Purple
-        [SerializeField] private Color assetColor = new(0.1f, 0.9f, 0.9f); // Cyan
-        [SerializeField] private Color parentChildConnection = new(0.5f, 0.5f, 1f); // Light Blue
-        [SerializeField] private Color componentConnection = new(0.5f, 1f, 0.5f); // Light Green
-        [SerializeField] private Color referenceConnection = new(1f, 0f, 0.5f); // Pink
-        [SerializeField] private Color dynamicComponentConnection = new(1f, 0.6f, 0f); // Orange
-        [SerializeField] private Color unityEventConnection = new(1f, 0.85f, 0f); // Gold
+        
         [SerializeField] private int colorPreset;
         [SerializeField] private bool generateColors;
         [SerializeField] private ToAnalyzeScene toAnalyzeScene;

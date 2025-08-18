@@ -14,6 +14,7 @@ namespace _3DConnections.Runtime.Managers
     
     using ScriptableObjectInventory;
     using Nodes;
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
 
     public class CubeSelector : MonoBehaviour
     {
@@ -89,9 +90,6 @@ namespace _3DConnections.Runtime.Managers
             if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0) &&
                 !Input.GetMouseButtonDown(1) && !_isDragging && !Input.GetKeyDown(KeyCode.M) &&
                 !Input.GetKeyDown(KeyCode.I)) return;
-            if (_currentlyDraggedCube)
-                _currentlyDraggedCube.gameObject.GetComponent<MeshRenderer>().sharedMaterial.color =
-                    ScriptableObjectInventory.Instance.nodeColors.nodeSelectedColor;
 
             var image = selectionRectangle.GetComponent<Image>();
             if (image)
