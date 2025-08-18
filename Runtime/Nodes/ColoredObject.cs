@@ -14,7 +14,7 @@ namespace _3DConnections.Runtime.Nodes
 
         private bool _isHighlighting;
         private float _highlightDuration = 1.0f;
-        private bool _highlightForever = false;
+        private bool _highlightForever;
         private float _timer;
         private UnityAction _actionAfterHighlight;
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -37,38 +37,20 @@ namespace _3DConnections.Runtime.Nodes
         private void Start()
         {
             _objectRenderer = GetComponent<Renderer>();
-            if (_objectRenderer != null && _objectRenderer.material != null)
+            if (_objectRenderer == null || _objectRenderer.material == null) return;
+            if (_objectRenderer is LineRenderer lineRenderer)
             {
-                if (_objectRenderer is LineRenderer lineRenderer)
-                {
-                    _originalColor = lineRenderer.startColor;
-                }
-                else
-                {
-                    _originalColor = _objectRenderer.material.color;
-                }
+                _originalColor = lineRenderer.startColor;
             }
-
-            _nodeConnections = GetComponent<LocalNodeConnections>();
-            _targetLayerMask = LayerMask.GetMask("OverlayScene");
+            else
+            {
+                _originalColor = _objectRenderer.material.color;
+            }
         }
 
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(1))
-            {
-                var ray = Physics2D.Raycast(
-                    SceneHandler.GetCameraOfOverlayedScene().ScreenToWorldPoint(Input.mousePosition), Vector2.zero,
-                    Mathf.Infinity, _targetLayerMask);
-
-                if (!ray) return;
-                if (ray.collider && ray.collider.gameObject && ray.collider.gameObject == gameObject)
-                {
-                    ToggleNodeDeletionMenu();
-                }
-            }
-
             if (!_isHighlighting) return;
             _timer += Time.deltaTime;
             if (_highlightForever) return;
@@ -87,44 +69,6 @@ namespace _3DConnections.Runtime.Nodes
             ResetColor();
         }
 
-        private void ToggleNodeDeletionMenu()
-        {
-            Debug.Log("toogle node deletion menu");
-            if (_nodeConnections.inConnections.Count > 0)
-            {
-                Debug.Log("Cannot delete - node has incoming connections");
-                HighlightIncomingConnections();
-            }
-            else
-            {
-                var highlight = gameObject.GetComponent<ColoredObject>();
-                if (!highlight) return;
-                highlight.Highlight(Color.red, 1f, actionAfterHighlight: DeleteNode);
-            }
-        }
-
-        private void HighlightIncomingConnections()
-        {
-            foreach (var nodeRenderer in _nodeConnections.inConnections.Select(node => node.GetComponent<Renderer>())
-                         .Where(nodeRendererIncoming => nodeRendererIncoming != null))
-            {
-                var coloredObject = nodeRenderer.gameObject.GetComponent<ColoredObject>();
-                coloredObject.Highlight(Color.red, .5f, actionAfterHighlight: ResetColor);
-            }
-        }
-
-        private void DeleteNode()
-        {
-            foreach (var outNodeConnections in _nodeConnections.outConnections
-                         .Select(outNode => outNode.GetComponent<LocalNodeConnections>())
-                         .Where(outNodeConnections => outNodeConnections))
-            {
-                outNodeConnections.inConnections.Remove(gameObject);
-            }
-
-            Destroy(gameObject);
-        }
-
         private void ResetColor()
         {
             if (!_objectRenderer || !_objectRenderer.material) return;
@@ -138,21 +82,6 @@ namespace _3DConnections.Runtime.Nodes
             {
                 _objectRenderer.material.color = _originalColor;
                 _objectRenderer.material.DisableKeyword("_EMISSION");
-            }
-        }
-
-        public void SetColor(Color color)
-        {
-            if (!_objectRenderer || !_objectRenderer.material) return;
-
-            if (_objectRenderer is LineRenderer lineRenderer)
-            {
-                lineRenderer.startColor = color;
-                lineRenderer.endColor = color;
-            }
-            else
-            {
-                _objectRenderer.material.color = color;
             }
         }
 

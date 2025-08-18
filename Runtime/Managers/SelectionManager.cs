@@ -14,7 +14,6 @@ namespace _3DConnections.Runtime.Managers
     
     using ScriptableObjectInventory;
     using Nodes;
-    using cols = ScriptableObjects.NodeColorsScriptableObject;
 
     public class CubeSelector : MonoBehaviour
     {
