@@ -46,7 +46,7 @@
                                 <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
                             </Bindings>
                         </ui:DropdownField>
-                        <ui:DropdownField label="Layout" choices="Grid,Tree,Radial,GRIP" index="2" name="DropdownLayout">
+                        <ui:DropdownField label="Layout" choices="Grid,Radial,Tree,GRIP,Sugiyama,Multiscale" index="2" name="DropdownLayout">
                             <Bindings>
                                 <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                             </Bindings>
