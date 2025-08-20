@@ -169,7 +169,7 @@ namespace _3DConnections.Runtime.Managers
                         var nodeGraph = GetNodeGraph();
                         if (nodeGraph && nodeGraph.IsEmpty())
                         {
-                            var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                            var layout = FindFirstObjectByType<LayoutManager>();
                             if (layout)
                                 layout.StaticLayout(() =>
                                 {

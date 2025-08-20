@@ -5,5 +5,6 @@ namespace _3DConnections.Runtime.Layout.Type
         Grid,
         Tree,
         Radial,
+        GRIP
     }
 }

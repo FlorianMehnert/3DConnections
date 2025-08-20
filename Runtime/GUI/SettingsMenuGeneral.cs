@@ -267,7 +267,7 @@ namespace _3DConnections.Runtime.Managers
                 () =>
                 {
                     // Static 
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
@@ -281,7 +281,7 @@ namespace _3DConnections.Runtime.Managers
                 () =>
                 {
                     // default
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         if (ScriptableObjectInventory.Instance?.applicationState)
@@ -298,7 +298,7 @@ namespace _3DConnections.Runtime.Managers
                 () =>
                 {
                     // burst
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         if (ScriptableObjectInventory.Instance)
@@ -333,7 +333,7 @@ namespace _3DConnections.Runtime.Managers
                     if (!sim) sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
 
                     // static layout using manager if found
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         // set state to spawnedNodes
@@ -358,7 +358,7 @@ namespace _3DConnections.Runtime.Managers
                             .AddComponent<ForceDirectedSimulationV2>();
 
                     // static layout using manager if found
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         // set state to spawnedNodes
@@ -387,7 +387,7 @@ namespace _3DConnections.Runtime.Managers
                     NodeConnectionManager.Instance.ConvertToNativeArray();
 
                     // layouting
-                    var layout = FindFirstObjectByType<StaticNodeLayoutManager>();
+                    var layout = FindFirstObjectByType<LayoutManager>();
                     layout.StaticLayout(() =>
                     {
                         if (springSimulation)

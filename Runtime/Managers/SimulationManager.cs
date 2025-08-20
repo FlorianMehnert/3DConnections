@@ -7,9 +7,11 @@ namespace _3DConnections.Runtime.Managers
     using ScriptableObjectInventory;
     using Simulations;
 
+    [RequireComponent(typeof(LayoutManager))]
     public class SimulationManager : MonoBehaviour
     {
         [SerializeField] private Transform rootSimulation;
+        private LayoutManager _layoutManager;
 
         private void OnEnable()
         {
@@ -19,6 +21,7 @@ namespace _3DConnections.Runtime.Managers
                 ? rootEdgeGameObject.transform
                 : new GameObject("ParentEdgesObject").transform;
             ScriptableObjectInventory.Instance.simulationRoot = rootSimulation;
+            GetComponent<LayoutManager>();
         }
 
         public void ApplyComponentPhysics()
@@ -104,8 +107,7 @@ namespace _3DConnections.Runtime.Managers
             var springSimulation = FindFirstObjectByType<SpringSimulation>();
             if (springSimulation)
                 springSimulation.CleanupNativeArrays();
-            StaticNodeLayoutManager.Layout(ScriptableObjectInventory.Instance.layout,
-                ScriptableObjectInventory.Instance.graph);
+            _layoutManager.Layout();
         }
 
         public void ApplyForceDirectedComponentPhysics()

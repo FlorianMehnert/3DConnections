@@ -5,27 +5,30 @@ namespace _3DConnections.Runtime.Managers
     using System.Linq;
     using UnityEngine;
     
-    using ScriptableObjectInventory;
+    using soi = ScriptableObjectInventory.ScriptableObjectInventory;
     using ScriptableObjects;
     using Nodes.Layout;
     using Nodes;
     using Layout.Type;
 
-    public class StaticNodeLayoutManager : MonoBehaviour
+    public class LayoutManager : MonoBehaviour
     {
         /// <summary>
         /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
         /// </summary>
-        public static void Layout(LayoutParameters layoutParameters, NodeGraphScriptableObject nodeGraph)
+        public void Layout()
         {
+            var layoutParameters = soi.Instance.layout;
+            var nodeGraph = soi.Instance.graph;
             if (!NodeConnectionManager.Instance) return;
             var forestManager = new ConnectionsBasedForestManager();
+            var gripManager = new GRIPLayoutManager();
             List<TreeNode> rootNodes;
             switch (layoutParameters.layoutType)
             {
                 case (int)LayoutType.Grid:
                 {
-                    rootNodes = ConnectionsBasedForestManager.BuildForest(ScriptableObjectInventory.Instance.conSo
+                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
                         .connections);
                     forestManager.SetLayoutParameters(
                         layoutParameters
@@ -35,7 +38,7 @@ namespace _3DConnections.Runtime.Managers
                 }
                 case (int)LayoutType.Radial:
                 {
-                    rootNodes = ConnectionsBasedForestManager.BuildForest(ScriptableObjectInventory.Instance.conSo
+                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
                         .connections);
                     forestManager.SetLayoutParameters(
                         layoutParameters
@@ -48,6 +51,13 @@ namespace _3DConnections.Runtime.Managers
                     rootNodes = HierarchicalLayout(layoutParameters);
                     break;
                 }
+                case (int)LayoutType.GRIP:
+                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
+                        .connections);
+                    gripManager.SetLayoutParameters(layoutParameters);
+                    gripManager.ApplyGRIPLayout(soi.Instance.conSo
+                        .connections);
+                    break;
                 default:
                     Debug.Log("Unknown layout type");
                     return;
@@ -59,7 +69,7 @@ namespace _3DConnections.Runtime.Managers
         private static List<TreeNode> HierarchicalLayout(LayoutParameters layoutParameters)
         {
             var rootNodes = ConnectionsBasedForestManager.BuildForest(
-                ScriptableObjectInventory.Instance.conSo.connections);
+                soi.Instance.conSo.connections);
 
             var hierarchicalLayout = new HierarchicalTreeLayout();
             hierarchicalLayout.SetLayoutParameters(
@@ -191,12 +201,12 @@ namespace _3DConnections.Runtime.Managers
         {
             var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
 
-            if (ScriptableObjectInventory.Instance?.removePhysicsEvent)
-                ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+            if (soi.Instance?.removePhysicsEvent)
+                soi.Instance.removePhysicsEvent.TriggerEvent();
 
             if (!sceneAnalyzer ||
-                !ScriptableObjectInventory.Instance?.applicationState ||
-                ScriptableObjectInventory.Instance.applicationState.spawnedNodes)
+                !soi.Instance?.applicationState ||
+                soi.Instance.applicationState.spawnedNodes)
             {
                 onComplete?.Invoke();
                 return;
@@ -207,31 +217,15 @@ namespace _3DConnections.Runtime.Managers
             {
                 Debug.Log("after analyze scene (in callback)");
 
-                if (ScriptableObjectInventory.Instance.applicationState)
-                    ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
+                if (soi.Instance.applicationState)
+                    soi.Instance.applicationState.spawnedNodes = true;
 
-                if (ScriptableObjectInventory.Instance.layout &&
-                    ScriptableObjectInventory.Instance.graph)
-                    Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
+                if (soi.Instance.layout &&
+                    soi.Instance.graph)
+                    Layout();
 
                 onComplete?.Invoke(); // continue chain
             });
-        }
-
-
-        /// <summary>
-        /// Continuation function for StaticLayout required in case of the scene not yet being loaded
-        /// </summary>
-        private void ContinueStaticLayout()
-        {
-            if (!ScriptableObjectInventory.Instance) return;
-
-            if (ScriptableObjectInventory.Instance.applicationState)
-                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-            if (ScriptableObjectInventory.Instance.layout &&
-                ScriptableObjectInventory.Instance.graph)
-                Layout(ScriptableObjectInventory.Instance.layout, ScriptableObjectInventory.Instance.graph);
         }
     }
 }
