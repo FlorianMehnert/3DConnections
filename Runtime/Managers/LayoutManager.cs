@@ -2,7 +2,6 @@ namespace _3DConnections.Runtime.Managers
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using UnityEngine;
     
     using soi = ScriptableObjectInventory.ScriptableObjectInventory;
@@ -22,24 +21,37 @@ namespace _3DConnections.Runtime.Managers
             var nodeGraph = soi.Instance.graph;
             var connections = soi.Instance.conSo.connections;
             if (!NodeConnectionManager.Instance) return;
+            
             var forestManager = new ConnectionsBasedForestManager();
             var gripManager = new GRIPLayoutManager();
+            var gridManager = new GridLayoutManager();
+            var sugiyamaManager = new SugiyamaLayoutManager();
+            var multiscaleManager = new MultiscaleLayoutManager();
+            
             List<TreeNode> rootNodes;
+            
             switch (layoutParameters.layoutType)
             {
                 case (int)LayoutType.Grid:
                 {
                     rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
-                    forestManager.SetLayoutParameters(layoutParameters);
-                    rootNodes = LevelBoxAvoidanceLayout(rootNodes[0].GameObject, nodeGraph);
+                    gridManager.SetLayoutParameters(layoutParameters);
+                    
+                    // Choose between regular grid and hierarchical grid based on connections
+                    if (HasHierarchicalStructure(rootNodes))
+                    {
+                        gridManager.LayoutHierarchicalGrid(rootNodes);
+                    }
+                    else
+                    {
+                        gridManager.LayoutGrid(rootNodes);
+                    }
                     break;
                 }
                 case (int)LayoutType.Radial:
                 {
                     rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
-                    forestManager.SetLayoutParameters(
-                        layoutParameters
-                    );
+                    forestManager.SetLayoutParameters(layoutParameters);
                     forestManager.LayoutForest(rootNodes);
                     break;
                 }
@@ -49,17 +61,46 @@ namespace _3DConnections.Runtime.Managers
                     break;
                 }
                 case (int)LayoutType.GRIP:
+                {
                     rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
                     gripManager.SetLayoutParameters(layoutParameters);
-                    gripManager.ApplyGRIPLayout(soi.Instance.conSo
-                        .connections);
+                    gripManager.ApplyGRIPLayout(connections);
                     break;
+                }
+                case (int)LayoutType.Sugiyama:
+                {
+                    rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
+                    sugiyamaManager.SetLayoutParameters(layoutParameters);
+                    sugiyamaManager.LayoutHierarchy(rootNodes);
+                    break;
+                }
+                case (int)LayoutType.Multiscale:
+                {
+                    rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
+                    multiscaleManager.SetLayoutParameters(layoutParameters);
+                    
+                    // Use an optimized version for large graphs
+                    var totalNodeCount = CountAllNodes(rootNodes);
+                    if (totalNodeCount > 1000)
+                    {
+                        multiscaleManager.LayoutLargeGraph(rootNodes);
+                    }
+                    else
+                    {
+                        multiscaleManager.LayoutMultiscale(rootNodes);
+                    }
+                    break;
+                }
                 default:
-                    Debug.Log("Unknown layout type");
+                    Debug.Log("Unknown layout type: " + layoutParameters.layoutType);
                     return;
             }
 
-            forestManager.FlattenToZPlane(rootNodes);
+            // Flatten to Z plane for all layouts except those that specifically handle 3D positioning
+            if (layoutParameters.layoutType != (int)LayoutType.Multiscale)
+            {
+                forestManager.FlattenToZPlane(rootNodes);
+            }
         }
 
         private static List<TreeNode> HierarchicalLayout(LayoutParameters layoutParameters)
@@ -77,121 +118,80 @@ namespace _3DConnections.Runtime.Managers
             return rootNodes;
         }
 
-        private static List<TreeNode> LevelBoxAvoidanceLayout(GameObject rootNode, NodeGraphScriptableObject nodeGraph)
+        /// <summary>
+        /// Determines if the node structure has a clear hierarchical organization
+        /// </summary>
+        /// <param name="rootNodes">Root nodes to analyze</param>
+        /// <returns>True if hierarchical structure is detected</returns>
+        private bool HasHierarchicalStructure(List<TreeNode> rootNodes)
         {
-            // Create TreeNodes for all GameObjects
-            List<TreeNode> treeNodes = new();
-            Dictionary<GameObject, TreeNode> gameObjectToTreeNode = new();
+            if (rootNodes == null || rootNodes.Count == 0) return false;
 
-            foreach (var obj in nodeGraph.AllNodes)
+            // Check if there are clear parent-child relationships
+            var visited = new HashSet<TreeNode>();
+            var totalNodes = 0;
+            var nodesWithChildren = 0;
+
+            foreach (var root in rootNodes)
             {
-                var node = new TreeNode { GameObject = obj };
-                treeNodes.Add(node);
-                gameObjectToTreeNode[obj] = node;
+                CountHierarchicalNodes(root, visited, ref totalNodes, ref nodesWithChildren);
             }
 
-            // Build connections using LocalNodeConnections
-            foreach (var obj in nodeGraph.AllNodes)
-            {
-                var currentNode = gameObjectToTreeNode[obj];
-                var connections = obj.GetComponent<LocalNodeConnections>();
-
-                // Add children based on outDirection connections
-                foreach (var childNode in connections.outConnections.Select(childObj => gameObjectToTreeNode[childObj]))
-                {
-                    currentNode.Children.Add(childNode);
-                    childNode.Parents.Add(currentNode);
-                }
-            }
-
-            // Initialize dictionary to track levels
-            Dictionary<TreeNode, int> nodeLevels = new();
-            foreach (var node in treeNodes) nodeLevels[node] = int.MaxValue;
-
-            // Set root level
-            var rootTreeNode = gameObjectToTreeNode[rootNode];
-            nodeLevels[rootTreeNode] = 0;
-
-            for (var currentLevel = 0; currentLevel < 10; currentLevel++)
-            {
-                var currentLevelNodes = treeNodes.Where(n => nodeLevels[n] == currentLevel).ToList();
-                var level = currentLevel;
-                foreach (var child in from node in currentLevelNodes
-                         from child in node.Children
-                         where nodeLevels[child] > level + 1
-                         select child) nodeLevels[child] = currentLevel + 1;
-
-                // Layout current level and next level without overlap
-                LayoutLevels(treeNodes, nodeLevels, currentLevel);
-            }
-
-            return treeNodes;
+            // If more than 30% of nodes have children, consider it hierarchical
+            return totalNodes > 0 && (float)nodesWithChildren / totalNodes > 0.3f;
         }
 
-        private static void LayoutLevels(List<TreeNode> allNodes, Dictionary<TreeNode, int> nodeLevels,
-            int currentLevel)
+        private void CountHierarchicalNodes(TreeNode node, HashSet<TreeNode> visited, 
+            ref int totalNodes, ref int nodesWithChildren)
         {
-            var currentLevelNodes = allNodes.Where(n => nodeLevels[n] == currentLevel).ToList();
-            var nextLevelNodes = allNodes.Where(n => nodeLevels[n] == currentLevel + 1).ToList();
+            if (node == null || !visited.Add(node)) return;
 
-            if (!currentLevelNodes.Any() || !nextLevelNodes.Any())
-                return;
+            totalNodes++;
+            if (node.Children.Count > 0)
+                nodesWithChildren++;
 
-            var padding = 20f; // Adjust this value based on your needs
-
-            float xOffset = 10;
-            foreach (var node in currentLevelNodes)
+            foreach (var child in node.Children)
             {
-                var bounds = node.GameObject.GetComponent<Renderer>().bounds;
-                var newPosition = new Vector3(xOffset, currentLevel * -1, 0);
-                node.GameObject.transform.position = newPosition;
-                xOffset += bounds.size.x + padding;
+                CountHierarchicalNodes(child, visited, ref totalNodes, ref nodesWithChildren);
             }
-
-            xOffset = 0;
-            foreach (var node in nextLevelNodes)
-            {
-                var bounds = node.GameObject.GetComponent<Renderer>().bounds;
-                var newPosition = new Vector3(xOffset, (currentLevel + 1) * -50f, 0);
-                node.GameObject.transform.position = newPosition;
-                xOffset += bounds.size.x + padding;
-            }
-
-            CenterNodes(currentLevelNodes);
-            CenterNodes(nextLevelNodes);
         }
 
-        private static void CenterNodes(List<TreeNode> nodes)
+        /// <summary>
+        /// Counts all nodes in the forest
+        /// </summary>
+        /// <param name="rootNodes">Root nodes</param>
+        /// <returns>Total number of nodes</returns>
+        private int CountAllNodes(List<TreeNode> rootNodes)
         {
-            if (!nodes.Any()) return;
+            if (rootNodes == null) return 0;
 
-            const float padding = 20f;
+            var visited = new HashSet<TreeNode>();
+            var count = 0;
 
-            var totalWidth = nodes.Select(node => node.GameObject.GetComponent<Renderer>().bounds)
-                .Select(bounds => bounds.size.x + padding).Sum();
-
-            totalWidth -= padding; // Remove extra padding from the last node
-
-            var centerOffset = -totalWidth / 2f;
-
-            // Adjust positions
-            foreach (var node in nodes)
+            foreach (var root in rootNodes)
             {
-                var bounds = node.GameObject.GetComponent<Renderer>().bounds;
-                var currentPos = node.GameObject.transform.position;
-                node.GameObject.transform.position = new Vector3(
-                    currentPos.x + centerOffset,
-                    currentPos.y,
-                    currentPos.z
-                );
-                centerOffset += bounds.size.x + padding;
+                CountNodesRecursive(root, visited, ref count);
+            }
+
+            return count;
+        }
+
+        private void CountNodesRecursive(TreeNode node, HashSet<TreeNode> visited, ref int count)
+        {
+            if (node == null || !visited.Add(node)) return;
+
+            count++;
+
+            foreach (var child in node.Children)
+            {
+                CountNodesRecursive(child, visited, ref count);
             }
         }
 
         /// <summary>
         /// Invoke ClearEvent, perform static layout and finally do onComplete action
         /// </summary>
-        /// <param name="onComplete">Action that is completed after static layout has been performed</param>
+        /// <param name="onComplete">Action that is completed after a static layout has been performed</param>
         public void StaticLayout(Action onComplete = null)
         {
             var sceneAnalyzer = FindFirstObjectByType<SceneAnalyzer>();
@@ -221,6 +221,60 @@ namespace _3DConnections.Runtime.Managers
 
                 onComplete?.Invoke(); // continue chain
             });
+        }
+
+        /// <summary>
+        /// Gets recommended layout type based on graph characteristics
+        /// </summary>
+        /// <param name="nodeCount">Number of nodes in the graph</param>
+        /// <param name="hasHierarchy">Whether the graph has hierarchical structure</param>
+        /// <returns>Recommended layout type</returns>
+        public LayoutType GetRecommendedLayoutType(int nodeCount, bool hasHierarchy)
+        {
+            if (nodeCount > 1000)
+            {
+                return LayoutType.Multiscale; // Best for very large graphs
+            }
+            else if (nodeCount > 200)
+            {
+                return hasHierarchy ? LayoutType.Sugiyama : LayoutType.GRIP;
+            }
+            else if (hasHierarchy)
+            {
+                return nodeCount > 50 ? LayoutType.Sugiyama : LayoutType.Tree;
+            }
+            else if (nodeCount > 20)
+            {
+                return LayoutType.Radial;
+            }
+            else
+            {
+                return LayoutType.Grid;
+            }
+        }
+
+        /// <summary>
+        /// Automatically selects and applies the best layout for the current graph
+        /// </summary>
+        public void AutoLayout()
+        {
+            var connections = soi.Instance.conSo.connections;
+            var rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
+            var nodeCount = CountAllNodes(rootNodes);
+            var hasHierarchy = HasHierarchicalStructure(rootNodes);
+
+            var recommendedType = GetRecommendedLayoutType(nodeCount, hasHierarchy);
+            
+            // Temporarily override the layout type
+            var originalType = soi.Instance.layout.layoutType;
+            soi.Instance.layout.layoutType = (int)recommendedType;
+            
+            Debug.Log($"Auto-selected layout: {recommendedType} for {nodeCount} nodes (hierarchical: {hasHierarchy})");
+            
+            Layout();
+            
+            // Restore original type
+            soi.Instance.layout.layoutType = originalType;
         }
     }
 }
