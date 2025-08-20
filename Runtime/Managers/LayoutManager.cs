@@ -20,6 +20,7 @@ namespace _3DConnections.Runtime.Managers
         {
             var layoutParameters = soi.Instance.layout;
             var nodeGraph = soi.Instance.graph;
+            var connections = soi.Instance.conSo.connections;
             if (!NodeConnectionManager.Instance) return;
             var forestManager = new ConnectionsBasedForestManager();
             var gripManager = new GRIPLayoutManager();
@@ -28,18 +29,14 @@ namespace _3DConnections.Runtime.Managers
             {
                 case (int)LayoutType.Grid:
                 {
-                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
-                        .connections);
-                    forestManager.SetLayoutParameters(
-                        layoutParameters
-                    );
+                    rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
+                    forestManager.SetLayoutParameters(layoutParameters);
                     rootNodes = LevelBoxAvoidanceLayout(rootNodes[0].GameObject, nodeGraph);
                     break;
                 }
                 case (int)LayoutType.Radial:
                 {
-                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
-                        .connections);
+                    rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
                     forestManager.SetLayoutParameters(
                         layoutParameters
                     );
@@ -52,8 +49,7 @@ namespace _3DConnections.Runtime.Managers
                     break;
                 }
                 case (int)LayoutType.GRIP:
-                    rootNodes = ConnectionsBasedForestManager.BuildForest(soi.Instance.conSo
-                        .connections);
+                    rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
                     gripManager.SetLayoutParameters(layoutParameters);
                     gripManager.ApplyGRIPLayout(soi.Instance.conSo
                         .connections);
@@ -68,8 +64,7 @@ namespace _3DConnections.Runtime.Managers
 
         private static List<TreeNode> HierarchicalLayout(LayoutParameters layoutParameters)
         {
-            var rootNodes = ConnectionsBasedForestManager.BuildForest(
-                soi.Instance.conSo.connections);
+            var rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(soi.Instance.conSo.connections);
 
             var hierarchicalLayout = new HierarchicalTreeLayout();
             hierarchicalLayout.SetLayoutParameters(

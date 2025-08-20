@@ -14,11 +14,12 @@ namespace _3DConnections.Runtime.Nodes.Layout
         private float _rootSpacing = 10f; // Space between root trees
 
         /// <summary>
-        /// Creates a Tree structure using existing connections structure containing connections between the node objects of the overlay layer
+        /// Creates a Tree structure using existing connections structure containing connections between the node objects of the overlay layer.
+        /// Establishes parent-child relationships between the TreeNode objects based on the connection list
         /// </summary>
         /// <param name="connections">Connections between GameObjects</param>
         /// <returns></returns>
-        public static List<TreeNode> BuildForest(List<NodeConnection> connections)
+        public static List<TreeNode> BuildGraphUsingConnections(List<NodeConnection> connections)
         {
             Dictionary<GameObject, TreeNode> nodeMap = new();
             if (connections == null || connections.Count == 0)
