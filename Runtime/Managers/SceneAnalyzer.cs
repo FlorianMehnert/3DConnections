@@ -105,7 +105,7 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnDisable()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (!ScriptableObjectInventory.Instance) return;
             if (ScriptableObjectInventory.Instance.clearEvent)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)

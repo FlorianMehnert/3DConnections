@@ -21,6 +21,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private float maxZoomForMinDetail = 150f;
         [SerializeField] private int gridCellSize = 2;
         [SerializeField] private float nodeAggregationThreshold = 1f;
+        [SerializeField] private float lodUpdateThreshold = 0.02f; // Minimum change needed to update LOD
 
         [Header("Visual Settings")] [SerializeField]
         public GameObject clusterNodePrefab; // Prefab for aggregated nodes
@@ -39,8 +40,11 @@ namespace _3DConnections.Runtime.Managers
         private Dictionary<GameObject, Vector2Int> _nodeToClusterMap;
         private HashSet<GameObject> _clusteredNodes;
 
+        // Cache for LOD state management
         private float _currentLODLevel;
+        private float _lastAppliedLODLevel = -1f;
         private bool _isLODActive;
+        private Dictionary<string, List<NodeConnection>> _cachedEdgeGroups;
 
         private void OnEnable()
         {
@@ -49,6 +53,7 @@ namespace _3DConnections.Runtime.Managers
             _aggregatedEdges = new Dictionary<string, GameObject>();
             _nodeToClusterMap = new Dictionary<GameObject, Vector2Int>();
             _clusteredNodes = new HashSet<GameObject>();
+            _cachedEdgeGroups = new Dictionary<string, List<NodeConnection>>();
             ForceClearAllState();
             Initialize();
             RestoreFullDetail();
@@ -84,6 +89,8 @@ namespace _3DConnections.Runtime.Managers
             var currentZoom = _camera.orthographicSize;
             var newLODLevel = CalculateLODLevel(currentZoom);
 
+            // Only update if the change is significant enough
+            if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > lodUpdateThreshold)) return;
             _currentLODLevel = newLODLevel;
             UpdateLOD();
         }
@@ -112,8 +119,10 @@ namespace _3DConnections.Runtime.Managers
             _originalConnections?.Clear();
             _nodeToClusterMap?.Clear();
             _clusteredNodes?.Clear();
+            _cachedEdgeGroups?.Clear();
 
             _isLODActive = false;
+            _lastAppliedLODLevel = -1f;
         }
 
         /// <summary>
@@ -139,8 +148,10 @@ namespace _3DConnections.Runtime.Managers
             }
             else
             {
-                // Apply LOD
+                // Apply LOD only if the level changed significantly
+                if (!(Mathf.Abs(_currentLODLevel - _lastAppliedLODLevel) > lodUpdateThreshold)) return;
                 ApplyLOD(_currentLODLevel);
+                _lastAppliedLODLevel = _currentLODLevel;
             }
         }
 
@@ -155,17 +166,14 @@ namespace _3DConnections.Runtime.Managers
                 _originalConnections = new List<NodeConnection>(ScriptableObjectInventory.Instance.conSo.connections);
             }
 
-            // Clear the previous LOD state
-            ClearLODState();
-
             // Build spatial grid for node aggregation
             BuildSpatialGrid(lodLevel);
 
-            // Create cluster nodes for dense regions
-            CreateClusterNodes(lodLevel);
+            // Update cluster nodes (reuse existing when possible)
+            UpdateClusterNodes(lodLevel);
 
-            // Apply edge cumulation
-            ApplyEdgeCumulation();
+            // Apply edge cumulation (reuse existing when possible)
+            UpdateEdgeCumulation();
         }
 
         private void BuildSpatialGrid(float lodLevel)
@@ -197,20 +205,62 @@ namespace _3DConnections.Runtime.Managers
             );
         }
 
-        private void CreateClusterNodes(float lodLevel)
+        private void UpdateClusterNodes(float lodLevel)
         {
             var threshold = Mathf.Max(1, nodeAggregationThreshold - lodLevel * nodeAggregationThreshold * 0.5f);
 
-            // Clear tracking collections
+            // Track which clusters are still needed
+            var activeClusterPositions = new HashSet<Vector2Int>();
+            
+            // Clear tracking collections for rebuild
             _nodeToClusterMap.Clear();
             _clusteredNodes.Clear();
 
+            // First pass: identify which clusters should exist
+            foreach (var cell in _spatialGrid)
+            {
+                if (cell.Value.Count >= threshold)
+                {
+                    activeClusterPositions.Add(cell.Key);
+                }
+            }
+
+            // Remove clusters that are no longer needed
+            var clustersToRemove = new List<Vector2Int>();
+            foreach (var clusterPair in _clusterNodes)
+            {
+                if (!activeClusterPositions.Contains(clusterPair.Key))
+                {
+                    clustersToRemove.Add(clusterPair.Key);
+                }
+            }
+
+            foreach (var clusterPos in clustersToRemove)
+            {
+                if (_clusterNodes.TryGetValue(clusterPos, out var clusterToRemove) && clusterToRemove)
+                {
+                    ScriptableObjectInventory.Instance.graph.AllNodes.Remove(clusterToRemove);
+                    Destroy(clusterToRemove);
+                }
+                _clusterNodes.Remove(clusterPos);
+            }
+
+            // Create or update existing clusters
             foreach (var cell in _spatialGrid)
             {
                 if (!(cell.Value.Count >= threshold)) continue;
-                // Create a cluster node for this cell
-                var clusterNode = CreateClusterNode(cell.Key, cell.Value);
-                _clusterNodes[cell.Key] = clusterNode;
+
+                if (_clusterNodes.ContainsKey(cell.Key))
+                {
+                    // Update existing cluster
+                    UpdateExistingCluster(cell.Key, cell.Value);
+                }
+                else
+                {
+                    // Create a new cluster
+                    var clusterNode = CreateClusterNode(cell.Key, cell.Value);
+                    _clusterNodes[cell.Key] = clusterNode;
+                }
 
                 // Track clustered nodes
                 foreach (var node in cell.Value)
@@ -219,6 +269,52 @@ namespace _3DConnections.Runtime.Managers
                     _clusteredNodes.Add(node);
                     _nodeToClusterMap[node] = cell.Key;
                 }
+            }
+
+            // Ensure non-clustered nodes are visible
+            foreach (var node in _originalNodes)
+            {
+                if (node && !_clusteredNodes.Contains(node))
+                {
+                    node.SetActive(true);
+                }
+            }
+        }
+
+        private void UpdateExistingCluster(Vector2Int gridPos, List<GameObject> nodes)
+        {
+            if (!_clusterNodes.TryGetValue(gridPos, out var cluster) || !cluster) return;
+
+            // Update cluster position
+            Vector3 center = nodes.Aggregate(Vector3.zero, (current, node) => current + node.transform.position);
+            center /= nodes.Count;
+            cluster.transform.position = center;
+
+            // Update cluster data
+            var clusterData = cluster.GetComponent<ClusterNodeData>();
+            if (clusterData)
+            {
+                clusterData.containedNodes = new List<GameObject>(nodes);
+                clusterData.nodeCount = nodes.Count;
+            }
+
+            // Update scale based on node count
+            cluster.transform.localScale = Vector3.one + new Vector3(1, 1, 0) * nodes.Count;
+
+            // Update color
+            var avgColor = CalculateAverageColor(nodes, 
+                node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, 
+                useHSV: true);
+
+            if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
+            {
+                clusterRenderer.material.color = avgColor;
+            }
+
+            var coloredObject = cluster.GetComponent<ColoredObject>();
+            if (coloredObject)
+            {
+                coloredObject.SetOriginalColor(avgColor);
             }
         }
 
@@ -256,7 +352,10 @@ namespace _3DConnections.Runtime.Managers
             }
 
             var coloredObject = cluster.GetComponent<ColoredObject>();
-            coloredObject.SetOriginalColor(avgColor);
+            if (coloredObject)
+            {
+                coloredObject.SetOriginalColor(avgColor);
+            }
 
             ScriptableObjectInventory.Instance.graph.AllNodes.Add(cluster);
             return cluster;
@@ -304,12 +403,10 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-
-
-        private void ApplyEdgeCumulation()
+        private void UpdateEdgeCumulation()
         {
             // Group edges by their connected clusters
-            var edgeGroups = new Dictionary<string, List<NodeConnection>>();
+            var currentEdgeGroups = new Dictionary<string, List<NodeConnection>>();
 
             foreach (var connection in _originalConnections)
             {
@@ -327,25 +424,100 @@ namespace _3DConnections.Runtime.Managers
 
                 var key = GetEdgeGroupKey(startRepresentative, endRepresentative);
 
-                if (!edgeGroups.ContainsKey(key))
+                if (!currentEdgeGroups.ContainsKey(key))
                 {
-                    edgeGroups[key] = new List<NodeConnection>();
+                    currentEdgeGroups[key] = new List<NodeConnection>();
                 }
 
-                edgeGroups[key].Add(connection);
-
-                // Hide original edge
-                if (connection.lineRenderer)
-                {
-                    connection.lineRenderer.enabled = false;
-                }
+                currentEdgeGroups[key].Add(connection);
             }
 
-            // Create aggregated edges
-            foreach (var group in edgeGroups.Where(group => group.Value.Count > 0))
+            // Remove aggregated edges that are no longer needed
+            var edgesToRemove = new List<string>();
+            foreach (var edgePair in _aggregatedEdges)
             {
-                CreateAggregatedEdge(group.Key, group.Value);
+                if (!currentEdgeGroups.ContainsKey(edgePair.Key))
+                {
+                    edgesToRemove.Add(edgePair.Key);
+                }
             }
+
+            foreach (var edgeKey in edgesToRemove)
+            {
+                if (_aggregatedEdges.TryGetValue(edgeKey, out var edgeToRemove) && edgeToRemove)
+                {
+                    Destroy(edgeToRemove);
+                }
+                _aggregatedEdges.Remove(edgeKey);
+            }
+
+            // Update or create aggregated edges
+            foreach (var group in currentEdgeGroups.Where(group => group.Value.Count > 0))
+            {
+                if (_aggregatedEdges.ContainsKey(group.Key))
+                {
+                    // Update existing edge
+                    UpdateAggregatedEdge(group.Key, group.Value);
+                }
+                else
+                {
+                    // Create a new aggregated edge
+                    CreateAggregatedEdge(group.Key, group.Value);
+                }
+            }
+
+            // Hide/show original edges based on whether they're part of the aggregation
+            foreach (var connection in _originalConnections)
+            {
+                if (!connection.startNode || !connection.endNode || !connection.lineRenderer) continue;
+
+                var startRep = GetNodeRepresentative(connection.startNode);
+                var endRep = GetNodeRepresentative(connection.endNode);
+                
+                // Hide if part of an aggregation, show if not
+                bool shouldHide = startRep != connection.startNode || endRep != connection.endNode;
+                connection.lineRenderer.enabled = !shouldHide;
+            }
+
+            _cachedEdgeGroups = currentEdgeGroups;
+        }
+
+        private void UpdateAggregatedEdge(string key, List<NodeConnection> connections)
+        {
+            if (!_aggregatedEdges.TryGetValue(key, out var edgeObj) || !edgeObj) return;
+
+            var startNode = GetNodeRepresentative(connections[0].startNode);
+            var endNode = GetNodeRepresentative(connections[0].endNode);
+
+            if (!startNode || !endNode) return;
+
+            var lr = edgeObj.GetComponent<LineRenderer>();
+            if (!lr) return;
+
+            // Update positions
+            lr.SetPosition(0, startNode.transform.position);
+            lr.SetPosition(1, endNode.transform.position);
+
+            // Update visual properties based on aggregation
+            float width = Mathf.Sqrt(connections.Count) * AggregatedEdgeWidth * 0.5f;
+            lr.startWidth = width;
+            lr.endWidth = width;
+
+            // Update color
+            var avgColor = CalculateAverageColor(connections, 
+                conn => conn.lineRenderer.startColor, 
+                useHSV: true);
+
+            avgColor.a = 0.7f; // slightly transparent
+            lr.startColor = avgColor;
+            lr.endColor = avgColor;
+
+            // Update edge data
+            var edgeData = edgeObj.GetComponent<AggregatedEdgeData>();
+            if (!edgeData) return;
+            edgeData.originalConnections = connections;
+            edgeData.startCluster = startNode;
+            edgeData.endCluster = endNode;
         }
 
         private GameObject GetNodeRepresentative(GameObject node)
@@ -409,7 +581,10 @@ namespace _3DConnections.Runtime.Managers
             lr.endColor = avgColor;
 
             var coloredObject = edgeObj.GetComponent<ColoredObject>();
-            coloredObject.SetOriginalColor(avgColor);
+            if (coloredObject)
+            {
+                coloredObject.SetOriginalColor(avgColor);
+            }
 
             // Store aggregated edge data
             var edgeData = edgeObj.AddComponent<AggregatedEdgeData>();
@@ -423,6 +598,7 @@ namespace _3DConnections.Runtime.Managers
         private void RestoreFullDetail()
         {
             _isLODActive = false;
+            _lastAppliedLODLevel = -1f;
 
             // Restore all original nodes
             if (_originalNodes != null)
@@ -442,30 +618,24 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
 
-            // Clear LOD state
-            ClearLODState();
+            // Hide LOD elements without destroying them
+            HideLODElements();
         }
 
-        private void ClearLODState()
+        private void HideLODElements()
         {
-            // Remove cluster nodes
+            // Hide cluster nodes instead of destroying them
             foreach (var cluster in _clusterNodes.Values.Where(cluster => cluster))
             {
-                ScriptableObjectInventory.Instance.graph.AllNodes.Remove(cluster);
-                Destroy(cluster);
+                cluster.SetActive(false);
             }
 
-            _clusterNodes.Clear();
-
-            // Remove aggregated edges
+            // Hide aggregated edges instead of destroying them
             foreach (var edge in _aggregatedEdges.Values.Where(edge => edge))
             {
-                Destroy(edge);
+                edge.SetActive(false);
             }
 
-            _aggregatedEdges.Clear();
-
-            _spatialGrid.Clear();
             _nodeToClusterMap.Clear();
             _clusteredNodes.Clear();
         }
@@ -476,12 +646,13 @@ namespace _3DConnections.Runtime.Managers
             {
                 RestoreFullDetail();
             }
+            ForceClearAllState();
         }
 
         public static void Init()
         {
             var lod = FindFirstObjectByType<GraphLODManager>();
-            lod.Initialize();
+            lod?.Initialize();
         }
     }
 }
