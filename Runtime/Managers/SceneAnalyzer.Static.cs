@@ -76,7 +76,7 @@ namespace _3DConnections.Runtime.Managers
                 (ignoreTransforms && component.GetType() == typeof(Transform))) return;
 
             // Track MonoBehaviour types for dynamic analysis
-            if (component is MonoBehaviour && analyzeDynamicReferences)
+            if (component is MonoBehaviour && ScriptableObjectInventory.ScriptableObjectInventory.Instance.analyzerConfigurations.lookupDynamicReferences)
             {
                 _discoveredMonoBehaviours.Add(component.GetType());
             }

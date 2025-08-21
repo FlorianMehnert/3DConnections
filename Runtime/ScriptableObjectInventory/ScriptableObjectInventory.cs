@@ -25,7 +25,7 @@ namespace _3DConnections.Runtime.ScriptableObjectInventory
 
         public ApplicationState applicationState;
 
-        public ToAnalyzeScene toAnalyzeScene;
+        public AnalyzerConfigurations analyzerConfigurations;
 
         public RemovePhysicsEvent removePhysicsEvent;
 

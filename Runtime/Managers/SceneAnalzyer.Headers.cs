@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Managers
+﻿using UnityEngine.Serialization;
+
+namespace _3DConnections.Runtime.Managers
 {
     using System;
     using System.Collections.Generic;
@@ -50,11 +52,8 @@
         
         [SerializeField] private int colorPreset;
         [SerializeField] private bool generateColors;
-        [SerializeField] private ToAnalyzeScene toAnalyzeScene;
         public bool setIcons;
 
-        [Header("Dynamic Analysis Settings")] [SerializeField]
-        private bool analyzeDynamicReferences = true;
 
         [SerializeField] private bool showAddComponentCalls = true;
         [SerializeField] private bool showGetComponentCalls = true;

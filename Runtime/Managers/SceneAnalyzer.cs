@@ -42,10 +42,10 @@ namespace _3DConnections.Runtime.Managers
             _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
 
-            var scenePath = SceneUtility.GetScenePathByBuildIndex(toAnalyzeScene.sceneIndex);
+            var scenePath = SceneUtility.GetScenePathByBuildIndex(ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex);
             if (string.IsNullOrEmpty(scenePath))
             {
-                Debug.LogError($"No scene found at build index {toAnalyzeScene.sceneIndex}");
+                Debug.LogError($"No scene found at build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex}");
                 return;
             }
 
@@ -55,14 +55,14 @@ namespace _3DConnections.Runtime.Managers
             void Analyze()
             {
                 scene = SceneManager.GetSceneByName(sceneName);
-                Debug.Log($"{scene.name} (build index {toAnalyzeScene.sceneIndex})");
+                Debug.Log($"{scene.name} (build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex})");
 
                 LoadComplexityMetrics(analysisData.ToString());
                 _cachedPrefabPaths.Clear();
                 TraverseScene(scene.GetRootGameObjects());
 
                 // Analyze dynamic component references after scene traversal
-                if (analyzeDynamicReferences)
+                if (ScriptableObjectInventory.Instance.analyzerConfigurations.lookupDynamicReferences)
                 {
                     Debug.Log(
                         $"Analyzing dynamic references for {_discoveredMonoBehaviours.Count} MonoBehaviour types");

@@ -8,6 +8,13 @@
                         <ui:Button text="Analyze Scene" name="AnalyzeScene" class="unity-button pink" style="background-color: rgb(26, 26, 26);" />
                         <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
                         <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                        <ui:Foldout text="Options" enabled="true" name="Foldout" value="false">
+                            <ui:Toggle label="Find dynamic references" name="AllowDynamic" data-source-type="_3DConnections.Runtime.Managers.SceneAnalyzer, _3DConnections.Runtime.Managers" data-source-path="analyzeDynamicReferences" value="false">
+                                <Bindings>
+                                    <ui:DataBinding property="value" data-source-path="lookupDynamicReferences" data-source-type="_3DConnections.Runtime.Managers.SceneAnalyzer, _3DConnections.Runtime.Managers" binding-mode="TwoWay" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/AnalyzerConfig.asset?fileID=11400000&amp;guid=7bbde96c694ff254da727afcd65e4ab3&amp;type=2#AnalyzerConfig" />
+                                </Bindings>
+                            </ui:Toggle>
+                        </ui:Foldout>
                     </ui:VisualElement>
                 </ui:Tab>
                 <ui:Tab label="Sim" name="SimTab">
@@ -43,7 +50,7 @@
                     <ui:VisualElement name="Container" class="menu">
                         <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="1">
                             <Bindings>
-                                <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/ToAnalyzeScene.asset?fileID=11400000&amp;guid=e22ef594faad8809a9b614a870a755a3&amp;type=2#ToAnalyzeScene" binding-mode="TwoWay" />
+                                <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/AnalyzerConfig.asset?fileID=11400000&amp;guid=7bbde96c694ff254da727afcd65e4ab3&amp;type=2#AnalyzerConfig" binding-mode="TwoWay" />
                             </Bindings>
                         </ui:DropdownField>
                         <ui:DropdownField label="Layout" choices="Grid,Radial,Tree,GRIP,Sugiyama,Multiscale" index="2" name="DropdownLayout">
