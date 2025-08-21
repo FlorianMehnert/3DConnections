@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using TMPro;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -483,8 +484,15 @@ namespace _3DConnections.Runtime.Managers
 
             // Create cluster node
             GameObject cluster = Instantiate(clusterNodePrefab, center, Quaternion.identity);
+            cluster.GetComponent<Renderer>().sortingOrder = 0; // Clusters should be on top of edges
             cluster.name = $"Cluster_{gridPos.x}_{gridPos.y} ({nodes.Count} nodes)";
             cluster.transform.SetParent(ScriptableObjectInventory.Instance.graph.AllNodes[0].transform.parent);
+            
+            // label to display contained nodes
+            var text = cluster.GetComponentInChildren<TextMeshPro>();
+            text.sortingOrder = 1; // Label should be on top of the cluster
+            text.text = $"{nodes.Count}";
+            text.alignment = TextAlignmentOptions.Center;
 
             // Store cluster data
             var clusterData = cluster.AddComponent<ClusterNodeData>();
@@ -701,7 +709,7 @@ namespace _3DConnections.Runtime.Managers
             if (!lr) return;
             
             lr.sortingLayerName = "Default";
-            lr.sortingOrder = 0; // Edges behind clusters
+            lr.sortingOrder = -1; // Edges behind clusters
 
             // Set up a smooth transition for edge positions
             _targetPositions[edgeObj] = Vector3.Lerp(startNode.transform.position, endNode.transform.position, 0.5f);
