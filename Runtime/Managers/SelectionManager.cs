@@ -275,11 +275,20 @@ namespace _3DConnections.Runtime.Managers
             var hit = Physics2D.Raycast(GetMouseWorldPosition(), Vector2.down, Mathf.Infinity, _targetLayerMask);
             if (hit == false)
             {
+                // Clear highlights first
                 NodeGraphScriptableObject.ClearAllHighlights();
+        
+                // Then refresh LOD colors to use original colors
+                var lodManager = FindObjectOfType<GraphLODManager>();
+                if (lodManager != null)
+                {
+                    lodManager.RefreshAggregatedEdgeColors();
+                }
                 return;
             }
             ScriptableObjectInventory.Instance.graph.HighlightNodeConnections(hit.transform.gameObject, 1);
         }
+
 
         #endregion
 

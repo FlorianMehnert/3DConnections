@@ -53,6 +53,7 @@ namespace _3DConnections.Runtime.Managers
         private float _lastAppliedLODLevel = -1f;
         private bool _isLODActive;
         private Dictionary<string, List<NodeConnection>> _cachedEdgeGroups;
+        private bool _useCurrentColors = true;
         
         // Transition management
         private Dictionary<GameObject, Vector3> _targetPositions;
@@ -522,15 +523,29 @@ namespace _3DConnections.Runtime.Managers
             cluster.transform.localScale = newScale;
 
             // Compute average HSV color
-            var avgColor = CalculateAverageColor(nodes, node => 
+            // Compute average color based on the flag
+            Color avgColor;
+            if (_useCurrentColors)
             {
-                var coloredObj = node.GetComponent<ColoredObject>();
-                if (coloredObj)
+                // Use current colors (which might be highlighted)
+                avgColor = CalculateAverageColor(nodes, node => 
                 {
-                    return coloredObj.GetOriginalColor();
-                }
-                return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
-            }, useHSV: true);
+                    return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
+                }, useHSV: true);
+            }
+            else
+            {
+                // Use original colors
+                avgColor = CalculateAverageColor(nodes, node => 
+                {
+                    var coloredObj = node.GetComponent<ColoredObject>();
+                    if (coloredObj != null)
+                    {
+                        return coloredObj.GetOriginalColor();
+                    }
+                    return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
+                }, useHSV: true);
+            }
 
             if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
             {
@@ -987,21 +1002,38 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         public void RefreshAggregatedEdgeColors()
         {
-            if (!_isLODActive) return;
+            // Always refresh with original colors when this is called
+            _useCurrentColors = false;
     
             // Refresh cluster node colors first
             RefreshClusterNodeColors();
     
-            // Then refresh edge colors
-            foreach (var edgePair in _aggregatedEdges)
+            // Force update of all aggregated edges
+            if (_isLODActive)
             {
-                var key = edgePair.Key;
-                if (_cachedEdgeGroups.TryGetValue(key, out var connections))
+                // Re-apply LOD to update everything with original colors
+                UpdateEdgeCumulation();
+        
+                // Also update existing clusters
+                foreach (var gridPos in _clusterNodes.Select(clusterPair => clusterPair.Key))
                 {
-                    UpdateAggregatedEdge(key, connections);
+                    if (_spatialGrid.TryGetValue(gridPos, out var nodes))
+                    {
+                        UpdateExistingCluster(gridPos, nodes);
+                    }
                 }
             }
+            else
+            {
+                // Even if LOD is not active, prepare the colors for when it becomes active
+                // This ensures that when LOD activates next time, it uses the correct colors
+                _useCurrentColors = false;
+            }
+    
+            // Reset to use current colors for normal operation
+            _useCurrentColors = true;
         }
+
 
         
         public void RefreshClusterNodeColors()

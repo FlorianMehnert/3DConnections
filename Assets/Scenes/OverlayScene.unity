@@ -260,10 +260,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_Mode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
@@ -271,7 +275,15 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3068503564556739264}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 907117479}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_CallState
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
@@ -279,11 +291,23 @@ PrefabInstance:
       value: FocusOnNode
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: RefreshAggregatedEdgeColors
+      objectReference: {fileID: 0}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: _3DConnections.Runtime.Managers.CubeSelector, _3DConnections.Runtime.Managers
       objectReference: {fileID: 0}
     - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: _3DConnections.Runtime.Managers.GraphLODManager, _3DConnections.Runtime.Managers
+      objectReference: {fileID: 0}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 2237390801319845235, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 5073936627618289257, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
@@ -591,6 +615,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: eb4c45ca-d4e7-40fe-b69d-7baca70e0918
     m_ActionName: 'CubeSelection/MousePosition[/Mouse/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: bead2de1-02a2-4e67-85d3-f8c213abb885
+    m_ActionName: 'CubeSelection/Focus[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9e974731-6b44-429f-85ac-277a6d61d5a2
+    m_ActionName: 'LOD/Toggle Information[/Keyboard/space,/Keyboard/i]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -768,6 +800,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: eb4c45ca-d4e7-40fe-b69d-7baca70e0918
     m_ActionName: 'CubeSelection/MousePosition[/Mouse/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: bead2de1-02a2-4e67-85d3-f8c213abb885
+    m_ActionName: 'CubeSelection/Focus[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9e974731-6b44-429f-85ac-277a6d61d5a2
+    m_ActionName: 'LOD/Toggle Information[/Keyboard/space,/Keyboard/i]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -866,6 +906,17 @@ Camera:
   m_CorrespondingSourceObject: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
   m_PrefabInstance: {fileID: 315801065}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &907117479 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 260993916698367870, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+  m_PrefabInstance: {fileID: 315801065}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d7c7b0af44091a4597638f31116fc27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &980942164
 GameObject:
   m_ObjectHideFlags: 0
@@ -1090,7 +1141,6 @@ MonoBehaviour:
   scaleNodesUsingMaintainability: 0
   colorPreset: 0
   generateColors: 0
-  analyzerConfigurations: {fileID: 11400000, guid: e22ef594faad8809a9b614a870a755a3, type: 2}
   setIcons: 1
   showAddComponentCalls: 1
   showGetComponentCalls: 1
