@@ -1,3 +1,5 @@
+using _3DConnections.Runtime.ScriptableObjects;
+
 namespace _3DConnections.Runtime.Managers
 {
 #if UNITY_EDITOR
@@ -271,7 +273,11 @@ namespace _3DConnections.Runtime.Managers
         public void FocusOnNode()
         {
             var hit = Physics2D.Raycast( GetMouseWorldPosition(), Vector2.down, Mathf.Infinity, _targetLayerMask);
-            if (hit == false) return;
+            if (hit == false)
+            {
+                NodeGraphScriptableObject.ClearAllHighlights();
+                return;
+            }
             ScriptableObjectInventory.Instance.graph.HighlightNodeConnections(hit.transform.gameObject, 1);
         }
 

@@ -7,7 +7,7 @@ namespace _3DConnections.Runtime.Nodes
 
     public class ColoredObject : MonoBehaviour
     {
-        private Color _originalColor;
+        [SerializeField] private Color originalColor;
         private Renderer _objectRenderer;
         private LocalNodeConnections _nodeConnections;
         private int _targetLayerMask;
@@ -26,11 +26,11 @@ namespace _3DConnections.Runtime.Nodes
             if (_objectRenderer == null || _objectRenderer.material == null) return;
             if (_objectRenderer is LineRenderer lineRenderer)
             {
-                _originalColor = lineRenderer.startColor;
+                originalColor = lineRenderer.startColor;
             }
             else
             {
-                _originalColor = _objectRenderer.material.color;
+                originalColor = _objectRenderer.material.color;
             }
         }
 
@@ -40,11 +40,11 @@ namespace _3DConnections.Runtime.Nodes
             if (_objectRenderer == null || _objectRenderer.material == null) return;
             if (_objectRenderer is LineRenderer lineRenderer)
             {
-                _originalColor = lineRenderer.startColor;
+                originalColor = lineRenderer.startColor;
             }
             else
             {
-                _originalColor = _objectRenderer.material.color;
+                originalColor = _objectRenderer.material.color;
             }
         }
 
@@ -74,13 +74,13 @@ namespace _3DConnections.Runtime.Nodes
             if (!_objectRenderer || !_objectRenderer.material) return;
             if (_objectRenderer is LineRenderer lineRenderer)
             {
-                lineRenderer.startColor = _originalColor;
-                lineRenderer.endColor = _originalColor;
+                lineRenderer.startColor = originalColor;
+                lineRenderer.endColor = originalColor;
                 lineRenderer.material.DisableKeyword("_EMISSION");
             }
             else
             {
-                _objectRenderer.material.color = _originalColor;
+                _objectRenderer.material.color = originalColor;
                 _objectRenderer.material.DisableKeyword("_EMISSION");
             }
         }
@@ -91,12 +91,12 @@ namespace _3DConnections.Runtime.Nodes
 
             if (_objectRenderer is LineRenderer lineRenderer)
             {
-                lineRenderer.startColor = _originalColor;
-                lineRenderer.endColor = _originalColor;
+                lineRenderer.startColor = originalColor;
+                lineRenderer.endColor = originalColor;
             }
             else
             {
-                _objectRenderer.material.color = _originalColor;
+                _objectRenderer.material.color = originalColor;
             }
             _isHighlighting = false;
             _highlightForever = false;
@@ -104,7 +104,7 @@ namespace _3DConnections.Runtime.Nodes
 
         public void SetOriginalColor(Color color)
         {
-            _originalColor = color;
+            originalColor = color;
         }
 
         /// <summary>
