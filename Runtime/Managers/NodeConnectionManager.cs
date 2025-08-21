@@ -142,13 +142,30 @@ namespace _3DConnections.Runtime.Managers
 
         private void UpdateConnectionPositions()
         {
+            var lodManager = FindFirstObjectByType<GraphLODManager>();
+    
             foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection =>
                          connection.startNode && connection.endNode && connection.lineRenderer))
             {
-                connection.lineRenderer.SetPosition(0, connection.startNode.transform.position);
-                connection.lineRenderer.SetPosition(1, connection.endNode.transform.position);
+                // Check if either node is clustered
+                GameObject startPos = connection.startNode;
+                GameObject endPos = connection.endNode;
+        
+                if (lodManager != null && lodManager.enabled)
+                {
+                    // Get cluster if node is clustered
+                    var startCluster = lodManager.GetClusterForNode(connection.startNode);
+                    var endCluster = lodManager.GetClusterForNode(connection.endNode);
+            
+                    if (startCluster != null) startPos = startCluster;
+                    if (endCluster != null) endPos = endCluster;
+                }
+        
+                connection.lineRenderer.SetPosition(0, startPos.transform.position);
+                connection.lineRenderer.SetPosition(1, endPos.transform.position);
             }
         }
+
 
         public static void ClearConnections()
         {
@@ -181,7 +198,16 @@ namespace _3DConnections.Runtime.Managers
         {
             foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections)
             {
-                var existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
+                SpringJoint2D[] existingSprings;
+                try
+                {
+                    existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
+                }
+                catch (Exception e)
+                {
+                    continue;
+                }
+                
 
                 // avoid duplicating spring joints
                 var alreadyExists = false;

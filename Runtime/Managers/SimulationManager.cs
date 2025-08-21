@@ -21,7 +21,7 @@ namespace _3DConnections.Runtime.Managers
                 ? rootEdgeGameObject.transform
                 : new GameObject("ParentEdgesObject").transform;
             ScriptableObjectInventory.Instance.simulationRoot = rootSimulation;
-            GetComponent<LayoutManager>();
+            _layoutManager = GetComponent<LayoutManager>();
         }
 
         public void ApplyComponentPhysics()
@@ -107,7 +107,19 @@ namespace _3DConnections.Runtime.Managers
             var springSimulation = FindFirstObjectByType<SpringSimulation>();
             if (springSimulation)
                 springSimulation.CleanupNativeArrays();
-            _layoutManager.Layout();
+            try
+            {
+                _layoutManager.Layout();
+            }
+            catch (NullReferenceException e)
+            {
+                _layoutManager = FindFirstObjectByType<LayoutManager>();
+                if (_layoutManager)
+                    _layoutManager.Layout();
+                else
+                    Debug.LogError(e);
+            }
+            
         }
 
         public void ApplyForceDirectedComponentPhysics()
