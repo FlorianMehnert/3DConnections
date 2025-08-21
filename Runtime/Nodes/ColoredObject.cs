@@ -107,6 +107,11 @@ namespace _3DConnections.Runtime.Nodes
             originalColor = color;
         }
 
+        public Color GetOriginalColor()
+        {
+            return originalColor;
+        }
+
         /// <summary>
         /// Highlights the LineRenderer by changing its color temporarily.
         /// </summary>

@@ -473,10 +473,15 @@ namespace _3DConnections.Runtime.Managers
             
 
             // Calculate target color using HSV averaging
-            var avgColor = CalculateAverageColor(nodes, 
-                node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, 
-                useHSV: true);
-            _targetColors[cluster] = avgColor;
+            var avgColor = CalculateAverageColor(nodes, node => 
+            {
+                var coloredObj = node.GetComponent<ColoredObject>();
+                if (coloredObj)
+                {
+                    return coloredObj.GetOriginalColor();
+                }
+                return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
+            }, useHSV: true);
 
             // Update ColoredObject if present
             var coloredObject = cluster.GetComponent<ColoredObject>();
@@ -517,9 +522,15 @@ namespace _3DConnections.Runtime.Managers
             cluster.transform.localScale = newScale;
 
             // Compute average HSV color
-            var avgColor = CalculateAverageColor(nodes, 
-                node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, 
-                useHSV: true);
+            var avgColor = CalculateAverageColor(nodes, node => 
+            {
+                var coloredObj = node.GetComponent<ColoredObject>();
+                if (coloredObj)
+                {
+                    return coloredObj.GetOriginalColor();
+                }
+                return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
+            }, useHSV: true);
 
             if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
             {
@@ -734,13 +745,20 @@ namespace _3DConnections.Runtime.Managers
             lr.startWidth = width;
             lr.endWidth = width;
 
-            // Update color
-            var avgColor = CalculateAverageColor(connections, 
-                conn => conn.lineRenderer.startColor, 
-                useHSV: true);
+            var avgColor = CalculateAverageColor(connections, conn => 
+            {
+                var coloredObj = conn.lineRenderer.GetComponent<ColoredObject>();
+                return coloredObj ? coloredObj.GetOriginalColor() : conn.lineRenderer.startColor;
+            }, useHSV: true);
 
-            avgColor.a = 0.7f; // slightly transparent
+            avgColor.a = 0.7f;
             _targetColors[edgeObj] = avgColor;
+
+            var edgeColoredObject = edgeObj.GetComponent<ColoredObject>();
+            if (edgeColoredObject)
+            {
+                edgeColoredObject.SetOriginalColor(avgColor);
+            }
 
             // Update edge data
             var edgeData = edgeObj.GetComponent<AggregatedEdgeData>();
@@ -800,10 +818,17 @@ namespace _3DConnections.Runtime.Managers
             {
                 lr.material = _aggregatedEdgeMaterial;
             }
-
-            var avgColor = CalculateAverageColor(connections, 
-                conn => conn.lineRenderer.startColor, 
-                useHSV: true);
+            
+            // Calculate average color using ORIGINAL colors, not current colors
+            var avgColor = CalculateAverageColor(connections, conn => 
+            {
+                var coloredObj = conn.lineRenderer.GetComponent<ColoredObject>();
+                return coloredObj != null ?
+                    // Use the original color stored in ColoredObject
+                    coloredObj.GetOriginalColor() :
+                    // Fallback to current color if no ColoredObject
+                    conn.lineRenderer.startColor;
+            }, useHSV: true);
 
             avgColor.a = 0.7f; // slightly transparent
             lr.startColor = avgColor;
@@ -956,5 +981,66 @@ namespace _3DConnections.Runtime.Managers
             _targetScales.Clear();
             _targetColors.Clear();
         }
+
+        /// <summary>
+        /// Use to force update edges on focus lifted
+        /// </summary>
+        public void RefreshAggregatedEdgeColors()
+        {
+            if (!_isLODActive) return;
+    
+            // Refresh cluster node colors first
+            RefreshClusterNodeColors();
+    
+            // Then refresh edge colors
+            foreach (var edgePair in _aggregatedEdges)
+            {
+                var key = edgePair.Key;
+                if (_cachedEdgeGroups.TryGetValue(key, out var connections))
+                {
+                    UpdateAggregatedEdge(key, connections);
+                }
+            }
+        }
+
+        
+        public void RefreshClusterNodeColors()
+        {
+            if (!_isLODActive) return;
+    
+            foreach (var clusterPair in _clusterNodes)
+            {
+                var gridPos = clusterPair.Key;
+                var cluster = clusterPair.Value;
+        
+                if (!cluster || !_spatialGrid.TryGetValue(gridPos, out var nodes)) continue;
+        
+                // Recalculate color using original colors
+                var avgColor = CalculateAverageColor(nodes, node => 
+                {
+                    var coloredObj = node.GetComponent<ColoredObject>();
+                    if (coloredObj != null)
+                    {
+                        return coloredObj.GetOriginalColor();
+                    }
+                    return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
+                }, useHSV: true);
+        
+                // Update cluster renderer
+                if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
+                {
+                    clusterRenderer.material.color = avgColor;
+                }
+        
+                // Update ColoredObject
+                var coloredObject = cluster.GetComponent<ColoredObject>();
+                if (coloredObject)
+                {
+                    coloredObject.SetOriginalColor(avgColor);
+                }
+            }
+        }
+
+
     }
 }

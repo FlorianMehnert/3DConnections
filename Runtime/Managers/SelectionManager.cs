@@ -272,7 +272,7 @@ namespace _3DConnections.Runtime.Managers
         [UsedImplicitly]
         public void FocusOnNode()
         {
-            var hit = Physics2D.Raycast( GetMouseWorldPosition(), Vector2.down, Mathf.Infinity, _targetLayerMask);
+            var hit = Physics2D.Raycast(GetMouseWorldPosition(), Vector2.down, Mathf.Infinity, _targetLayerMask);
             if (hit == false)
             {
                 NodeGraphScriptableObject.ClearAllHighlights();
