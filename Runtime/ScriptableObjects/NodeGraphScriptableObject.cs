@@ -23,6 +23,11 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private bool _workingOnAllNodes;
         private GameObject _parentObject;
 
+        public int goCount;
+        public int coCount;
+        public int soCount;
+        public int voCount;
+
         public event Action OnGoCountChanged;
         public event Action OnCoCountChanged;
         public event Action OnSoCountChanged;

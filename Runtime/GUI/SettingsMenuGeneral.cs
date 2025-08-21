@@ -1,3 +1,5 @@
+using UnityEngine.UI;
+
 namespace _3DConnections.Runtime.Managers
 {
     using System;
@@ -40,6 +42,11 @@ namespace _3DConnections.Runtime.Managers
         private Button _coButton;
         private Button _soButton;
         private Button _voButton;
+        
+        private VisualElement _goButtonElement;
+        private VisualElement _coButtonElement;
+        private VisualElement _soButtonElement;
+        private VisualElement _voButtonElement;
 
         // Dropdowns
         private DropdownField _sceneDropdown;
@@ -111,6 +118,7 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
+        [ContextMenu("Update Text")]
         private void UpdateText()
         {
             try
@@ -122,10 +130,11 @@ namespace _3DConnections.Runtime.Managers
                 var soCount = ScriptableObjectInventory.Instance.graph.AllNodes.Count(n =>
                     n.GetComponent<NodeType>().nodeTypeName == NodeTypeName.ScriptableObject);
                 var allNodes = goCount+coCount+soCount;
-                _goButton.text = goCount == 0 ? " 0 " : goCount.ToString();
-                _coButton.text = coCount == 0 ? " 0 " : coCount.ToString();
-                _soButton.text = soCount == 0 ? " 0 " : soCount.ToString();
-                _voButton.text = allNodes == 0 ? " 0 " : allNodes.ToString();
+                ScriptableObjectInventory.Instance.graph.goCount = goCount;
+                ScriptableObjectInventory.Instance.graph.coCount = coCount;
+                ScriptableObjectInventory.Instance.graph.soCount = soCount;
+                ScriptableObjectInventory.Instance.graph.voCount = allNodes;
+
             }
             catch (Exception e)
             {
@@ -232,6 +241,10 @@ namespace _3DConnections.Runtime.Managers
             _coButton = root.Q<Button>("CO");
             _soButton = root.Q<Button>("SO");
             _voButton = root.Q<Button>("VO");
+            _goButtonElement = root.Q<Button>("GOButtonElement");
+            _coButtonElement = root.Q<Button>("COButtonElement");
+            _soButtonElement = root.Q<Button>("SOButtonElement");
+            _voButtonElement = root.Q<Button>("VOButtonElement");
 
         }
 

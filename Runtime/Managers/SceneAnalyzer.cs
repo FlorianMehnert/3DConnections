@@ -30,64 +30,80 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         /// <param name="onComplete"></param>
         public void AnalyzeScene(Action onComplete = null)
-        {
-            _currentNodes = 0;
-            _visitedObjects.Clear();
-            _processingObjects.Clear();
-            _instanceIdToNodeLookup.Clear();
-            _discoveredMonoBehaviours.Clear();
-            _dynamicComponentReferences.Clear();
+{
+    _currentNodes = 0;
+    _visitedObjects.Clear();
+    _processingObjects.Clear();
+    _instanceIdToNodeLookup.Clear();
+    _discoveredMonoBehaviours.Clear();
+    _dynamicComponentReferences.Clear();
 
 #if UNITY_EDITOR
-            _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
+    _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
 #endif
 
-            var scenePath = SceneUtility.GetScenePathByBuildIndex(ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex);
-            if (string.IsNullOrEmpty(scenePath))
-            {
-                Debug.LogError($"No scene found at build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex}");
-                return;
-            }
+    var scenePath = SceneUtility.GetScenePathByBuildIndex(
+        ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex);
 
-            var sceneName = Path.GetFileNameWithoutExtension(scenePath);
-            var scene = SceneManager.GetSceneByName(sceneName);
+    if (string.IsNullOrEmpty(scenePath))
+    {
+        Debug.LogError($"No scene found at build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex}");
+        return;
+    }
 
-            void Analyze()
-            {
-                scene = SceneManager.GetSceneByName(sceneName);
-                Debug.Log($"{scene.name} (build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex})");
+    var sceneName = Path.GetFileNameWithoutExtension(scenePath);
+    var scene = SceneManager.GetSceneByName(sceneName);
 
-                LoadComplexityMetrics(analysisData.ToString());
-                _cachedPrefabPaths.Clear();
-                TraverseScene(scene.GetRootGameObjects());
+    IEnumerator AnalyzeCoroutine()
+    {
+        scene = SceneManager.GetSceneByName(sceneName);
+        Debug.Log($"{scene.name} (build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex})");
 
-                // Analyze dynamic component references after scene traversal
-                if (ScriptableObjectInventory.Instance.analyzerConfigurations.lookupDynamicReferences)
-                {
-                    Debug.Log(
-                        $"Analyzing dynamic references for {_discoveredMonoBehaviours.Count} MonoBehaviour types");
-                    AnalyzeDynamicComponentReferences();
-                    CreateDynamicConnections();
-                    AnalyzeEventSubscriptions();
-                    CreateEventConnections();
-                }
+        LoadComplexityMetrics(analysisData.ToString());
+        _cachedPrefabPaths.Clear();
 
-                onComplete?.Invoke();
-                
-                // update node count
-                ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-            }
+        // Example: break traversal into chunks
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            TraverseScene(new[] { root });
 
-            if (!scene.isLoaded)
-            {
-                Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
-                StartCoroutine(SceneHandler.LoadSceneAndInvokeAfterCoroutine(sceneName, Analyze));
-                return;
-            }
-
-            // Scene is already loaded
-            StartCoroutine(RunNextFrame(Analyze));
+            // let UI update after each root traversal
+            ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
+            yield return null;  
         }
+
+        if (ScriptableObjectInventory.Instance.analyzerConfigurations.lookupDynamicReferences)
+        {
+            Debug.Log($"Analyzing dynamic references for {_discoveredMonoBehaviours.Count} MonoBehaviour types");
+            AnalyzeDynamicComponentReferences();
+            CreateDynamicConnections();
+
+            // UI update again
+            ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
+            yield return null;
+
+            AnalyzeEventSubscriptions();
+            CreateEventConnections();
+        }
+
+        // final update
+        ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
+
+        onComplete?.Invoke();
+    }
+
+    if (!scene.isLoaded)
+    {
+        Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
+        StartCoroutine(SceneHandler.LoadSceneAndInvokeAfterCoroutine(sceneName, 
+            () => StartCoroutine(AnalyzeCoroutine())));
+        return;
+    }
+
+    // Scene is already loaded
+    StartCoroutine(AnalyzeCoroutine());
+}
+
 
         private IEnumerator RunNextFrame(Action action)
         {
