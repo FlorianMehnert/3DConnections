@@ -1,3 +1,5 @@
+using System;
+
 namespace _3DConnections.Runtime.Nodes
 {
     using System.Collections.Generic;
@@ -151,7 +153,13 @@ namespace _3DConnections.Runtime.Nodes
 
             if (_preliminaryPositions.TryGetValue(node, out var position))
             {
-                node.GameObject.transform.position = new Vector3(position.x, position.y, 0);
+                try
+                {
+                    node.GameObject.transform.position = new Vector3(position.x, position.y, 0);
+                }
+                catch (Exception e)
+                {
+                }
             }
 
             foreach (var child in node.Children)

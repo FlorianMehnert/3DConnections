@@ -191,10 +191,11 @@ MonoBehaviour:
     m_ActionName: 'cameraMovement/input[/XInputControllerWindows/rightStick]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 275891097617498144}
-        m_TargetAssemblyTypeName: CameraController, 3DConnections.Runtime.Managers
+      - m_Target: {fileID: 260993916698367870}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.GraphLODManager,
+          _3DConnections.Runtime.Managers
         m_MethodName: OnZoom
-        m_Mode: 0
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -229,6 +230,63 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
     m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth,/XInputControllerWindows/select,/XInputControllerWindows/start]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
+    m_ActionName: 'UI/InfoPanel[/Keyboard/t]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2f41ee54-8f47-4a9b-85f8-c819c6d10a05
+    m_ActionName: 'CubeSelection/Select[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 18448764-e9b3-409a-8d20-0c0b9382934c
+    m_ActionName: 'CubeSelection/ContextMenu[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88474b37-0d33-402a-a999-1709909cb51e
+    m_ActionName: 'CubeSelection/ToggleActive[/Keyboard/s]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 21ccd759-2552-4775-a797-0b6649736c94
+    m_ActionName: 'CubeSelection/TogglePing[/Keyboard/p]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 85283933-92d1-445c-ba36-f030dc41d411
+    m_ActionName: 'CubeSelection/SelectOutgoing[/Keyboard/i]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c25e655d-ec73-4c96-b076-d9e12fb98b84
+    m_ActionName: 'CubeSelection/PingEditor[/Keyboard/m]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8ffd139b-911c-4182-8c23-41ae4a0a9bd1
+    m_ActionName: 'CubeSelection/ShiftModifier[/Keyboard/shift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: f8cecb2a-2e33-46e7-ad69-dd6b82343012
+    m_ActionName: 'CubeSelection/CtrlModifier[/Keyboard/leftCtrl]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: eb4c45ca-d4e7-40fe-b69d-7baca70e0918
+    m_ActionName: 'CubeSelection/MousePosition[/Mouse/position]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 260993916698367870}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.GraphLODManager,
+          _3DConnections.Runtime.Managers
+        m_MethodName: OnToggleClusterInfo
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 9e974731-6b44-429f-85ac-277a6d61d5a2
+    m_ActionName: LOD/Toggle Information
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: cameraMovement
@@ -246,8 +304,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d7c7b0af44091a4597638f31116fc27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nodeHeightThreshold: 20
   minZoomForFullDetail: 50
   maxZoomForMinDetail: 150
   gridCellSize: 7
   nodeAggregationThreshold: 5
+  lodUpdateThreshold: 0.02
   clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
+  transitionSpeed: 5
+  scaleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

@@ -7,7 +7,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
     using System.Linq;
     using TMPro;
     using UnityEngine;
-    
     using Managers.Scene;
     using Nodes;
 
@@ -23,7 +22,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private List<GameObject> _allNodes = new();
         private bool _workingOnAllNodes;
         private GameObject _parentObject;
-        
+
         public event Action OnGoCountChanged;
         public event Action OnCoCountChanged;
         public event Action OnSoCountChanged;
@@ -50,7 +49,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
         {
             OnVoCountChanged?.Invoke();
         }
-        
+
         public void InvokeOnAllCountChanged()
         {
             InvokeOnGoCountChanged();
@@ -59,8 +58,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
             InvokeOnVoCountChanged();
         }
 
-        
-        
+
         public List<GameObject> AllNodes
         {
             get
@@ -98,7 +96,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 }
             }
         }
-        
+
         public int NodeCount => AllNodes.Count;
 
 
@@ -245,8 +243,158 @@ namespace _3DConnections.Runtime.ScriptableObjects
             }
         }
 
+        /// <summary>
+        /// Highlights a specific node and all its connected nodes/edges while fading out everything else
+        /// </summary>
+        /// <param name="targetNode">The node to highlight along with its connections</param>
+        /// <param name="maxDepth">Maximum depth to traverse connections (default: 5)</param>
+        public void HighlightNodeConnections(GameObject targetNode, int maxDepth = 5)
+        {
+            if (targetNode == null)
+            {
+                Debug.LogWarning("Target node is null, cannot highlight connections");
+                return;
+            }
+            ClearAllHighlights();
+            var connectedObjects = GetConnectedObjects(targetNode, maxDepth);
+            var parentNodes = GameObject.Find("ParentNodesObject");
+            var parentEdges = GameObject.Find("ParentEdgesObject");
+            var allObjects = new List<GameObject>();
+            if (parentNodes != null)
+            {
+                allObjects.AddRange(from Transform child in parentNodes.transform select child.gameObject);
+            }
+            if (parentEdges != null)
+            {
+                allObjects.AddRange(from Transform child in parentEdges.transform select child.gameObject);
+            }
 
+            // Objects that should be faded out (all objects minus the connected ones)
+            var fadeOutObjects = allObjects.Except(connectedObjects).ToList();
 
+            // Highlight the target node in bright red
+            var targetColoredObject = targetNode.GetComponent<ColoredObject>();
+            if (targetColoredObject != null)
+            {
+                targetColoredObject.Highlight(Color.red, duration: 1, highlightForever: true);
+            }
+
+            // Highlight connected objects in orange/yellow
+            var highlightColor = new Color(1f, 0.6f, 0f, 1f); // Orange color
+            foreach (var connectedObj in connectedObjects.Where(obj => obj != targetNode))
+            {
+                var coloredObject = connectedObj.GetComponent<ColoredObject>();
+                if (coloredObject == null) continue;
+
+                coloredObject.Highlight(highlightColor, duration: 1, highlightForever: true);
+            }
+
+            // Fade out all unconnected objects
+            var dimColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
+            foreach (var fadeObj in fadeOutObjects)
+            {
+                var coloredObject = fadeObj.GetComponent<ColoredObject>();
+                if (coloredObject == null) continue;
+
+                coloredObject.Highlight(dimColor, duration: 1, highlightForever: true);
+            }
+
+            Debug.Log(
+                $"Highlighted target node and {connectedObjects.Count - 1} connected objects, faded out {fadeOutObjects.Count} others");
+        }
+
+        /// <summary>
+        /// Gets all objects (nodes and edges) connected to the target node up to a specified depth
+        /// </summary>
+        /// <param name="targetNode">The starting node</param>
+        /// <param name="maxDepth">Maximum traversal depth</param>
+        /// <returns>List of all connected GameObjects including the target node</returns>
+        private static List<GameObject> GetConnectedObjects(GameObject targetNode, int maxDepth)
+        {
+            var connectedObjects = new HashSet<GameObject> { targetNode };
+            var nodesToProcess = new Queue<(GameObject node, int depth)>();
+            nodesToProcess.Enqueue((targetNode, 0));
+            while (nodesToProcess.Count > 0)
+            {
+                var (currentNode, currentDepth) = nodesToProcess.Dequeue();
+                if (currentDepth >= maxDepth || currentNode == null) continue;
+                var nodeConnections = currentNode.GetComponent<LocalNodeConnections>();
+                if (nodeConnections == null) continue;
+                foreach (var connectedNode in nodeConnections.outConnections.Where(connectedNode => connectedNode != null && !connectedObjects.Contains(connectedNode)))
+                {
+                    connectedObjects.Add(connectedNode);
+                    nodesToProcess.Enqueue((connectedNode, currentDepth + 1));
+                    var edgeObject = FindEdgeBetweenNodes(currentNode, connectedNode);
+                    if (edgeObject != null)
+                    {
+                        connectedObjects.Add(edgeObject);
+                    }
+                }
+                // Process incoming connections if the LocalNodeConnections has them
+                var inConnectionsProperty = nodeConnections.GetType().GetField("inConnections");
+                if (inConnectionsProperty == null) continue;
+                {
+                    if (inConnectionsProperty.GetValue(nodeConnections) is not List<GameObject> inConnections) continue;
+                    foreach (var connectedNode in inConnections.Where(connectedNode => connectedNode != null && !connectedObjects.Contains(connectedNode)))
+                    {
+                        connectedObjects.Add(connectedNode);
+                        nodesToProcess.Enqueue((connectedNode, currentDepth + 1));
+
+                        // Add the edge/connection visual if it exists
+                        var edgeObject = FindEdgeBetweenNodes(connectedNode, currentNode);
+                        if (edgeObject != null)
+                        {
+                            connectedObjects.Add(edgeObject);
+                        }
+                    }
+                }
+            }
+
+            return connectedObjects.ToList();
+        }
+
+        /// <summary>
+        /// Finds the edge GameObject between two connected nodes
+        /// </summary>
+        /// <param name="fromNode">Source node</param>
+        /// <param name="toNode">Target node</param>
+        /// <returns>The edge GameObject if found, null otherwise</returns>
+        private static GameObject FindEdgeBetweenNodes(GameObject fromNode, GameObject toNode)
+        {
+            var parentEdges = GameObject.Find("ParentEdgesObject");
+            return parentEdges == null ? null :
+                // Look for an edge that connects these two nodes
+                (from Transform edgeTransform in parentEdges.transform select edgeTransform.gameObject into edgeObj let edgeName = edgeObj.name where edgeName.Contains(fromNode.name) && edgeName.Contains(toNode.name) || edgeName.Contains(toNode.name) && edgeName.Contains(fromNode.name) select edgeObj).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Clears all highlights from nodes and edges
+        /// </summary>
+        public static void ClearAllHighlights()
+        {
+            var parentNodes = GameObject.Find("ParentNodesObject");
+            var parentEdges = GameObject.Find("ParentEdgesObject");
+
+            var allObjects = new List<GameObject>();
+
+            // Get all nodes
+            if (parentNodes != null)
+            {
+                allObjects.AddRange(from Transform child in parentNodes.transform select child.gameObject);
+            }
+
+            // Get all edges
+            if (parentEdges != null)
+            {
+                allObjects.AddRange(from Transform child in parentEdges.transform select child.gameObject);
+            }
+
+            // Clear highlights from all objects
+            foreach (var coloredObject in allObjects.Select(obj => obj.GetComponent<ColoredObject>()).Where(coloredObject => coloredObject != null))
+            {
+                coloredObject.ManualClearHighlight();
+            }
+        }
 
         public void Initialize()
         {

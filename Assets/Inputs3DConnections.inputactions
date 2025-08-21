@@ -57,6 +57,17 @@
                     "action": "zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "dd18ae5a-2b1b-4d6d-9b76-9cdce8ccb23e",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -589,6 +600,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Focus",
+                    "type": "Button",
+                    "id": "bead2de1-02a2-4e67-85d3-f8c213abb885",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -638,17 +658,6 @@
                 },
                 {
                     "name": "",
-                    "id": "f88dc921-db5f-4fc5-b8ab-8fbf31269c6c",
-                    "path": "<Keyboard>/i",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SelectOutgoing",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "69b61b2c-8120-4d6a-8d3d-65c910eea736",
                     "path": "<Keyboard>/m",
                     "interactions": "",
@@ -688,6 +697,56 @@
                     "processors": "",
                     "groups": "",
                     "action": "MousePosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c8e9fa49-3793-4bfb-85df-1ef907e26429",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Focus",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "LOD",
+            "id": "bffb4ac0-4ff8-42a9-a9c5-91329caaf483",
+            "actions": [
+                {
+                    "name": "Toggle Information",
+                    "type": "Button",
+                    "id": "9e974731-6b44-429f-85ac-277a6d61d5a2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "2cdd020f-4efd-4c7a-a0a1-5b27bc8aaddd",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Information",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3643cd3d-ceba-4526-b4d5-f655eae76ee7",
+                    "path": "<Keyboard>/i",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Information",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

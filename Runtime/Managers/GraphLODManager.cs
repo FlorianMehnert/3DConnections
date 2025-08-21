@@ -30,6 +30,7 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] public GameObject clusterNodePrefab; // Prefab for aggregated nodes
         [SerializeField] private float transitionSpeed = 5f; // Speed of LOD transitions
         [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 2f);
+        private bool _showText;
         
         private Material _aggregatedEdgeMaterial;
         private const float AggregatedEdgeWidth = 2f;
@@ -117,7 +118,16 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        private void Update()
+        public void OnToggleClusterInfo()
+        {
+            _showText = !_showText;
+            foreach (var text in from node in ScriptableObjectInventory.Instance.graph.AllNodes where node.GetComponent<ClusterNodeData>() select node.GetComponentInChildren<TextMeshPro>() into text where text select text)
+            {
+                text.enabled = _showText;
+            }
+        }
+
+        public void OnZoom()
         {
             if (!_camera || !ScriptableObjectInventory.Instance.graph) return;
 
@@ -128,8 +138,8 @@ namespace _3DConnections.Runtime.Managers
             if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > lodUpdateThreshold)) return;
             _currentLODLevel = newLODLevel;
             UpdateLOD();
+            
     
-            // Add this: Update aggregated edge positions every frame when LOD is active
             if (_isLODActive)
             {
                 UpdateAggregatedEdgePositions();
@@ -493,6 +503,7 @@ namespace _3DConnections.Runtime.Managers
             text.sortingOrder = 1; // Label should be on top of the cluster
             text.text = $"{nodes.Count}";
             text.alignment = TextAlignmentOptions.Center;
+            text.enabled = _showText;
 
             // Store cluster data
             var clusterData = cluster.AddComponent<ClusterNodeData>();

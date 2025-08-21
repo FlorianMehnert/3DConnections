@@ -264,6 +264,17 @@ namespace _3DConnections.Runtime.Managers
 #endif
         }
 
+        /// <summary>
+        /// Invoked by F event (Focus on Node)
+        /// </summary>
+        [UsedImplicitly]
+        public void FocusOnNode()
+        {
+            var hit = Physics2D.Raycast( GetMouseWorldPosition(), Vector2.down, Mathf.Infinity, _targetLayerMask);
+            if (hit == false) return;
+            ScriptableObjectInventory.Instance.graph.HighlightNodeConnections(hit.transform.gameObject, 1);
+        }
+
         #endregion
 
         #region Input Handling Logic
