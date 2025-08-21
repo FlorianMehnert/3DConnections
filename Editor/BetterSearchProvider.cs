@@ -24,7 +24,7 @@ namespace _3DConnections.Editor
         // =====================
         // Search Actions
         // =====================
-        private static readonly Dictionary<string, System.Action<List<GameObject>>> SearchActions = new()
+        private static readonly Dictionary<string, Action<List<GameObject>>> SearchActions = new()
         {
             ["highlight"] = HighlightObjects,
             ["select"] = (objects) => Selection.objects = objects.ToArray(),
@@ -55,7 +55,7 @@ namespace _3DConnections.Editor
         // =====================
         // Extendable Token System
         // =====================
-        private static readonly Dictionary<string, System.Func<GameObject, string, bool>> TokenHandlers =
+        private static readonly Dictionary<string, Func<GameObject, string, bool>> TokenHandlers =
             new()
             {
                 ["name"] = (go, val) => go.name.ToLowerInvariant().Contains(val),
@@ -502,7 +502,8 @@ namespace _3DConnections.Editor
                     ));
 
                     return propositions;
-                }
+                },
+                onDisable = ClearHighlights
             };
         }
 
