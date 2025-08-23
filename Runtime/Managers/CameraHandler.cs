@@ -80,40 +80,7 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!ScriptableObjectInventory.Instance.menuState ||
                 ScriptableObjectInventory.Instance.menuState.menuOpen) return;
-            // Recalculate world dimensions if zoom changes
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F))
-            {
-                // Disable all nodes
-                foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
-                {
-                    if (!node) continue;
-                    var meshRenderer = node.GetComponent<MeshRenderer>();
-                    if (meshRenderer)
-                        meshRenderer.enabled = false;
-                    foreach (Transform child in node.transform)
-                    {
-                        child.gameObject.SetActive(false);
-                    }
-                }
-
-                // Disable all connections
-                foreach (var lineRenderer in ScriptableObjectInventory.Instance.conSo.connections.Select(node =>
-                             node.lineRenderer))
-                    lineRenderer.enabled = false;
-
-                // reenable all nodes that are connected with deep
-                ScriptableObjectInventory.Instance.graph.ReenableConnectedNodes(
-                    ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject, 0);
-                EnableOutgoingLines(ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject);
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                CenterOnTarget(ScriptableObjectInventory.Instance.graph.currentlySelectedGameObject, true);
-                return;
-            }
-
+            
             if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G) && parentObject)
             {
                 foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
