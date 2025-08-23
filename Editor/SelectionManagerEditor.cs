@@ -4,7 +4,7 @@ namespace _3DConnections.Editor
 {
     using Runtime.Managers;
     using UnityEditor;
-    [CustomEditor(typeof(CubeSelector))]
+    [CustomEditor(typeof(SelectionManager))]
     public class SelectionManagerEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -14,7 +14,7 @@ namespace _3DConnections.Editor
 
             DrawDefaultInspector();
 
-            var script = (CubeSelector)target;
+            var script = (SelectionManager)target;
 
             // Custom display logic
             EditorGUILayout.LabelField("Selected Nodes", script.GetSelectionCount().ToString());
