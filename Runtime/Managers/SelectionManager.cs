@@ -14,7 +14,7 @@ namespace _3DConnections.Runtime.Managers
     using UnityEngine.UI;
     using ScriptableObjectInventory;
     using Nodes;
-    public class CubeSelector : MonoBehaviour
+    public class SelectionManager : MonoBehaviour
     {
         [Header("Layer settings")]
         [SerializeField] private string targetLayerName = "OverlayLayer";
