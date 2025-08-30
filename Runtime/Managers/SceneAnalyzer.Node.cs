@@ -283,9 +283,15 @@
             textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
 
             var text = textObj.AddComponent<TextMeshPro>();
+    
             if (virtualType != null)
             {
                 text.text = $"({virtualType.Name})";
+            }
+            else if (obj is Component component)
+            {
+                // For components, show both the GameObject name and Component type
+                text.text = $"{component.gameObject.name}.{component.GetType().Name}";
             }
             else
             {
@@ -295,6 +301,7 @@
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 1.5f;
         }
+
 
 #if UNITY_EDITOR
         /// <summary>
