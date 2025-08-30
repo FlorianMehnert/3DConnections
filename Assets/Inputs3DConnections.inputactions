@@ -517,7 +517,7 @@
             ]
         },
         {
-            "name": "CubeSelection",
+            "name": "NodeInteractivity",
             "id": "43dd5a8c-794a-435c-ae34-1e879a45f643",
             "actions": [
                 {
@@ -605,6 +605,15 @@
                     "name": "Focus",
                     "type": "Button",
                     "id": "bead2de1-02a2-4e67-85d3-f8c213abb885",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Proximity Scaling",
+                    "type": "Button",
+                    "id": "eb3a8d73-9ee6-4fd1-bc56-b13022dbbcc4",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -708,6 +717,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Focus",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bfa8cdb9-c40a-47c1-88d3-ce32894acb73",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Proximity Scaling",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
