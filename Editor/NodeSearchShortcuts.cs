@@ -54,5 +54,11 @@ namespace _3DConnections.Editor
         {
             SearchService.ShowWindow(SearchService.CreateContext("node: highlight{#NodeType.nodeTypeName:\"Component\"}"));
         }
+
+        [MenuItem("Tools/3DConnections/Search/Find GameObjects with PlayerInput Component")]
+        public static void FindGameObjectsWithPlayerInputComponent()
+        {
+            SearchService.ShowWindow(SearchService.CreateContext("node: highlight{nodetype:Component name:Player}"));
+        }
     }
 }

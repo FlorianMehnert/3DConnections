@@ -21,7 +21,7 @@ void scale_nodes_based_on_mouse_position(uint3 id : SV_DispatchThreadID)
     
     // Get the current node position (convert from 3D to 2D screen space)
     float3 node_pos = node_positions[id.x];
-    float2 node_pos_2d = float2(node_pos.x, node_pos.z);
+    float2 node_pos_2d = float2(node_pos.x, node_pos.y);
     
     // Calculate distance from mouse to node
     float distance = length(mouse_position - node_pos_2d);

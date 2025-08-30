@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using _3DConnections.Runtime.Managers.Scene;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -34,13 +35,13 @@ namespace _3DConnections.Runtime.Managers
     {
         private static readonly int NodePositions = Shader.PropertyToID("node_positions");
         private static readonly int ScaleFactors = Shader.PropertyToID("scale_factors");
-        private static readonly int MousePosition = Shader.PropertyToID("mousePosition");
-        private static readonly int MaxDistance = Shader.PropertyToID("maxDistance");
-        private static readonly int MinScale = Shader.PropertyToID("minScale");
-        private static readonly int MaxScale = Shader.PropertyToID("maxScale");
-        private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
-        private static readonly int LerpSpeed = Shader.PropertyToID("lerpSpeed");
-        private static readonly int NodeCount = Shader.PropertyToID("nodeCount");
+        private static readonly int MousePosition = Shader.PropertyToID("mouse_position");
+        private static readonly int DeltaTime = Shader.PropertyToID("delta_time_node_proximity");
+        private static readonly int NodeCount = Shader.PropertyToID("node_count_node_proximity");
+        private static readonly int MinScale = Shader.PropertyToID("min_scale");
+        private static readonly int MaxScale = Shader.PropertyToID("max_scale");
+        private static readonly int MaxDistance = Shader.PropertyToID("max_distance");
+        private static readonly int LerpSpeed = Shader.PropertyToID("lerp_speed");
 
         [Header("Node Graph")] [SerializeField]
         private NodeGraphScriptableObject nodeGraph;
@@ -51,6 +52,10 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private float minScale = 1f;
         [SerializeField] private float maxScale = 10f;
         [SerializeField] private float lerpSpeed = 5f;
+        
+        [Header("TMP Settings")]
+        [SerializeField] private bool scaleTMPChildren = true;
+        [SerializeField] private float tmpAdditionalScaleMultiplier = 1.5f; // Extra scaling for TMP
 
         [Tooltip("Amount of distance the mouse has to move before everything is recalculated")] [SerializeField]
         private float mouseMoveThreshold = 0.1f;
@@ -140,6 +145,7 @@ namespace _3DConnections.Runtime.Managers
         /// <param name="forceReinitialize">If true, forces reinitialization even if already enabled</param>
         public void EnableSimulation(bool forceReinitialize = false)
         {
+            Debug.Log("enable proximity scaling");
             switch (IsSimulationEnabled)
             {
                 case true when !forceReinitialize:
@@ -194,6 +200,7 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         public void DisableSimulation()
         {
+            Debug.Log("disabled proximity scaling");
             if (!IsSimulationEnabled)
                 return;
 
@@ -204,8 +211,9 @@ namespace _3DConnections.Runtime.Managers
         }
 
         /// <summary>
-        /// Toggles the simulation state
+        /// Toggles the simulation state (Executed currently using Keyboard.Q)
         /// </summary>
+        [UsedImplicitly]
         public void ToggleSimulation()
         {
             if (IsSimulationEnabled)
@@ -278,10 +286,10 @@ namespace _3DConnections.Runtime.Managers
             if (proximityComputeShader == null)
                 return false;
 
-            _kernelIndex = proximityComputeShader.FindKernel("CSMain");
+            _kernelIndex = proximityComputeShader.FindKernel("scale_nodes_based_on_mouse_position");
 
             if (_kernelIndex >= 0) return true;
-            Debug.LogError("Could not find CSMain kernel in compute shader!");
+            Debug.LogError("Could not find scale_nodes_based_on_mouse_position kernel in compute shader!");
             return false;
         }
 
@@ -363,7 +371,7 @@ namespace _3DConnections.Runtime.Managers
 
             // Set compute shader parameters
             proximityComputeShader.SetVector(MousePosition,
-                new Vector2(_currentMouseWorldPos.x, _currentMouseWorldPos.z));
+                new Vector2(_currentMouseWorldPos.x, _currentMouseWorldPos.y));
             proximityComputeShader.SetFloat(MaxDistance, maxDistance);
             proximityComputeShader.SetFloat(MinScale, minScale);
             proximityComputeShader.SetFloat(MaxScale, maxScale);
@@ -375,7 +383,7 @@ namespace _3DConnections.Runtime.Managers
             int threadGroups = Mathf.CeilToInt(nodeCount / 64f);
             proximityComputeShader.Dispatch(_kernelIndex, threadGroups, 1, 1);
         }
-
+        
         private void ApplyScaleResults()
         {
             if (_scaleFactorsBuffer == null)
@@ -388,10 +396,51 @@ namespace _3DConnections.Runtime.Managers
             for (var i = 0; i < _cachedNodes.Count && i < _scaleFactors.Length; i++)
             {
                 if (!_cachedNodes[i]) continue;
+        
                 var scaleFactor = _scaleFactors[i];
                 var newScale = _originalScales[i] * scaleFactor;
+        
+                // Apply base scaling to the node
                 _cachedNodes[i].transform.localScale = new Vector3(newScale.x, newScale.y, _originalScales[i].z);
+        
+                // Additionally scale TMP children if enabled
+                if (scaleTMPChildren)
+                {
+                    ScaleTMPChildren(_cachedNodes[i], scaleFactor);
+                }
             }
+        }
+
+        private void ScaleTMPChildren(GameObject node, float scaleFactor)
+        {
+            // Get all TMP components in children
+            var tmpComponents = node.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
+            foreach (var tmp in tmpComponents)
+            {
+                // Apply additional scaling to font size
+                float baseSize = GetOriginalFontSize(tmp);
+                tmp.fontSize = baseSize * scaleFactor * tmpAdditionalScaleMultiplier;
+            }
+    
+            // Also handle 3D TextMeshPro if you're using them
+            var tmp3DComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
+            foreach (var tmp3D in tmp3DComponents)
+            {
+                float baseSize = GetOriginalFontSize(tmp3D);
+                tmp3D.fontSize = baseSize * scaleFactor * tmpAdditionalScaleMultiplier;
+            }
+        }
+
+// Dictionary to store original font sizes
+        private Dictionary<TMPro.TMP_Text, float> _originalFontSizes = new Dictionary<TMPro.TMP_Text, float>();
+
+        private float GetOriginalFontSize(TMPro.TMP_Text tmpText)
+        {
+            if (!_originalFontSizes.ContainsKey(tmpText))
+            {
+                _originalFontSizes[tmpText] = tmpText.fontSize;
+            }
+            return _originalFontSizes[tmpText];
         }
 
         private void RestoreNodeScales()
