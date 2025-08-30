@@ -42,12 +42,15 @@ namespace _3DConnections.Runtime.Managers
         private static readonly int MaxScale = Shader.PropertyToID("max_scale");
         private static readonly int MaxDistance = Shader.PropertyToID("max_distance");
         private static readonly int LerpSpeed = Shader.PropertyToID("lerp_speed");
-
+        private static readonly int ThresholdDistance = Shader.PropertyToID("threshold_distance");
+        
         [Header("Node Graph")] [SerializeField]
         private NodeGraphScriptableObject nodeGraph;
 
         [Header("Proximity Settings")] [SerializeField]
         private float maxDistance = 10f;
+        [SerializeField] private float thresholdDistance = 5f;
+
 
         [SerializeField] private float minScale = 1f;
         [SerializeField] private float maxScale = 10f;
@@ -172,7 +175,7 @@ namespace _3DConnections.Runtime.Managers
 
             // Count and cache nodes
             CountAndCacheNodes();
-
+            
             // Setup compute shader
             if (!SetupComputeShader())
             {
@@ -187,10 +190,12 @@ namespace _3DConnections.Runtime.Managers
                 UpdateNodeData();
             }
 
+            _lastMousePosition = Input.mousePosition;
+            UpdateMouseWorldPosition();
+    
             IsSimulationEnabled = true;
             _isInitialized = true;
-            _lastMousePosition = Input.mousePosition;
-
+    
             // Invoke events
             onSimulationEnabled?.Invoke();
         }
@@ -373,6 +378,7 @@ namespace _3DConnections.Runtime.Managers
             proximityComputeShader.SetVector(MousePosition,
                 new Vector2(_currentMouseWorldPos.x, _currentMouseWorldPos.y));
             proximityComputeShader.SetFloat(MaxDistance, maxDistance);
+            proximityComputeShader.SetFloat(ThresholdDistance, thresholdDistance); // Add this line
             proximityComputeShader.SetFloat(MinScale, minScale);
             proximityComputeShader.SetFloat(MaxScale, maxScale);
             proximityComputeShader.SetFloat(DeltaTime, Time.deltaTime);
@@ -383,6 +389,7 @@ namespace _3DConnections.Runtime.Managers
             int threadGroups = Mathf.CeilToInt(nodeCount / 64f);
             proximityComputeShader.Dispatch(_kernelIndex, threadGroups, 1, 1);
         }
+
         
         private void ApplyScaleResults()
         {
@@ -414,47 +421,31 @@ namespace _3DConnections.Runtime.Managers
         private void ScaleTMPChildren(GameObject node, float scaleFactor)
         {
             // Get all TMP components in children
-            var tmpComponents = node.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
+            var tmpComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
             foreach (var tmp in tmpComponents)
             {
-                // Apply additional scaling to font size
-                float baseSize = GetOriginalFontSize(tmp);
-                tmp.fontSize = baseSize * scaleFactor * tmpAdditionalScaleMultiplier;
-            }
-    
-            // Also handle 3D TextMeshPro if you're using them
-            var tmp3DComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
-            foreach (var tmp3D in tmp3DComponents)
-            {
-                float baseSize = GetOriginalFontSize(tmp3D);
-                tmp3D.fontSize = baseSize * scaleFactor * tmpAdditionalScaleMultiplier;
+                // Apply additional scaling to the font size
+                var baseSize = 1.5f;
+                var textScale = baseSize * scaleFactor * tmpAdditionalScaleMultiplier;
+                tmp.fontSize = baseSize * scaleFactor > 1.5f ? textScale : 1.5f;
             }
         }
 
-        // Dictionary to store original font sizes
-        private Dictionary<TMPro.TMP_Text, float> _originalFontSizes = new Dictionary<TMPro.TMP_Text, float>();
-
-        private float GetOriginalFontSize(TMPro.TMP_Text tmpText)
-        {
-            if (!_originalFontSizes.ContainsKey(tmpText))
-            {
-                _originalFontSizes[tmpText] = tmpText.fontSize;
-            }
-            return _originalFontSizes[tmpText];
-        }
 
         private void RestoreNodeScales()
         {
             if (_cachedNodes == null || _originalScales == null) return;
+    
             for (var i = 0; i < _cachedNodes.Count && i < _originalScales.Length; i++)
             {
                 if (_cachedNodes[i] == null) continue;
                 var node = _cachedNodes[i];
                 node.transform.localScale = _originalScales[i];
-                var tmp3DComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
-                foreach (var tmp3D in tmp3DComponents)
+        
+                var tmpComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
+                foreach (var tmp in tmpComponents)
                 {
-                    tmp3D.fontSize = 1.5f;
+                    tmp.fontSize = 1.5f;
                 }
             }
         }
@@ -470,7 +461,7 @@ namespace _3DConnections.Runtime.Managers
         private void CleanupSimulation()
         {
             ReleaseBuffers();
-
+    
             _cachedNodes?.Clear();
             _cachedNodes = null;
             _nodePositions = null;
@@ -479,6 +470,7 @@ namespace _3DConnections.Runtime.Managers
             _kernelIndex = -1;
             _isInitialized = false;
         }
+
 
         private void OnDestroy()
         {
@@ -500,6 +492,7 @@ namespace _3DConnections.Runtime.Managers
         private void OnValidate()
         {
             maxDistance = Mathf.Max(0.1f, maxDistance);
+            thresholdDistance = Mathf.Clamp(thresholdDistance, 0.1f, maxDistance); // Add this line
             minScale = Mathf.Max(0.1f, minScale);
             maxScale = Mathf.Max(minScale, maxScale);
             lerpSpeed = Mathf.Max(0.1f, lerpSpeed);
