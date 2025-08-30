@@ -1,0 +1,39 @@
+﻿#pragma kernel scale_nodes_based_on_mouse_position
+
+// Input buffers
+StructuredBuffer<float3> node_positions;
+RWStructuredBuffer<float> scale_factors;
+
+// Shader parameters
+float2 mouse_position;
+float max_distance;
+float min_scale;
+float max_scale;
+float delta_time_node_proximity;
+float lerp_speed;
+int node_count_node_proximity;
+
+[numthreads(64, 1, 1)]
+void scale_nodes_based_on_mouse_position(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)node_count_node_proximity)
+        return;
+    
+    // Get the current node position (convert from 3D to 2D screen space)
+    float3 node_pos = node_positions[id.x];
+    float2 node_pos_2d = float2(node_pos.x, node_pos.z);
+    
+    // Calculate distance from mouse to node
+    float distance = length(mouse_position - node_pos_2d);
+    
+    // Calculate a target scale based on distance
+    float normalized_distance = saturate(distance / max_distance);
+    float target_scale = lerp(max_scale, min_scale, normalized_distance);
+    
+    // Smooth interpolation to a target scale
+    float current_scale = scale_factors[id.x];
+    float new_scale = lerp(current_scale, target_scale, lerp_speed * delta_time_node_proximity);
+    
+    // Store the new scale factor
+    scale_factors[id.x] = new_scale;
+}
