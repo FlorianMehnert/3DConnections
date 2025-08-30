@@ -1,3 +1,5 @@
+using UnityEngine.Serialization;
+
 namespace _3DConnections.Runtime.Managers
 {
     using System;
@@ -12,18 +14,18 @@ namespace _3DConnections.Runtime.Managers
 
     public class LayoutManager : MonoBehaviour
     {
+        [FormerlySerializedAs("useHierarchyGrid")] public bool createRealGrid = true;
         /// <summary>
         /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
         /// </summary>
         public void Layout()
         {
             var layoutParameters = soi.Instance.layout;
-            var nodeGraph = soi.Instance.graph;
             var connections = soi.Instance.conSo.connections;
             if (!NodeConnectionManager.Instance) return;
             
             var forestManager = new ConnectionsBasedForestManager();
-            var gripManager = new GRIPLayoutManager();
+            var gripManager = new GRIPLayoutManager(layoutParameters);
             var gridManager = new GridLayoutManager();
             var sugiyamaManager = new SugiyamaLayoutManager();
             var multiscaleManager = new MultiscaleLayoutManager();
@@ -38,7 +40,7 @@ namespace _3DConnections.Runtime.Managers
                     gridManager.SetLayoutParameters(layoutParameters);
                     
                     // Choose between regular grid and hierarchical grid based on connections
-                    if (HasHierarchicalStructure(rootNodes))
+                    if (createRealGrid)
                     {
                         gridManager.LayoutHierarchicalGrid(rootNodes);
                     }
@@ -63,7 +65,6 @@ namespace _3DConnections.Runtime.Managers
                 case (int)LayoutType.GRIP:
                 {
                     rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
-                    gripManager.SetLayoutParameters(layoutParameters);
                     gripManager.ApplyGRIPLayout(connections);
                     break;
                 }

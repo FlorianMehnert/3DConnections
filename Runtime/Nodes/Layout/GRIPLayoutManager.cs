@@ -1,28 +1,24 @@
 ﻿namespace _3DConnections.Runtime.Nodes.Layout
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using UnityEngine;
     using ScriptableObjects;
     
     /// <summary>
-    /// GRIP (Graph dRawing with Intelligent Placement) layout algorithm implementation
+    /// GRIP (Graph drawing with Intelligent Placement) layout algorithm implementation
     /// Based on force-directed principles with multi-level optimization
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public class GRIPLayoutManager
     {
-        private float _attractionStrength = 1.0f;
-        private float _repulsionStrength = 100.0f;
-        private float _idealEdgeLength = 5.0f;
-        private int _iterations = 50;
-        private float _coolingFactor = 0.95f;
-        private float _initialTemperature = 10.0f;
+        private readonly LayoutParameters _layoutParameters;
+        public GRIPLayoutManager(LayoutParameters layoutParameters)
+        {
+            _layoutParameters = layoutParameters;
+        }
         
-        // GRIP-specific parameters
-        private int _coarseningLevels = 3;
-        private float _coarseningRatio = 0.5f;
-        
+        // ReSharper disable once InconsistentNaming
         private class GRIPNode
         {
             public GameObject GameObject { get; set; }
@@ -37,6 +33,7 @@
         /// <summary>
         /// Apply GRIP layout to the given connections
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public void ApplyGRIPLayout(List<NodeConnection> connections)
         {
             if (connections == null || connections.Count == 0) return;
@@ -45,7 +42,7 @@
             var nodeMap = BuildGraphStructure(connections);
             if (nodeMap.Count == 0) return;
             
-            // Create hierarchy of coarsened graphs
+            // Create a hierarchy of coarsened graphs
             var graphHierarchy = CreateCoarsenedHierarchy(nodeMap);
             
             // Layout from coarsest to finest level
@@ -55,17 +52,17 @@
                 
                 if (level == graphHierarchy.Count - 1)
                 {
-                    // Initialize positions for coarsest level
+                    // Initialize positions for the coarsest level
                     InitializePositions(currentLevel);
                 }
                 else
                 {
-                    // Interpolate positions from coarser level
-                    InterpolatePositions(currentLevel, graphHierarchy[level + 1]);
+                    // Interpolate positions from a coarser level
+                    InterpolatePositions(currentLevel);
                 }
                 
                 // Apply force-directed layout at this level
-                ApplyForceDirectedLayout(currentLevel, _iterations / (level + 1));
+                ApplyForceDirectedLayout(currentLevel, _layoutParameters.iterations / (level + 1));
             }
             
             // Apply final positions to GameObjects
@@ -105,10 +102,10 @@
             var hierarchy = new List<Dictionary<GameObject, GRIPNode>> { originalGraph };
             var currentLevel = originalGraph;
             
-            for (int i = 0; i < _coarseningLevels; i++)
+            for (int i = 0; i < _layoutParameters.coarseningLevels; i++)
             {
                 var coarsenedLevel = CoarsenGraph(currentLevel);
-                if (coarsenedLevel.Count >= currentLevel.Count * _coarseningRatio)
+                if (coarsenedLevel.Count >= currentLevel.Count * _layoutParameters.coarseningRatio)
                 {
                     hierarchy.Add(coarsenedLevel);
                     currentLevel = coarsenedLevel;
@@ -132,7 +129,7 @@
                 var node = kvp.Value;
                 if (visited.Contains(node)) continue;
                 
-                // Find best neighbor to merge with
+                // Find the best neighbor to merge with
                 GRIPNode bestNeighbor = null;
                 float bestScore = float.MinValue;
                 
@@ -142,11 +139,9 @@
                     
                     // Score based on edge weight and node similarity
                     float score = 1.0f / (neighbor.Neighbors.Count + 1);
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        bestNeighbor = neighbor;
-                    }
+                    if (!(score > bestScore)) continue;
+                    bestScore = score;
+                    bestNeighbor = neighbor;
                 }
                 
                 // Create coarse node
@@ -198,7 +193,7 @@
         private void InitializePositions(Dictionary<GameObject, GRIPNode> graph)
         {
             var nodes = graph.Values.ToList();
-            var radius = Mathf.Sqrt(nodes.Count) * _idealEdgeLength;
+            var radius = Mathf.Sqrt(nodes.Count) * _layoutParameters.idealEdgeLength;
             
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -211,25 +206,22 @@
             }
         }
         
-        private void InterpolatePositions(Dictionary<GameObject, GRIPNode> fineLevel, 
-                                        Dictionary<GameObject, GRIPNode> coarseLevel)
+        private void InterpolatePositions(Dictionary<GameObject, GRIPNode> fineLevel)
         {
             foreach (var fineNode in fineLevel.Values)
             {
-                if (fineNode.CoarseParent != null)
-                {
-                    // Add small random offset to avoid overlapping
-                    var offset = UnityEngine.Random.insideUnitSphere * 0.5f;
-                    offset.z = 0;
-                    fineNode.Position = fineNode.CoarseParent.Position + offset;
-                }
+                if (fineNode.CoarseParent == null) continue;
+                // Add a small random offset to avoid overlapping
+                var offset = Random.insideUnitSphere * 0.5f;
+                offset.z = 0;
+                fineNode.Position = fineNode.CoarseParent.Position + offset;
             }
         }
         
         private void ApplyForceDirectedLayout(Dictionary<GameObject, GRIPNode> graph, int iterations)
         {
             var nodes = graph.Values.ToList();
-            float temperature = _initialTemperature;
+            float temperature = _layoutParameters.initialTemperature;
             
             for (int iter = 0; iter < iterations; iter++)
             {
@@ -245,12 +237,10 @@
                         
                         Vector3 delta = node.Position - other.Position;
                         float distance = delta.magnitude;
-                        
-                        if (distance > 0 && distance < 50f) // Cutoff for performance
-                        {
-                            float repulsion = (_repulsionStrength * node.Mass * other.Mass) / (distance * distance);
-                            node.Force += delta.normalized * repulsion;
-                        }
+
+                        if (!(distance > 0) || !(distance < 50f)) continue; // Cutoff for performance
+                        float repulsion = (_layoutParameters.repulsion * node.Mass * other.Mass) / (distance * distance);
+                        node.Force += delta.normalized * repulsion;
                     }
                     
                     // Attractive forces
@@ -258,19 +248,17 @@
                     {
                         Vector3 delta = neighbor.Position - node.Position;
                         float distance = delta.magnitude;
-                        
-                        if (distance > 0)
-                        {
-                            float attraction = _attractionStrength * Mathf.Log(distance / _idealEdgeLength);
-                            node.Force += delta.normalized * attraction;
-                        }
+
+                        if (!(distance > 0)) continue;
+                        float attraction = _layoutParameters.attractionStrength * Mathf.Log(distance / _layoutParameters.idealEdgeLength);
+                        node.Force += delta.normalized * attraction;
                     }
                 }
                 
                 // Update positions
                 foreach (var node in nodes)
                 {
-                    Vector3 displacement = node.Force.normalized * Mathf.Min(temperature, node.Force.magnitude);
+                    var displacement = node.Force.normalized * Mathf.Min(temperature, node.Force.magnitude);
                     node.Position += displacement;
                     
                     // Keep nodes on the z=0 plane
@@ -278,7 +266,7 @@
                 }
                 
                 // Cool down
-                temperature *= _coolingFactor;
+                temperature *= _layoutParameters.coolingFactor;
             }
         }
         
@@ -293,12 +281,5 @@
             }
         }
         
-        public void SetLayoutParameters(LayoutParameters parameters)
-        {
-            _idealEdgeLength = parameters.startRadius;
-            _attractionStrength = parameters.minDistance / 2f;
-            _repulsionStrength = parameters.radiusInc * 20f;
-            _iterations = Mathf.RoundToInt(parameters.rootSpacing * 5);
-        }
     }
 }

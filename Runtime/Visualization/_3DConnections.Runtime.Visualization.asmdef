@@ -1,0 +1,10 @@
+﻿{
+  "name": "_3DConnections.Runtime.Visualization",
+  "rootNamespace": "_3DConnections.Runtime.Visualization",
+  "references":[ 
+    "GUID:f373597d47624f6d907847f70cac6b71", 
+    "GUID:68990cf58c0248f2ae7aaa38040ef8a9", 
+    "GUID:f4eb26c44d5d41ef825a8424c949fb63", 
+    "GUID:a3b0b6165b21422f893d1afda1b21d65" 
+  ]
+}

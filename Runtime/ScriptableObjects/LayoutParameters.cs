@@ -18,5 +18,15 @@ namespace _3DConnections.Runtime.ScriptableObjects
         public float levelSpacing = 10f;
         public float nodeSpacing = 2f;
         public float subtreeSpacing = 2f;
+        
+        [Header("GRIP")]
+        public float attractionStrength = 1f;
+        public float repulsion = 100f;
+        public float idealEdgeLength = 5f;
+        public int iterations = 50;
+        public float coolingFactor = 0.95f;
+        public float initialTemperature = 10.0f;
+        public float coarseningLevels = 3f;
+        public float coarseningRatio = 0.5f;
     }
 }

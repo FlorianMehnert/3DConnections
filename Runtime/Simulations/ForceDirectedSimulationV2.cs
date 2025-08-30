@@ -146,7 +146,6 @@ namespace _3DConnections.Runtime.Simulations
             };
 
             // Execute the job immediately on the main thread (for simplicity)
-            // For better performance in larger graphs, you could use Schedule() and complete later
             forceCalculationJob.Run();
         }
 
