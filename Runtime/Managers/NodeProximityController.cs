@@ -431,7 +431,7 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-// Dictionary to store original font sizes
+        // Dictionary to store original font sizes
         private Dictionary<TMPro.TMP_Text, float> _originalFontSizes = new Dictionary<TMPro.TMP_Text, float>();
 
         private float GetOriginalFontSize(TMPro.TMP_Text tmpText)
@@ -448,9 +448,13 @@ namespace _3DConnections.Runtime.Managers
             if (_cachedNodes == null || _originalScales == null) return;
             for (var i = 0; i < _cachedNodes.Count && i < _originalScales.Length; i++)
             {
-                if (_cachedNodes[i] != null)
+                if (_cachedNodes[i] == null) continue;
+                var node = _cachedNodes[i];
+                node.transform.localScale = _originalScales[i];
+                var tmp3DComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
+                foreach (var tmp3D in tmp3DComponents)
                 {
-                    _cachedNodes[i].transform.localScale = _originalScales[i];
+                    tmp3D.fontSize = 1.5f;
                 }
             }
         }
