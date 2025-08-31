@@ -242,6 +242,10 @@ PrefabInstance:
       propertyPath: parentObject
       value: 
       objectReference: {fileID: 108217077}
+    - target: {fileID: 1241412518822067057, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_Antialiasing
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_Name
       value: OverlayCamera
