@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Simulations
+﻿using _3DConnections.Runtime.ScriptableObjects;
+
+namespace _3DConnections.Runtime.Simulations
 {
     using System.Collections.Generic;
     using System.Linq;
@@ -54,6 +56,18 @@
                 if (ConnectionStartIndices.IsCreated) ConnectionStartIndices.Dispose();
                 if (ConnectionEndIndices.IsCreated) ConnectionEndIndices.Dispose();
             }
+        }
+
+        public override void OnEnable()
+        {
+            base.OnEnable();
+            simulationEvent.OnSimulationRequested += Simulate;
+        }
+
+        private void Simulate(SimulationType simulationType)
+        {
+            if (simulationType != SimulationType.GRIP) return;
+            Initialize();
         }
 
         public void Initialize()
@@ -412,6 +426,7 @@
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+            simulationEvent.OnSimulationRequested -= Simulate;
         }
 
         private void HandleEvent()

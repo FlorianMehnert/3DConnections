@@ -1,3 +1,6 @@
+using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.ScriptableObjects;
+
 namespace _3DConnections.Runtime.Simulations
 {
     using System.Collections.Generic;
@@ -7,12 +10,10 @@ namespace _3DConnections.Runtime.Simulations
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
-    
     using ScriptableObjectInventory;
 
     public class SpringSimulation : MonoBehaviour, ILogable
     {
-
         private NativeArray<float2> _positions;
         private NativeArray<float2> _newPositions;
         private NativeArray<float2> _velocities;
@@ -21,19 +22,24 @@ namespace _3DConnections.Runtime.Simulations
         private List<GameObject> _nodes;
         private bool _isSetUp;
 
+        [SerializeField] private SimulationEvent simulationEvent;
+
+
+        private void OnEnable()
+        {
+            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
+            simulationEvent.OnSimulationRequested += Simulate;
+        }
+
 
         private void OnDisable()
         {
             if (!ScriptableObjectInventory.InstanceExists) return;
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
+            simulationEvent.OnSimulationRequested -= Simulate;
             CleanupNativeArrays();
-        }
-
-        private void OnEnable()
-        {
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
-                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
         }
 
 
@@ -58,9 +64,21 @@ namespace _3DConnections.Runtime.Simulations
             _isSetUp = false;
         }
 
-        public void Simulate()
+        public void Simulate(SimulationType simulationType)
         {
+            if (simulationType != SimulationType.Burst) return;
             CleanupNativeArrays();
+            
+            if (ScriptableObjectInventory.Instance.graph)
+                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+            
+            // TODO: readd this using events
+            // if (NodeConnectionManager.Instance)
+            // {
+            //     NodeConnectionManager.Instance
+            //         .ConvertToNativeArray(); // convert connections to a burst array
+            //     NodeConnectionManager.Instance.AddSpringsToConnections();
+            // }
 
             _nodes = ScriptableObjectInventory.Instance.graph.AllNodes;
 

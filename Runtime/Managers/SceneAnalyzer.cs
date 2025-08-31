@@ -98,18 +98,18 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnEnable()
         {
-            if (ScriptableObjectInventory.Instance.clearEvent)
+            if (ScriptableObjectInventory.Instance.clearEvent != null)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
         }
 
         private void OnDisable()
         {
             if (!ScriptableObjectInventory.Instance) return;
-            if (ScriptableObjectInventory.Instance.clearEvent)
+            if (ScriptableObjectInventory.Instance.clearEvent != null)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+            if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
         }
 

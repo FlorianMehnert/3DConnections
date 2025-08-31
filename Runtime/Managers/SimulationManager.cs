@@ -1,17 +1,18 @@
+using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.ScriptableObjects;
+
 namespace _3DConnections.Runtime.Managers
 {
-    using System;
     using System.Linq;
     using UnityEngine;
-    
     using ScriptableObjectInventory;
     using Simulations;
-
-    [RequireComponent(typeof(LayoutManager))]
+    
     public class SimulationManager : MonoBehaviour
     {
         [SerializeField] private Transform rootSimulation;
-        private LayoutManager _layoutManager;
+        
+        [SerializeField] private SimulationEvent simulationEvent;
 
         private void OnEnable()
         {
@@ -21,17 +22,10 @@ namespace _3DConnections.Runtime.Managers
                 ? rootEdgeGameObject.transform
                 : new GameObject("ParentEdgesObject").transform;
             ScriptableObjectInventory.Instance.simulationRoot = rootSimulation;
-            _layoutManager = GetComponent<LayoutManager>();
         }
 
-        public void ApplyComponentPhysics()
+        private static void ApplyComponentPhysics()
         {
-            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-            var springSimulation = FindFirstObjectByType<SpringSimulation>();
-            if (springSimulation)
-                springSimulation.CleanupNativeArrays();
-
             ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
 
             // required to avoid intersections when using components
@@ -47,7 +41,7 @@ namespace _3DConnections.Runtime.Managers
                     }
                     else
                     {
-                        // skip cluster nodes that have the circle collider
+                        // skip cluster nodes that have the circle collider e.g. LOD nodes
                     }
                 }
                 catch (MissingComponentException e)
@@ -59,20 +53,19 @@ namespace _3DConnections.Runtime.Managers
             NodeConnectionManager.Instance.AddSpringsToConnections();
         }
 
-        public void ApplyBurstPhysics()
+        private static void ApplyBurstPhysics()
         {
-            Debug.Log("apply burst physics");
             var springSimulation = FindFirstObjectByType<SpringSimulation>();
             if (springSimulation)
             {
-                if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-                ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
                 NodeConnectionManager.Instance.UseNativeArray();
                 ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+                
+                // required as the current implementation "imports" the existing spring components to create buffers
                 NodeConnectionManager.Instance.AddSpringsToConnections();
                 NodeConnectionManager.Instance.ResizeNativeArray();
                 NodeConnectionManager.Instance.ConvertToNativeArray();
-                springSimulation.Simulate();
+                springSimulation.Simulate(SimulationType.Burst);
             }
             else
             {
@@ -80,7 +73,7 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        public void ApplySimpleGPUPhysics()
+        private void ApplySimpleGPUPhysics()
         {
             var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
             if (!forceDirectedSim) return;
@@ -100,29 +93,16 @@ namespace _3DConnections.Runtime.Managers
             forceDirectedSim.Initialize();
         }
 
-        public void ApplyStaticLayout()
+        private void ApplyStaticLayout()
         {
             if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
             ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
             var springSimulation = FindFirstObjectByType<SpringSimulation>();
             if (springSimulation)
                 springSimulation.CleanupNativeArrays();
-            try
-            {
-                _layoutManager.Layout();
-            }
-            catch (NullReferenceException e)
-            {
-                _layoutManager = FindFirstObjectByType<LayoutManager>();
-                if (_layoutManager)
-                    _layoutManager.Layout();
-                else
-                    Debug.LogError(e);
-            }
-            
         }
 
-        public void ApplyForceDirectedComponentPhysics()
+        private void ApplyForceDirectedComponentPhysics()
         {
             var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject
                 .GetComponent<ForceDirectedSimulationV2>();
@@ -137,7 +117,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
         // ReSharper disable once InconsistentNaming
-        public void ApplyGRIP()
+        private void ApplyGRIP()
         {
             var layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<GRIP>();
             if (!layout) layout = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
@@ -146,6 +126,13 @@ namespace _3DConnections.Runtime.Managers
             if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
             ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
             layout.Initialize();
+        }
+
+        public void Simulate()
+        {
+            if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
+            ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+            simulationEvent.Raise(ScriptableObjectInventory.Instance.simulationParameters.simulationType);
         }
     }
 }

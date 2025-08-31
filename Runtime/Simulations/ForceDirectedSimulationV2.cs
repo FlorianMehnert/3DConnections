@@ -1,3 +1,6 @@
+using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.ScriptableObjects;
+
 namespace _3DConnections.Runtime.Simulations
 {
     using System;
@@ -26,7 +29,9 @@ namespace _3DConnections.Runtime.Simulations
         public bool activated = true;
 
         private bool _currentlyCalculating;
-
+        
+        [SerializeField] private SimulationEvent simulationEvent;
+        
         [ContextMenu( "Refresh" )]
         public void Initialize()
         {
@@ -77,6 +82,7 @@ namespace _3DConnections.Runtime.Simulations
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
+            simulationEvent.OnSimulationRequested += Simulate;
         }
 
         private void Update()
@@ -156,6 +162,7 @@ namespace _3DConnections.Runtime.Simulations
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+            simulationEvent.OnSimulationRequested -= Simulate;
         }
 
         private void HandleEvent()
@@ -261,6 +268,11 @@ namespace _3DConnections.Runtime.Simulations
 
                 forces.Dispose();
             }
+        }
+        private void Simulate(SimulationType simulationType)
+        {
+            if (simulationType != SimulationType.ComponentV2) return;
+            Initialize();
         }
     }
 }

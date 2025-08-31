@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using _3DConnections.Runtime.ScriptableObjects;
+using UnityEngine;
 
 namespace _3DConnections.Runtime.Events
 {
@@ -9,10 +10,14 @@ namespace _3DConnections.Runtime.Events
         public LayoutEvent layoutEvent;
         public SimulationEvent simulationEvent;
 
-        public void TriggerEvent()
+        public void TriggerEvent(SimulationType simulationType, int layoutType)
         {
-            layoutEvent.TriggerEvent();
-            simulationEvent.TriggerEvent();
+            Debug.Log($"executing analyze event channel with simulation of: {simulationType} and layoutType of {layoutType}");
+            layoutEvent.TriggerEvent(() =>
+            {
+                simulationEvent.Raise(simulationType);
+            });
+            // TODO: update node texts
         }
     }
 }

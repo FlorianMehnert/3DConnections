@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace _3DConnections.Runtime.Events
@@ -6,11 +7,11 @@ namespace _3DConnections.Runtime.Events
     [CreateAssetMenu(fileName = "LayoutEvent", menuName = "3DConnections/Events/Layout Nodes Event")]
     public class LayoutEvent : ScriptableObject
     {
-        public UnityEvent onEventTriggered;
+        public UnityAction<Action> OnEventTriggered;
 
-        public void TriggerEvent()
+        public void TriggerEvent(Action afterLayout)
         {
-            onEventTriggered?.Invoke();
+            OnEventTriggered?.Invoke(afterLayout);
         }
     }
 }

@@ -61,10 +61,6 @@ namespace _3DConnections.Runtime.Managers
 
         public GameObject clusterNodePrefab;
 
-        // Internal
-        private Action[] _actions;
-        private Action _currentAction;
-        
         // Handlers
         private Action _clearButtonHandler;
         private Action _removePhysicsHandler;
@@ -80,7 +76,7 @@ namespace _3DConnections.Runtime.Managers
         private EventCallback<ChangeEvent<bool>> _levelOfDetailCallback;
         
         // Events to invoke
-        [SerializeField] private AnalyzeEvent analyzeEvent;
+        [SerializeField] private AnalyzeEventChannel analyzeEventChannel;
 
         private void Start()
         {
@@ -107,7 +103,6 @@ namespace _3DConnections.Runtime.Managers
             GrabUIElementsInfoPanel(uiDocumentLeft.rootVisualElement);
 
             SetupUICallbacks();
-            PopulateActions();
             InitializeAnalyzeButton();
 
             // since this is a scriptable object, in edit mode this will not reset
@@ -389,172 +384,29 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        private void PopulateActions()
-        {
-            var springSimulation = FindFirstObjectByType<SpringSimulation>();
-            _actions = new Action[]
-            {
-                () =>
-                {
-                    // Static 
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // default
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance?.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        ScriptableObjectInventory.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
-                        NodeConnectionManager.Instance?.AddSpringsToConnections();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // burst
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance)
-                        {
-                            if (ScriptableObjectInventory.Instance.applicationState)
-                                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                            if (ScriptableObjectInventory.Instance.graph)
-                                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                        }
-
-                        if (NodeConnectionManager.Instance)
-                        {
-                            NodeConnectionManager.Instance
-                                .ConvertToNativeArray(); // convert connections to a burst array
-                            NodeConnectionManager.Instance.AddSpringsToConnections();
-                        }
-
-                        if (springSimulation)
-                            springSimulation.Simulate();
-                        else
-                            Debug.Log("missing springSimulation Script on the Manager");
-                        
-                        // update node count
-                        ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                    });
-                    GraphLODManager.Init();
-                },
-                () =>
-                {
-                    // GRIP (check if the simulation component is already added and add if not)
-                    var sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<GRIP>();
-                    if (!sim) sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
-
-                    // static layout using manager if found
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        // set state to spawnedNodes
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        // start simulation
-                        sim.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // ComponentV2 (check if the simulation component is already added and add if not)
-                    var forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject
-                        .GetComponent<ForceDirectedSimulationV2>();
-                    if (!forceDirected)
-                        forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject
-                            .AddComponent<ForceDirectedSimulationV2>();
-
-                    // static layout using manager if found
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        // set state to spawnedNodes
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        // start simulation
-                        forceDirected.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // minimalGPU
-                    var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
-                    if (!forceDirectedSim) return;
-                    if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-                    ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-                    NodeConnectionManager.Instance.UseNativeArray();
-                    ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                    NodeConnectionManager.Instance.ResizeNativeArray();
-                    NodeConnectionManager.Instance.ConvertToNativeArray();
-
-                    // layouting
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (springSimulation)
-                            springSimulation.Disable();
-                        forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes
-                            .Select(node => node.transform).ToArray();
-                        forceDirectedSim.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                }
-            };
-        }
-
         private void InitializeAnalyzeButton()
         {
-            if (_startButton == null || _actions == null || _actions.Length == 0)
+            if (_startButton == null)
             {
                 Debug.LogError("Failed to initialize Analyze button: button or actions are null");
                 return;
             }
 
-            _currentAction = _actions[0];
             _startButton.clicked += OnAnalyzeSceneButtonClicked;
         }
         
         /// <summary>
         /// raises the analyzeScene ScriptableObject event when clicking on the analyze button
-        /// <see cref="analyzeEvent"/>
+        /// <see cref="analyzeEventChannel"/>
         /// </summary>
         private void OnAnalyzeSceneButtonClicked()
         {
-            analyzeEvent?.Raise();
+            analyzeEventChannel.TriggerEvent(ScriptableObjectInventory.Instance.simulationParameters.simulationType, ScriptableObjectInventory.Instance.layout.layoutType);;
         }
 
+        /// <summary>
+        /// dynamically populate scenes
+        /// </summary>
         private void PopulateSceneDropdown()
         {
             // Get all scenes from build settings
@@ -656,21 +508,12 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnSimulationTypeChanged(string newValue)
         {
-            if (_startButton == null || _actions == null)
-            {
-                Debug.LogError("Cannot change simulation type: button or actions are null");
-                return;
-            }
-
-            _startButton.clicked -= _currentAction;
-
             if (Enum.TryParse(newValue, out SimulationType simType))
             {
                 var index = (int)simType;
-                if (index >= 0 && index < _actions.Length)
+                if (index >=0)
                 {
-                    _currentAction = _actions[index];
-                    _startButton.clicked += _currentAction;
+                    ScriptableObjectInventory.Instance.simulationParameters.simulationType = simType;
                 }
                 else
                 {
