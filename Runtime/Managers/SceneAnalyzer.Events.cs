@@ -56,7 +56,9 @@
             UnityAction,
             Action,
             UnityEvent,
-            CustomDelegate
+            CustomDelegate,
+            SystemEventHandler,
+            FuncDelegate
         }
 
         private enum SubscriptionType
@@ -579,6 +581,9 @@
             if (typeName.Contains("UnityAction")) return EventType.UnityAction;
             if (typeName.Contains("Action")) return EventType.Action;
             if (typeName.Contains("UnityEvent")) return EventType.UnityEvent;
+            if (typeName.Contains("UnityEvent")) return EventType.UnityEvent;
+            if (typeName.Contains("EventHandler")) return EventType.SystemEventHandler; // Add this
+            if (typeName.Contains("Func")) return EventType.FuncDelegate; // Add this
             return EventType.CustomDelegate;
         }
 
