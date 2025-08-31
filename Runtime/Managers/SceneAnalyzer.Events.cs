@@ -9,7 +9,7 @@
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using UnityEngine;
-    using Events;
+    using _3DConnections.Runtime.Events;
     using ScriptableObjects;
     using cols = ScriptableObjects.NodeColorsScriptableObject;
     public partial class SceneAnalyzer

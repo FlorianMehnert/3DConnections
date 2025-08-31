@@ -32,8 +32,9 @@ namespace _3DConnections.Runtime.ScriptableObjectInventory
         public ClearEvent clearEvent;
 
         public ToggleOverlayEvent toggleOverlayEvent;
+        
+        public SimulationParameters simulationParameters;
 
-        public UpdateLOD updateLOD;
 
         private static bool _isShuttingDown;
 

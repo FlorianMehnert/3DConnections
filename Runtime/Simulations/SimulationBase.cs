@@ -1,4 +1,6 @@
-﻿namespace _3DConnections.Runtime.Simulations
+﻿using _3DConnections.Runtime.Events;
+
+namespace _3DConnections.Runtime.Simulations
 {
     using UnityEngine;
     using UnityEngine.Serialization;
@@ -15,6 +17,8 @@
         private float _timer;
         [FormerlySerializedAs("Activated")] public bool activated = true;
         private bool _runningStep;
+        
+        [SerializeField] internal SimulationEvent simulationEvent;
 
         public virtual void OnEnable()
         {

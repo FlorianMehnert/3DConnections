@@ -1,4 +1,4 @@
-using UnityEngine.Serialization;
+using _3DConnections.Runtime.Events;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -14,11 +14,24 @@ namespace _3DConnections.Runtime.Managers
 
     public class LayoutManager : MonoBehaviour
     {
-        [FormerlySerializedAs("useHierarchyGrid")] public bool createRealGrid = true;
+        public bool createRealGrid = true;
+        
+        public LayoutEvent layoutEvent;
+
+        public void OnEnable()
+        {
+            layoutEvent.OnEventTriggered += StaticLayout;
+        }
+        
+        public void OnDisable()
+        {
+            layoutEvent.OnEventTriggered += StaticLayout;
+        }
+
         /// <summary>
         /// Requires existing connections in <see cref="NodeConnectionManager"/> to layout nodes as forest in a circular arrangement
         /// </summary>
-        public void Layout()
+        private void Layout()
         {
             var layoutParameters = soi.Instance.layout;
             var connections = soi.Instance.conSo.connections;

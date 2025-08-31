@@ -1,4 +1,4 @@
-using UnityEngine.UI;
+using _3DConnections.Runtime.Events;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -12,7 +12,6 @@ namespace _3DConnections.Runtime.Managers
     
     using ScriptableObjectInventory;
     using Scene;
-    using Simulations;
     using Nodes;
     using ScriptableObjects;
     using Utils;
@@ -26,7 +25,6 @@ namespace _3DConnections.Runtime.Managers
         // General UI
         public UIDocument uiDocument;
         public UIDocument uiDocumentLeft;
-        private VisualElement _panel;
 
         // Buttons
         private Button _clearButton;
@@ -57,14 +55,27 @@ namespace _3DConnections.Runtime.Managers
 
         // Toggle
         private Toggle _alternativeColorsButton;
-        private int _sliderValue = 0;
+        private int _sliderValue;
         private Toggle _levelOfDetailToggle;
 
         public GameObject clusterNodePrefab;
 
-        // Internal
-        private Action[] _actions;
-        private Action _currentAction;
+        // Handlers
+        private Action _clearButtonHandler;
+        private Action _removePhysicsHandler;
+        private Action _hrButtonHandler;
+        private Action _crButtonHandler;
+        private Action _srButtonHandler;
+        private Action _drButtonHandler;
+    
+        // Store value change callbacks
+        private EventCallback<ChangeEvent<string>> _simDropdownCallback;
+        private EventCallback<ChangeEvent<int>> _colorSliderCallback;
+        private EventCallback<ChangeEvent<bool>> _alternativeColorsCallback;
+        private EventCallback<ChangeEvent<bool>> _levelOfDetailCallback;
+        
+        // Events to invoke
+        [SerializeField] private AnalyzeEventChannel analyzeEventChannel;
 
         private void Start()
         {
@@ -91,7 +102,6 @@ namespace _3DConnections.Runtime.Managers
             GrabUIElementsInfoPanel(uiDocumentLeft.rootVisualElement);
 
             SetupUICallbacks();
-            PopulateActions();
             InitializeAnalyzeButton();
 
             // since this is a scriptable object, in edit mode this will not reset
@@ -112,7 +122,8 @@ namespace _3DConnections.Runtime.Managers
             try
             {
                 ScriptableObjectInventory.Instance.graph.OnGoCountChanged -= UpdateText;
-            }catch(Exception e)
+                RemoveUICallbacks();
+            }catch(Exception)
             {
                 
             }
@@ -136,7 +147,7 @@ namespace _3DConnections.Runtime.Managers
                 ScriptableObjectInventory.Instance.graph.voCount = allNodes;
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 
             }
@@ -145,88 +156,163 @@ namespace _3DConnections.Runtime.Managers
 
         private void SetupUICallbacks()
         {
-            if (_clearButton != null)
-                _clearButton.clicked += () =>
-                {
-                    if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.clearEvent)
-                        ScriptableObjectInventory.Instance.clearEvent.TriggerEvent();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                };
-
-            if (_removePhysicsButton != null)
-                _removePhysicsButton.clicked += () =>
-                {
-                    if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.removePhysicsEvent)
-                        ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-                };
-
-            if (_sceneDropdown != null)
-                PopulateSceneDropdown();
-
-            _simDropdown?.RegisterValueChangedCallback(evt => { OnSimulationTypeChanged(evt.newValue); });
-
-            _colorSlider?.RegisterValueChangedCallback(evt => UpdateColor(evt.newValue));
-            _alternativeColorsButton?.RegisterValueChangedCallback(_ => UpdateColor(_sliderValue));
-            _levelOfDetailToggle?.RegisterValueChangedCallback(evt =>
+            // Clear Button
+        if (_clearButton != null)
+        {
+            _clearButtonHandler = () =>
             {
-                var cam = SceneHandler.GetCameraOfOverlayedScene();
-                var component = cam?.GetComponent<GraphLODManager>();
-                if (component && component != null)
-                {
-                    if (_levelOfDetailToggle.value == false)
-                    {
-                        component.enabled = true;
-                        component.enabled = false;
-                    }
-                    else
-                    {
-                        component.enabled = false;
-                        component.enabled = true;
-                    }
+                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.clearEvent)
+                    ScriptableObjectInventory.Instance.clearEvent.TriggerEvent();
+                
+                ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
+            };
+            _clearButton.clicked += _clearButtonHandler;
+        }
 
-                }
-                else
-                {
-                    var lodManager = cam?.gameObject.AddComponent<GraphLODManager>();
-                    if (lodManager != null) lodManager.clusterNodePrefab = clusterNodePrefab;
-                }
-            });
+        // Remove Physics Button
+        if (_removePhysicsButton != null)
+        {
+            _removePhysicsHandler = () =>
+            {
+                if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.removePhysicsEvent)
+                    ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
+            };
+            _removePhysicsButton.clicked += _removePhysicsHandler;
+        }
 
-            ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = true;
-            ScriptableObjectInventory.Instance.conSo.componentReferencesActive = true;
-            ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = true;
-            ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = true;
-            if (_hrButton != null)
-                _hrButton.clicked += () =>
-                {
-                    var pcra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
-                    NodeConnectionManager.SetConnectionType("parentChildConnection", !pcra);
-                    ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = !pcra;
-                };
+        // Scene Dropdown
+        if (_sceneDropdown != null)
+            PopulateSceneDropdown();
 
-            if (_crButton != null)
-                _crButton.clicked += () =>
-                {
-                    var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
-                    NodeConnectionManager.SetConnectionType("componentConnection", !cra);
-                    ScriptableObjectInventory.Instance.conSo.componentReferencesActive = !cra;
-                };
-            if (_srButton != null)
-                _srButton.clicked += () =>
-                {
-                    var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
-                    NodeConnectionManager.SetConnectionType("referenceConnection", !fra);
-                    ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = !fra;
-                };
-            if (_drButton != null)
-                _drButton.clicked += () =>
-                {
-                    var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
-                    NodeConnectionManager.SetConnectionType("dynamicComponentConnection", !dra);
-                    ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = !dra;
-                };
+        // Simulation Dropdown
+        if (_simDropdown != null)
+        {
+            _simDropdownCallback = evt => OnSimulationTypeChanged(evt.newValue);
+            _simDropdown.RegisterValueChangedCallback(_simDropdownCallback);
+        }
+
+        // Color Slider
+        if (_colorSlider != null)
+        {
+            _colorSliderCallback = evt => UpdateColor(evt.newValue);
+            _colorSlider.RegisterValueChangedCallback(_colorSliderCallback);
+        }
+
+        // Alternative Colors Button
+        if (_alternativeColorsButton != null)
+        {
+            _alternativeColorsCallback = _ => UpdateColor(_sliderValue);
+            _alternativeColorsButton.RegisterValueChangedCallback(_alternativeColorsCallback);
+        }
+
+        // Level of Detail Toggle
+        if (_levelOfDetailToggle != null)
+        {
+            _levelOfDetailCallback = evt => HandleLevelOfDetailChange(evt.newValue);
+            _levelOfDetailToggle.RegisterValueChangedCallback(_levelOfDetailCallback);
+        }
+
+        // Initialize connection settings
+        ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.componentReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = true;
+        ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = true;
+
+        // HR Button
+        if (_hrButton != null)
+        {
+            _hrButtonHandler = () =>
+            {
+                var pcra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
+                NodeConnectionManager.SetConnectionType("parentChildConnection", !pcra);
+                ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = !pcra;
+            };
+            _hrButton.clicked += _hrButtonHandler;
+        }
+
+        // CR Button
+        if (_crButton != null)
+        {
+            _crButtonHandler = () =>
+            {
+                var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
+                NodeConnectionManager.SetConnectionType("componentConnection", !cra);
+                ScriptableObjectInventory.Instance.conSo.componentReferencesActive = !cra;
+            };
+            _crButton.clicked += _crButtonHandler;
+        }
+
+        // SR Button
+        if (_srButton != null)
+        {
+            _srButtonHandler = () =>
+            {
+                var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
+                NodeConnectionManager.SetConnectionType("referenceConnection", !fra);
+                ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = !fra;
+            };
+            _srButton.clicked += _srButtonHandler;
+        }
+
+        // DR Button
+        if (_drButton == null) return;
+        _drButtonHandler = () =>
+        {
+            var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
+            NodeConnectionManager.SetConnectionType("dynamicComponentConnection", !dra);
+            ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = !dra;
+        };
+        _drButton.clicked += _drButtonHandler;
+        }
+        
+        private void RemoveUICallbacks()
+        {
+            // Remove button click handlers
+            if (_clearButton != null && _clearButtonHandler != null)
+                _clearButton.clicked -= _clearButtonHandler;
+            
+            if (_removePhysicsButton != null && _removePhysicsHandler != null)
+                _removePhysicsButton.clicked -= _removePhysicsHandler;
+            
+            if (_hrButton != null && _hrButtonHandler != null)
+                _hrButton.clicked -= _hrButtonHandler;
+            
+            if (_crButton != null && _crButtonHandler != null)
+                _crButton.clicked -= _crButtonHandler;
+            
+            if (_srButton != null && _srButtonHandler != null)
+                _srButton.clicked -= _srButtonHandler;
+            
+            if (_drButton != null && _drButtonHandler != null)
+                _drButton.clicked -= _drButtonHandler;
+        
+            // Remove value changed callbacks
+            if (_simDropdown != null && _simDropdownCallback != null)
+                _simDropdown.UnregisterValueChangedCallback(_simDropdownCallback);
+            
+            if (_colorSlider != null && _colorSliderCallback != null)
+                _colorSlider.UnregisterValueChangedCallback(_colorSliderCallback);
+            
+            if (_alternativeColorsButton != null && _alternativeColorsCallback != null)
+                _alternativeColorsButton.UnregisterValueChangedCallback(_alternativeColorsCallback);
+            
+            if (_levelOfDetailToggle != null && _levelOfDetailCallback != null)
+                _levelOfDetailToggle.UnregisterValueChangedCallback(_levelOfDetailCallback);
+            
+            if (_startButton != null)
+                _startButton.clicked -= OnAnalyzeSceneButtonClicked;
+        
+            // Clear references
+            _clearButtonHandler = null;
+            _removePhysicsHandler = null;
+            _hrButtonHandler = null;
+            _crButtonHandler = null;
+            _srButtonHandler = null;
+            _drButtonHandler = null;
+            _simDropdownCallback = null;
+            _colorSliderCallback = null;
+            _alternativeColorsCallback = null;
+            _levelOfDetailCallback = null;
         }
         
         private void GrabUIElementsInfoPanel(VisualElement root)
@@ -256,7 +342,6 @@ namespace _3DConnections.Runtime.Managers
                 return;
             }
 
-            _panel = root.Q<VisualElement>("Panel");
             _clearButton = root.Q<Button>("Clear");
             _removePhysicsButton = root.Q<Button>("RemovePhysics");
             _sceneDropdown = root.Q<DropdownField>("DropdownScene");
@@ -271,164 +356,56 @@ namespace _3DConnections.Runtime.Managers
             _srButton = root.Q<Button>("FR");
             _drButton = root.Q<Button>("DR");
         }
-
-        private void PopulateActions()
+        
+        private void HandleLevelOfDetailChange(bool value)
         {
-            var springSimulation = FindFirstObjectByType<SpringSimulation>();
-            _actions = new Action[]
+            var cam = SceneHandler.GetCameraOfOverlayedScene();
+            var component = cam?.GetComponent<GraphLODManager>();
+        
+            if (component != null)
             {
-                () =>
+                if (!value)
                 {
-                    // Static 
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // default
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance?.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        ScriptableObjectInventory.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
-                        NodeConnectionManager.Instance?.AddSpringsToConnections();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // burst
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (ScriptableObjectInventory.Instance)
-                        {
-                            if (ScriptableObjectInventory.Instance.applicationState)
-                                ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-                            if (ScriptableObjectInventory.Instance.graph)
-                                ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                        }
-
-                        if (NodeConnectionManager.Instance)
-                        {
-                            NodeConnectionManager.Instance
-                                .ConvertToNativeArray(); // convert connections to a burst array
-                            NodeConnectionManager.Instance.AddSpringsToConnections();
-                        }
-
-                        if (springSimulation)
-                            springSimulation.Simulate();
-                        else
-                            Debug.Log("missing springSimulation Script on the Manager");
-                        
-                        // update node count
-                        ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                    });
-                    GraphLODManager.Init();
-                },
-                () =>
-                {
-                    // GRIP (check if the simulation component is already added and add if not)
-                    var sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.GetComponent<GRIP>();
-                    if (!sim) sim = ScriptableObjectInventory.Instance.simulationRoot.gameObject.AddComponent<GRIP>();
-
-                    // static layout using manager if found
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        // set state to spawnedNodes
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        // start simulation
-                        sim.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // ComponentV2 (check if the simulation component is already added and add if not)
-                    var forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject
-                        .GetComponent<ForceDirectedSimulationV2>();
-                    if (!forceDirected)
-                        forceDirected = ScriptableObjectInventory.Instance.simulationRoot.gameObject
-                            .AddComponent<ForceDirectedSimulationV2>();
-
-                    // static layout using manager if found
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        // set state to spawnedNodes
-                        if (ScriptableObjectInventory.Instance && ScriptableObjectInventory.Instance.applicationState)
-                            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = true;
-
-                        // start simulation
-                        forceDirected.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-                },
-                () =>
-                {
-                    // minimalGPU
-                    var forceDirectedSim = FindFirstObjectByType<MinimalForceDirectedSimulation>();
-                    if (!forceDirectedSim) return;
-                    if (ScriptableObjectInventory.Instance.graph.AllNodes.Count <= 0) return;
-                    ScriptableObjectInventory.Instance.removePhysicsEvent.TriggerEvent();
-                    NodeConnectionManager.Instance.UseNativeArray();
-                    ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
-                    NodeConnectionManager.Instance.AddSpringsToConnections();
-                    NodeConnectionManager.Instance.ResizeNativeArray();
-                    NodeConnectionManager.Instance.ConvertToNativeArray();
-
-                    // layouting
-                    var layout = FindFirstObjectByType<LayoutManager>();
-                    layout.StaticLayout(() =>
-                    {
-                        if (springSimulation)
-                            springSimulation.Disable();
-                        forceDirectedSim.nodeTransforms = ScriptableObjectInventory.Instance.graph.AllNodes
-                            .Select(node => node.transform).ToArray();
-                        forceDirectedSim.Initialize();
-                    });
-                    GraphLODManager.Init();
-                    
-                    // update node count
-                    ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
+                    component.enabled = true;
+                    component.enabled = false;
                 }
-            };
+                else
+                {
+                    component.enabled = false;
+                    component.enabled = true;
+                }
+            }
+            else
+            {
+                var lodManager = cam?.gameObject.AddComponent<GraphLODManager>();
+                if (lodManager != null) 
+                    lodManager.clusterNodePrefab = clusterNodePrefab;
+            }
         }
 
         private void InitializeAnalyzeButton()
         {
-            if (_startButton == null || _actions == null || _actions.Length == 0)
+            if (_startButton == null)
             {
                 Debug.LogError("Failed to initialize Analyze button: button or actions are null");
                 return;
             }
 
-            _currentAction = _actions[0];
-            _startButton.clicked += _currentAction;
+            _startButton.clicked += OnAnalyzeSceneButtonClicked;
+        }
+        
+        /// <summary>
+        /// raises the analyzeScene ScriptableObject event when clicking on the analyze button
+        /// <see cref="analyzeEventChannel"/>
+        /// </summary>
+        private void OnAnalyzeSceneButtonClicked()
+        {
+            analyzeEventChannel.TriggerEvent(ScriptableObjectInventory.Instance.simulationParameters.simulationType, ScriptableObjectInventory.Instance.layout.layoutType);;
         }
 
+        /// <summary>
+        /// dynamically populate scenes
+        /// </summary>
         private void PopulateSceneDropdown()
         {
             // Get all scenes from build settings
@@ -530,21 +507,12 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnSimulationTypeChanged(string newValue)
         {
-            if (_startButton == null || _actions == null)
-            {
-                Debug.LogError("Cannot change simulation type: button or actions are null");
-                return;
-            }
-
-            _startButton.clicked -= _currentAction;
-
             if (Enum.TryParse(newValue, out SimulationType simType))
             {
                 var index = (int)simType;
-                if (index >= 0 && index < _actions.Length)
+                if (index >=0)
                 {
-                    _currentAction = _actions[index];
-                    _startButton.clicked += _currentAction;
+                    ScriptableObjectInventory.Instance.simulationParameters.simulationType = simType;
                 }
                 else
                 {

@@ -1,6 +1,8 @@
+using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.ScriptableObjects;
+
 namespace _3DConnections.Runtime.Simulations
 {
-    // Updated C# Script
     using UnityEngine;
     
     using ScriptableObjectInventory;
@@ -21,6 +23,8 @@ namespace _3DConnections.Runtime.Simulations
         private static readonly int RepulsionStrength = Shader.PropertyToID("repulsion_strength");
         private static readonly int AttractionStrength = Shader.PropertyToID("attraction_strength");
         private static readonly int StepsPerDispatch = Shader.PropertyToID("steps_per_dispatch");
+        
+        [SerializeField] private SimulationEvent simulationEvent;
 
         private struct NodeData
         {
@@ -32,6 +36,16 @@ namespace _3DConnections.Runtime.Simulations
         {
             _kernel = computeShader.FindKernel("CSMain");
         }
+        
+        private void OnEnable()
+        {
+            _isShuttingDown = false;
+            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
+                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
+            if (ScriptableObjectInventory.Instance.clearEvent)
+                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
+            simulationEvent.OnSimulationRequested += Simulate;
+        }
 
         private void OnDisable()
         {
@@ -41,10 +55,24 @@ namespace _3DConnections.Runtime.Simulations
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
                 ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+            simulationEvent.OnSimulationRequested -= Simulate;
+        }
+
+        private void Simulate(SimulationType simulationType)
+        {
+            if (simulationType != SimulationType.MinimalGPU) return;
+            Initialize();
         }
 
         public void Initialize()
         {
+            // TODO: reimplement this back using maybe events
+            // NodeConnectionManager.Instance.UseNativeArray();
+            // ScriptableObjectInventory.Instance.graph.NodesAddComponent(typeof(Rigidbody2D));
+            // NodeConnectionManager.Instance.AddSpringsToConnections();
+            // NodeConnectionManager.Instance.ResizeNativeArray();
+            // NodeConnectionManager.Instance.ConvertToNativeArray();
+
             var data = new NodeData[nodeTransforms.Length];
 
             Debug.Log(nodeTransforms.Length);
@@ -74,14 +102,6 @@ namespace _3DConnections.Runtime.Simulations
             _nodeBuffer = null;
         }
 
-        private void OnEnable()
-        {
-            _isShuttingDown = false;
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent)
-                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
-            if (ScriptableObjectInventory.Instance.clearEvent)
-                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
-        }
 
         private void Update()
         {

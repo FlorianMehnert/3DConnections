@@ -1,3 +1,5 @@
+using System;
+
 namespace _3DConnections.Runtime.GUI
 {
     using System.Collections.Generic;
@@ -7,6 +9,7 @@ namespace _3DConnections.Runtime.GUI
     
     using ScriptableObjectInventory;
 
+    [Obsolete]
     public class NodeTextScaler : MonoBehaviour
     {
         [SerializeField]

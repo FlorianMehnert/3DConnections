@@ -1,6 +1,5 @@
 namespace _3DConnections.Runtime.ScriptableObjects
 {
-    using System;
     using JetBrains.Annotations;
     using UnityEngine;
     using UnityEngine.SceneManagement;

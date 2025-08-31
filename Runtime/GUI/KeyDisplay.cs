@@ -5,8 +5,7 @@ namespace _3DConnections.Runtime.Managers
     using UnityEngine;
     using UnityEngine.SceneManagement;
     using ScriptableObjectInventory;
-    using Scene;
-    using Runtime.ScriptableObjects;
+    using ScriptableObjects;
 
     public class KeyDisplay : MonoBehaviour
     {
@@ -162,28 +161,6 @@ namespace _3DConnections.Runtime.Managers
 
                 // Update the last input time
                 _lastInputTime = Time.time;
-                if (IsConfirm())
-                {
-                    if (_inputString == "")
-                    {
-                        var nodeGraph = GetNodeGraph();
-                        if (nodeGraph && nodeGraph.IsEmpty())
-                        {
-                            var layout = FindFirstObjectByType<LayoutManager>();
-                            if (layout)
-                                layout.StaticLayout(() =>
-                                {
-                                    var overlayedScene = SceneHandler.GetOverlayedScene();
-                                    if (overlayedScene != null)
-                                        SceneManager.SetActiveScene(overlayedScene.Value);
-                                    Log("Showing static circular layout", 2f);
-                                });
-                        }
-                    }
-
-                    _style.normal.textColor = Color.green;
-                }
-
                 // Check for the ":q" sequence
                 if (_inputString.Contains(":q") && IsConfirm())
                 {
@@ -213,36 +190,39 @@ namespace _3DConnections.Runtime.Managers
                 }
                 else if (IsConfirm())
                 {
-                    var menu = FindFirstObjectByType<SimulationManager>();
-                    if (menu)
+                    var simulationManager = FindFirstObjectByType<SimulationManager>();
+                    if (simulationManager)
                     {
                         if (_inputString.StartsWith("0"))
                         {
-                            Log("Executing physics sim (Method: Unity Components)");
-                            menu.ApplyStaticLayout();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Static;
+                            simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("1"))
                         {
-                            Log("Executing physics sim (Method: Unity Components)");
-                            menu.ApplyComponentPhysics();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Default;
+                            simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("2"))
                         {
-                            Log("Executing physics sim (Method: Burst)");
-                            menu.ApplyBurstPhysics();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Burst;
+                            simulationManager.Simulate();
                         }
 
                         else if (_inputString.StartsWith("3"))
                         {
-                            menu.ApplyGRIP();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.GRIP;
+                            simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("4"))
                         {
-                            menu.ApplySimpleGPUPhysics();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.MinimalGPU;
+                            simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("5"))
                         {
-                            menu.ApplyForceDirectedComponentPhysics();
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.ComponentV2;
+                            simulationManager.Simulate();
                         }
 
                         _inputString = "";
