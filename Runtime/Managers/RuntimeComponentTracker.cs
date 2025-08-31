@@ -438,16 +438,16 @@
             ClearReferences();
 
             // Find all GameObjects in the scene
-            var allGameObjects = FindObjectsOfType<GameObject>();
+            var allGameObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
 
-            foreach (var gameObject in allGameObjects)
+            foreach (var go in allGameObjects)
             {
-                if (gameObject.GetComponent<ArtificialGameObject>() != null) continue;
+                if (go.GetComponent<ArtificialGameObject>() != null) continue;
 
-                RegisterGameObject(gameObject);
+                RegisterGameObject(go);
 
                 // Analyze all MonoBehaviour components
-                var components = gameObject.GetComponents<MonoBehaviour>();
+                var components = go.GetComponents<MonoBehaviour>();
                 foreach (var component in components)
                 {
                     if (component != null)

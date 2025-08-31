@@ -14,7 +14,7 @@ namespace _3DConnections.Runtime.Simulations
 
     /// <summary>
     /// Places nodes initially in a radius defined by @param initialPlacementRadius
-    /// maxLevels ... amount of hierarchy levels
+    /// maxLevels ... number of hierarchy levels
     /// </summary>
 // ReSharper disable once InconsistentNaming
     public class GRIP : SimulationBase
@@ -32,7 +32,6 @@ namespace _3DConnections.Runtime.Simulations
         private List<GameObject> _nodes;
         private List<GRIPLevel> _levels;
         private int _currentLevel;
-        private float _currentTemperature = 0.01f;
         private bool _currentlyCalculating;
 
         // ReSharper disable once InconsistentNaming
@@ -156,7 +155,7 @@ namespace _3DConnections.Runtime.Simulations
             {
                 if (matched.Contains(nodeIdx)) continue;
 
-                // Find best match (heaviest edge)
+                // Find the best match (the heaviest edge)
                 var bestMatch = -1;
                 var maxWeight = 0;
 
@@ -172,7 +171,7 @@ namespace _3DConnections.Runtime.Simulations
 
                 // Create supernode
                 var supernodeIdx = coarserLevel.NodeIndices.Count;
-                coarserLevel.NodeIndices.Add(nodeIdx); // Use first node as representative
+                coarserLevel.NodeIndices.Add(nodeIdx); // Use the first node as representative
                 coarserLevel.NodeToChildrenMap[supernodeIdx] = new List<int> { nodeIdx };
                 matched.Add(nodeIdx);
 
@@ -203,7 +202,7 @@ namespace _3DConnections.Runtime.Simulations
             }
             else
             {
-                // Coarser levels - will be initialized later
+                // Coarser levels will be initialized later
                 for (int i = 0; i < nodeCount; i++)
                 {
                     level.Velocities[i] = float3.zero;
@@ -307,7 +306,7 @@ namespace _3DConnections.Runtime.Simulations
                     {
                         RefineToNextLevel();
                         _currentLevel--;
-                        CurrentTemperature = startTemperature; // reset for new level
+                        CurrentTemperature = startTemperature; // reset for a new level
                     }
                     else
                     {
@@ -353,7 +352,7 @@ namespace _3DConnections.Runtime.Simulations
                     if (!coarserLevel.NodeToChildrenMap.TryGetValue(i, out var children)) continue;
                     var childCount = children.Count;
 
-                    // Place children around parent position
+                    // Place children around a parent position
                     for (int j = 0; j < childCount; j++)
                     {
                         var childNodeIdx = children[j];
@@ -370,7 +369,7 @@ namespace _3DConnections.Runtime.Simulations
                         }
 
                         if (childLevelIdx < 0) continue;
-                        // Add small random offset in 2D only
+                        // Add a small random offset in 2D only
                         var offset = new float3(
                             UnityEngine.Random.Range(-5f, 5f),
                             UnityEngine.Random.Range(-5f, 5f),
@@ -420,7 +419,7 @@ namespace _3DConnections.Runtime.Simulations
 
         private void OnDisable()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (ScriptableObjectInventory.Instance == null) return;
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
@@ -484,7 +483,7 @@ namespace _3DConnections.Runtime.Simulations
                         var direction2d = pos12D - pos22D;
                         var distance = math.length(direction2d);
 
-                        // Skip if distance is zero to avoid division by zero
+                        // Skip if the distance is zero to avoid division by zero
                         if (distance <= float.Epsilon) continue;
 
                         var normalizedDirection2d = direction2d / distance;
@@ -504,7 +503,7 @@ namespace _3DConnections.Runtime.Simulations
                     }
                 }
 
-                // Calculate attractive forces with spring model
+                // Calculate attractive forces with a spring model
                 for (var i = 0; i < ConnectionStartIndices.Length; i++)
                 {
                     var startIndex = ConnectionStartIndices[i];

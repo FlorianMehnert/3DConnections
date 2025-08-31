@@ -203,7 +203,7 @@ namespace _3DConnections.Runtime.Managers
                 {
                     existingSprings = connection.startNode.GetComponents<SpringJoint2D>();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     continue;
                 }

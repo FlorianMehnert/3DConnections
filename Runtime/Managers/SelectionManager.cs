@@ -279,7 +279,7 @@ namespace _3DConnections.Runtime.Managers
                 NodeGraphScriptableObject.ClearAllHighlights();
         
                 // Then refresh LOD colors to use original colors
-                var lodManager = FindObjectOfType<GraphLODManager>();
+                var lodManager = FindFirstObjectByType<GraphLODManager>();
                 if (lodManager != null)
                 {
                     lodManager.RefreshAggregatedEdgeColors();

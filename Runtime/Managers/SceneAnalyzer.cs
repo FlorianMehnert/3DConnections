@@ -70,6 +70,9 @@ namespace _3DConnections.Runtime.Managers
                     CreateDynamicConnections();
                     AnalyzeEventSubscriptions();
                     CreateEventConnections();
+#if UNITY_EDITOR
+                    AnalyzeUnityEventPersistentConnections();
+#endif
                 }
 
                 onComplete?.Invoke();

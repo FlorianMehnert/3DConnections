@@ -54,7 +54,7 @@ namespace _3DConnections.Runtime.Simulations
                     _velocities[i] = float3.zero;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 
             }
@@ -151,13 +151,12 @@ namespace _3DConnections.Runtime.Simulations
                 DeltaTime = updateInterval
             };
 
-            // Execute the job immediately on the main thread (for simplicity)
             forceCalculationJob.Run();
         }
 
         private void OnDisable()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (ScriptableObjectInventory.Instance == null) return;
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)

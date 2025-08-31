@@ -62,8 +62,6 @@
                 var typeName = typeOfExpr.Type.ToString();
                 return FindTypeByName(typeName);
             }
-
-            return null;
         }
 
         /// <summary>

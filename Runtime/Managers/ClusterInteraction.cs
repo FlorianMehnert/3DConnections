@@ -15,7 +15,7 @@
 
         private void Start()
         {
-            _lodManager = FindObjectOfType<GraphLODManager>();
+            _lodManager = FindFirstObjectByType<GraphLODManager>();
         }
 
         public void OnPointerClick(PointerEventData eventData)

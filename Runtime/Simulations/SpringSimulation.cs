@@ -35,7 +35,7 @@ namespace _3DConnections.Runtime.Simulations
 
         private void OnDisable()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (ScriptableObjectInventory.Instance == null) return;
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             simulationEvent.OnSimulationRequested -= Simulate;

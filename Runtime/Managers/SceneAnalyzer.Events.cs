@@ -548,10 +548,10 @@
         private void AnalyzeScriptableObjectEvents()
         {
             // Find all ScriptableObject types in the project and analyze them for events
-            var scriptableObjects = FindObjectsOfType<ScriptableObject>();
+            var scriptableObjects = FindObjectsByType<ScriptableObject>(FindObjectsSortMode.InstanceID);
             foreach (var so in scriptableObjects)
             {
-                if (so == null) continue;
+                if (!so) continue;
 
                 var soType = so.GetType();
                 if (_discoveredMonoBehaviours.Contains(soType)) continue; // Already analyzed

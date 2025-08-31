@@ -28,7 +28,6 @@ namespace _3DConnections.Runtime.Managers
         
         [Header("Visual Settings")] 
         [SerializeField] public GameObject clusterNodePrefab; // Prefab for aggregated nodes
-        [SerializeField] private float transitionSpeed = 5f; // Speed of LOD transitions
         [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 2f);
         private bool _showText;
         
@@ -528,10 +527,7 @@ namespace _3DConnections.Runtime.Managers
             if (_useCurrentColors)
             {
                 // Use current colors (which might be highlighted)
-                avgColor = CalculateAverageColor(nodes, node => 
-                {
-                    return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
-                }, useHSV: true);
+                avgColor = CalculateAverageColor(nodes, node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, useHSV: true);
             }
             else
             {
@@ -841,7 +837,7 @@ namespace _3DConnections.Runtime.Managers
                 return coloredObj != null ?
                     // Use the original color stored in ColoredObject
                     coloredObj.GetOriginalColor() :
-                    // Fallback to current color if no ColoredObject
+                    // Fallback to the current color if no ColoredObject
                     conn.lineRenderer.startColor;
             }, useHSV: true);
 
@@ -1035,8 +1031,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
 
-        
-        public void RefreshClusterNodeColors()
+        private void RefreshClusterNodeColors()
         {
             if (!_isLODActive) return;
     
