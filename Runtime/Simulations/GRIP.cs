@@ -33,7 +33,6 @@ namespace _3DConnections.Runtime.Simulations
         private List<GRIPLevel> _levels;
         private int _currentLevel;
         private float _currentTemperature = 0.01f;
-        private float _timer;
         private bool _currentlyCalculating;
 
         // ReSharper disable once InconsistentNaming
