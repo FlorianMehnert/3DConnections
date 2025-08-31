@@ -13,7 +13,12 @@ namespace _3DConnections.Runtime.Simulations
             simulationEvent.OnSimulationRequested += Simulate;
         }
 
-        private void Simulate(SimulationType simulationType)
+        public void OnDisable()
+        {
+            simulationEvent.OnSimulationRequested -= Simulate;
+        }
+
+        private static void Simulate(SimulationType simulationType)
         {
             if (simulationType != SimulationType.Default) return;
             soi.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
