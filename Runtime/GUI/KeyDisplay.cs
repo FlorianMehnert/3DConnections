@@ -5,8 +5,7 @@ namespace _3DConnections.Runtime.Managers
     using UnityEngine;
     using UnityEngine.SceneManagement;
     using ScriptableObjectInventory;
-    using Scene;
-    using Runtime.ScriptableObjects;
+    using ScriptableObjects;
 
     public class KeyDisplay : MonoBehaviour
     {

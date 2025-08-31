@@ -6,7 +6,7 @@ namespace _3DConnections.Editor
     using UnityEditor;
     using UnityEngine;
     [CustomEditor(typeof(SettingsMenuGeneral))]
-    public class SettingsMenuEditor : UnityEditor.Editor
+    public class SettingsMenuEditor : Editor
     {
         private SettingsMenuGeneral _nodeConnectionManager;
 

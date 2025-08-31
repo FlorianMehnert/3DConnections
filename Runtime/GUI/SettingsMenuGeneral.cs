@@ -12,7 +12,6 @@ namespace _3DConnections.Runtime.Managers
     
     using ScriptableObjectInventory;
     using Scene;
-    using Simulations;
     using Nodes;
     using ScriptableObjects;
     using Utils;
