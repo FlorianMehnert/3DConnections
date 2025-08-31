@@ -47,7 +47,7 @@ namespace _3DConnections.Runtime.Managers
             AddLayerToCamera("OverlayScene");
 
             // Find or create LOD manager
-            _lodManager = FindObjectOfType<GraphLODManager>();
+            _lodManager = FindFirstObjectByType<GraphLODManager>();
             if (!_lodManager)
             {
                 _lodManager = gameObject.AddComponent<GraphLODManager>();
