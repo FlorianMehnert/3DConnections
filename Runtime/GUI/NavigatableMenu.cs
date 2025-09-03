@@ -17,7 +17,6 @@ namespace _3DConnections.Runtime.Managers
         private List<Tab> _tabButtons;
         private List<Button> _currentTabButtons;
         private int _currentButtonIndex = -1;
-        private bool _isVisible = true;
         [SerializeField] private MenuState menuState;
 
         private void Awake()
@@ -70,21 +69,20 @@ namespace _3DConnections.Runtime.Managers
                 Debug.Log("did not find settingsMenuGeneral on menuToggle");
             }
             if (_menuDocument == null) return;
-
-            if (_isVisible)
+            var root = _menuDocument.rootVisualElement;
+            var panel = root.Q<VisualElement>("Panel"); 
+            if (panel.ClassListContains("visible"))
             {
-                _menuDocument.rootVisualElement.RemoveFromClassList("visible");
-                _menuDocument.rootVisualElement.AddToClassList("hidden");
+                panel.RemoveFromClassList("visible");
+                panel.AddToClassList("hidden");
                 menuState.menuOpen = false;
             }
             else
             {
-                _menuDocument.rootVisualElement.RemoveFromClassList("hidden");
-                _menuDocument.rootVisualElement.AddToClassList("visible");
+                panel.RemoveFromClassList("hidden");
+                panel.AddToClassList("visible");
                 menuState.menuOpen = true;
             }
-
-            _isVisible = !_isVisible;
         }
 
         public void OnNavigationPerformed(InputAction.CallbackContext context)

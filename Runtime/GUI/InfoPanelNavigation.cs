@@ -1,5 +1,4 @@
-﻿
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -9,41 +8,24 @@ namespace _3DConnections.Runtime.Managers
 
     public class InfoPanelNavigation : MonoBehaviour
     {
-        private UIDocument _menuDocument;
-        private VisualElement _infoPanel;
-        private bool _isVisible = true;
-
-        private void Awake()
-        {
-            _menuDocument = GetComponent<UIDocument>();
-        }
-
-        private void OnEnable()
-        {
-            var root = _menuDocument.rootVisualElement;
-
-            _infoPanel = root.Q<VisualElement>("VisualElement"); 
-        }
-
         [UsedImplicitly]
-        public void OnInfoPanelToggle(InputAction.CallbackContext context)
+        public void OnMenuToggle(InputAction.CallbackContext context)
         {
             if (!context.performed) return;
-
-            if (_infoPanel == null) return;
-
-            if (_isVisible)
+            var infoToggle = GetComponent<UIDocument>();
+            if (infoToggle == null) return;
+            var root = infoToggle.rootVisualElement;
+            var panel = root.Q<VisualElement>("Panel");
+            if (panel.ClassListContains("fade_in_opacity"))
             {
-                _infoPanel.RemoveFromClassList("fade_in_opacity");
-                _infoPanel.AddToClassList("fade_out_opacity");
+                panel.RemoveFromClassList("fade_in_opacity");
+                panel.AddToClassList("fade_out_opacity");
             }
             else
             {
-                _infoPanel.RemoveFromClassList("fade_out_opacity");
-                _infoPanel.AddToClassList("fade_in_opacity");
+                panel.RemoveFromClassList("fade_out_opacity");
+                panel.AddToClassList("fade_in_opacity");
             }
-
-            _isVisible = !_isVisible;
         }
     }
 }
