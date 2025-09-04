@@ -55,41 +55,51 @@ namespace _3DConnections.Runtime.Nodes
         {
             if (node == null || _nodeWidths.ContainsKey(node)) return;
 
-            // Get node width from GameObject (assuming it has a Renderer or RectTransform)
             var width = 1f;
+
             if (node.GameObject)
             {
-                var renderer = node.GameObject.GetComponent<Renderer>();
-                if (renderer)
-                    width = renderer.bounds.size.x;
+                var spriteRenderer = node.GameObject.GetComponent<SpriteRenderer>();
+                if (spriteRenderer)
+                {
+                    width = spriteRenderer.bounds.size.x;
+                }
                 else
                 {
-                    var rectTransform = node.GameObject.GetComponent<RectTransform>();
-                    if (rectTransform)
+                    var meshRenderer = node.GameObject.GetComponent<MeshRenderer>();
+                    if (meshRenderer)
                     {
-                        width = rectTransform.rect.width;
+                        width = meshRenderer.bounds.size.x;
+                    }
+                    else
+                    {
+                        var rectTransform = node.GameObject.GetComponent<RectTransform>();
+                        if (rectTransform)
+                        {
+                            width = rectTransform.rect.width * rectTransform.lossyScale.x;
+                        }
                     }
                 }
             }
 
             _nodeWidths[node] = width;
 
-            // Calculate subtree width
             var subtreeWidth = width;
             if (node.Children.Count > 0)
             {
-                subtreeWidth = 0;
+                subtreeWidth = 0f;
                 foreach (var child in node.Children)
                 {
                     CalculateNodeWidths(child);
-                    subtreeWidth += _subtreeWidths.GetValueOrDefault(child, 0) + _nodeSpacing;
+                    subtreeWidth += _subtreeWidths.GetValueOrDefault(child, 0f) + _nodeSpacing;
                 }
 
-                subtreeWidth -= _nodeSpacing; // Remove extra spacing after last child
+                subtreeWidth -= _nodeSpacing;
             }
 
             _subtreeWidths[node] = Mathf.Max(width, subtreeWidth);
         }
+
 
         private void CalculateInitialPositions(TreeNode node, float x, float y)
         {
