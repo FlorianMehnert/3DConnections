@@ -20,7 +20,7 @@ MonoBehaviour:
   levelSpacing: 10
   nodeSpacing: 2
   subtreeSpacing: 2
-  attractionStrength: 1
+  attractionStrength: 10
   repulsion: 100
   idealEdgeLength: 5
   iterations: 50
@@ -28,7 +28,7 @@ MonoBehaviour:
   initialTemperature: 10
   coarseningLevels: 3
   coarseningRatio: 0.5
-  isDirected: 1
+  isDirected: 0
   directionalForce: 2
   cycleHandlingStrength: 0.5
   useBarnesHut: 1

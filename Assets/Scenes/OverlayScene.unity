@@ -666,6 +666,7 @@ MonoBehaviour:
   clearEvent: {fileID: 11400000, guid: 2d8463635a0e4f7c489d9f680ace1b2d, type: 2}
   toggleOverlayEvent: {fileID: 11400000, guid: b9872aed5462e2f4db20322ef7c3e55d, type: 2}
   simulationParameters: {fileID: 11400000, guid: 2a77680ff598d414cadf6fd10f72d592, type: 2}
+  UISettings: {fileID: 11400000, guid: 71629feeb53bc0a45837bdd2b27cd133, type: 2}
   simulationRoot: {fileID: 1470742721}
   managerRoot: {fileID: 4630647389690195313}
   nodeRoot: {fileID: 108217078}
@@ -1167,7 +1168,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1953,6 +1954,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -1962,7 +1967,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6752259139762021487, guid: 25c61585dad37cb52a4d0b42b5ef826d, type: 3}
       propertyPath: m_LocalRotation.w

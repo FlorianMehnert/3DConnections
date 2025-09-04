@@ -1,3 +1,5 @@
+using UnityEngine.Serialization;
+
 namespace _3DConnections.Runtime.ScriptableObjectInventory
 {
     using Events;
@@ -34,6 +36,8 @@ namespace _3DConnections.Runtime.ScriptableObjectInventory
         public ToggleOverlayEvent toggleOverlayEvent;
         
         public SimulationParameters simulationParameters;
+        
+        public UISettings uiSettings;
 
 
         private static bool _isShuttingDown;

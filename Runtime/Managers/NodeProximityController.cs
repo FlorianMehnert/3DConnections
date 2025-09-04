@@ -36,28 +36,23 @@ namespace _3DConnections.Runtime.Managers
         private static readonly int NodePositions = Shader.PropertyToID("node_positions");
         private static readonly int ScaleFactors = Shader.PropertyToID("scale_factors");
         private static readonly int MousePosition = Shader.PropertyToID("mouse_position");
-        private static readonly int DeltaTime = Shader.PropertyToID("delta_time_node_proximity");
         private static readonly int NodeCount = Shader.PropertyToID("node_count_node_proximity");
-        private static readonly int MinScale = Shader.PropertyToID("min_scale");
         private static readonly int MaxScale = Shader.PropertyToID("max_scale");
-        private static readonly int MaxDistance = Shader.PropertyToID("max_distance");
-        private static readonly int LerpSpeed = Shader.PropertyToID("lerp_speed");
         private static readonly int ThresholdDistance = Shader.PropertyToID("threshold_distance");
-        
+
         [Header("Node Graph")] [SerializeField]
         private NodeGraphScriptableObject nodeGraph;
 
         [Header("Proximity Settings")] [SerializeField]
         private float maxDistance = 10f;
+
         [SerializeField] private float thresholdDistance = 5f;
 
+        public float maxScale = 10f;
 
-        [SerializeField] private float minScale = 1f;
-        [SerializeField] private float maxScale = 10f;
-        [SerializeField] private float lerpSpeed = 5f;
-        
-        [Header("TMP Settings")]
-        [SerializeField] private bool scaleTMPChildren = true;
+        [Header("TMP Settings")] [SerializeField]
+        private bool scaleTMPChildren = true;
+
         [SerializeField] private float tmpAdditionalScaleMultiplier = 1.5f; // Extra scaling for TMP
 
         [Tooltip("Amount of distance the mouse has to move before everything is recalculated")] [SerializeField]
@@ -66,8 +61,7 @@ namespace _3DConnections.Runtime.Managers
         [Header("Performance")] [SerializeField]
         private int maxNodes = 1000;
 
-        [Header("Events")] [SerializeField]
-        private UnityEvent onSimulationEnabled;
+        [Header("Events")] [SerializeField] private UnityEvent onSimulationEnabled;
 
         [SerializeField] private UnityEvent onSimulationDisabled;
 
@@ -105,6 +99,27 @@ namespace _3DConnections.Runtime.Managers
         {
             // Initialize basic components but don't start simulation
             InitializeBasicComponents();
+        }
+
+        private void OnEnable()
+        {
+            if (ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings == null) return;
+            ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings.onRadiusChanged.AddListener(
+                HandleEvent);
+
+            // init from uiSettings
+            maxDistance = ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings.Radius;
+        }
+
+        /// <summary>
+        /// update the node influence radius once the radius is updated in the ScriptableObject
+        /// </summary>
+        private void HandleEvent(float radius)
+        {
+            if (ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings != null)
+            {
+                thresholdDistance = ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings.Radius;
+            }
         }
 
         private void Update()
@@ -175,7 +190,7 @@ namespace _3DConnections.Runtime.Managers
 
             // Count and cache nodes
             CountAndCacheNodes();
-            
+
             // Setup compute shader
             if (!SetupComputeShader())
             {
@@ -192,10 +207,10 @@ namespace _3DConnections.Runtime.Managers
 
             _lastMousePosition = Input.mousePosition;
             UpdateMouseWorldPosition();
-    
+
             IsSimulationEnabled = true;
             _isInitialized = true;
-    
+
             // Invoke events
             onSimulationEnabled?.Invoke();
         }
@@ -377,12 +392,8 @@ namespace _3DConnections.Runtime.Managers
             // Set compute shader parameters
             proximityComputeShader.SetVector(MousePosition,
                 new Vector2(_currentMouseWorldPos.x, _currentMouseWorldPos.y));
-            proximityComputeShader.SetFloat(MaxDistance, maxDistance);
-            proximityComputeShader.SetFloat(ThresholdDistance, thresholdDistance); // Add this line
-            proximityComputeShader.SetFloat(MinScale, minScale);
+            proximityComputeShader.SetFloat(ThresholdDistance, thresholdDistance);
             proximityComputeShader.SetFloat(MaxScale, maxScale);
-            proximityComputeShader.SetFloat(DeltaTime, Time.deltaTime);
-            proximityComputeShader.SetFloat(LerpSpeed, lerpSpeed);
             proximityComputeShader.SetInt(NodeCount, nodeCount);
 
             // Dispatch compute shader
@@ -390,7 +401,7 @@ namespace _3DConnections.Runtime.Managers
             proximityComputeShader.Dispatch(_kernelIndex, threadGroups, 1, 1);
         }
 
-        
+
         private void ApplyScaleResults()
         {
             if (_scaleFactorsBuffer == null)
@@ -403,13 +414,13 @@ namespace _3DConnections.Runtime.Managers
             for (var i = 0; i < _cachedNodes.Count && i < _scaleFactors.Length; i++)
             {
                 if (!_cachedNodes[i]) continue;
-        
+
                 var scaleFactor = _scaleFactors[i];
                 var newScale = _originalScales[i] * scaleFactor;
-        
+
                 // Apply base scaling to the node
                 _cachedNodes[i].transform.localScale = new Vector3(newScale.x, newScale.y, _originalScales[i].z);
-        
+
                 // Additionally scale TMP children if enabled
                 if (scaleTMPChildren)
                 {
@@ -435,13 +446,13 @@ namespace _3DConnections.Runtime.Managers
         private void RestoreNodeScales()
         {
             if (_cachedNodes == null || _originalScales == null) return;
-    
+
             for (var i = 0; i < _cachedNodes.Count && i < _originalScales.Length; i++)
             {
                 if (_cachedNodes[i] == null) continue;
                 var node = _cachedNodes[i];
                 node.transform.localScale = _originalScales[i];
-        
+
                 var tmpComponents = node.GetComponentsInChildren<TMPro.TextMeshPro>();
                 foreach (var tmp in tmpComponents)
                 {
@@ -461,7 +472,7 @@ namespace _3DConnections.Runtime.Managers
         private void CleanupSimulation()
         {
             ReleaseBuffers();
-    
+
             _cachedNodes?.Clear();
             _cachedNodes = null;
             _nodePositions = null;
@@ -486,16 +497,16 @@ namespace _3DConnections.Runtime.Managers
             {
                 RestoreNodeScales();
             }
+
+            if (ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings == null) return;
+            ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings.onRadiusChanged.RemoveListener(
+                HandleEvent);
         }
 
         // Editor validation
         private void OnValidate()
         {
             maxDistance = Mathf.Max(0.1f, maxDistance);
-            thresholdDistance = Mathf.Clamp(thresholdDistance, 0.1f, maxDistance); // Add this line
-            minScale = Mathf.Max(0.1f, minScale);
-            maxScale = Mathf.Max(minScale, maxScale);
-            lerpSpeed = Mathf.Max(0.1f, lerpSpeed);
             maxNodes = Mathf.Max(1, maxNodes);
         }
     }

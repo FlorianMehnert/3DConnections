@@ -6,11 +6,7 @@ RWStructuredBuffer<float> scale_factors;
 
 // Shader parameters
 float2 mouse_position;
-float max_distance;
-float min_scale;
 float max_scale;
-float delta_time_node_proximity;
-float lerp_speed;
 int node_count_node_proximity;
 float threshold_distance;
 
