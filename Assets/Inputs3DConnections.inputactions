@@ -137,6 +137,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Scale Nodes",
+                    "type": "Button",
+                    "id": "8cecd2ef-d40d-48da-8c2b-89d6e84b7b12",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -511,6 +520,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "InfoPanel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "faa66be7-7064-4ca2-856d-d63e0915c0ff",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Scale Nodes",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

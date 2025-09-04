@@ -135,6 +135,7 @@ namespace _3DConnections.Runtime.Managers
         private void OnDisable()
         {
             inputActions?.Disable();
+            if (ScriptableObjectInventory.Instance == null) return;
             ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
         }
 

@@ -498,7 +498,7 @@ namespace _3DConnections.Runtime.Managers
                 RestoreNodeScales();
             }
 
-            if (ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings == null) return;
+            if (ScriptableObjectInventory.ScriptableObjectInventory.Instance == null || ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings == null) return;
             ScriptableObjectInventory.ScriptableObjectInventory.Instance.uiSettings.onRadiusChanged.RemoveListener(
                 HandleEvent);
         }
