@@ -41,7 +41,7 @@ namespace _3DConnections.Runtime.Managers
             var gripManager = new GRIPLayoutManager(layoutParameters);
             var gridManager = new GridLayoutManager();
             var sugiyamaManager = new SugiyamaLayoutManager();
-            var multiscaleManager = new MultiscaleLayoutManager();
+            var multiscaleManager = new FM3LayoutManager();
             
             List<TreeNode> rootNodes;
             
@@ -93,16 +93,9 @@ namespace _3DConnections.Runtime.Managers
                     rootNodes = ConnectionsBasedForestManager.BuildGraphUsingConnections(connections);
                     multiscaleManager.SetLayoutParameters(layoutParameters);
                     
-                    // Use an optimized version for large graphs
+                    
                     var totalNodeCount = CountAllNodes(rootNodes);
-                    if (totalNodeCount > 1000)
-                    {
-                        multiscaleManager.LayoutLargeGraph(rootNodes);
-                    }
-                    else
-                    {
-                        multiscaleManager.LayoutMultiscale(rootNodes);
-                    }
+                    multiscaleManager.LayoutFM3(rootNodes);
                     break;
                 }
                 default:
