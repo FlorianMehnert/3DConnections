@@ -103,26 +103,33 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        public NodeConnection AddConnection(GameObject startNode, GameObject endNode, Color? color = null,
-            float lineWidth = 1f, float saturation = 1f, string connectionType = "parentChildConnection")
+        public NodeConnection AddConnection(
+            GameObject startNode,
+            GameObject endNode,
+            Color? color = null,
+            float lineWidth = 1f,
+            float saturation = 1f,
+            string connectionType = "parentChildConnection",
+            bool dashed = false)
         {
             if (_isShuttingDown) return null;
 
             var lineObj = Instantiate(lineRendererPrefab, rootEdgeTransform);
             var lineRenderer = lineObj.GetComponent<LineRenderer>();
             lineRenderer.name = startNode.name + "-" + endNode.name;
-            
+
             var type = lineObj.GetComponent<EdgeType>();
             if (type) type.connectionType = connectionType;
-            
+
             var knownColor = color ?? Color.white;
             Color.RGBToHSV(knownColor, out var h, out _, out var v);
-            
+
             var coloredObject = lineObj.GetComponent<ColoredObject>();
             coloredObject.SetOriginalColor(knownColor);
 
             knownColor = Color.HSVToRGB(h, saturation, v);
             knownColor.a = .5f;
+
             var newConnection = new NodeConnection
             {
                 startNode = startNode,
@@ -130,7 +137,8 @@ namespace _3DConnections.Runtime.Managers
                 lineRenderer = lineRenderer,
                 connectionColor = knownColor,
                 lineWidth = lineWidth,
-                connectionType = connectionType
+                connectionType = connectionType,
+                dashed = dashed
             };
 
             newConnection.ApplyConnection();
@@ -139,6 +147,7 @@ namespace _3DConnections.Runtime.Managers
             ScriptableObjectInventory.Instance.conSo.connections.Add(newConnection);
             return newConnection;
         }
+
 
         private void UpdateConnectionPositions()
         {

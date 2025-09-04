@@ -13,6 +13,7 @@ public class NodeConnection
     public Color connectionColor = new(1, 255, 50);
     public float lineWidth = 0.1f;
     public string connectionType;
+    public bool dashed;
 
     public void ApplyConnection()
     {
@@ -22,6 +23,28 @@ public class NodeConnection
         lineRenderer.endColor = color;
         lineRenderer.startWidth = lineWidth;
         lineRenderer.endWidth = lineWidth;
+
+        // TODO: fix this
+        if (dashed)
+        {
+            var dashedMat = Resources.Load<Material>($"dashedLine.mat");
+            if (dashedMat)
+            {
+                lineRenderer.material = dashedMat;
+                lineRenderer.textureMode = LineTextureMode.Tile;
+                lineRenderer.material.mainTextureScale = new Vector2(1f / lineWidth, 1f);
+            }
+            else
+            {
+                Debug.LogWarning("DashedLineMaterial not found in Resources. Dashed line will not render as dashed.");
+            }
+        }
+        else
+        {
+            var defaultMat = Resources.Load<Material>("Default-Line");
+            if (defaultMat)
+                lineRenderer.material = defaultMat;
+        }
     }
 
     public void DisableConnection()
