@@ -671,31 +671,33 @@
             // Create connections for enhanced event subscriptions
             foreach (var sub in _eventSubscriptionsEnhanced)
             {
-                GameObject subscriberNode = FindNodeByComponentType(sub.SubscriberType);
-                if (subscriberNode == null) continue;
+                var subscriberNode = FindNodeByComponentType(sub.SubscriberType);
+                if (!subscriberNode) continue;
 
-                int eventDepth = 1;
-                GameObject publisherNode = GetOrSpawnNode(null, eventDepth, subscriberNode, false, sub.PublisherType);
-                if (!publisherNode) continue;
-
-                // Use different colors based on a subscription type
-                var connectionColor = sub.Type switch
+                const int eventDepth = 1;
+                var publisherNode = FindNodeByComponentType(sub.PublisherType);
+                if (!publisherNode)
                 {
-                    SubscriptionType.DirectSubscription => cols.UnityEventConnection,
-                    SubscriptionType.InstanceAccess => new Color(cols.UnityEventConnection.r * 0.8f,
-                        cols.UnityEventConnection.g * 0.8f, cols.UnityEventConnection.b, 0.7f),
-                    SubscriptionType.ConditionalAccess => new Color(cols.UnityEventConnection.r,
-                        cols.UnityEventConnection.g * 0.6f, cols.UnityEventConnection.b * 0.6f, 0.8f),
-                    _ => cols.UnityEventConnection
-                };
+                    GetOrSpawnNode(null, eventDepth, subscriberNode, false, sub.PublisherType);                    
+                }
+                else
+                {
+                    var connectionColor = sub.Type switch
+                    {
+                        SubscriptionType.DirectSubscription => cols.UnityEventConnection,
+                        SubscriptionType.InstanceAccess => new Color(cols.UnityEventConnection.r * 0.8f,
+                            cols.UnityEventConnection.g * 0.8f, cols.UnityEventConnection.b, 0.7f),
+                        SubscriptionType.ConditionalAccess => new Color(cols.UnityEventConnection.r,
+                            cols.UnityEventConnection.g * 0.6f, cols.UnityEventConnection.b * 0.6f, 0.8f),
+                        _ => cols.UnityEventConnection
+                    };
 
-                subscriberNode.ConnectNodes(publisherNode,
-                    connectionColor,
-                    eventDepth,
-                    $"eventSubscription_{sub.Type}_{sub.IntermediateField ?? "direct"}",
-                    cols.MaxWidthHierarchy);
-
-                Debug.Log($"Connected event subscription: {sub.AccessPattern} -> {sub.SubscriberType.Name} (Type: {sub.Type}, Field: {sub.IntermediateField})");
+                    subscriberNode.ConnectNodes(publisherNode,
+                        connectionColor,
+                        eventDepth,
+                        $"eventSubscription_{sub.Type}_{sub.IntermediateField ?? "direct"}",
+                        cols.MaxWidthHierarchy);
+                }
             }
 
             // Create connections for event invocations

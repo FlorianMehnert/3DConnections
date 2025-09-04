@@ -4,8 +4,7 @@
     using System.IO;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using UnityEngine;
-    
-    using ScriptableObjectInventory;
+    using cols = ScriptableObjects.NodeColorsScriptableObject;
     using Runtime.Nodes;
 
     public partial class SceneAnalyzer : MonoBehaviour
@@ -97,27 +96,32 @@
         /// </summary>
         private void CreateDynamicConnections()
         {
-            foreach (var kvp in _dynamicComponentReferences)
+            foreach (var (sourceType, references) in _dynamicComponentReferences)
             {
-                var sourceType = kvp.Key;
-                var references = kvp.Value;
-
                 // Find the source component node using the existing method
-                GameObject sourceNode = FindNodeByComponentType(sourceType);
-                if (sourceNode == null) continue;
+                var sourceNode = FindNodeByComponentType(sourceType);
+                if (!sourceNode) continue;
 
                 foreach (var reference in references)
                 {
-                    // Use the integrated GetOrSpawnNode for virtual component nodes
-                    // We can determine appropriate depth and parent based on the source node
-                    var sourceNodeType = sourceNode.GetComponent<NodeType>();
-                    int dynamicDepth = 1; // Dynamic connections are typically one level deep
-            
-                    GameObject targetNode = GetOrSpawnNode(null, dynamicDepth, sourceNode, false, reference.ReferencedComponentType);
-                    if (targetNode == null) continue;
+                    // Use the enhanced search method
+                    var targetNode = FindExistingNode(reference.ReferencedComponentType);
 
-                    Debug.Log(
-                        $"Created dynamic connection: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
+                    if (targetNode == null)
+                    {
+                        // Only create virtual node if no existing node found
+                        targetNode = GetOrSpawnNode(null, 1, sourceNode, false, reference.ReferencedComponentType);
+                    }
+                    else
+                    {
+                        // Connect to existing node
+                        var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
+                        sourceNode.ConnectNodes(targetNode, connectionColor, 1, "dynamicComponentConnection", cols.MaxWidthHierarchy);
+                    }
+
+                    if (!targetNode) continue;
+
+                    Debug.Log($"Connected dynamic reference: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
                 }
             }
         }

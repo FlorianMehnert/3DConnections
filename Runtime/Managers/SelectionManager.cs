@@ -657,12 +657,12 @@ namespace _3DConnections.Runtime.Managers
 
         private void SetColorToInvertedSelectionColor(GameObject cube)
         {
-            var meshRenderer = cube.GetComponent<ColoredObject>();
-            if (!meshRenderer) return;
+            var coloredObject = cube.GetComponent<ColoredObject>();
+            if (!coloredObject) return;
             
             Color.RGBToHSV(selectionRectColor, out var h, out _, out _);
             var invertedColor = Color.HSVToRGB((h + .5f) % 1f, 1f, 1f);
-            meshRenderer.Highlight(invertedColor, -1f, true);
+            coloredObject.Highlight(invertedColor, -1f, true);
         }
 
         public int GetSelectionCount()

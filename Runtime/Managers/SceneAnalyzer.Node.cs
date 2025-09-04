@@ -64,36 +64,50 @@
     // Handle virtual component nodes
     if (virtualComponentType != null)
     {
-        var fakeInstanceId = -(virtualComponentType.GetHashCode());
-        
+        // First, check if there's already a real component node of this type
+        var existingComponentNode = FindNodeByComponentType(virtualComponentType);
+        if (existingComponentNode)
+        {
+            // Connect to existing real component node instead of creating virtual one
+            if (!parentNodeObject) return existingComponentNode;
+            var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
+            parentNodeObject.ConnectNodes(existingComponentNode, connectionColor, depth,
+                "dynamicComponentConnection", cols.MaxWidthHierarchy);
+            return existingComponentNode;
+        }
+
+        var fakeInstanceId = -virtualComponentType.GetHashCode();
+
         // Check if a virtual node already exists
         if (_instanceIdToNodeLookup.TryGetValue(fakeInstanceId, out var existingVirtualNode))
         {
-            // Connect existing virtual node to parent if needed
-            if (!parentNodeObject) return existingVirtualNode;
-            var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
-            parentNodeObject.ConnectNodes(existingVirtualNode, connectionColor, depth, 
-                "dynamicComponentConnection", cols.MaxWidthHierarchy);
-            return existingVirtualNode;
+            // Ensure the existing virtual node is still valid
+            if (existingVirtualNode)
+            {
+                if (!parentNodeObject) return existingVirtualNode;
+                var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
+                parentNodeObject.ConnectNodes(existingVirtualNode, connectionColor, depth,
+                    "dynamicComponentConnection", cols.MaxWidthHierarchy);
+                return existingVirtualNode;
+            }
+
+            // Remove invalid entry
+            _instanceIdToNodeLookup.Remove(fakeInstanceId);
         }
 
-        // Create a new virtual node
+        // Only create virtual node if no real or virtual node exists
         var virtualNode = SpawnNode(null, false, virtualComponentType);
         if (!virtualNode) return virtualNode;
         {
-            _instanceIdToNodeLookup[fakeInstanceId] = virtualNode;
-            
             // Connect to parent if provided
             if (!parentNodeObject) return virtualNode;
-            var connectionColor = new Color(cols.DynamicComponentConnection.r, cols.DynamicComponentConnection.g,
-                cols.DynamicComponentConnection.b, 0.7f);
-            parentNodeObject.ConnectNodes(virtualNode, connectionColor, depth, 
+            var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
+            parentNodeObject.ConnectNodes(virtualNode, connectionColor, depth,
                 "dynamicComponentConnection", cols.MaxWidthHierarchy);
         }
         return virtualNode;
     }
 
-    // Handle regular objects (existing logic)
     if (!obj) return null;
 
     var instanceId = obj.GetInstanceID();
@@ -101,57 +115,55 @@
     // Check if this node already exists
     if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var existingNode))
     {
-        // Connect existing node
-        if (parentNodeObject == null) return existingNode;
-        if (isAsset)
-            parentNodeObject.ConnectNodes(existingNode,
-                new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f), depth + 1,
-                "referenceConnection", cols.MaxWidthHierarchy);
+        if (!existingNode)
+        {
+            _instanceIdToNodeLookup.Remove(instanceId);
+        }
         else
-            parentNodeObject.ConnectNodes(existingNode,
+        {
+            if (parentNodeObject == null) return existingNode;
+            var connectionColor = isAsset ? 
+                new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f) :
                 obj switch
                 {
-                    GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g,
-                        cols.ParentChildConnection.b, 0.5f),
-                    Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b,
-                        0.5f),
+                    GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g, cols.ParentChildConnection.b, 0.5f),
+                    Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b, 0.5f),
                     _ => new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f)
-                }, depth, obj switch
-                {
-                    GameObject => "parentChildConnection",
-                    Component => "componentConnection",
-                    _ => "referenceConnection"
-                }, cols.MaxWidthHierarchy);
+                };
 
-        return existingNode;
-    }
-
-    // Create a new node
-    var newNode = SpawnNode(obj, isAsset);
-    if (newNode == null) return newNode;
-    _instanceIdToNodeLookup[instanceId] = newNode;
-        
-    // Connect to parent if provided
-    if (parentNodeObject == null) return newNode;
-    if (isAsset)
-        parentNodeObject.ConnectNodes(newNode,
-            new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f), depth + 1,
-            "referenceConnection", cols.MaxWidthHierarchy);
-    else
-        parentNodeObject.ConnectNodes(newNode,
-            obj switch
-            {
-                GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g,
-                    cols.ParentChildConnection.b, 0.5f),
-                Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b,
-                    0.5f),
-                _ => new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f)
-            }, depth, obj switch
+            var connectionType = isAsset ? "referenceConnection" : obj switch
             {
                 GameObject => "parentChildConnection",
                 Component => "componentConnection",
                 _ => "referenceConnection"
-            }, cols.MaxWidthHierarchy);
+            };
+
+            parentNodeObject.ConnectNodes(existingNode, connectionColor, depth, connectionType, cols.MaxWidthHierarchy);
+            return existingNode;
+        }
+    }
+
+    var newNode = SpawnNode(obj, isAsset);
+    if (newNode == null || parentNodeObject == null) return newNode;
+    {
+        var connectionColor = isAsset ? 
+            new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f) :
+            obj switch
+            {
+                GameObject => new Color(cols.ParentChildConnection.r, cols.ParentChildConnection.g, cols.ParentChildConnection.b, 0.5f),
+                Component => new Color(cols.ComponentConnection.r, cols.ComponentConnection.g, cols.ComponentConnection.b, 0.5f),
+                _ => new Color(cols.ReferenceConnection.r, cols.ReferenceConnection.g, cols.ReferenceConnection.b, 0.5f)
+            };
+
+        var connectionType = isAsset ? "referenceConnection" : obj switch
+        {
+            GameObject => "parentChildConnection",
+            Component => "componentConnection",
+            _ => "referenceConnection"
+        };
+
+        parentNodeObject.ConnectNodes(newNode, connectionColor, depth, connectionType, cols.MaxWidthHierarchy);
+    }
 
     return newNode;
 }
@@ -161,30 +173,53 @@
         /// </summary>
         /// <param name="componentType"></param>
         /// <returns></returns>
+        /// <summary>
+        /// Find existing node by component type (including virtual nodes)
+        /// </summary>
         private GameObject FindNodeByComponentType(Type componentType)
         {
             foreach (var kvp in _instanceIdToNodeLookup)
             {
-                var nodeType = kvp.Value.GetComponent<NodeType>();
+                var nodeObject = kvp.Value;
+                if (!nodeObject) continue;
+        
+                var nodeType = nodeObject.GetComponent<NodeType>();
                 if (nodeType?.reference is Component comp && comp.GetType() == componentType)
+                    //|| nodeType?.reference == null && 
+                    //!string.IsNullOrEmpty(nodeObject.name) && 
+                    // nodeObject.name == $"virtual_co_{componentType.Name}")
                 {
-                    return kvp.Value;
+                    return nodeObject;
                 }
             }
 
             return null;
         }
-
+        
         /// <summary>
-        /// Find an existing node or create a new one for the component type
+        /// Find existing node by multiple criteria
         /// </summary>
-        /// <param name="componentType"></param>
-        /// <returns></returns>
-        private GameObject FindOrCreateNodeForComponentType(Type componentType)
+        private GameObject FindExistingNode(Type componentType, Object reference = null)
         {
-            var existingNode = FindNodeByComponentType(componentType);
-            return existingNode ? existingNode : SpawnNode(null, false, componentType);
+            // First priority: exact reference match
+            if (reference != null)
+            {
+                var instanceId = reference.GetInstanceID();
+                if (_instanceIdToNodeLookup.TryGetValue(instanceId, out var exactNode))
+                {
+                    return exactNode;
+                }
+            }
+    
+            // Second priority: component type match
+            if (componentType != null)
+            {
+                return FindNodeByComponentType(componentType);
+            }
+    
+            return null;
         }
+
 
         /// <summary>
         /// Spawn a node gameObject in the overlay scene.
@@ -196,8 +231,8 @@
         /// <returns>The spawned node GameObject.</returns>
         private GameObject SpawnNode(Object obj, bool isAsset = false, Type virtualType = null)
         {
-            GameObject nodeObject = CreateNodeInstance();
-            if (nodeObject == null)
+            var nodeObject = CreateNodeInstance();
+            if (!nodeObject)
                 return null;
 
             ConfigureNodeType(nodeObject, obj, virtualType);
@@ -212,17 +247,26 @@
             ConfigureNodeName(nodeObject, obj, virtualType);
             ApplyNodeColor(nodeObject, obj, isAsset, virtualType);
 
-            // For virtual nodes, store the node using a fake negative instance ID.
-            if (virtualType == null) return nodeObject;
-            int fakeInstanceId = -(virtualType.GetHashCode());
+            // Ensure the node is properly registered in the graph system
+            if (virtualType != null)
+            {
+                var fakeInstanceId = -(virtualType.GetHashCode());
+                _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
+            }
+            else if (obj != null)
+            {
+                _instanceIdToNodeLookup[obj.GetInstanceID()] = nodeObject;
+            }
 
-            // Add the virtual node immediately to all nodes.
-            _instanceIdToNodeLookup[fakeInstanceId] = nodeObject;
-            if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && nodeObject)
+            // Add to AllNodes collection for layout processing
+            if (ScriptableObjectInventory.Instance.graph?.AllNodes != null)
+            {
                 ScriptableObjectInventory.Instance.graph.AllNodes.Add(nodeObject);
+            }
 
             return nodeObject;
         }
+
 
         /// <summary>
         /// Creates a new node instance using the prefab and ensures the parent and camera are valid.
@@ -246,6 +290,20 @@
             _currentNodes++;
             nodeObject.transform.localPosition = Vector3.zero;
             nodeObject.transform.localScale = new Vector3(nodeWidth, nodeHeight, 1f);
+
+            // integrate new version of nodes using sprite renderers
+            var spriteRenderer = nodeObject.GetComponent<SpriteRenderer>();
+            if (spriteRenderer && spriteRenderer.sprite)
+            {
+                var sprite = spriteRenderer.sprite;
+                var spriteSize = sprite.rect.size / sprite.pixelsPerUnit;
+                nodeObject.transform.localScale = new Vector3(
+                    nodeWidth / spriteSize.x,
+                    nodeHeight / spriteSize.y,
+                    1f
+                );
+            }
+
             nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
             return nodeObject;
         }
@@ -283,7 +341,7 @@
             textObj.transform.localPosition = new Vector3(0, 0.6f, -1f);
 
             var text = textObj.AddComponent<TextMeshPro>();
-    
+
             if (virtualType != null)
             {
                 text.text = $"({virtualType.Name})";
@@ -376,25 +434,15 @@
             {
                 // Use a dimmed version of the component color to denote a virtual node.
                 Color dimmedColor = cols.DynamicComponentConnection;
-                nodeObject.SetNodeColor(obj, cols.GameObjectColor, dimmedColor, cols.ScriptableObjectColor, cols.AssetColor,
+                nodeObject.SetNodeColor(obj, cols.GameObjectColor, dimmedColor, cols.ScriptableObjectColor,
+                    cols.AssetColor,
                     overrideColor: dimmedColor);
             }
             else
             {
-                if (!IsPrefab(obj))
-                {
-                    nodeObject.SetNodeColor(obj, cols.GameObjectColor, cols.ComponentColor, cols.ScriptableObjectColor, cols.AssetColor,
-                        isAsset);
-                }
-                else
-                {
-                    // For prefabs, enable an emission effect.
-                    var nodeRenderer = nodeObject.GetComponent<Renderer>();
-                    if (!nodeRenderer) return;
-                    nodeRenderer.material.EnableKeyword("_EMISSION");
-                    Color emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f; // White with intensity
-                    nodeRenderer.material.SetColor(EmissionColor, emissionColor);
-                }
+                nodeObject.SetNodeColor(obj, cols.GameObjectColor, cols.ComponentColor, cols.ScriptableObjectColor,
+                    cols.AssetColor,
+                    isAsset);
             }
         }
 
