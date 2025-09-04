@@ -80,25 +80,6 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!ScriptableObjectInventory.Instance.menuState ||
                 ScriptableObjectInventory.Instance.menuState.menuOpen) return;
-            
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.G) && parentObject)
-            {
-                foreach (var node in ScriptableObjectInventory.Instance.graph.AllNodes)
-                {
-                    if (!node) continue;
-                    var meshRenderer = node.GetComponent<MeshRenderer>();
-                    if (meshRenderer)
-                        meshRenderer.enabled = true;
-                    foreach (Transform child in node.transform)
-                    {
-                        child.gameObject.SetActive(true);
-                    }
-                }
-
-                foreach (var lineRenderer in ScriptableObjectInventory.Instance.conSo.connections.Select(node =>
-                             node.lineRenderer))
-                    lineRenderer.enabled = true;
-            }
 
             if (Input.GetKeyDown(KeyCode.G) && parentObject)
             {
