@@ -141,6 +141,9 @@ namespace _3DConnections.Runtime.Managers
                             break;
                     }
                 }
+#if UNITY_EDITOR
+                ConnectUnityEventPersistentListeners(component, parentNodeObject, depth);
+#endif
             }
             finally
             {
