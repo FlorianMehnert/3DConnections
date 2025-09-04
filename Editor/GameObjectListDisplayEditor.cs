@@ -1,28 +1,34 @@
-
-
 namespace _3DConnections.Editor
 {
     using UnityEngine;
     using UnityEditor;
-    
     using Runtime.Nodes;
 
     [CustomEditor(typeof(LocalNodeConnections))]
     public class GameObjectListDisplayEditor : Editor
     {
+        private SerializedProperty _inConnectionsProp;
+        private SerializedProperty _outConnectionsProp;
+
+        private void OnEnable()
+        {
+            _inConnectionsProp = serializedObject.FindProperty("inConnections");
+            _outConnectionsProp = serializedObject.FindProperty("outConnections");
+        }
+
         public override void OnInspectorGUI()
         {
-            var script = (LocalNodeConnections)target;
+            serializedObject.Update();
 
-            // Display the "In Connections"
             EditorGUILayout.LabelField("In Connections", EditorStyles.boldLabel);
-            if (script.inConnections is { Count: > 0 })
+            if (_inConnectionsProp.arraySize > 0)
             {
-                for (var i = 0; i < script.inConnections.Count; i++)
+                for (int i = 0; i < _inConnectionsProp.arraySize; i++)
                 {
-                    script.inConnections[i] = (GameObject)EditorGUILayout.ObjectField(
+                    var element = _inConnectionsProp.GetArrayElementAtIndex(i);
+                    element.objectReferenceValue = EditorGUILayout.ObjectField(
                         $"In {i}",
-                        script.inConnections[i],
+                        element.objectReferenceValue,
                         typeof(GameObject),
                         true
                     );
@@ -34,15 +40,15 @@ namespace _3DConnections.Editor
             }
 
             EditorGUILayout.Space();
-            // Display the "Out Connections"
             EditorGUILayout.LabelField("Out Connections", EditorStyles.boldLabel);
-            if (script.outConnections is { Count: > 0 })
+            if (_outConnectionsProp.arraySize > 0)
             {
-                for (var i = 0; i < script.outConnections.Count; i++)
+                for (var i = 0; i < _outConnectionsProp.arraySize; i++)
                 {
-                    script.outConnections[i] = (GameObject)EditorGUILayout.ObjectField(
+                    var element = _outConnectionsProp.GetArrayElementAtIndex(i);
+                    element.objectReferenceValue = EditorGUILayout.ObjectField(
                         $"Out {i}",
-                        script.outConnections[i],
+                        element.objectReferenceValue,
                         typeof(GameObject),
                         true
                     );
@@ -53,22 +59,20 @@ namespace _3DConnections.Editor
                 EditorGUILayout.HelpBox("No Out Connections defined.", MessageType.Info);
             }
 
-            // Optionally add buttons for managing the lists
             EditorGUILayout.Space();
             if (GUILayout.Button("Add In Connection"))
             {
-                script.inConnections?.Add(null);
+                _inConnectionsProp.InsertArrayElementAtIndex(_inConnectionsProp.arraySize);
+                _inConnectionsProp.GetArrayElementAtIndex(_inConnectionsProp.arraySize - 1).objectReferenceValue = null;
             }
 
             if (GUILayout.Button("Add Out Connection"))
             {
-                script.outConnections?.Add(null);
+                _outConnectionsProp.InsertArrayElementAtIndex(_outConnectionsProp.arraySize);
+                _outConnectionsProp.GetArrayElementAtIndex(_outConnectionsProp.arraySize - 1).objectReferenceValue = null;
             }
 
-            if (GUI.changed)
-            {
-                EditorUtility.SetDirty(script);
-            }
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }
