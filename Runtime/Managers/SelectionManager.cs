@@ -129,11 +129,28 @@ namespace _3DConnections.Runtime.Managers
         {
             inputActions?.Enable();
             SetupInputActions();
+            ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
         }
 
         private void OnDisable()
         {
             inputActions?.Disable();
+            ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
+        }
+
+        private void HandleEvent()
+        {
+            _selectedCubes.Clear();
+            _selectedCubesStartPositions.Clear();
+            _markUnselect.Clear();
+            _isDrawingSelectionRect = false;
+            _isDragging = false;
+            _currentlyDraggedCube = null;
+            _dragStart = null;
+            _dragEnd = null;
+            _clickCount = 0;
+            _timer = 0f;
+            _selectedCubesCount = 0;
         }
 
         private void Update()
@@ -601,10 +618,15 @@ namespace _3DConnections.Runtime.Managers
         private void DeselectAllCubes()
         {
             foreach (var selectable in from cube in _selectedCubes
-                     where cube.GetComponent<Collider2D>()
-                     where cube.GetComponent<ColoredObject>()
-                     select cube.GetComponent<Collider2D>().GetComponent<ColoredObject>())
+                     where cube != null
+                     let collider = cube.GetComponent<Collider2D>()
+                     where collider != null
+                     let coloredObject = collider.GetComponent<ColoredObject>()
+                     where coloredObject != null
+                     select coloredObject)
+            {
                 selectable.SetToOriginalColor();
+            }
 
             _selectedCubes.Clear();
         }

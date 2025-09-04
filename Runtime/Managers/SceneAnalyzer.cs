@@ -70,9 +70,6 @@ namespace _3DConnections.Runtime.Managers
                     CreateDynamicConnections();
                     AnalyzeEventSubscriptions();
                     CreateEventConnections();
-#if UNITY_EDITOR
-                    AnalyzeUnityEventPersistentConnections();
-#endif
                 }
 
                 onComplete?.Invoke();
@@ -102,7 +99,7 @@ namespace _3DConnections.Runtime.Managers
         private void OnEnable()
         {
             if (ScriptableObjectInventory.Instance.clearEvent != null)
-                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
+                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
             if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
         }
@@ -111,7 +108,7 @@ namespace _3DConnections.Runtime.Managers
         {
             if (!ScriptableObjectInventory.Instance) return;
             if (ScriptableObjectInventory.Instance.clearEvent != null)
-                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
             if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
         }

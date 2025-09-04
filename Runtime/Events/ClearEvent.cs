@@ -6,11 +6,11 @@ namespace _3DConnections.Runtime.Events
     [CreateAssetMenu(fileName = "Clear Nodes Event", menuName = "3DConnections/Events/Clear Nodes Event")]
     public class ClearEvent : ScriptableObject
     {
-        public UnityAction OnEventTriggered;
+        public UnityEvent onEventTriggered;
 
         public void TriggerEvent()
         {
-            OnEventTriggered?.Invoke();
+            onEventTriggered?.Invoke();
         }
     }
 }

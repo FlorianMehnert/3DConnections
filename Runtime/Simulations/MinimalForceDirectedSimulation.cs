@@ -43,7 +43,7 @@ namespace _3DConnections.Runtime.Simulations
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
-                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered += HandleEvent;
+                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
             simulationEvent.OnSimulationRequested += Simulate;
         }
 
@@ -54,7 +54,7 @@ namespace _3DConnections.Runtime.Simulations
             if (ScriptableObjectInventory.Instance.removePhysicsEvent)
                 ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleEvent;
             if (ScriptableObjectInventory.Instance.clearEvent)
-                ScriptableObjectInventory.Instance.clearEvent.OnEventTriggered -= HandleEvent;
+                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
             simulationEvent.OnSimulationRequested -= Simulate;
         }
 

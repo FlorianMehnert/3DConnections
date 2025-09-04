@@ -38,7 +38,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
 
-        [SerializeField] private TextAsset analysisData; // Assign the JSON file here
+        [SerializeField] private TextAsset analysisData;
         [SerializeField] private GameObject parentNode;
         [SerializeField] private GameObject nodePrefab;
 
