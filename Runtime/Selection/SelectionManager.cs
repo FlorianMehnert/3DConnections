@@ -216,11 +216,10 @@ namespace _3DConnections.Runtime.Selection
             if (!inputValidator.ShouldProcessInput()) return;
 
             Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
-            var hit = raycastManager.RaycastAtMousePosition(mouseWorldPos);
-
-            if (hit.collider != null)
+            var closestObj = raycastManager.GetClosestObjectToMouse(mouseWorldPos);
+            if (closestObj != null)
             {
-                HandleObjectClick(hit.collider.gameObject, mouseWorldPos);
+                HandleObjectClick(closestObj, mouseWorldPos);
             }
             else
             {

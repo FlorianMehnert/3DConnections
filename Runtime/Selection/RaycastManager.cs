@@ -9,7 +9,7 @@ namespace _3DConnections.Runtime.Selection
         [SerializeField] private Camera targetCamera;
         
         private int _targetLayerMask;
-        private readonly RaycastHit2D[] _raycastBuffer = new RaycastHit2D[16];
+        private readonly Collider2D[] _overlapBuffer = new Collider2D[16];
 
         public void Initialize(Camera camera)
         {
@@ -27,25 +27,6 @@ namespace _3DConnections.Runtime.Selection
                 
             Vector2 screenPos = mousePositionAction.ReadValue<Vector2>();
             return targetCamera.ScreenToWorldPoint(screenPos);
-        }
-
-        public RaycastHit2D RaycastAtMousePosition(Vector2 mouseWorldPosition)
-        {
-            var hitCount = Physics2D.RaycastNonAlloc(
-                mouseWorldPosition,
-                Vector2.zero,
-                _raycastBuffer,
-                Mathf.Infinity,
-                _targetLayerMask);
-
-            if (hitCount > 0)
-                return GetClosestHit(_raycastBuffer, hitCount, mouseWorldPosition);
-
-            return Physics2D.Raycast(
-                mouseWorldPosition,
-                Vector2.zero,
-                Mathf.Infinity,
-                _targetLayerMask);
         }
 
         public RaycastHit2D RaycastDown(Vector2 position)
@@ -70,6 +51,30 @@ namespace _3DConnections.Runtime.Selection
 
             return closest;
         }
+        
+        public GameObject GetClosestObjectToMouse(Vector2 mouseWorldPosition)
+        {
+            int hitCount = Physics2D.OverlapPointNonAlloc(mouseWorldPosition, _overlapBuffer, _targetLayerMask);
+            if (hitCount == 0) return null;
+
+            GameObject closestObj = null;
+            float minSqrDist = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                var collider = _overlapBuffer[i];
+                if (collider == null) continue;
+                var center = collider.bounds.center;
+                float sqrDist = (mouseWorldPosition - (Vector2)center).sqrMagnitude;
+                if (sqrDist < minSqrDist)
+                {
+                    minSqrDist = sqrDist;
+                    closestObj = collider.gameObject;
+                }
+            }
+            return closestObj;
+        }
+
 
         public bool IsTargetLayer(GameObject obj)
         {

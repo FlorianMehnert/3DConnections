@@ -1,3 +1,4 @@
+using _3DConnections.Runtime.Managers.Scene;
 using UnityEditor.Search;
 
 namespace _3DConnections.Editor
@@ -5,6 +6,7 @@ namespace _3DConnections.Editor
     using UnityEngine;
     using UnityEditor;
     using Runtime.Nodes;
+    using Runtime.Managers;
 
     [CustomEditor(typeof(LocalNodeConnections))]
     public class LocalNodeConnectionsEditor : Editor
@@ -50,21 +52,40 @@ namespace _3DConnections.Editor
 
             if (listProp.arraySize > 0)
             {
+                // Define the full rect for the scroll view
+                Rect scrollRect = GUILayoutUtility.GetRect(
+                    0, // min width
+                    float.MaxValue, // max width (fill inspector)
+                    0, // min height
+                    ScrollViewHeight // fixed height
+                );
+
                 // Begin scroll view
-                scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Height(ScrollViewHeight));
-                for (var i = 0; i < listProp.arraySize; i++)
+                scrollPos = GUI.BeginScrollView(scrollRect, scrollPos,
+                    new Rect(0, 0, scrollRect.width - 16f, listProp.arraySize * EditorGUIUtility.singleLineHeight));
+
+                for (int i = 0; i < listProp.arraySize; i++)
                 {
-                    var element = listProp.GetArrayElementAtIndex(i);
-                    element.objectReferenceValue = EditorGUILayout.ObjectField(
+                    Rect lineRect = new Rect(
+                        0,
+                        i * EditorGUIUtility.singleLineHeight,
+                        scrollRect.width - 16f, // subtract scrollbar width
+                        EditorGUIUtility.singleLineHeight
+                    );
+
+                    SerializedProperty element = listProp.GetArrayElementAtIndex(i);
+                    element.objectReferenceValue = EditorGUI.ObjectField(
+                        lineRect,
                         $"{prefix} {i}",
                         element.objectReferenceValue,
                         typeof(GameObject),
                         true
                     );
 
-                    HandleContextMenu(element, GUILayoutUtility.GetLastRect());
+                    HandleContextMenu(element, lineRect);
                 }
-                EditorGUILayout.EndScrollView();
+
+                GUI.EndScrollView();
             }
             else
             {
@@ -80,11 +101,10 @@ namespace _3DConnections.Editor
             if (element.objectReferenceValue != null)
             {
                 var go = element.objectReferenceValue as GameObject;
-                menu.AddItem(new GUIContent("Print node's name"), false, () =>
+                menu.AddItem(new GUIContent("Focus on this node"), false, () =>
                 {
                     if (!go) return;
-                    SearchService.ShowWindow(
-                        SearchService.CreateContext($"node: highlight{{{go.name}}}"));
+                    CameraController.AdjustCameraToViewObjects(SceneHandler.GetCameraOfOverlayedScene(), new [] {go});
                 });
             }
             else

@@ -262,6 +262,77 @@ namespace _3DConnections.Runtime.Managers
             if (size == 0) size = 1;
             _cam.orthographicSize = size * padding;
         }
+        
+        public static void AdjustCameraToViewObjects(Camera cam, IEnumerable<GameObject> targets, float padding = 1.1f)
+        {
+            if (!cam)
+            {
+                Debug.LogWarning("Camera is not assigned.");
+                return;
+            }
+
+            var combinedBounds = new Bounds(Vector3.zero, Vector3.zero);
+            var hasBounds = false;
+
+            foreach (var obj in targets)
+            {
+                if (!obj) continue;
+
+                // Prefer renderer bounds
+                var renderer = obj.GetComponentInChildren<Renderer>();
+                if (renderer)
+                {
+                    if (hasBounds)
+                        combinedBounds.Encapsulate(renderer.bounds);
+                    else
+                    {
+                        combinedBounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    continue;
+                }
+
+                // Fallback: collider bounds
+                var collider = obj.GetComponentInChildren<Collider>();
+                if (!collider) continue;
+                if (hasBounds)
+                    combinedBounds.Encapsulate(collider.bounds);
+                else
+                {
+                    combinedBounds = collider.bounds;
+                    hasBounds = true;
+                }
+            }
+
+            if (!hasBounds)
+            {
+                Debug.LogWarning("No valid objects with bounds found.");
+                return;
+            }
+
+            var center = combinedBounds.center;
+
+            if (cam.orthographic)
+            {
+                // Move orthographic camera to center
+                cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
+
+                var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
+                cam.orthographicSize = size * padding;
+            }
+            else
+            {
+                // For perspective cameras: move & adjust distance
+                cam.transform.LookAt(center);
+
+                var boundsSize = combinedBounds.extents.magnitude;
+                var fov = cam.fieldOfView * Mathf.Deg2Rad;
+                var distance = boundsSize / Mathf.Sin(fov / 2f);
+
+                cam.transform.position = center - cam.transform.forward * distance * padding;
+            }
+        }
+
 
         /// <summary>
         /// Used in Focus on Node to reenable Nodes that are in focus
