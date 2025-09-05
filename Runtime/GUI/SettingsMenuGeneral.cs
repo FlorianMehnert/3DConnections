@@ -119,14 +119,9 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnDisable()
         {
-            try
-            {
+                if (ScriptableObjectInventory.Instance == null) return;
                 ScriptableObjectInventory.Instance.graph.OnGoCountChanged -= UpdateText;
                 RemoveUICallbacks();
-            }catch(Exception)
-            {
-                
-            }
         }
 
         [ContextMenu("Update Text")]

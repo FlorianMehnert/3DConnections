@@ -3,7 +3,6 @@
     "rootNamespace": "_3DConnections.Runtime.Scripts",
     "references": [
         "GUID:407d9f5d313b4d20b83d06c1f10def66",
-        "GUID:40b69349343e4adbbbce2ca25f9f4998",
         "GUID:6055be8ebefd69e48b49212b09b47b2f",
         "GUID:d4d225d43cef45518370ff85d6b9dd9f",
         "GUID:8857b4c115034c599e5be5d0d0b40564",

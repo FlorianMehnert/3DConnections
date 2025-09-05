@@ -729,7 +729,7 @@ namespace _3DConnections.Editor
                 allObjects.AddRange(from Transform child in parentEdges.transform select child.gameObject);
             }
 
-            // Objects that should be faded out (all objects minus the ones we're highlighting)
+            // Objects that should be faded out (all objects minus the ones that are highlighted)
             var fadeOutObjects = allObjects.Except(objects).ToList();
 
             // Highlight selected objects in bright red

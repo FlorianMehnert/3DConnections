@@ -87,7 +87,7 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnDestroy()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
+            if (ScriptableObjectInventory.Instance == null) return;
             _isShuttingDown = true;
             try
             {
