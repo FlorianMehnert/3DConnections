@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace _3DConnections.Runtime.Selection
 {
     public class SelectionRectangle : MonoBehaviour

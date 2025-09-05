@@ -22,7 +22,6 @@ namespace _3DConnections.Runtime.Selection
         [SerializeField] private InputActionAsset inputActions;
         
         [Header("Canvas Settings")]
-        [SerializeField] private Canvas parentCanvas;
         [SerializeField] private Material highlightMaterial;
 
         // Input Actions
@@ -201,7 +200,7 @@ namespace _3DConnections.Runtime.Selection
                     var objectsInRect = selectionRectangle.GetObjectsInSelection();
                     foreach (var obj in objectsInRect)
                     {
-                        objectSelector.SelectObject(obj, true, true);
+                        objectSelector.SelectObject(obj, true);
                     }
                 }
             }
@@ -249,7 +248,8 @@ namespace _3DConnections.Runtime.Selection
         private void OnTogglePing(InputAction.CallbackContext context)
         {
             if (!inputValidator.IsActive) return;
-            // Toggle ping functionality
+            if (objectSelector == null) return;
+            objectSelector.enableEditorPing = !objectSelector.enableEditorPing;
         }
 
         private void OnSelectOutgoing(InputAction.CallbackContext context)
@@ -286,7 +286,7 @@ namespace _3DConnections.Runtime.Selection
 
             // Select the object
             bool addToSelection = IsShiftPressed();
-            objectSelector.SelectObject(hitObject, addToSelection, false);
+            objectSelector.SelectObject(hitObject, addToSelection);
 
             // Start drag operation
             dragHandler.StartDrag(hitObject, mouseWorldPos);
@@ -346,7 +346,9 @@ namespace _3DConnections.Runtime.Selection
             
             objectSelector.DeselectAll();
             CloseContextMenu();
-            objectSelector.SelectObject(hitObject, false, false);
+            objectSelector.enableEditorPing = true;
+            objectSelector.SelectObject(hitObject, false);
+            objectSelector.enableEditorPing = false;
         }
 
         private void HandleClearEvent()

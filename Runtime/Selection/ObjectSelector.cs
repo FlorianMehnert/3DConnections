@@ -8,11 +8,11 @@ namespace _3DConnections.Runtime.Selection
     public class ObjectSelector : MonoBehaviour, ISelectionHandler
     {
         [SerializeField] private Color selectionColor = Color.yellow;
-        [SerializeField] private bool enableEditorPing = true;
-        
+        [SerializeField] public bool enableEditorPing = true;
+
         private readonly HashSet<GameObject> _selectedObjects = new();
         private readonly Dictionary<GameObject, bool> _pendingDeselection = new();
-        
+
         private InputValidator _inputValidator;
 
         public int SelectionCount => _selectedObjects.Count;
@@ -27,8 +27,7 @@ namespace _3DConnections.Runtime.Selection
         /// </summary>
         /// <param name="obj">object that will be selected</param>
         /// <param name="addToSelection"></param>
-        /// <param name="disallowPingInEditorAnyways">Flag to distinguish between single select object using ping object and rectangle selection</param>
-        public void SelectObject(GameObject obj, bool addToSelection = false, bool disallowPingInEditorAnyways = false)
+        public void SelectObject(GameObject obj, bool addToSelection = false)
         {
             if (!obj) return;
 
@@ -45,15 +44,29 @@ namespace _3DConnections.Runtime.Selection
             if (_selectedObjects.Add(obj))
             {
                 ApplySelectionVisual(obj);
-                
+
 #if UNITY_EDITOR
-                if (!disallowPingInEditorAnyways && enableEditorPing && _inputValidator != null)
+                if (enableEditorPing && addToSelection && _inputValidator)
+                {
+                    AddToEditorSelection(obj);
+                }
+                else if (enableEditorPing && _inputValidator)
                 {
                     _inputValidator.PingInEditor(obj);
                 }
 #endif
             }
         }
+
+#if UNITY_EDITOR
+        void AddToEditorSelection(GameObject obj)
+        {
+            var currentSelection = UnityEditor.Selection.objects.ToList();
+            if (!currentSelection.Contains(obj))
+                currentSelection.Add(obj);
+            UnityEditor.Selection.objects = currentSelection.ToArray();
+        }
+#endif
 
         public void DeselectObject(GameObject obj)
         {
@@ -66,14 +79,17 @@ namespace _3DConnections.Runtime.Selection
         public void DeselectAll()
         {
             var objectsToDeselect = _selectedObjects.ToArray();
-            
+
             foreach (var obj in objectsToDeselect)
             {
                 DeselectObject(obj);
             }
-            
+
             _selectedObjects.Clear();
             _pendingDeselection.Clear();
+#if UNITY_EDITOR
+            UnityEditor.Selection.objects = null;
+#endif
         }
 
         public void ToggleSelection(GameObject obj)
@@ -81,7 +97,7 @@ namespace _3DConnections.Runtime.Selection
             if (IsSelected(obj))
                 DeselectObject(obj);
             else
-                SelectObject(obj, true, true);
+                SelectObject(obj, true);
         }
 
         public bool IsSelected(GameObject obj)
@@ -97,12 +113,12 @@ namespace _3DConnections.Runtime.Selection
         public Bounds GetSelectionBounds()
         {
             var validObjects = GetSelectedObjects();
-            
-            if (validObjects.Length == 0) 
+
+            if (validObjects.Length == 0)
                 return new Bounds();
 
             var firstCollider = validObjects[0].GetComponent<Collider2D>();
-            if (!firstCollider) 
+            if (!firstCollider)
                 return new Bounds();
 
             var bounds = firstCollider.bounds;
@@ -122,7 +138,7 @@ namespace _3DConnections.Runtime.Selection
         public void ProcessPendingDeselections()
         {
             var toDeselect = _pendingDeselection.Where(kvp => kvp.Value).Select(kvp => kvp.Key).ToArray();
-            
+
             foreach (var obj in toDeselect)
             {
                 if (obj != null)
@@ -130,7 +146,7 @@ namespace _3DConnections.Runtime.Selection
                     DeselectObject(obj);
                 }
             }
-            
+
             _pendingDeselection.Clear();
         }
 
@@ -145,17 +161,17 @@ namespace _3DConnections.Runtime.Selection
         public void SelectOutgoingConnections()
         {
             var currentSelection = _selectedObjects.ToList();
-            
+
             foreach (var cube in currentSelection)
             {
                 if (!cube) continue;
-                
+
                 var connections = cube.GetComponent<LocalNodeConnections>();
                 if (connections?.outConnections == null) continue;
-                
+
                 foreach (var outgoingNode in connections.outConnections.Where(node => node != null))
                 {
-                    SelectObject(outgoingNode, true, true);
+                    SelectObject(outgoingNode, true);
                 }
             }
         }
@@ -181,7 +197,7 @@ namespace _3DConnections.Runtime.Selection
         private void RemoveSelectionVisual(GameObject obj)
         {
             if (!obj) return;
-            
+
             var coloredObject = obj.GetComponent<ColoredObject>();
             if (coloredObject != null)
             {
@@ -191,7 +207,7 @@ namespace _3DConnections.Runtime.Selection
             // Clean up child objects (like highlights)
             foreach (Transform child in obj.transform)
             {
-                if (child.gameObject.name.Contains("Highlight") || 
+                if (child.gameObject.name.Contains("Highlight") ||
                     child.gameObject.name.Contains("Selection"))
                 {
                     Destroy(child.gameObject);

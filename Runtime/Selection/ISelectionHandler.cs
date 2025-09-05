@@ -4,7 +4,7 @@ namespace _3DConnections.Runtime.Selection
 {
     public interface ISelectionHandler
     {
-        void SelectObject(GameObject obj, bool addToSelection = false,  bool disallowPingInEditorAnyways = false);
+        void SelectObject(GameObject obj, bool addToSelection = false);
         void DeselectObject(GameObject obj);
         void DeselectAll();
         void ToggleSelection(GameObject obj);
