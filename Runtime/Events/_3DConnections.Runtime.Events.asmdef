@@ -1,4 +1,7 @@
 {
   "name": "_3DConnections.Runtime.Events",
-  "rootNamespace": "_3DConnections.Runtime.Events"
+  "rootNamespace": "_3DConnections.Runtime.Events",
+  "references": [
+    
+  ]
 }
