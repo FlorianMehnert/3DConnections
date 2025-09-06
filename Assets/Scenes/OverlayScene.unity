@@ -2375,25 +2375,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 410225113034936725}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 702cadbe1636451c9adb2df4177c1c5e, type: 3}
+  m_Script: {fileID: 11500000, guid: cef00adafb0349deadb9b4b9cda55688, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  analysisData: {fileID: 4900000, guid: a50f5d748ba945a5aecdf256de3372b0, type: 3}
+  analysisData: {fileID: 0}
   parentNode: {fileID: 108217077}
-  nodePrefab: {fileID: 5666332458060235577, guid: e836823126ba9d9149cc0c726ad8ce9c, type: 3}
-  nodeWidth: 2
-  nodeHeight: 1
-  maxNodes: 1000
-  ignoreTransforms: 0
-  scaleNodesUsingMaintainability: 0
-  colorPreset: 0
-  generateColors: 0
-  setIcons: 1
-  showAddComponentCalls: 1
-  showGetComponentCalls: 1
-  searchForPrefabsUsingNames: 1
-  spawnRootNode: 0
-  ignoredTypes: []
+  nodePrefab: {fileID: 5666332458060235577, guid: f97d8b134e1b45d2bdc949424cb470f6, type: 3}
+  nodeSettings:
+    NodeWidth: 2
+    NodeHeight: 1
+    SetIcons: 0
+    ScaleNodesUsingMaintainability: 0
+  componentSettings:
+    ShowAddComponentCalls: 1
+    ShowGetComponentCalls: 1
+  traversalSettings:
+    MaxNodes: 1000
+    SpawnRootNode: 1
+    IgnoreTransforms: 0
 --- !u!1001 &1871476725280748545
 PrefabInstance:
   m_ObjectHideFlags: 0
