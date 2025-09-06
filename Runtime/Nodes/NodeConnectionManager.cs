@@ -311,7 +311,6 @@ namespace _3DConnections.Runtime.Managers
             ScriptableObjectInventory.Instance.conSo.usingNativeArray = true;
         }
 
-        // Call this when you want to resize the native array (e.g., when connections are added/removed)
         public void ResizeNativeArray()
         {
             if (!ScriptableObjectInventory.Instance.conSo.usingNativeArray) return;
