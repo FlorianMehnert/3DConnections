@@ -112,8 +112,6 @@ namespace _3DConnections.Runtime.Selection
                 return;
             }
             clickDetector.OnDoubleClick += HandleDoubleClick;
-
-            Debug.Log("All components initialized successfully!");
         }
 
         private void OnEnable()

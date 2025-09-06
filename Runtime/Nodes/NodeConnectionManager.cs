@@ -60,12 +60,29 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnEnable()
         {
-            if (rootEdgeTransform) return;
+            if (!rootEdgeTransform) return;
             var rootEdgeGameObject = GameObject.Find("ParentEdgesObject");
             rootEdgeTransform = rootEdgeGameObject.transform
                 ? rootEdgeGameObject.transform
                 : new GameObject("ParentEdgesObject").transform;
             ScriptableObjectInventory.Instance.edgeRoot = rootEdgeTransform;
+            ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
+        }
+
+		private void OnDisable()
+        {
+            HandleEvent();
+            if (ScriptableObjectInventory.Instance == null) return;
+            ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
+		}
+
+        /// <summary>
+        /// Handle ClearEvent
+        /// </summary>
+        public void HandleEvent()
+        {
+            if (ScriptableObjectInventory.Instance == null || ScriptableObjectInventory.Instance.conSo == null) return;
+            ClearConnections();
         }
 
         private void Update()
@@ -176,7 +193,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
 
-        public static void ClearConnections()
+        public void ClearConnections()
         {
             var conSo = ScriptableObjectInventory.Instance.conSo;
             if (conSo && conSo.usingNativeArray && conSo.NativeConnections.IsCreated)
@@ -187,7 +204,7 @@ namespace _3DConnections.Runtime.Managers
 
             try
             {
-                if (!ScriptableObjectInventory.InstanceExists) return;
+                if (ScriptableObjectInventory.Instance == null) return;
                 if (!ScriptableObjectInventory.Instance.conSo) return;
                 foreach (var connection in conSo.connections.Where(connection => connection.lineRenderer))
                 {

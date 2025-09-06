@@ -33,7 +33,6 @@ namespace _3DConnections.Runtime.Selection
             {
                 selectionRectangle.gameObject.SetActive(false);
                 UpdateColor();
-                Debug.Log($"SelectionRectangle initialized with UI element: {selectionRectangle.name}");
             }
             else
             {

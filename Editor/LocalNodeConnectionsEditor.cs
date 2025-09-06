@@ -52,7 +52,6 @@ namespace _3DConnections.Editor
 
             if (listProp.arraySize > 0)
             {
-                // Define the full rect for the scroll view
                 Rect scrollRect = GUILayoutUtility.GetRect(
                     0, // min width
                     float.MaxValue, // max width (fill inspector)
@@ -106,10 +105,15 @@ namespace _3DConnections.Editor
                     if (!go) return;
                     CameraController.AdjustCameraToViewObjects(SceneHandler.GetCameraOfOverlayedScene(), new [] {go});
                 });
+                menu.AddItem(new GUIContent("Select this connection"), false, () =>
+                {
+                    element.objectReferenceValue = Selection.activeGameObject;
+                });
             }
             else
             {
-                menu.AddDisabledItem(new GUIContent("This element needs to be assigned first"));
+                menu.AddDisabledItem(new GUIContent("Focus on this node"));
+                menu.AddDisabledItem(new GUIContent("Select this connection"));
             }
 
             menu.ShowAsContext();

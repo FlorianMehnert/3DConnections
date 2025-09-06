@@ -10,6 +10,7 @@ namespace _3DConnections.Runtime.Events
 
         public void TriggerEvent()
         {
+            Debug.Log("ClearEvent.TriggerEvent() called");
             onEventTriggered?.Invoke();
         }
     }
