@@ -1,5 +1,8 @@
 {
   "name": "_3DConnections.Runtime.Nodes.Clustering",
   "rootNamespace": "_3DConnections.Runtime.Nodes.Clustering",
-  "references":[ "GUID:577a0febf14c435a9f5ae7679ca580ba", "GUID:407d9f5d313b4d20b83d06c1f10def66" ]
+  "references": [
+    "GUID:577a0febf14c435a9f5ae7679ca580ba",
+    "GUID:407d9f5d313b4d20b83d06c1f10def66"
+  ]
 }
