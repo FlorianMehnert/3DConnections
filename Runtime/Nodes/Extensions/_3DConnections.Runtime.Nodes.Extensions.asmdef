@@ -3,7 +3,6 @@
   "rootNamespace": "3DConnections.Runtime.Nodes.Extensions",
   "references":[
     "GUID:776e09b4de4a427fba7608d3c91be466",
-    "GUID:68990cf58c0248f2ae7aaa38040ef8a9",
     "GUID:f4eb26c44d5d41ef825a8424c949fb63"
   ]
 }

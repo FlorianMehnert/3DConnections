@@ -226,7 +226,7 @@ namespace _3DConnections.Runtime.Managers
                     soi.Instance.graph)
                     Layout();
 
-                onComplete?.Invoke(); // continue chain
+                onComplete?.Invoke();
             });
         }
 

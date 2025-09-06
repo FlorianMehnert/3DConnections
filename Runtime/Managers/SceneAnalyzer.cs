@@ -1,94 +1,137 @@
+﻿// SceneAnalyzer.cs
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using _3DConnections.Runtime.Analysis;
+using _3DConnections.Runtime.Managers.Scene;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using ILogger = _3DConnections.Runtime.Analysis.ILogger;
+using Object = System.Object;
+using soi = _3DConnections.Runtime.ScriptableObjectInventory.ScriptableObjectInventory;
+
 namespace _3DConnections.Runtime.Managers
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-
-#if UNITY_EDITOR
-    using UnityEditor;
-#endif
-    using UnityEngine;
-    using UnityEngine.SceneManagement;
-    
-    using ScriptableObjectInventory;
-    using Scene;
-
-    public partial class SceneAnalyzer : MonoBehaviour
+    public class SceneAnalyzer : MonoBehaviour, ISceneAnalysisService
     {
+        [Header("Analysis Data")]
+        [SerializeField] private TextAsset analysisData;
+        
+        [Header("Node Settings")]
+        [SerializeField] private GameObject parentNode;
+        [SerializeField] private GameObject nodePrefab;
+        [SerializeField] private NodeSettings nodeSettings = new();
+        
+        [Header("Analysis Settings")]
+        [SerializeField] private ComponentAnalysisSettings componentSettings = new();
+        [SerializeField] private TraversalSettings traversalSettings = new();
+
+        // Services
+        private INodeGraphManager _nodeManager;
+        private IComponentReferenceAnalyzer _componentAnalyzer;
+        private IEventAnalyzer _eventAnalyzer;
+        private SceneTraversalService _traversalService;
+        private IFileLocator _fileLocator;
+        private ITypeResolver _typeResolver;
+        private ILogger _logger;
+        public readonly List<Object> IgnoredTypes = new();
+
         private void Start()
         {
-#if UNITY_EDITOR
-            _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
-#endif
+            InitializeServices();
         }
 
+        private void InitializeServices()
+        {
+            _logger = new UnityLogger();
+            _fileLocator = new UnityFileLocator();
+            _typeResolver = new UnityTypeResolver();
+            
+            _nodeManager = new NodeGraphManager(nodePrefab, parentNode, nodeSettings, _logger);
+            _componentAnalyzer = new ComponentReferenceAnalyzer(_fileLocator, _typeResolver, _logger, componentSettings);
+            _eventAnalyzer = new EventAnalyzer(_fileLocator, _typeResolver, _logger);
+            _traversalService = new SceneTraversalService(_nodeManager, _logger, traversalSettings);
+        }
 
-        /// <summary>
-        /// Function that is invoked by calling "Analyze scene" in the GUI. Entrypoint into scene analysis and graph building.
-        /// </summary>
-        /// <param name="onComplete"></param>
         public void AnalyzeScene(Action onComplete = null)
         {
-            _currentNodes = 0;
-            _visitedObjects.Clear();
-            _processingObjects.Clear();
-            _instanceIdToNodeLookup.Clear();
-            _discoveredMonoBehaviours.Clear();
-            _dynamicComponentReferences.Clear();
-
-#if UNITY_EDITOR
-            _cachedPrefabPaths = AssetDatabase.FindAssets("t:Prefab").ToList();
-#endif
-
-            var scenePath = SceneUtility.GetScenePathByBuildIndex(ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex);
+            var scenePath = SceneUtility.GetScenePathByBuildIndex(soi.Instance.analyzerConfigurations.sceneIndex);
             if (string.IsNullOrEmpty(scenePath))
             {
-                Debug.LogError($"No scene found at build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex}");
+                _logger.LogError($"No scene found at build index {soi.Instance.analyzerConfigurations.sceneIndex}");
                 return;
             }
 
             var sceneName = Path.GetFileNameWithoutExtension(scenePath);
             var scene = SceneManager.GetSceneByName(sceneName);
 
-            void Analyze()
-            {
-                scene = SceneManager.GetSceneByName(sceneName);
-                Debug.Log($"{scene.name} (build index {ScriptableObjectInventory.Instance.analyzerConfigurations.sceneIndex})");
-
-                LoadComplexityMetrics(analysisData.ToString());
-                _cachedPrefabPaths.Clear();
-                TraverseScene(scene.GetRootGameObjects());
-
-                // Analyze dynamic component references after scene traversal
-                if (ScriptableObjectInventory.Instance.analyzerConfigurations.lookupDynamicReferences)
-                {
-                    Debug.Log(
-                        $"Analyzing dynamic references for {_discoveredMonoBehaviours.Count} MonoBehaviour types");
-                    AnalyzeDynamicComponentReferences();
-                    CreateDynamicConnections();
-                    AnalyzeEventSubscriptions();
-                    CreateEventConnections();
-                }
-
-                onComplete?.Invoke();
-                
-                // update node count
-                ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged();
-            }
-
             if (!scene.isLoaded)
             {
-                Debug.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
+                _logger.Log($"Scene '{sceneName}' is not loaded. Loading additively...");
                 StartCoroutine(SceneHandler.LoadSceneAndInvokeAfterCoroutine(sceneName, Analyze));
                 return;
             }
 
-            // Scene is already loaded
             StartCoroutine(RunNextFrame(Analyze));
+            return;
+
+            void Analyze()
+            {
+                scene = SceneManager.GetSceneByName(sceneName);
+                _logger.Log($"Analyzing scene: {scene.name} (build index {soi.Instance.analyzerConfigurations.sceneIndex})");
+
+                // Clear previous analysis
+                ClearAnalysis();
+
+                // Traverse scene
+                _traversalService.TraverseScene(scene.GetRootGameObjects());
+
+                // Analyze dynamic references if enabled
+                if (soi.Instance.analyzerConfigurations.lookupDynamicReferences)
+                {
+                    var context = _traversalService.GetContext();
+                    _logger.Log($"Analyzing dynamic references for {context.DiscoveredMonoBehaviours.Count} MonoBehaviour types");
+                    
+                    AnalyzeDynamicReferences(context.DiscoveredMonoBehaviours);
+                    AnalyzeEvents(context.DiscoveredMonoBehaviours);
+                }
+
+                onComplete?.Invoke();
+                
+                // Update node count
+                soi.Instance.graph.InvokeOnAllCountChanged();
+            }
         }
 
+        public void ClearAnalysis()
+        {
+            _nodeManager.ClearNodes();
+            soi.Instance.applicationState.spawnedNodes = false;
+            soi.Instance.graph.Initialize();
+        }
+
+        public IReadOnlyList<GameObject> GetAllNodes()
+        {
+            return _nodeManager.NodeLookup.Values.Where(node => node != null).ToList();
+        }
+
+        private void AnalyzeDynamicReferences(IEnumerable<Type> monoBehaviourTypes)
+        {
+            foreach (var type in monoBehaviourTypes)
+            {
+                _componentAnalyzer.AnalyzeComponentReferences(type);
+            }
+            
+            _componentAnalyzer.CreateDynamicConnections(_nodeManager);
+        }
+
+        private void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes)
+        {
+            _eventAnalyzer.AnalyzeEvents(monoBehaviourTypes);
+            _eventAnalyzer.CreateEventConnections(_nodeManager);
+        }
 
         private IEnumerator RunNextFrame(Action action)
         {
@@ -98,72 +141,35 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnEnable()
         {
-            if (ScriptableObjectInventory.Instance.clearEvent != null)
-                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
-                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
+            if (soi.Instance.clearEvent != null)
+                soi.Instance.clearEvent.onEventTriggered.AddListener(HandleClearEvent);
+            if (soi.Instance.removePhysicsEvent != null)
+                soi.Instance.removePhysicsEvent.OnEventTriggered += HandleRemovePhysicsEvent;
         }
 
         private void OnDisable()
         {
-            if (!ScriptableObjectInventory.Instance) return;
-            if (ScriptableObjectInventory.Instance.clearEvent != null)
-                ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
-            if (ScriptableObjectInventory.Instance.removePhysicsEvent != null)
-                ScriptableObjectInventory.Instance.removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
+            if (!soi.Instance) return;
+            if (soi.Instance.clearEvent != null)
+                soi.Instance.clearEvent.onEventTriggered.RemoveListener(HandleClearEvent);
+            if (soi.Instance.removePhysicsEvent != null)
+                soi.Instance.removePhysicsEvent.OnEventTriggered -= HandleRemovePhysicsEvent;
         }
 
-        private void TraverseScene(GameObject[] rootGameObjects)
+        private void HandleClearEvent()
         {
-            if (rootGameObjects == null)
-            {
-                Debug.Log("In traverse scene, however there are not gameobjects in the scene");
-                return;
-            }
-
-            GameObject rootNode = null;
-            if (spawnRootNode)
-            {
-                rootNode = SpawnNode(null);
-                if (!rootNode)
-                {
-                    Debug.Log("Root Node could not be spawned");
-                    return;
-                }
-            }
-
-            foreach (var rootObject in rootGameObjects)
-                TraverseGameObject(rootObject, parentNodeObject: rootNode, depth: 0);
-
-            if (_instanceIdToNodeLookup != null && ScriptableObjectInventory.Instance.graph &&
-                ScriptableObjectInventory.Instance.graph.AllNodes is { Count: 0 })
-                ScriptableObjectInventory.Instance.graph.AllNodes = _instanceIdToNodeLookup.Values.ToList();
-
-            if (ScriptableObjectInventory.Instance.graph.AllNodes is { Count: > 0 } && rootNode)
-                ScriptableObjectInventory.Instance.graph.AllNodes.Add(rootNode);
+            ClearAnalysis();
         }
 
-
-        private void HandleEvent()
+        private static void HandleRemovePhysicsEvent()
         {
-            if (!ScriptableObjectInventory.InstanceExists) return;
-            ClearNodes();
-            ScriptableObjectInventory.Instance.applicationState.spawnedNodes = false;
-            ScriptableObjectInventory.Instance.graph.Initialize();
-        }
-
-        private void HandleRemovePhysicsEvent()
-        {
-            var types = new List<Type>
-            {
-                typeof(SpringJoint2D),
-                typeof(Rigidbody2D)
-            };
+            var types = new List<Type> { typeof(SpringJoint2D), typeof(Rigidbody2D) };
             var parentObject = SceneHandler.GetParentObject();
-            if (!parentObject)
-                return;
-            ScriptableObjectInventory.Instance.graph.NodesRemoveComponents(types,
-                SceneHandler.GetNodesUsingTheNodegraphParentObject());
+            if (parentObject)
+            {
+                soi.Instance.graph.NodesRemoveComponents(types,
+                    SceneHandler.GetNodesUsingTheNodegraphParentObject());
+            }
         }
     }
 }

@@ -37,14 +37,14 @@ namespace _3DConnections.Editor
             EditorGUILayout.LabelField("Ignored Types", EditorStyles.boldLabel);
 
             // Display ignored types list
-            for (var i = 0; i < _analyzer.ignoredTypes.Count; i++)
+            for (var i = 0; i < _analyzer.IgnoredTypes.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"[{i}]: {_analyzer.ignoredTypes[i]}");
+                EditorGUILayout.LabelField($"[{i}]: {_analyzer.IgnoredTypes[i]}");
 
                 if (GUILayout.Button("Remove", GUILayout.Width(70)))
                 {
-                    _analyzer.ignoredTypes.RemoveAt(i);
+                    _analyzer.IgnoredTypes.RemoveAt(i);
                     EditorUtility.SetDirty(_analyzer);
                 }
 
@@ -84,9 +84,9 @@ namespace _3DConnections.Editor
             if (GUILayout.Button("Add Selected Type") && _filteredTypes.Count > 0)
             {
                 var selectedType = _filteredTypes[_selectedTypeIndex];
-                if (!_analyzer.ignoredTypes.Contains(selectedType))
+                if (!_analyzer.IgnoredTypes.Contains(selectedType))
                 {
-                    _analyzer.ignoredTypes.Add(selectedType);
+                    _analyzer.IgnoredTypes.Add(selectedType);
                     EditorUtility.SetDirty(_analyzer);
                 }
             }

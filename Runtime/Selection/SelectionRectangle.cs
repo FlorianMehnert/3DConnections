@@ -72,7 +72,6 @@ namespace _3DConnections.Runtime.Selection
 
         public void EndSelection()
         {
-            Debug.Log("EndSelection called");
             _isDrawing = false;
             
             if (selectionRectangle != null)

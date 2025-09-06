@@ -9,7 +9,6 @@ namespace _3DConnections.Runtime.Nodes
     {
         [SerializeField] private Color originalColor;
         private Renderer _objectRenderer;
-        private LocalNodeConnections _nodeConnections;
         private int _targetLayerMask;
 
         private bool _isHighlighting;

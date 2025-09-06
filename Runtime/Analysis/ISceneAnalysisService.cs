@@ -7,7 +7,7 @@ namespace _3DConnections.Runtime.Analysis
 {
     public interface ISceneAnalysisService
     {
-        void AnalyzeScene(int sceneIndex, Action onComplete = null);
+        void AnalyzeScene(Action onComplete = null);
         void ClearAnalysis();
         IReadOnlyList<GameObject> GetAllNodes();
     }
