@@ -2391,7 +2391,7 @@ MonoBehaviour:
     ShowGetComponentCalls: 1
   traversalSettings:
     MaxNodes: 1000
-    SpawnRootNode: 1
+    SpawnRootNode: 0
     IgnoreTransforms: 0
 --- !u!1001 &1871476725280748545
 PrefabInstance:
