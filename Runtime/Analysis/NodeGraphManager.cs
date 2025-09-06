@@ -246,7 +246,7 @@ namespace _3DConnections.Runtime.Analysis
         {
             var textObj = new GameObject("Text");
             textObj.transform.SetParent(nodeObject.transform);
-            textObj.transform.localPosition = new Vector3(0, 0.12f, 0);
+            textObj.transform.localPosition = new Vector3(0, 0.12f, -0.3f);
 
             var text = textObj.AddComponent<TextMeshPro>();
 
