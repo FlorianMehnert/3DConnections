@@ -16,13 +16,31 @@ namespace _3DConnections.Runtime.Analysis
         private readonly ILogger _logger;
         private readonly ComponentAnalysisSettings _settings;
         private readonly Dictionary<Type, List<ComponentReference>> _dynamicComponentReferences = new();
+        private readonly IProgressReporter _progressReporter;
 
-        public ComponentReferenceAnalyzer(IFileLocator fileLocator, ITypeResolver typeResolver, ILogger logger, ComponentAnalysisSettings settings)
+        public ComponentReferenceAnalyzer(IFileLocator fileLocator, ITypeResolver typeResolver, 
+            ILogger logger, ComponentAnalysisSettings settings, IProgressReporter progressReporter = null)
         {
             _fileLocator = fileLocator;
             _typeResolver = typeResolver;
             _logger = logger;
             _settings = settings;
+            _progressReporter = progressReporter ?? new NullProgressReporter();
+        }
+        
+        public void AnalyzeAllComponents(IEnumerable<Type> monoBehaviourTypes)
+        {
+            var types = monoBehaviourTypes.ToArray();
+            _progressReporter.StartOperation("Component Reference Analysis", types.Length);
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                _progressReporter.ReportProgress("Analyzing Components", i + 1, types.Length, 
+                    types[i].Name);
+                AnalyzeComponentReferences(types[i]);
+            }
+
+            _progressReporter.CompleteOperation();
         }
 
         public List<ComponentReference> AnalyzeComponentReferences(Type monoBehaviourType)

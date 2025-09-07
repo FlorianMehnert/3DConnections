@@ -19,6 +19,7 @@ namespace _3DConnections.Runtime.Analysis
         private readonly IFileLocator _fileLocator;
         private readonly ITypeResolver _typeResolver;
         private readonly ILogger _logger;
+        private readonly IProgressReporter _progressReporter;
 
         private readonly Dictionary<Type, List<EventInfo>> _eventPublishers = new();
         private readonly List<EventInvocation> _eventInvocations = new();
@@ -26,11 +27,12 @@ namespace _3DConnections.Runtime.Analysis
         private readonly Dictionary<string, Type> _typeNameToTypeMap = new();
         private readonly Dictionary<Type, List<EventInfo>> EventPublishersEnhanced = new();
 
-        public EventAnalyzer(IFileLocator fileLocator, ITypeResolver typeResolver, ILogger logger)
+        public EventAnalyzer(IFileLocator fileLocator, ITypeResolver typeResolver, ILogger logger, IProgressReporter progressReporter = null)
         {
             _fileLocator = fileLocator;
             _typeResolver = typeResolver;
             _logger = logger;
+            _progressReporter = progressReporter ?? new NullProgressReporter();
         }
 
         private List<EventInvocation> AnalyzeSourceCodeForEventInvocations(string sourceCode, Type invokerType)
@@ -181,46 +183,54 @@ namespace _3DConnections.Runtime.Analysis
 
         public void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes)
         {
-            var behaviourTypes = monoBehaviourTypes as Type[] ?? monoBehaviourTypes.ToArray();
+            var behaviourTypes = monoBehaviourTypes.ToArray();
+            _progressReporter.StartOperation("Event Analysis", behaviourTypes.Length * 2); // Two passes
+
             BuildTypeNameMapping(behaviourTypes);
 
             // First pass: Find all event publishers
-            foreach (var monoBehaviourType in behaviourTypes)
+            for (int i = 0; i < behaviourTypes.Length; i++)
             {
+                _progressReporter.ReportProgress("Finding Event Publishers", i + 1, behaviourTypes.Length, 
+                    behaviourTypes[i].Name);
                 try
                 {
-                    var sourceFile = _fileLocator.FindSourceFileForType(monoBehaviourType);
+                    var sourceFile = _fileLocator.FindSourceFileForType(behaviourTypes[i]);
                     if (string.IsNullOrEmpty(sourceFile)) continue;
 
                     var sourceCode = File.ReadAllText(sourceFile);
-                    AnalyzeEventPublishers(sourceCode, monoBehaviourType);
+                    AnalyzeEventPublishers(sourceCode, behaviourTypes[i]);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogWarning($"Could not analyze event publishers in {monoBehaviourType.Name}: {e.Message}");
+                    _logger.LogWarning($"Could not analyze event publishers in {behaviourTypes[i].Name}: {e.Message}");
                 }
             }
 
             // Second pass: Find all event subscriptions and invocations
-            foreach (var monoBehaviourType in behaviourTypes)
+            for (int i = 0; i < behaviourTypes.Length; i++)
             {
+                _progressReporter.ReportProgress("Finding Event Subscriptions", 
+                    behaviourTypes.Length + i + 1, behaviourTypes.Length * 2, behaviourTypes[i].Name);
                 try
                 {
-                    var sourceFile = _fileLocator.FindSourceFileForType(monoBehaviourType);
+                    var sourceFile = _fileLocator.FindSourceFileForType(behaviourTypes[i]);
                     if (string.IsNullOrEmpty(sourceFile)) continue;
 
                     var sourceCode = File.ReadAllText(sourceFile);
-                    var subscriptions = AnalyzeSourceCodeForEventSubscriptions(sourceCode, monoBehaviourType);
+                    var subscriptions = AnalyzeSourceCodeForEventSubscriptions(sourceCode, behaviourTypes[i]);
                     _eventSubscriptions.AddRange(subscriptions);
 
-                    var invocations = AnalyzeSourceCodeForEventInvocations(sourceCode, monoBehaviourType);
+                    var invocations = AnalyzeSourceCodeForEventInvocations(sourceCode, behaviourTypes[i]);
                     _eventInvocations.AddRange(invocations);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogWarning($"Could not analyze events in {monoBehaviourType.Name}: {e.Message}");
+                    _logger.LogWarning($"Could not analyze events in {behaviourTypes[i].Name}: {e.Message}");
                 }
             }
+            
+            _progressReporter.CompleteOperation();
 
             _logger.Log(
                 $"Found {_eventPublishers.Count} event publishers, {_eventInvocations.Count} invocations, and {_eventSubscriptions.Count} subscriptions");

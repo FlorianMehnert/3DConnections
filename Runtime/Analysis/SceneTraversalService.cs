@@ -21,41 +21,44 @@ namespace _3DConnections.Runtime.Analysis
         private readonly ILogger _logger;
         private readonly AnalysisContext _context;
         private readonly TraversalSettings _settings;
+        private readonly IProgressReporter _progressReporter;
 
-        public SceneTraversalService(INodeGraphManager nodeManager, ILogger logger, TraversalSettings settings)
+        public SceneTraversalService(INodeGraphManager nodeManager, ILogger logger, 
+            TraversalSettings settings, IProgressReporter progressReporter = null)
         {
             _nodeManager = nodeManager;
             _logger = logger;
             _settings = settings;
             _context = new AnalysisContext { MaxNodes = settings.MaxNodes };
+            _progressReporter = progressReporter ?? new NullProgressReporter();
         }
 
         public void TraverseScene()
         {
+            var rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
+            _progressReporter.StartOperation("Scene Traversal", rootObjects.Length);
+
             switch (_settings.Mode)
             {
                 case SceneTraversalMode.Hierarchy:
-                    TraverseHierarchy(SceneManager.GetActiveScene()
-                        .GetRootGameObjects());
+                    TraverseHierarchy(rootObjects);
                     break;
-
                 case SceneTraversalMode.Flat:
                     TraverseFlat();
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
+
+            _progressReporter.CompleteOperation();
         }
         
         private void TraverseHierarchy(GameObject[] rootObjects)
         {
-            if (rootObjects == null || rootObjects.Length == 0) return;
-            var sceneRoot = _settings.SpawnRootNode
-                ? _nodeManager.CreateNode(null, 0)
-                : null;
-
-            foreach (var root in rootObjects)
-                TraverseGameObject(root, 0, sceneRoot);
+            for (int i = 0; i < rootObjects.Length; i++)
+            {
+                _progressReporter.ReportProgress("Traversing Hierarchy", i + 1, rootObjects.Length, 
+                    rootObjects[i].name);
+                TraverseGameObject(rootObjects[i], 0, null);
+            }
         }
 
         private void TraverseFlat()

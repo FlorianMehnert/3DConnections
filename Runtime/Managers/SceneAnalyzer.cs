@@ -1,4 +1,5 @@
 ﻿// SceneAnalyzer.cs
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,16 +17,18 @@ namespace _3DConnections.Runtime.Managers
 {
     public class SceneAnalyzer : MonoBehaviour, ISceneAnalysisService
     {
-        [Header("Analysis Data")]
-        [SerializeField] private TextAsset analysisData;
-        
-        [Header("Node Settings")]
-        [SerializeField] private GameObject parentNode;
+        [Header("Analysis Data")] [SerializeField]
+        private TextAsset analysisData;
+
+        [Header("Node Settings")] [SerializeField]
+        private GameObject parentNode;
+
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private NodeSettings nodeSettings = new();
-        
-        [Header("Analysis Settings")]
-        [SerializeField] private ComponentAnalysisSettings componentSettings = new();
+
+        [Header("Analysis Settings")] [SerializeField]
+        private ComponentAnalysisSettings componentSettings = new();
+
         [SerializeField] private TraversalSettings traversalSettings = new();
 
         // Services
@@ -36,6 +39,7 @@ namespace _3DConnections.Runtime.Managers
         private IFileLocator _fileLocator;
         private ITypeResolver _typeResolver;
         private ILogger _logger;
+        private IProgressReporter _progressReporter;
         public readonly List<Object> IgnoredTypes = new();
 
         private void Start()
@@ -48,11 +52,19 @@ namespace _3DConnections.Runtime.Managers
             _logger = new UnityLogger();
             _fileLocator = new UnityFileLocator();
             _typeResolver = new UnityTypeResolver();
-            
+
+            // Initialize progress reporter based on context
+#if UNITY_EDITOR
+            _progressReporter = new UnityProgressReporter();
+#else
+            _progressReporter = new ConsoleProgressReporter();
+#endif
+
             _nodeManager = new NodeGraphManager(nodePrefab, parentNode, nodeSettings, _logger);
-            _componentAnalyzer = new ComponentReferenceAnalyzer(_fileLocator, _typeResolver, _logger, componentSettings);
-            _eventAnalyzer = new EventAnalyzer(_fileLocator, _typeResolver, _logger);
-            _traversalService = new SceneTraversalService(_nodeManager, _logger, traversalSettings);
+            _componentAnalyzer = new ComponentReferenceAnalyzer(_fileLocator, _typeResolver, _logger, componentSettings,
+                _progressReporter);
+            _eventAnalyzer = new EventAnalyzer(_fileLocator, _typeResolver, _logger, _progressReporter);
+            _traversalService = new SceneTraversalService(_nodeManager, _logger, traversalSettings, _progressReporter);
         }
 
         public void AnalyzeScene(Action onComplete = null)
@@ -79,29 +91,57 @@ namespace _3DConnections.Runtime.Managers
 
             void Analyze()
             {
-                scene = SceneManager.GetSceneByName(sceneName);
-                _logger.Log($"Analyzing scene: {scene.name} (build index {soi.Instance.analyzerConfigurations.sceneIndex})");
-
-                // Clear previous analysis
-                ClearAnalysis();
-
-                // Traverse scene
-                _traversalService.TraverseScene();
-
-                // Analyze dynamic references if enabled
-                if (soi.Instance.analyzerConfigurations.lookupDynamicReferences)
+                try
                 {
-                    var context = _traversalService.GetContext();
-                    _logger.Log($"Analyzing dynamic references for {context.DiscoveredMonoBehaviours.Count} MonoBehaviour types");
-                    
-                    AnalyzeDynamicReferences(context.DiscoveredMonoBehaviours);
-                    AnalyzeEvents(context.DiscoveredMonoBehaviours);
-                }
+                    scene = SceneManager.GetSceneByName(sceneName);
+                    _logger.Log(
+                        $"Analyzing scene: {scene.name} (build index {soi.Instance.analyzerConfigurations.sceneIndex})");
 
-                onComplete?.Invoke();
-                
-                // Update node count
-                soi.Instance.graph.InvokeOnAllCountChanged();
+                    // Start overall progress tracking
+                    int totalSteps = soi.Instance.analyzerConfigurations.lookupDynamicReferences ? 3 : 1;
+                    _progressReporter.StartOperation("Complete Scene Analysis", totalSteps);
+
+                    // Clear previous analysis
+                    ClearAnalysis();
+
+                    // Step 1: Traverse scene
+                    _progressReporter.ReportProgress("Scene Analysis", 1, totalSteps, "Traversing scene hierarchy");
+                    _traversalService.TraverseScene();
+
+                    // Analyze dynamic references if enabled
+                    if (soi.Instance.analyzerConfigurations.lookupDynamicReferences)
+                    {
+                        var context = _traversalService.GetContext();
+                        _logger.Log(
+                            $"Analyzing dynamic references for {context.DiscoveredMonoBehaviours.Count} MonoBehaviour types");
+
+                        // Step 2: Analyze component references
+                        _progressReporter.ReportProgress("Scene Analysis", 2, totalSteps,
+                            "Analyzing component references");
+                        AnalyzeDynamicReferences(context.DiscoveredMonoBehaviours);
+
+                        // Step 3: Analyze events
+                        _progressReporter.ReportProgress("Scene Analysis", 3, totalSteps, "Analyzing events");
+                        AnalyzeEvents(context.DiscoveredMonoBehaviours);
+                    }
+
+                    _progressReporter.CompleteOperation();
+                    onComplete?.Invoke();
+
+                    // Update node count
+                    soi.Instance.graph.InvokeOnAllCountChanged();
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.Log("Analysis cancelled by user");
+                    onComplete?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Analysis failed: {e.Message}");
+                    _progressReporter.CompleteOperation();
+                    onComplete?.Invoke();
+                }
             }
         }
 
@@ -123,7 +163,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 _componentAnalyzer.AnalyzeComponentReferences(type);
             }
-            
+
             _componentAnalyzer.CreateDynamicConnections(_nodeManager);
         }
 
