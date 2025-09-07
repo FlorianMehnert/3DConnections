@@ -5,80 +5,61 @@ namespace _3DConnections.Runtime.Selection
 {
     public class RaycastManager : MonoBehaviour
     {
-        [SerializeField] private string targetLayerName = "OverlayLayer";
+        [SerializeField] private string targetLayerName = "OverlayScene";
         [SerializeField] private Camera targetCamera;
-        
-        private int _targetLayerMask;
-        private readonly Collider2D[] _overlapBuffer = new Collider2D[16];
 
-        public void Initialize(Camera camera)
+        private int _targetLayerMask;
+
+        public void Initialize(Camera overlayCamera)
         {
-            targetCamera = camera;
+            targetCamera = overlayCamera;
             _targetLayerMask = LayerMask.GetMask(targetLayerName);
-            
+
             if (_targetLayerMask == 0)
                 Debug.LogError($"Layer '{targetLayerName}' not found!");
         }
 
         public Vector2 GetMouseWorldPosition(InputAction mousePositionAction)
         {
-            if (mousePositionAction == null || targetCamera == null) 
+            if (mousePositionAction == null || !targetCamera)
                 return Vector2.zero;
-                
-            Vector2 screenPos = mousePositionAction.ReadValue<Vector2>();
-            return targetCamera.ScreenToWorldPoint(screenPos);
+
+            var screenPos = mousePositionAction.ReadValue<Vector2>();
+            var mousePos = new Vector3(screenPos.x, screenPos.y, 0)
+            {
+                z = -targetCamera.transform.position.z
+            };
+
+            var worldPos = targetCamera.ScreenToWorldPoint(mousePos);
+            return new Vector2(worldPos.x, worldPos.y);
         }
+
 
         public RaycastHit2D RaycastDown(Vector2 position)
         {
             return Physics2D.Raycast(position, Vector2.down, Mathf.Infinity, _targetLayerMask);
         }
 
-        private static RaycastHit2D GetClosestHit(RaycastHit2D[] hits, int hitCount, Vector2 origin)
-        {
-            var closest = hits[0];
-            var minSqr = (hits[0].point - origin).sqrMagnitude;
-
-            for (var i = 1; i < hitCount; i++)
-            {
-                var sqr = (hits[i].point - origin).sqrMagnitude;
-                if (sqr < minSqr)
-                {
-                    minSqr = sqr;
-                    closest = hits[i];
-                }
-            }
-
-            return closest;
-        }
-        
         public GameObject GetClosestObjectToMouse(Vector2 mouseWorldPosition)
         {
-            int hitCount = Physics2D.OverlapPointNonAlloc(mouseWorldPosition, _overlapBuffer, _targetLayerMask);
-            if (hitCount == 0) return null;
+            var hits = Physics2D.RaycastAll(mouseWorldPosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
 
-            GameObject closestObj = null;
-            float minSqrDist = float.MaxValue;
+            if (hits.Length == 0) return null;
 
-            for (int i = 0; i < hitCount; i++)
+            var closestHit = hits[0];
+            var closestDistance = Vector2.Distance(mouseWorldPosition, hits[0].transform.position);
+
+            foreach (var hit in hits)
             {
-                var collider = _overlapBuffer[i];
-                if (collider == null) continue;
-                var center = collider.bounds.center;
-                float sqrDist = (mouseWorldPosition - (Vector2)center).sqrMagnitude;
-                if (sqrDist < minSqrDist)
-                {
-                    minSqrDist = sqrDist;
-                    closestObj = collider.gameObject;
-                }
+                var distance = Vector2.Distance(mouseWorldPosition, hit.transform.position);
+                if (!(distance < closestDistance)) continue;
+                closestDistance = distance;
+                closestHit = hit;
             }
-            return closestObj;
-        }
 
+            var closestObject = closestHit.collider.gameObject;
+            return closestObject;
 
-        public bool IsTargetLayer(GameObject obj)
-        {
-            return obj != null && ((1 << obj.layer) & _targetLayerMask) != 0;
         }
     }
 }
