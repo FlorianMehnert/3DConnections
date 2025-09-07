@@ -276,6 +276,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetLayerName: OverlayScene
   targetCamera: {fileID: 907117478}
+  testObject: {fileID: 8202587036729794933, guid: d16a21cf48a7f144ca0798a63ce75ec3, type: 3}
 --- !u!1001 &315801065
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1780,7 +1781,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1329466035
 MonoBehaviour:
   m_ObjectHideFlags: 0
