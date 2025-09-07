@@ -30,35 +30,53 @@ namespace _3DConnections.Runtime.Analysis
             _context = new AnalysisContext { MaxNodes = settings.MaxNodes };
         }
 
-        public void TraverseScene(GameObject[] rootGameObjects)
+        public void TraverseScene()
         {
-            if (rootGameObjects == null)
+            switch (_settings.Mode)
             {
-                _logger.Log("No GameObjects found in scene");
-                return;
-            }
+                case SceneTraversalMode.Hierarchy:
+                    TraverseHierarchy(SceneManager.GetActiveScene()
+                        .GetRootGameObjects());
+                    break;
 
-            GameObject rootNode = null;
-            if (_settings.SpawnRootNode)
-            {
-                rootNode = _nodeManager.CreateNode(null, 0);
-                if (rootNode == null)
-                {
-                    _logger.LogError("Root node could not be spawned");
-                    return;
-                }
+                case SceneTraversalMode.Flat:
+                    TraverseFlat();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-
-            foreach (var rootObject in rootGameObjects)
-            {
-                TraverseGameObject(rootObject, 0, rootNode);
-            }
-
-            _logger.Log($"Scene traversal completed. Created {_context.CurrentNodeCount} nodes.");
         }
+        
+        private void TraverseHierarchy(GameObject[] rootObjects)
+        {
+            if (rootObjects == null || rootObjects.Length == 0) return;
+            var sceneRoot = _settings.SpawnRootNode
+                ? _nodeManager.CreateNode(null, 0)
+                : null;
+
+            foreach (var root in rootObjects)
+                TraverseGameObject(root, 0, sceneRoot);
+        }
+
+        private void TraverseFlat()
+        {
+            var allGos = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID)
+                .Where(go => go.scene.isLoaded);
+            var sceneRoot = _settings.SpawnRootNode
+                ? _nodeManager.CreateNode(null, 0)
+                : null;
+
+            foreach (var go in allGos)
+                TraverseGameObject(go, 1, sceneRoot);   // depth==1 for every GO
+        }
+
 
         private void TraverseGameObject(GameObject gameObject, int depth, GameObject parentNode = null, bool isReference = false)
         {
+            if (_settings.Mode == SceneTraversalMode.Flat)
+            {
+                depth = 1;
+            }
             if (!gameObject || _context.CurrentNodeCount >= _context.MaxNodes) return;
             if (gameObject.GetComponent<ArtificialGameObject>()) return;
 
@@ -90,13 +108,11 @@ namespace _3DConnections.Runtime.Analysis
                     }
                 }
 
-                // Traverse children
-                foreach (Transform child in gameObject.transform)
+                // Traverse children only in Hierarchy mode
+                if (_settings.Mode == SceneTraversalMode.Hierarchy)
                 {
-                    if (child && child.gameObject)
-                    {
+                    foreach (Transform child in gameObject.transform)
                         TraverseGameObject(child.gameObject, depth + 1, nodeObject);
-                    }
                 }
             }
             finally
@@ -107,6 +123,11 @@ namespace _3DConnections.Runtime.Analysis
 
         private void TraverseComponent(Component component, int depth, GameObject parentNode = null)
         {
+            if (_settings.Mode == SceneTraversalMode.Flat)
+            {
+                depth = 1;
+            }
+            
             if (!component || _context.CurrentNodeCount > _context.MaxNodes) return;
             if (ShouldIgnoreComponent(component)) return;
 
@@ -173,6 +194,10 @@ namespace _3DConnections.Runtime.Analysis
 
         private void TraverseScriptableObject(ScriptableObject scriptableObject, int depth, GameObject parentNode)
         {
+            if (_settings.Mode == SceneTraversalMode.Flat)
+            {
+                depth = 1;
+            }
             if (!scriptableObject || _context.CurrentNodeCount > _context.MaxNodes) return;
 
             if (_context.ProcessingObjects.Contains(scriptableObject))
@@ -214,6 +239,10 @@ namespace _3DConnections.Runtime.Analysis
 
         private void ConnectToExistingNode(UnityEngine.Object obj, GameObject parentNode, int depth, bool isReference)
         {
+            if (_settings.Mode == SceneTraversalMode.Flat)
+            {
+                depth = 1;
+            }
             if (parentNode == null) return;
 
             var existingNode = _nodeManager.NodeLookup.Values
@@ -257,6 +286,10 @@ namespace _3DConnections.Runtime.Analysis
 #if UNITY_EDITOR
         private void ConnectUnityEventPersistentListeners(Component component, GameObject parentNode, int depth)
         {
+            if (_settings.Mode == SceneTraversalMode.Flat)
+            {
+                depth = 1;
+            }
             if (component == null) return;
 
             var type = component.GetType();
@@ -296,12 +329,5 @@ namespace _3DConnections.Runtime.Analysis
         public AnalysisContext GetContext() => _context;
     }
 
-    [Serializable]
-    public class TraversalSettings
-    {
-        public int MaxNodes = 1000;
-        public bool SpawnRootNode = true;
-        public bool IgnoreTransforms = false;
-        public List<Type> IgnoredTypes = new();
-    }
+    
 }

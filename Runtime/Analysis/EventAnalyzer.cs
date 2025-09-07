@@ -1,4 +1,5 @@
 ﻿// EventAnalyzer.cs
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +19,7 @@ namespace _3DConnections.Runtime.Analysis
         private readonly IFileLocator _fileLocator;
         private readonly ITypeResolver _typeResolver;
         private readonly ILogger _logger;
-        
+
         private readonly Dictionary<Type, List<EventInfo>> _eventPublishers = new();
         private readonly List<EventInvocation> _eventInvocations = new();
         private readonly List<EventSubscription> _eventSubscriptions = new();
@@ -31,7 +32,7 @@ namespace _3DConnections.Runtime.Analysis
             _typeResolver = typeResolver;
             _logger = logger;
         }
-        
+
         private List<EventInvocation> AnalyzeSourceCodeForEventInvocations(string sourceCode, Type invokerType)
         {
             var invocations = new List<EventInvocation>();
@@ -43,32 +44,33 @@ namespace _3DConnections.Runtime.Analysis
 
                 // Look for direct Invoke() calls
                 var invocationExpressions = root.DescendantNodes().OfType<InvocationExpressionSyntax>();
-                var invocationExpressionSyntaxes = invocationExpressions as InvocationExpressionSyntax[] ?? invocationExpressions.ToArray();
+                var invocationExpressionSyntaxes = invocationExpressions as InvocationExpressionSyntax[] ??
+                                                   invocationExpressions.ToArray();
                 invocations.AddRange(from invocation in invocationExpressionSyntaxes
-                let memberAccess = invocation.Expression as MemberAccessExpressionSyntax
-                where memberAccess?.Name.Identifier.ValueText == "Invoke"
-                let fullExpression = memberAccess.Expression.ToString()
-                let lineNumber = syntaxTree.GetLineSpan(invocation.Span).StartLinePosition.Line + 1
-                let matchedEvent = FindMatchingEventForInvocation(fullExpression)
-                where matchedEvent.HasValue
-                select new EventInvocation
-                {
-                    InvokerType = invokerType,
-                    EventName = matchedEvent.Value.eventName,
-                    MethodPattern = fullExpression + ".Invoke()",
-                    TargetType = matchedEvent.Value.targetType,
-                    LineNumber = lineNumber,
-                    SourceFile = FindSourceFileForType(invokerType),
-                    IsIndirect = fullExpression.Contains("."),
-                    AccessPath = fullExpression
-                });
+                    let memberAccess = invocation.Expression as MemberAccessExpressionSyntax
+                    where memberAccess?.Name.Identifier.ValueText == "Invoke"
+                    let fullExpression = memberAccess.Expression.ToString()
+                    let lineNumber = syntaxTree.GetLineSpan(invocation.Span).StartLinePosition.Line + 1
+                    let matchedEvent = FindMatchingEventForInvocation(fullExpression)
+                    where matchedEvent.HasValue
+                    select new EventInvocation
+                    {
+                        InvokerType = invokerType,
+                        EventName = matchedEvent.Value.eventName,
+                        MethodPattern = fullExpression + ".Invoke()",
+                        TargetType = matchedEvent.Value.targetType,
+                        LineNumber = lineNumber,
+                        SourceFile = FindSourceFileForType(invokerType),
+                        IsIndirect = fullExpression.Contains("."),
+                        AccessPath = fullExpression
+                    });
 
                 // Look for method invocations that might trigger events (like InvokeOnAllCountChanged)
                 foreach (var invocation in invocationExpressionSyntaxes)
                 {
                     if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess2) continue;
                     var methodName = memberAccess2.Name.Identifier.ValueText;
-                        
+
                     // Check if this is an invoke method pattern
                     if (!methodName.StartsWith("Invoke") || methodName.Length <= 6) continue;
                     var lineNumber = syntaxTree.GetLineSpan(invocation.Span).StartLinePosition.Line + 1;
@@ -77,7 +79,7 @@ namespace _3DConnections.Runtime.Analysis
 
                     // Extract the event name from the method name
                     var potentialEventName = methodName[6..]; // Remove "Invoke" prefix
-                            
+
                     invocations.Add(new EventInvocation
                     {
                         InvokerType = invokerType,
@@ -101,11 +103,11 @@ namespace _3DConnections.Runtime.Analysis
 
             return invocations;
         }
-        
+
         private Type ResolveTypeFromExpression(ExpressionSyntax expression)
         {
             var expressionString = expression.ToString();
-            
+
             // Handle Instance pattern
             if (expressionString.Contains("Instance"))
             {
@@ -119,22 +121,22 @@ namespace _3DConnections.Runtime.Analysis
                     }
                 }
             }
-            
+
             // Handle direct type references
             if (_typeNameToTypeMap.TryGetValue(expressionString, out var directType))
             {
                 return directType;
             }
-            
+
             // Handle this/base references
             if (expressionString == "this" || expressionString == "base")
             {
                 return null; // Will be resolved to invokerType later
             }
-            
+
             return null;
         }
-        
+
         private string FindSourceFileForType(Type type)
         {
 #if UNITY_EDITOR
@@ -152,39 +154,14 @@ namespace _3DConnections.Runtime.Analysis
 #endif
             return null;
         }
-        
-        private void AnalyzeIndirectInvocations(SyntaxNode root, Type invokerType, List<EventInvocation> invocations)
-        {
-            // Look for patterns like: ScriptableObjectInventory.Instance.graph.InvokeOnAllCountChanged()
-            var memberAccessExpressions = root.DescendantNodes().OfType<MemberAccessExpressionSyntax>();
 
-            invocations.AddRange(from memberAccess in memberAccessExpressions
-            let accessPath = memberAccess.ToString()
-            where accessPath.Contains("Instance.") && (accessPath.Contains("Event") || accessPath.Contains("event") || accessPath.Contains("graph") || accessPath.Contains("clearEvent"))
-            let parentInvocation = memberAccess.Ancestors().OfType<InvocationExpressionSyntax>().FirstOrDefault()
-            where parentInvocation != null
-            let lineNumber = root.SyntaxTree.GetLineSpan(parentInvocation.Span).StartLinePosition.Line + 1
-            let targetType = ResolveTypeFromAccessPath(accessPath)
-            select new EventInvocation
-            {
-                InvokerType = invokerType,
-                EventName = ExtractEventNameFromPath(accessPath),
-                MethodPattern = parentInvocation.ToString(),
-                TargetType = targetType ?? typeof(object),
-                LineNumber = lineNumber,
-                SourceFile = FindSourceFileForType(invokerType),
-                IsIndirect = true,
-                AccessPath = accessPath
-            });
-        }
-        
         private string ExtractEventNameFromPath(string accessPath)
         {
             var parts = accessPath.Split('.');
             return parts.Length > 0 ? parts[^1] : "UnknownEvent";
         }
 
-        
+
         private (string eventName, Type targetType)? FindMatchingEventForInvocation(string expression)
         {
             // Try to match expressions like "OnGoCountChanged" to known events
@@ -245,15 +222,16 @@ namespace _3DConnections.Runtime.Analysis
                 }
             }
 
-            _logger.Log($"Found {_eventPublishers.Count} event publishers, {_eventInvocations.Count} invocations, and {_eventSubscriptions.Count} subscriptions");
+            _logger.Log(
+                $"Found {_eventPublishers.Count} event publishers, {_eventInvocations.Count} invocations, and {_eventSubscriptions.Count} subscriptions");
         }
-        
+
         private bool IsKnownEventType(string typeName)
         {
             return typeName.Contains("Event") || typeName.Contains("Action") ||
                    typeName.Contains("Delegate") || typeName.Contains("Func");
         }
-        
+
         private EventType DetermineEventType(string typeName)
         {
             if (typeName.Contains("UnityAction")) return EventType.UnityAction;
@@ -291,8 +269,8 @@ namespace _3DConnections.Runtime.Analysis
                     };
 
                     subscriberNode.ConnectNodes(publisherNode, connectionColor, 1,
-                            $"eventSubscription_{subscription.Type}_{subscription.IntermediateField ?? "direct"}",
-                            cols.MaxWidthHierarchy);
+                        $"eventSubscription_{subscription.Type}_{subscription.IntermediateField ?? "direct"}",
+                        cols.MaxWidthHierarchy);
                 }
             }
 
@@ -317,10 +295,11 @@ namespace _3DConnections.Runtime.Analysis
                         cols.DynamicComponentConnection.b, 0.9f);
 
                 invokerNode.ConnectNodes(targetNode, invocationColor, 1,
-                        invocation.IsIndirect ? "indirectEventInvocation" : "eventInvocation",
-                        cols.MaxWidthHierarchy);
+                    invocation.IsIndirect ? "indirectEventInvocation" : "eventInvocation",
+                    cols.MaxWidthHierarchy);
 
-                _logger.Log($"Connected event invocation: {invocation.MethodPattern} from {invocation.InvokerType.Name} to {invocation.TargetType.Name}");
+                _logger.Log(
+                    $"Connected event invocation: {invocation.MethodPattern} from {invocation.InvokerType.Name} to {invocation.TargetType.Name}");
             }
         }
 
@@ -334,7 +313,8 @@ namespace _3DConnections.Runtime.Analysis
             }
 
             // Add known types
-            _typeNameToTypeMap["ScriptableObjectInventory"] = typeof(ScriptableObjectInventory.ScriptableObjectInventory);
+            _typeNameToTypeMap["ScriptableObjectInventory"] =
+                typeof(ScriptableObjectInventory.ScriptableObjectInventory);
         }
 
         private void AnalyzeEventPublishers(string sourceCode, Type publisherType)
@@ -357,7 +337,7 @@ namespace _3DConnections.Runtime.Analysis
                         var eventType = DetermineEventType(typeName);
                         if (eventType == EventType.CustomDelegate && !IsKnownEventType(typeName)) continue;
                         var invokeMethodName = FindInvokeMethodForEvent(root, fieldName);
-                            
+
                         events.Add(new EventInfo
                         {
                             EventName = fieldName,
@@ -379,14 +359,14 @@ namespace _3DConnections.Runtime.Analysis
                 _logger.LogWarning($"Error analyzing event publishers for {publisherType.Name}: {e.Message}");
             }
         }
-        
+
         private bool HasInvokePattern(string sourceCode, string eventName)
         {
             return sourceCode.Contains($"{eventName}?.Invoke(") ||
                    sourceCode.Contains($"{eventName}.Invoke(") ||
                    sourceCode.Contains($"Invoke{eventName}");
         }
-        
+
         private string FindInvokeMethodForEvent(SyntaxNode root, string eventName)
         {
             // Look for methods that invoke this specific event
@@ -399,6 +379,7 @@ namespace _3DConnections.Runtime.Analysis
                     return method.Identifier.ValueText;
                 }
             }
+
             return null;
         }
 
@@ -427,7 +408,7 @@ namespace _3DConnections.Runtime.Analysis
                 foreach (var ifStatement in ifStatements)
                 {
                     var condition = ifStatement.Condition.ToString();
-                    
+
                     var assignmentsInIf = ifStatement.DescendantNodes()
                         .OfType<AssignmentExpressionSyntax>()
                         .Where(a => a.OperatorToken.IsKind(SyntaxKind.PlusEqualsToken));
@@ -451,7 +432,7 @@ namespace _3DConnections.Runtime.Analysis
             List<EventSubscription> results, string condition = null)
         {
             var parts = leftSide.Split('.');
-            
+
             if (parts.Length == 2 && !leftSide.Contains("Instance"))
             {
                 var eventName = parts[1];
@@ -495,6 +476,7 @@ namespace _3DConnections.Runtime.Analysis
                     return kvp.Key;
                 }
             }
+
             return null;
         }
 
@@ -510,15 +492,155 @@ namespace _3DConnections.Runtime.Analysis
             return fieldTypeMap.GetValueOrDefault(fieldName);
         }
 
+// ============================================================================
+//  Roslyn-powered target-type resolution + richer access-path heuristics
+//  (replace the existing helpers in EventAnalyzer.cs with the block below)
+// ============================================================================
+
+        #region === 1.  Roslyn helpers  ===============================================
+
+// Cache one semantic model per syntax tree (enough for our single-file passes)
+        private Tuple<SyntaxTree, SemanticModel> _semanticModelCache;
+
+        private SemanticModel GetSemanticModel(SyntaxTree tree)
+        {
+            if (_semanticModelCache != null && _semanticModelCache.Item1 == tree)
+                return _semanticModelCache.Item2;
+
+            // Build a minimal compilation that contains just this tree
+            var references = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                .Select(a => MetadataReference.CreateFromFile(a.Location));
+
+            var compilation = CSharpCompilation.Create(
+                "TmpEventAnalysis",
+                new[] { tree },
+                references,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var model = compilation.GetSemanticModel(tree, true);
+            _semanticModelCache = Tuple.Create(tree, model);
+            return model;
+        }
+
+// Convert a Roslyn ITypeSymbol into a System.Type via reflection
+        private Type ConvertSymbolToType(ITypeSymbol symbol)
+        {
+            if (symbol == null) return null;
+
+            string fullName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                .Replace("global::", string.Empty);
+
+            // Try fully-qualified first, then short name
+            return _typeResolver.FindTypeByName(fullName) ??
+                   _typeResolver.FindTypeByName(symbol.Name);
+        }
+
+        #endregion
+
+
+        #region === 2.  Access-path → Type heuristics  ================================
+
+// Extra singleton/service keywords beyond the classic “Instance”
+        private static readonly string[] _singletonKeywords =
+            { "Instance", "Current", "Singleton", "Service", "Services" };
+
         private Type ResolveTypeFromAccessPath(string accessPath)
         {
-            if (!accessPath.Contains("ScriptableObjectInventory.Instance")) return null;
+            // Generic rule:  FooBar.Instance.…  |  FooBar.Current.…  etc.
+            var parts = accessPath.Split('.');
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                if (!_singletonKeywords.Contains(parts[i + 1])) continue;
+
+                var candidate = string.Join(".", parts.Take(i + 1)); // everything before “.Instance”
+                var type = _typeResolver.FindTypeByName(candidate);
+                if (type != null) return type;
+            }
+
+            // Static field / property pattern:  StaticType.SomeEvent
+            if (parts.Length >= 2)
+            {
+                var candidate = string.Join(".", parts.Take(parts.Length - 1));
+                var type = _typeResolver.FindTypeByName(candidate);
+                if (type != null) return type;
+            }
+
+            // Service-locator pattern:  locator.Get<SomeType>()…
+            int gStart = accessPath.IndexOf('<');
+            int gEnd = accessPath.IndexOf('>');
+            if (gStart >= 0 && gEnd > gStart)
+            {
+                var genericType = accessPath.Substring(gStart + 1, gEnd - gStart - 1);
+                var type = _typeResolver.FindTypeByName(genericType);
+                if (type != null) return type;
+            }
+
+            // Project-specific fall-backs you already had
             if (accessPath.Contains("graph"))
                 return _typeResolver.FindTypeByName("NodeGraphScriptableObject");
             if (accessPath.Contains("clearEvent"))
                 return _typeResolver.FindTypeByName("ClearEvent");
-            return _typeResolver.FindTypeByName("ScriptableObjectInventory");
 
+            return null; // **never** fall back to typeof(object)
         }
+
+        #endregion
+
+
+        #region === 3.  Indirect invocation scanner (uses semantic model) =============
+
+        private void AnalyzeIndirectInvocations(SyntaxNode root, Type invokerType, List<EventInvocation> invocations)
+        {
+            var memberAccessExpressions = root.DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>();
+            var semantic = GetSemanticModel(root.SyntaxTree);
+
+            foreach (var memberAccess in memberAccessExpressions)
+            {
+                string accessPath = memberAccess.ToString();
+                if (!accessPath.Contains(".")) continue; // nothing interesting
+
+                // 1) First choice: Roslyn semantic model
+                var targetType = ResolveTargetType(memberAccess, semantic);
+
+                // 2) Fallback: string heuristics
+                targetType ??= ResolveTypeFromAccessPath(accessPath);
+                if (targetType == null) continue; // still unknown → skip, no “Object” node
+
+                var parentInvocation = memberAccess.Ancestors()
+                    .OfType<InvocationExpressionSyntax>()
+                    .FirstOrDefault();
+
+                invocations.Add(new EventInvocation
+                {
+                    InvokerType = invokerType,
+                    EventName = ExtractEventNameFromPath(accessPath),
+                    MethodPattern = parentInvocation?.ToString() ?? accessPath,
+                    TargetType = targetType,
+                    LineNumber = root.SyntaxTree.GetLineSpan(memberAccess.Span)
+                        .StartLinePosition.Line + 1,
+                    SourceFile = FindSourceFileForType(invokerType),
+                    IsIndirect = true,
+                    AccessPath = accessPath
+                });
+            }
+        }
+
+        // Use Roslyn to learn the runtime type of the expression left of “.Invoke” / “.Event”
+        private Type ResolveTargetType(MemberAccessExpressionSyntax memberAccess, SemanticModel semantic)
+        {
+            var exprSymbol = semantic.GetSymbolInfo(memberAccess.Expression).Symbol;
+
+            return exprSymbol switch
+            {
+                IPropertySymbol propSym => ConvertSymbolToType(propSym.Type),
+                IFieldSymbol fieldSym => ConvertSymbolToType(fieldSym.Type),
+                IMethodSymbol methodSym => ConvertSymbolToType(methodSym.ReturnType),
+                _ => null
+            };
+        }
+
+        #endregion
     }
 }

@@ -86,7 +86,7 @@ namespace _3DConnections.Runtime.Managers
                 ClearAnalysis();
 
                 // Traverse scene
-                _traversalService.TraverseScene(scene.GetRootGameObjects());
+                _traversalService.TraverseScene();
 
                 // Analyze dynamic references if enabled
                 if (soi.Instance.analyzerConfigurations.lookupDynamicReferences)
