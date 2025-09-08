@@ -15,7 +15,7 @@ namespace _3DConnections.Runtime.Managers
         /// <param name="connectionType">Type string</param>
         /// <param name="maxWidthHierarchy">Max width for line thickness</param>
         /// <param name="dashed">If true, draw a dashed line</param>
-        public static void ConnectNodes(
+        public static NodeConnection ConnectNodes(
             this GameObject inGameObject,
             GameObject outGameObject,
             Color connectionColor,
@@ -24,8 +24,8 @@ namespace _3DConnections.Runtime.Managers
             uint maxWidthHierarchy,
             bool dashed = false)
         {
-            if (NodeConnectionManager.Instance)
-                NodeConnectionManager.Instance.AddConnection(
+            if (!NodeConnectionManager.Instance) return null;
+                var connection = NodeConnectionManager.Instance.AddConnection(
                     inGameObject,
                     outGameObject,
                     connectionColor,
@@ -39,6 +39,7 @@ namespace _3DConnections.Runtime.Managers
             var outConnections = outGameObject.GetComponent<LocalNodeConnections>();
             inConnections.outConnections.Add(outGameObject);
             outConnections.inConnections.Add(inGameObject);
+            return connection;
         }
     }
 }

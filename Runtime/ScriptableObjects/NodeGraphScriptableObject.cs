@@ -35,6 +35,11 @@ namespace _3DConnections.Runtime.ScriptableObjects
 
         private readonly object _lock = new();
 
+        [Header("Search Settings")] public Color searchHighlightColor = Color.yellow;
+        public Color searchDimColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+        public float searchHighlightIntensity = 2.0f;
+
+
         private void InvokeOnGoCountChanged()
         {
             OnGoCountChanged?.Invoke();
@@ -178,26 +183,6 @@ namespace _3DConnections.Runtime.ScriptableObjects
             }
         }
 
-        public void SearchNodes(string searchString)
-        {
-            if (AllNodes == null)
-                return;
-            foreach (var nodeObj in AllNodes)
-            {
-                var node = nodeObj.GetComponent<ColoredObject>();
-                if (!node) continue;
-                if (string.IsNullOrEmpty(searchString) ||
-                    nodeObj.name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                {
-                    ChangeTextSize(nodeObj, 30f);
-                }
-                else
-                {
-                    ChangeTextSize(nodeObj, 1.5f);
-                }
-            }
-        }
-
         public void ChangeTextSize(GameObject node, float size)
         {
             var textComponent = node.GetComponentInChildren<TMP_Text>();
@@ -231,6 +216,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 Debug.LogWarning("Target node is null, cannot highlight connections");
                 return;
             }
+
             ClearAllHighlights();
             var connectedObjects = GetConnectedObjects(targetNode, maxDepth);
             var parentNodes = GameObject.Find("ParentNodesObject");
@@ -240,6 +226,7 @@ namespace _3DConnections.Runtime.ScriptableObjects
             {
                 allObjects.AddRange(from Transform child in parentNodes.transform select child.gameObject);
             }
+
             if (parentEdges != null)
             {
                 allObjects.AddRange(from Transform child in parentEdges.transform select child.gameObject);
@@ -296,7 +283,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
                 if (currentDepth >= maxDepth || currentNode == null) continue;
                 var nodeConnections = currentNode.GetComponent<LocalNodeConnections>();
                 if (nodeConnections == null) continue;
-                foreach (var connectedNode in nodeConnections.outConnections.Where(connectedNode => connectedNode != null && !connectedObjects.Contains(connectedNode)))
+                foreach (var connectedNode in nodeConnections.outConnections.Where(connectedNode =>
+                             connectedNode != null && !connectedObjects.Contains(connectedNode)))
                 {
                     connectedObjects.Add(connectedNode);
                     nodesToProcess.Enqueue((connectedNode, currentDepth + 1));
@@ -306,12 +294,14 @@ namespace _3DConnections.Runtime.ScriptableObjects
                         connectedObjects.Add(edgeObject);
                     }
                 }
+
                 // Process incoming connections if the LocalNodeConnections has them
                 var inConnectionsProperty = nodeConnections.GetType().GetField("inConnections");
                 if (inConnectionsProperty == null) continue;
                 {
                     if (inConnectionsProperty.GetValue(nodeConnections) is not List<GameObject> inConnections) continue;
-                    foreach (var connectedNode in inConnections.Where(connectedNode => connectedNode != null && !connectedObjects.Contains(connectedNode)))
+                    foreach (var connectedNode in inConnections.Where(connectedNode =>
+                                 connectedNode != null && !connectedObjects.Contains(connectedNode)))
                     {
                         connectedObjects.Add(connectedNode);
                         nodesToProcess.Enqueue((connectedNode, currentDepth + 1));
@@ -338,9 +328,17 @@ namespace _3DConnections.Runtime.ScriptableObjects
         private static GameObject FindEdgeBetweenNodes(GameObject fromNode, GameObject toNode)
         {
             var parentEdges = GameObject.Find("ParentEdgesObject");
-            return parentEdges == null ? null :
+            return parentEdges == null
+                ? null
+                :
                 // Look for an edge that connects these two nodes
-                (from Transform edgeTransform in parentEdges.transform select edgeTransform.gameObject into edgeObj let edgeName = edgeObj.name where edgeName.Contains(fromNode.name) && edgeName.Contains(toNode.name) || edgeName.Contains(toNode.name) && edgeName.Contains(fromNode.name) select edgeObj).FirstOrDefault();
+                (from Transform edgeTransform in parentEdges.transform
+                    select edgeTransform.gameObject
+                    into edgeObj
+                    let edgeName = edgeObj.name
+                    where edgeName.Contains(fromNode.name) && edgeName.Contains(toNode.name) ||
+                          edgeName.Contains(toNode.name) && edgeName.Contains(fromNode.name)
+                    select edgeObj).FirstOrDefault();
         }
 
         /// <summary>
@@ -366,7 +364,8 @@ namespace _3DConnections.Runtime.ScriptableObjects
             }
 
             // Clear highlights from all objects
-            foreach (var coloredObject in allObjects.Select(obj => obj.GetComponent<ColoredObject>()).Where(coloredObject => coloredObject != null))
+            foreach (var coloredObject in allObjects.Select(obj => obj.GetComponent<ColoredObject>())
+                         .Where(coloredObject => coloredObject != null))
             {
                 coloredObject.ManualClearHighlight();
             }
@@ -379,6 +378,84 @@ namespace _3DConnections.Runtime.ScriptableObjects
             _allNodes = new List<GameObject>();
             _workingOnAllNodes = false;
             _parentObject = null;
+        }
+
+        /// <summary>
+        /// Search and highlight nodes based on search string using ColoredObject
+        /// </summary>
+        /// <param name="searchString">String to search for in node names</param>
+        public void SearchNodes(string searchString)
+        {
+            if (AllNodes == null)
+                return;
+
+            bool hasSearchTerm = !string.IsNullOrEmpty(searchString);
+
+            foreach (var nodeObj in AllNodes)
+            {
+                var coloredObject = nodeObj.GetComponent<ColoredObject>();
+                if (!coloredObject) continue;
+
+                bool isMatch = !hasSearchTerm ||
+                               nodeObj.name.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+
+                if (isMatch)
+                {
+                    // Highlight matching nodes
+                    if (hasSearchTerm)
+                    {
+                        var emissionColor = searchHighlightColor * searchHighlightIntensity;
+                        coloredObject.Highlight(
+                            highlightColor: searchHighlightColor,
+                            duration: 1f,
+                            highlightForever: true,
+                            emissionColor: emissionColor
+                        );
+
+                        // Also increase text size for better visibility
+                        ChangeTextSize(nodeObj, 30f);
+                    }
+                    else
+                    {
+                        // No search term - reset to original
+                        coloredObject.ManualClearHighlight();
+                        ChangeTextSize(nodeObj, 1.5f);
+                    }
+                }
+                else
+                {
+                    // Dim non-matching nodes
+                    coloredObject.Highlight(
+                        highlightColor: searchDimColor,
+                        duration: 1f,
+                        highlightForever: true
+                    );
+
+                    // Make text smaller for non-matches
+                    ChangeTextSize(nodeObj, 1.5f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clear all search highlights and reset nodes to original state
+        /// </summary>
+        public void ClearSearchHighlights()
+        {
+            if (AllNodes == null)
+                return;
+
+            foreach (var nodeObj in AllNodes)
+            {
+                var coloredObject = nodeObj.GetComponent<ColoredObject>();
+                if (coloredObject)
+                {
+                    coloredObject.ManualClearHighlight();
+                }
+
+                // Reset text size
+                ChangeTextSize(nodeObj, 1.5f);
+            }
         }
     }
 }

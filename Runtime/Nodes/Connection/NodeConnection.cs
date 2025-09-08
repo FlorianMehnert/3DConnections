@@ -14,6 +14,8 @@ public class NodeConnection
     public float lineWidth = 0.1f;
     public string connectionType;
     public bool dashed;
+    
+    public CodeReference codeReference;
 
     public void ApplyConnection()
     {
@@ -51,4 +53,15 @@ public class NodeConnection
     {
         lineRenderer.enabled = false;
     } 
+}
+
+[System.Serializable]
+public class CodeReference
+{
+    public string sourceFile;
+    public int lineNumber;
+    public string methodName;
+    public string className;
+    
+    public bool HasReference => !string.IsNullOrEmpty(sourceFile) && lineNumber > 0;
 }

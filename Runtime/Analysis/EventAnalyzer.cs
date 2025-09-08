@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using _3DConnections.Runtime.Managers;
+using _3DConnections.Runtime.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -248,55 +249,26 @@ namespace _3DConnections.Runtime.Analysis
             if (typeName.Contains("Action")) return EventType.Action;
             if (typeName.Contains("UnityEvent")) return EventType.UnityEvent;
             if (typeName.Contains("UnityEvent")) return EventType.UnityEvent;
-            if (typeName.Contains("EventHandler")) return EventType.SystemEventHandler; // Add this
-            if (typeName.Contains("Func")) return EventType.FuncDelegate; // Add this
+            if (typeName.Contains("EventHandler")) return EventType.SystemEventHandler;
+            if (typeName.Contains("Func")) return EventType.FuncDelegate;
             return EventType.CustomDelegate;
         }
 
         public void CreateEventConnections(INodeGraphManager nodeManager)
         {
-            // Create connections for event subscriptions
-            foreach (var subscription in _eventSubscriptions)
-            {
-                var subscriberNode = nodeManager.FindNodeByType(subscription.SubscriberType);
-                if (subscriberNode == null) continue;
-
-                var publisherNode = nodeManager.FindNodeByType(subscription.PublisherType);
-                if (publisherNode == null)
-                {
-                    nodeManager.CreateNode(null, 1, subscriberNode, false, subscription.PublisherType);
-                }
-                else
-                {
-                    var connectionColor = subscription.Type switch
-                    {
-                        SubscriptionType.DirectSubscription => cols.UnityEventConnection,
-                        SubscriptionType.InstanceAccess => new Color(cols.UnityEventConnection.r * 0.8f,
-                            cols.UnityEventConnection.g * 0.8f, cols.UnityEventConnection.b, 0.7f),
-                        SubscriptionType.ConditionalAccess => new Color(cols.UnityEventConnection.r,
-                            cols.UnityEventConnection.g * 0.6f, cols.UnityEventConnection.b * 0.6f, 0.8f),
-                        _ => cols.UnityEventConnection
-                    };
-
-                    subscriberNode.ConnectNodes(publisherNode, connectionColor, 1,
-                        $"eventSubscription_{subscription.Type}_{subscription.IntermediateField ?? "direct"}",
-                        cols.MaxWidthHierarchy);
-                }
-            }
-
             // Create connections for event invocations
             foreach (var invocation in _eventInvocations)
             {
                 var invokerNode = nodeManager.FindNodeByType(invocation.InvokerType);
-                if (invokerNode == null) continue;
+                if (!invokerNode) continue;
 
                 var targetNode = nodeManager.FindNodeByType(invocation.TargetType);
-                if (targetNode == null)
+                if (!targetNode)
                 {
                     targetNode = nodeManager.CreateNode(null, 1, invokerNode, false, invocation.TargetType);
                 }
 
-                if (targetNode == null) continue;
+                if (!targetNode) continue;
 
                 var invocationColor = invocation.IsIndirect
                     ? new Color(cols.DynamicComponentConnection.r * 1.2f, cols.DynamicComponentConnection.g * 0.8f,
@@ -304,14 +276,20 @@ namespace _3DConnections.Runtime.Analysis
                     : new Color(cols.DynamicComponentConnection.r, cols.DynamicComponentConnection.g * 1.2f,
                         cols.DynamicComponentConnection.b, 0.9f);
 
-                invokerNode.ConnectNodes(targetNode, invocationColor, 1,
+                // Use the new extension method with code reference
+                invokerNode.ConnectNodesWithCodeReference(
+                    targetNode, 
+                    invocationColor, 
+                    1,
                     invocation.IsIndirect ? "indirectEventInvocation" : "eventInvocation",
-                    cols.MaxWidthHierarchy);
-
-                _logger.Log(
-                    $"Connected event invocation: {invocation.MethodPattern} from {invocation.InvokerType.Name} to {invocation.TargetType.Name}");
+                    cols.MaxWidthHierarchy,
+                    invocation.SourceFile,
+                    invocation.LineNumber,
+                    invocation.MethodPattern
+                );
             }
         }
+
 
         private void BuildTypeNameMapping(IEnumerable<Type> monoBehaviourTypes)
         {

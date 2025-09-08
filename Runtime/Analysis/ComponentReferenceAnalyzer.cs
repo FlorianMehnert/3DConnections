@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using _3DConnections.Runtime.Managers;
+using _3DConnections.Runtime.Nodes.Connection;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using cols = _3DConnections.Runtime.ScriptableObjects.NodeColorsScriptableObject;
@@ -76,24 +77,35 @@ namespace _3DConnections.Runtime.Analysis
                 foreach (var reference in references)
                 {
                     var targetNode = nodeManager.FindNodeByType(reference.ReferencedComponentType);
-                    
+            
                     if (targetNode == null)
                     {
                         targetNode = nodeManager.CreateNode(null, 1, sourceNode, false, reference.ReferencedComponentType);
                     }
-                    else
-                    {
-                        var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
-                        sourceNode.ConnectNodes(targetNode, connectionColor, 1, "dynamicComponentConnection", cols.MaxWidthHierarchy);
-                    }
 
-                    if (targetNode)
+                    if (!targetNode) continue;
+                    var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
+                    var connection = sourceNode.ConnectNodes(targetNode, connectionColor, 1, "dynamicComponentConnection", cols.MaxWidthHierarchy);
+                
+                    if (connection != null)
                     {
-                        _logger.Log($"Connected dynamic reference: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
+                        var edgeType = connection.lineRenderer.gameObject.GetComponent<EdgeType>();
+                        if (edgeType)
+                        {
+                            edgeType.SetCodeReference(
+                                reference.SourceFile,
+                                reference.LineNumber,
+                                reference.MethodName,
+                                sourceType.Name
+                            );
+                        }
                     }
+                
+                    _logger.Log($"Connected dynamic reference: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
                 }
             }
         }
+
 
         private List<ComponentReference> AnalyzeSourceCodeForComponentReferences(string sourceCode, string sourceFile)
         {

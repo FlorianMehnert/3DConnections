@@ -5,7 +5,6 @@ namespace _3DConnections.Runtime.Managers
     using System;
     using System.Linq;
     using Unity.Collections;
-    using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
     using Color = UnityEngine.Color;
@@ -127,7 +126,8 @@ namespace _3DConnections.Runtime.Managers
             float lineWidth = 1f,
             float saturation = 1f,
             string connectionType = "parentChildConnection",
-            bool dashed = false)
+            bool dashed = false,
+            CodeReference codeReference = null)
         {
             if (_isShuttingDown) return null;
 
@@ -136,7 +136,20 @@ namespace _3DConnections.Runtime.Managers
             lineRenderer.name = startNode.name + "-" + endNode.name;
 
             var type = lineObj.GetComponent<EdgeType>();
-            if (type) type.connectionType = connectionType;
+            if (type) 
+            {
+                type.connectionType = connectionType;
+                if (codeReference != null)
+                {
+                    type.codeReference = codeReference;
+                }
+            }
+            
+            if (!lineObj.GetComponent<Collider2D>())
+            {
+                var edgeCollider2D = lineObj.AddComponent<EdgeCollider2D>();
+                UpdateEdgeCollider(edgeCollider2D, lineRenderer);
+            }
 
             var knownColor = color ?? Color.white;
             Color.RGBToHSV(knownColor, out var h, out _, out var v);
@@ -155,7 +168,8 @@ namespace _3DConnections.Runtime.Managers
                 connectionColor = knownColor,
                 lineWidth = lineWidth,
                 connectionType = connectionType,
-                dashed = dashed
+                dashed = dashed,
+                codeReference = codeReference
             };
 
             newConnection.ApplyConnection();
@@ -163,6 +177,18 @@ namespace _3DConnections.Runtime.Managers
 
             ScriptableObjectInventory.Instance.conSo.connections.Add(newConnection);
             return newConnection;
+        }
+        
+        private void UpdateEdgeCollider(EdgeCollider2D edgeCollider2D, LineRenderer lineRenderer)
+        {
+            if (lineRenderer.positionCount < 2) return;
+    
+            Vector2[] points = new Vector2[lineRenderer.positionCount];
+            for (int i = 0; i < lineRenderer.positionCount; i++)
+            {
+                points[i] = lineRenderer.transform.InverseTransformPoint(lineRenderer.GetPosition(i));
+            }
+            edgeCollider2D.points = points;
         }
 
 
@@ -193,7 +219,7 @@ namespace _3DConnections.Runtime.Managers
         }
 
 
-        public void ClearConnections()
+        private void ClearConnections()
         {
             var conSo = ScriptableObjectInventory.Instance.conSo;
             if (conSo && conSo.usingNativeArray && conSo.NativeConnections.IsCreated)

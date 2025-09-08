@@ -27,6 +27,8 @@ namespace _3DConnections.Editor
         private static bool _cacheInitialized;
         private static double _lastCacheUpdateTime;
         private const double CacheRefreshInterval = 10.0;
+        
+        private static readonly Dictionary<string, int> EdgePingIndexCache = new();
 
         private void OnEnable()
         {
@@ -121,6 +123,7 @@ namespace _3DConnections.Editor
         {
             ConnectionTypeCache.Clear();
             NodeConnectionsSoCache.Clear();
+            EdgePingIndexCache.Clear();
             _cacheInitialized = false;
         }
 
@@ -259,21 +262,38 @@ namespace _3DConnections.Editor
 
         private static void PingEdgeConnection(GameObject startNode, GameObject endNode)
         {
-            foreach (var connection in NodeConnectionsSoCache.Select(kvp => kvp.Value).Where(nodeConnectionsSo => nodeConnectionsSo?.connections != null).SelectMany(nodeConnectionsSo => from connection in nodeConnectionsSo.connections where connection != null let isMatchingConnection = (connection.startNode == startNode && connection.endNode == endNode) ||
-                         (connection.startNode == endNode && connection.endNode == startNode) where isMatchingConnection && connection.lineRenderer != null select connection))
+            var connectionKey = GetConnectionKey(startNode, endNode);
+    
+            var matchingConnections = NodeConnectionsSoCache.Select(kvp => kvp.Value)
+                .Where(nodeConnectionsSo => nodeConnectionsSo?.connections != null)
+                .SelectMany(nodeConnectionsSo => nodeConnectionsSo.connections)
+                .Where(connection => connection != null && connection.lineRenderer)
+                .Where(connection => 
+                    (connection.startNode == startNode && connection.endNode == endNode) ||
+                    (connection.startNode == endNode && connection.endNode == startNode))
+                .ToList();
+    
+            if (matchingConnections.Count == 0)
             {
-                // Ping the LineRenderer GameObject
-                EditorGUIUtility.PingObject(connection.lineRenderer.gameObject);
-                        
-                // Optionally, also select it in the hierarchy
-                Selection.activeGameObject = connection.lineRenderer.gameObject;
-                        
-                Debug.Log($"Found and pinged edge connection between {startNode.name} and {endNode.name}");
+                Debug.LogWarning($"No edge connection found between {startNode.name} and {endNode.name}");
                 return;
             }
-
-            Debug.LogWarning($"No edge connection found between {startNode.name} and {endNode.name}");
+    
+            int currentIndex = EdgePingIndexCache.GetValueOrDefault(connectionKey, 0);
+    
+            // Ensure index is within bounds
+            currentIndex %= matchingConnections.Count;
+    
+            var connectionToPing = matchingConnections[currentIndex];
+    
+            EditorGUIUtility.PingObject(connectionToPing.lineRenderer.gameObject);
+    
+            Selection.activeGameObject = connectionToPing.lineRenderer.gameObject;
+    
+            // Increment index for next ping
+            EdgePingIndexCache[connectionKey] = (currentIndex + 1) % matchingConnections.Count;
         }
+
 
         private static void AddConnection(SerializedProperty listProp)
         {
