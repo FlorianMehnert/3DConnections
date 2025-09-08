@@ -21,7 +21,7 @@ MonoBehaviour:
   nodeSpacing: 2
   subtreeSpacing: 2
   attractionStrength: 10
-  repulsion: 100
+  repulsion: 1000
   idealEdgeLength: 5
   iterations: 50
   coolingFactor: 0.95
