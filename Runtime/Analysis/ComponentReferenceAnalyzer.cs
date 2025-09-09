@@ -6,6 +6,7 @@ using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.Nodes.Connection;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using UnityEngine;
 using cols = _3DConnections.Runtime.ScriptableObjects.NodeColorsScriptableObject;
 
 namespace _3DConnections.Runtime.Analysis
@@ -15,12 +16,12 @@ namespace _3DConnections.Runtime.Analysis
         private readonly IFileLocator _fileLocator;
         private readonly ITypeResolver _typeResolver;
         private readonly ILogger _logger;
-        private readonly ComponentAnalysisSettings _settings;
+        private readonly AnalysisFilterSettings _settings;
         private readonly Dictionary<Type, List<ComponentReference>> _dynamicComponentReferences = new();
         private readonly IProgressReporter _progressReporter;
 
         public ComponentReferenceAnalyzer(IFileLocator fileLocator, ITypeResolver typeResolver, 
-            ILogger logger, ComponentAnalysisSettings settings, IProgressReporter progressReporter = null)
+            ILogger logger, AnalysisFilterSettings settings, IProgressReporter progressReporter = null)
         {
             _fileLocator = fileLocator;
             _typeResolver = typeResolver;
@@ -64,45 +65,6 @@ namespace _3DConnections.Runtime.Analysis
             {
                 _logger.LogWarning($"Could not analyze {monoBehaviourType.Name}: {e.Message}");
                 return new List<ComponentReference>();
-            }
-        }
-
-        public void CreateDynamicConnections(INodeGraphManager nodeManager)
-        {
-            foreach (var (sourceType, references) in _dynamicComponentReferences)
-            {
-                var sourceNode = nodeManager.FindNodeByType(sourceType);
-                if (sourceNode == null) continue;
-
-                foreach (var reference in references)
-                {
-                    var targetNode = nodeManager.FindNodeByType(reference.ReferencedComponentType);
-            
-                    if (targetNode == null)
-                    {
-                        targetNode = nodeManager.CreateNode(null, 1, sourceNode, false, reference.ReferencedComponentType);
-                    }
-
-                    if (!targetNode) continue;
-                    var connectionColor = cols.DimColor(cols.DynamicComponentConnection, 0.7f);
-                    var connection = sourceNode.ConnectNodes(targetNode, connectionColor, 1, "dynamicComponentConnection", cols.MaxWidthHierarchy);
-                
-                    if (connection != null)
-                    {
-                        var edgeType = connection.lineRenderer.gameObject.GetComponent<EdgeType>();
-                        if (edgeType)
-                        {
-                            edgeType.SetCodeReference(
-                                reference.SourceFile,
-                                reference.LineNumber,
-                                reference.MethodName,
-                                sourceType.Name
-                            );
-                        }
-                    }
-                
-                    _logger.Log($"Connected dynamic reference: {sourceType.Name} -> {reference.ReferencedComponentType.Name} ({reference.MethodName})");
-                }
             }
         }
 
@@ -182,12 +144,97 @@ namespace _3DConnections.Runtime.Analysis
                 return _typeResolver.FindTypeByName(typeName);
             }
         }
+        
+        public void CreateDynamicConnections(INodeGraphManager nodeManager, AnalysisFilterSettings filterSettings)
+        {
+            foreach (var (sourceType, references) in _dynamicComponentReferences)
+            {
+                var filteredReferences = references.Where(r => 
+                    ShouldIncludeComponentCall(r.MethodName, filterSettings)).ToList();
+            
+                if (!filteredReferences.Any()) continue;
+
+                var sourceNode = nodeManager.FindNodeByType(sourceType);
+                if (sourceNode == null) continue;
+
+                foreach (var reference in filteredReferences)
+                {
+                    var targetNode = nodeManager.FindNodeByType(reference.ReferencedComponentType);
+            
+                    if (targetNode == null)
+                    {
+                        targetNode = nodeManager.CreateNode(null, 1, sourceNode, false, reference.ReferencedComponentType);
+                    }
+
+                    if (!targetNode) continue;
+            
+                    var connectionInfo = GetEnhancedComponentConnectionInfo(reference, filterSettings);
+                    var connection = sourceNode.ConnectNodes(targetNode, connectionInfo.Color, 1, 
+                        connectionInfo.ConnectionType, cols.MaxWidthHierarchy);
+            
+                    if (connection != null && filterSettings.ShowCodeReferences)
+                    {
+                        var edgeType = connection.lineRenderer.gameObject.GetComponent<EdgeType>();
+                        if (edgeType)
+                        {
+                            edgeType.SetCodeReference(
+                                reference.SourceFile,
+                                reference.LineNumber,
+                                reference.MethodName,
+                                sourceType.Name
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        private bool ShouldIncludeComponentCall(string methodName, AnalysisFilterSettings settings)
+        {
+            if (methodName.StartsWith("AddComponent")) return settings.ShowAddComponentCalls;
+            if (methodName.StartsWith("GetComponent")) return settings.ShowGetComponentCalls;
+            return settings.ShowOtherComponentReferences;
+        }
+
+        private (Color Color, string ConnectionType) GetEnhancedComponentConnectionInfo(ComponentReference reference, AnalysisFilterSettings settings)
+        {
+            if (!settings.DifferentiateComponentCallTypes)
+            {
+                return (cols.DimColor(cols.DynamicComponentConnection, 0.7f), "dynamicComponentConnection");
+            }
+
+            return reference.MethodName switch
+            {
+                var method when method.StartsWith("AddComponent") => 
+                    (new Color(0.9f, 0.3f, 0.3f, 0.8f), "addComponentCall"),
+                var method when method.StartsWith("GetComponent") => 
+                    (new Color(0.3f, 0.9f, 0.3f, 0.8f), "getComponentCall"),
+                _ => (cols.DimColor(cols.DynamicComponentConnection, 0.7f), "otherComponentCall")
+            };
+        }
     }
 
     [Serializable]
-    public class ComponentAnalysisSettings
+    public class AnalysisFilterSettings
     {
+        [Header("Event Filtering")]
+        public bool ShowUnityEvents = true;
+        public bool ShowUnityActions = true;
+        public bool ShowSystemActions = false;
+        public bool ShowCustomDelegates = false;
+        public bool ShowSystemEventHandlers = false;
+        public bool ShowFuncDelegates = false;
+    
+        [Header("Component Reference Filtering")]
         public bool ShowAddComponentCalls = true;
         public bool ShowGetComponentCalls = true;
+        public bool ShowOtherComponentReferences = false;
+    
+        [Header("Connection Type Enhancement")]
+        public bool DifferentiateEventTypes = true;
+        public bool DifferentiateComponentCallTypes = true;
+        public bool ShowCodeReferences = true;
+    
+        [Header("Output Filtering")]
+        public bool FilteredOutputOnly = false; // When true, only shows filtered types
     }
 }

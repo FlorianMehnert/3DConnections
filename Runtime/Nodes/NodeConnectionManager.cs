@@ -64,14 +64,15 @@ namespace _3DConnections.Runtime.Managers
             rootEdgeTransform = rootEdgeGameObject.transform
                 ? rootEdgeGameObject.transform
                 : new GameObject("ParentEdgesObject").transform;
+            ScriptableObjectInventory.Instance.conSo.connections.Clear();
             ScriptableObjectInventory.Instance.edgeRoot = rootEdgeTransform;
             ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
         }
 
 		private void OnDisable()
         {
-            HandleEvent();
             if (ScriptableObjectInventory.Instance == null) return;
+            ScriptableObjectInventory.Instance.conSo.connections.Clear();
             ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
 		}
 

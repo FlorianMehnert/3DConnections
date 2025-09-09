@@ -23,13 +23,13 @@ namespace _3DConnections.Runtime.Analysis
     public interface IComponentReferenceAnalyzer
     {
         List<ComponentReference> AnalyzeComponentReferences(Type monoBehaviourType);
-        void CreateDynamicConnections(INodeGraphManager nodeManager);
+        void CreateDynamicConnections(INodeGraphManager nodeManager, AnalysisFilterSettings filterSettings);
     }
 
     public interface IEventAnalyzer
     {
         void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes);
-        void CreateEventConnections(INodeGraphManager nodeManager);
+        void CreateEventConnections(INodeGraphManager nodeManager, AnalysisFilterSettings filterSettings);
     }
 
     public interface IFileLocator

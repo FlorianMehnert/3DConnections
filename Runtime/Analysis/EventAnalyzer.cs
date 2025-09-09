@@ -254,10 +254,17 @@ namespace _3DConnections.Runtime.Analysis
             return EventType.CustomDelegate;
         }
 
-        public void CreateEventConnections(INodeGraphManager nodeManager)
+        /// <summary>
+        /// Creates filtered event connections
+        /// </summary>
+        /// <param name="nodeManager"></param>
+        /// <param name="filterSettings"></param>
+        public void CreateEventConnections(INodeGraphManager nodeManager, AnalysisFilterSettings filterSettings)
         {
-            // Create connections for event invocations
-            foreach (var invocation in _eventInvocations)
+            var filteredInvocations = _eventInvocations.Where(invocation => 
+                ShouldIncludeEventType(GetEventTypeFromInvocation(invocation), filterSettings)).ToList();
+    
+            foreach (var invocation in filteredInvocations)
             {
                 var invokerNode = nodeManager.FindNodeByType(invocation.InvokerType);
                 if (!invokerNode) continue;
@@ -270,24 +277,67 @@ namespace _3DConnections.Runtime.Analysis
 
                 if (!targetNode) continue;
 
-                var invocationColor = invocation.IsIndirect
-                    ? new Color(cols.DynamicComponentConnection.r * 1.2f, cols.DynamicComponentConnection.g * 0.8f,
-                        cols.DynamicComponentConnection.b, 0.9f)
-                    : new Color(cols.DynamicComponentConnection.r, cols.DynamicComponentConnection.g * 1.2f,
-                        cols.DynamicComponentConnection.b, 0.9f);
-
-                // Use the new extension method with code reference
+                var connectionInfo = GetEnhancedConnectionInfo(invocation, filterSettings);
+        
                 invokerNode.ConnectNodesWithCodeReference(
                     targetNode, 
-                    invocationColor, 
+                    connectionInfo.Color, 
                     1,
-                    invocation.IsIndirect ? "indirectEventInvocation" : "eventInvocation",
+                    connectionInfo.ConnectionType,
                     cols.MaxWidthHierarchy,
                     invocation.SourceFile,
                     invocation.LineNumber,
                     invocation.MethodPattern
                 );
             }
+        }
+        
+        private bool ShouldIncludeEventType(EventType eventType, AnalysisFilterSettings settings)
+        {
+            return eventType switch
+            {
+                EventType.UnityEvent => settings.ShowUnityEvents,
+                EventType.UnityAction => settings.ShowUnityActions,
+                EventType.Action => settings.ShowSystemActions,
+                EventType.CustomDelegate => settings.ShowCustomDelegates,
+                EventType.SystemEventHandler => settings.ShowSystemEventHandlers,
+                EventType.FuncDelegate => settings.ShowFuncDelegates,
+                _ => false
+            };
+        }
+        
+        private EventType GetEventTypeFromInvocation(EventInvocation invocation)
+        {
+            // Look up the event type from publishers
+            foreach (var kvp in _eventPublishers)
+            {
+                var eventInfo = kvp.Value.FirstOrDefault(e => e.EventName == invocation.EventName);
+                if (eventInfo.EventName != null)
+                {
+                    return eventInfo.Type;
+                }
+            }
+            return EventType.CustomDelegate; // Default fallback
+        }
+
+        private (Color Color, string ConnectionType) GetEnhancedConnectionInfo(EventInvocation invocation, AnalysisFilterSettings settings)
+        {
+            if (!settings.DifferentiateEventTypes)
+            {
+                return (cols.DynamicComponentConnection, "eventInvocation");
+            }
+
+            var eventType = GetEventTypeFromInvocation(invocation);
+            return eventType switch
+            {
+                EventType.UnityEvent => (new Color(0.2f, 0.8f, 0.2f, 0.9f), "unityEventInvocation"),
+                EventType.UnityAction => (new Color(0.2f, 0.6f, 0.8f, 0.9f), "unityActionInvocation"),
+                EventType.Action => (new Color(0.8f, 0.4f, 0.2f, 0.9f), "systemActionInvocation"),
+                EventType.CustomDelegate => (new Color(0.6f, 0.2f, 0.8f, 0.9f), "customDelegateInvocation"),
+                EventType.SystemEventHandler => (new Color(0.8f, 0.8f, 0.2f, 0.9f), "systemEventHandlerInvocation"),
+                EventType.FuncDelegate => (new Color(0.8f, 0.2f, 0.4f, 0.9f), "funcDelegateInvocation"),
+                _ => (cols.DynamicComponentConnection, "eventInvocation")
+            };
         }
 
 

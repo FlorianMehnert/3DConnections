@@ -249,6 +249,7 @@ namespace _3DConnections.Runtime.Analysis
             textObj.transform.localPosition = new Vector3(0, 0.12f, -0.3f);
 
             var text = textObj.AddComponent<TextMeshPro>();
+            text.renderer.sortingOrder = 2;
 
             if (virtualType != null)
             {

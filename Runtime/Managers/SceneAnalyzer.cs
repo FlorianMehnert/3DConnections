@@ -27,7 +27,10 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private NodeSettings nodeSettings = new();
 
         [Header("Analysis Settings")] [SerializeField]
-        private ComponentAnalysisSettings componentSettings = new();
+        private AnalysisFilterSettings componentSettings = new();
+        
+        [Header("Filter Settings")]
+        [SerializeField] private AnalysisFilterSettings filterSettings = new();
 
         [SerializeField] private TraversalSettings traversalSettings = new();
 
@@ -150,6 +153,7 @@ namespace _3DConnections.Runtime.Managers
             _nodeManager.ClearNodes();
             soi.Instance.applicationState.spawnedNodes = false;
             soi.Instance.graph.Initialize();
+            InitializeServices();
         }
 
         public IReadOnlyList<GameObject> GetAllNodes()
@@ -164,13 +168,28 @@ namespace _3DConnections.Runtime.Managers
                 _componentAnalyzer.AnalyzeComponentReferences(type);
             }
 
-            _componentAnalyzer.CreateDynamicConnections(_nodeManager);
+            if (filterSettings.FilteredOutputOnly)
+            {
+                ((ComponentReferenceAnalyzer)_componentAnalyzer).CreateDynamicConnections(_nodeManager, filterSettings);
+            }
+            else
+            {
+                _componentAnalyzer.CreateDynamicConnections(_nodeManager, filterSettings);
+            }
         }
 
         private void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes)
         {
             _eventAnalyzer.AnalyzeEvents(monoBehaviourTypes);
-            _eventAnalyzer.CreateEventConnections(_nodeManager);
+    
+            if (filterSettings.FilteredOutputOnly)
+            {
+                ((EventAnalyzer)_eventAnalyzer).CreateEventConnections(_nodeManager, filterSettings);
+            }
+            else
+            {
+                _eventAnalyzer.CreateEventConnections(_nodeManager, filterSettings);
+            }
         }
 
         private IEnumerator RunNextFrame(Action action)
