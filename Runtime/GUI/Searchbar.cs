@@ -31,62 +31,68 @@ namespace _3DConnections.Runtime.GUI
 
         private void Awake()
         {
-            // Setup Input Actions
-            // searchFocusAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/f", modifiers: "ctrl");
-            // clearSearchAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/escape");
+            // Setup Input Actions with proper keyboard events
+            searchFocusAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/f");
+            searchFocusAction.AddCompositeBinding("ButtonWithOneModifier")
+                .With("Modifier", "<Keyboard>/ctrl")
+                .With("Button", "<Keyboard>/f");
+
+            clearSearchAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/escape");
         }
 
         private void OnEnable()
         {
             SetupUI();
-
-            searchFocusAction.performed += OnSearchFocus;
+            
+            // Enable and bind Input Actions
             searchFocusAction.Enable();
-
-            clearSearchAction.performed += OnClearSearch;
             clearSearchAction.Enable();
+            
+            searchFocusAction.performed += OnSearchFocus;
+            clearSearchAction.performed += OnClearSearch;
         }
 
         private void OnDisable()
         {
+            // Disable and unbind Input Actions
             searchFocusAction.performed -= OnSearchFocus;
-            searchFocusAction.Disable();
-
             clearSearchAction.performed -= OnClearSearch;
+            
+            searchFocusAction.Disable();
             clearSearchAction.Disable();
+        }
 
-            if (searchInputField != null)
-            {
-                searchInputField.onValueChanged.RemoveListener(OnSearchValueChanged);
-                searchInputField.onEndEdit.RemoveListener(OnSearchEndEdit);
-                searchInputField.onDeselect.RemoveListener(OnSearchDefocus);
-            }
-
-            if (clearButton != null)
-            {
-                clearButton.onClick.RemoveListener(ClearSearch);
-            }
+        private void OnDestroy()
+        {
+            // Dispose of Input Actions
+            searchFocusAction?.Dispose();
+            clearSearchAction?.Dispose();
         }
 
         private void SetupUI()
         {
-            if (searchInputField != null)
+            UpdateResultsCount(0, NodeGraph?.NodeCount ?? 0);
+            
+            // Connect UI events
+            if (searchInputField)
             {
                 searchInputField.onValueChanged.AddListener(OnSearchValueChanged);
                 searchInputField.onEndEdit.AddListener(OnSearchEndEdit);
                 searchInputField.onDeselect.AddListener(OnSearchDefocus);
-                searchInputField.placeholder.GetComponent<TextMeshProUGUI>().text = "Search nodes...";
             }
-
-            if (clearButton != null)
+            
+            if (clearButton)
             {
                 clearButton.onClick.AddListener(ClearSearch);
             }
-
-            UpdateResultsCount(0, NodeGraph?.NodeCount ?? 0);
         }
 
-        private void OnSearchValueChanged(string searchText)
+        public void OnSearchValueChanged()
+        {
+            OnSearchValueChanged(searchInputField.text);
+        }
+
+        public void OnSearchValueChanged(string searchText)
         {
             _lastSearchTime = Time.time;
 
@@ -106,7 +112,7 @@ namespace _3DConnections.Runtime.GUI
             }
         }
 
-        private void PerformSearch(string searchText)
+        public void PerformSearch(string searchText)
         {
             var nodeGraph = NodeGraph;
             if (!nodeGraph)
@@ -142,7 +148,7 @@ namespace _3DConnections.Runtime.GUI
             resultsCountText.text = string.IsNullOrEmpty(_lastSearchTerm) ? $"Total nodes: {total}" : $"Found: {matches} / {total}";
         }
 
-        private void ClearSearch()
+        public void ClearSearch()
         {
             if (searchInputField)
             {
@@ -160,7 +166,7 @@ namespace _3DConnections.Runtime.GUI
         }
 
         // Called when the input field loses focus (defocus)
-        private void OnSearchDefocus(string _)
+        public void OnSearchDefocus(string _)
         {
             var nodeGraph = NodeGraph;
             if (nodeGraph != null)
@@ -172,7 +178,14 @@ namespace _3DConnections.Runtime.GUI
         }
 
         // Called when editing ends (e.g., user presses Enter or clicks away)
-        private static void OnSearchEndEdit(string _) { }
+        private void OnSearchEndEdit(string searchText)
+        {
+            // Perform final search when user finishes editing
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                PerformSearch(searchText);
+            }
+        }
 
         private void FocusSearchInput()
         {
@@ -181,15 +194,17 @@ namespace _3DConnections.Runtime.GUI
             searchInputField.ActivateInputField();
         }
 
-        // Input System callbacks
         private void OnSearchFocus(InputAction.CallbackContext ctx)
         {
-            FocusSearchInput();
+            if (ctx.performed) // Only trigger on key press, not release
+            {
+                FocusSearchInput();
+            }
         }
 
         private void OnClearSearch(InputAction.CallbackContext ctx)
         {
-            if (!string.IsNullOrEmpty(_lastSearchTerm))
+            if (ctx.performed && !string.IsNullOrEmpty(_lastSearchTerm))
             {
                 ClearSearch();
             }
