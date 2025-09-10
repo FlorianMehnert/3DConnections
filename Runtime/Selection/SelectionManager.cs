@@ -1,4 +1,5 @@
 ﻿using _3DConnections.Runtime.Managers;
+using _3DConnections.Runtime.Nodes.Connection;
 using _3DConnections.Runtime.ScriptableObjects;
 using soi = _3DConnections.Runtime.ScriptableObjectInventory.ScriptableObjectInventory;
 using UnityEngine;
@@ -215,8 +216,10 @@ namespace _3DConnections.Runtime.Selection
 
             Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
             var closestObj = raycastManager.GetClosestObjectToMouse(mouseWorldPos);
+            
             if (closestObj != null)
             {
+                if (closestObj.GetComponent<EdgeType>()) Debug.Log($"hit an edge {closestObj.name}");
                 HandleObjectClick(closestObj, mouseWorldPos);
             }
             else

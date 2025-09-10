@@ -221,7 +221,7 @@ namespace _3DConnections.Runtime.Analysis
                 );
             }
 
-            nodeObject.layer = LayerMask.NameToLayer("OverlayScene");
+            nodeObject.layer = LayerMask.NameToLayer("Nodes");
             return nodeObject;
         }
 

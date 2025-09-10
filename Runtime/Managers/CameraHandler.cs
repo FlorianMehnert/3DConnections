@@ -1,5 +1,3 @@
-using UnityEngine.Serialization;
-
 namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
@@ -18,11 +16,12 @@ namespace _3DConnections.Runtime.Managers
     /// <summary>
     /// Manager Class to move the orthographic camera using middle mouse drag and zoom in/out using mouse wheel
     /// </summary>
+    [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
     {
         public float zoomSpeed = 10f;
 
-        [FormerlySerializedAs("_cam")] public Camera cam;
+        public Camera cam;
         private Vector3 _lastMousePosition;
         private float _screenWidth;
         private float _screenHeight;
@@ -56,6 +55,11 @@ namespace _3DConnections.Runtime.Managers
 
             // Calculate world dimensions based on current orthographic size
             CalculateWorldDimensions();
+        }
+
+        private void OnEnable()
+        {
+            cam = GetComponent<Camera>();
         }
 
         private void AddLayerToCamera(string layerName)

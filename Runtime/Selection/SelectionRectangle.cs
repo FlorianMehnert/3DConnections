@@ -14,8 +14,9 @@ namespace _3DConnections.Runtime.Selection
     {
         [SerializeField] private RectTransform selectionRectangle;
         [SerializeField] private Color selectionRectColor = new(0.3f, 0.5f, 0.8f, 0.3f);
-        [SerializeField] private string targetLayerName = "OverlayLayer";
-        
+        [SerializeField] private string targetLayerNodesName = "Nodes";
+        [SerializeField] private string targetLayerEdgesName = "Edges";
+
         private Vector2 _selectionStartPos;
         private bool _isDrawing;
         private Camera _targetCamera;
@@ -28,7 +29,7 @@ namespace _3DConnections.Runtime.Selection
         public void Initialize(Camera camera)
         {
             _targetCamera = camera;
-            
+
             if (selectionRectangle != null)
             {
                 selectionRectangle.gameObject.SetActive(false);
@@ -47,75 +48,53 @@ namespace _3DConnections.Runtime.Selection
 
         public void StartSelection(Vector2 screenPosition)
         {
-            if (!selectionRectangle) 
+            if (!selectionRectangle)
             {
                 return;
             }
-            
+
             _isDrawing = true;
             _selectionStartPos = screenPosition;
-            
+
             selectionRectangle.gameObject.SetActive(true);
             UpdateRectangle(screenPosition);
         }
 
         public void UpdateSelection(Vector2 currentScreenPosition)
         {
-            if (!_isDrawing) 
+            if (!_isDrawing)
             {
                 return;
             }
-            
+
             UpdateRectangle(currentScreenPosition);
         }
 
         public void EndSelection()
         {
             _isDrawing = false;
-            
+
             if (selectionRectangle != null)
                 selectionRectangle.gameObject.SetActive(false);
         }
 
         public List<GameObject> GetObjectsInSelection()
         {
-            if (!_isDrawing || !_targetCamera) 
-                return new List<GameObject>();
-
+            if (!_isDrawing || !_targetCamera) return new List<GameObject>();
             Vector2 currentMousePos = _mousePositionAction?.ReadValue<Vector2>() ?? Input.mousePosition;
             var screenHeight = Screen.height;
-
-            var selectionRect = new Rect(
-                Mathf.Min(_selectionStartPos.x, currentMousePos.x),
+            var selectionRect = new Rect(Mathf.Min(_selectionStartPos.x, currentMousePos.x),
                 Mathf.Min(screenHeight - _selectionStartPos.y, screenHeight - currentMousePos.y),
                 Mathf.Abs(currentMousePos.x - _selectionStartPos.x),
-                Mathf.Abs(currentMousePos.y - _selectionStartPos.y)
-            );
-            
+                Mathf.Abs(currentMousePos.y - _selectionStartPos.y));
             _currentRect = selectionRect;
+            var objects = FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID).Where(obj =>
+                obj.layer == LayerMask.NameToLayer(targetLayerNodesName) ||
+                obj.layer == LayerMask.NameToLayer(targetLayerEdgesName));
 
-            var objects = FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID)
-                .Where(obj => obj.layer == LayerMask.NameToLayer(targetLayerName));
-
-            var selectedObjects = new List<GameObject>();
-
-            foreach (var obj in objects)
-            {
-                var objectCollider = obj.GetComponent<Collider2D>();
-                if (!objectCollider) continue;
-
-                var worldPosition = objectCollider.bounds.center;
-                var screenPosition = _targetCamera.WorldToScreenPoint(worldPosition);
-                var rectAdjustedPosition = new Vector2(screenPosition.x, screenHeight - screenPosition.y);
-                
-                if (selectionRect.Contains(rectAdjustedPosition))
-                {
-                    selectedObjects.Add(obj);
-                }
-            }
-
-            return selectedObjects;
+            return (from obj in objects let objectCollider = obj.GetComponent<Collider2D>() where objectCollider let worldPosition = objectCollider.bounds.center let screenPosition = _targetCamera.WorldToScreenPoint(worldPosition) let rectAdjustedPosition = new Vector2(screenPosition.x, screenHeight - screenPosition.y) where selectionRect.Contains(rectAdjustedPosition) select obj).ToList();
         }
+
 
         private void UpdateRectangle(Vector2 currentMousePos)
         {
@@ -132,7 +111,7 @@ namespace _3DConnections.Runtime.Selection
         private void UpdateColor()
         {
             if (!selectionRectangle) return;
-            
+
             var image = selectionRectangle.GetComponent<Image>();
             if (image != null)
             {

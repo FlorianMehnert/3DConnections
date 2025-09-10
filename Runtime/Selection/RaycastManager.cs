@@ -1,22 +1,30 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using HarmonyLib;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace _3DConnections.Runtime.Selection
 {
     public class RaycastManager : MonoBehaviour
     {
-        [SerializeField] private string targetLayerName = "OverlayScene";
+        [SerializeField] private string targetLayerNodesName = "Nodes";
+        [SerializeField] private string targetLayerEdgesName = "Edges";
         [SerializeField] private Camera targetCamera;
 
-        private int _targetLayerMask;
+        private int _targetLayerNodesMask;
+        private int _targetLayerEdgesMask;
 
         public void Initialize(Camera overlayCamera)
         {
             targetCamera = overlayCamera;
-            _targetLayerMask = LayerMask.GetMask(targetLayerName);
+            _targetLayerNodesMask = LayerMask.GetMask(targetLayerNodesName);
+            _targetLayerEdgesMask = LayerMask.GetMask(targetLayerEdgesName);
 
-            if (_targetLayerMask == 0)
-                Debug.LogError($"Layer '{targetLayerName}' not found!");
+            if (_targetLayerNodesMask == 0)
+                Debug.LogError($"Layer '{targetLayerNodesName}' not found!");
+            
+            if (_targetLayerEdgesMask == 0)
+                Debug.LogError($"Layer '{targetLayerNodesName}' not found!");
         }
 
         public Vector2 GetMouseWorldPosition(InputAction mousePositionAction)
@@ -37,17 +45,20 @@ namespace _3DConnections.Runtime.Selection
 
         public RaycastHit2D RaycastDown(Vector2 position)
         {
-            return Physics2D.Raycast(position, Vector2.down, Mathf.Infinity, _targetLayerMask);
+            return Physics2D.Raycast(position, Vector2.down, Mathf.Infinity, _targetLayerNodesMask);
         }
 
         public GameObject GetClosestObjectToMouse(Vector2 mouseWorldPosition)
         {
-            var hits = Physics2D.RaycastAll(mouseWorldPosition, Vector2.zero, Mathf.Infinity, _targetLayerMask);
+            var nodeHits = Physics2D.OverlapPointAll(mouseWorldPosition, _targetLayerNodesMask);
+            var edgeHits = Physics2D.OverlapPointAll(mouseWorldPosition, _targetLayerEdgesMask);
 
-            if (hits.Length == 0) return null;
+            var hits = nodeHits.Concat(edgeHits);
+            
+            if (!hits.Any()) return null;
 
-            var closestHit = hits[0];
-            var closestDistance = Vector2.Distance(mouseWorldPosition, hits[0].transform.position);
+            var closestHit = hits.First();
+            var closestDistance = Vector2.Distance(mouseWorldPosition, hits.First().transform.position);
 
             foreach (var hit in hits)
             {
@@ -57,7 +68,7 @@ namespace _3DConnections.Runtime.Selection
                 closestHit = hit;
             }
 
-            var closestObject = closestHit.collider.gameObject;
+            var closestObject = closestHit.GetComponent<Collider2D>().gameObject;
             return closestObject;
 
         }

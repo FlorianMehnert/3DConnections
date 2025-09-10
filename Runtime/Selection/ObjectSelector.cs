@@ -182,11 +182,6 @@ namespace _3DConnections.Runtime.Selection
             if (!nodeObjectRenderer) return;
 
             var coloredObject = obj.GetComponent<ColoredObject>();
-            if (!coloredObject)
-            {
-                coloredObject = obj.AddComponent<ColoredObject>();
-                coloredObject.SetOriginalColor(nodeObjectRenderer.sharedMaterial.color);
-            }
 
             // Create inverted selection color
             Color.RGBToHSV(selectionColor, out var h, out _, out _);

@@ -196,28 +196,35 @@ namespace _3DConnections.Runtime.Managers
         private void UpdateConnectionPositions()
         {
             var lodManager = FindFirstObjectByType<GraphLODManager>();
-    
+
             foreach (var connection in ScriptableObjectInventory.Instance.conSo.connections.Where(connection =>
                          connection.startNode && connection.endNode && connection.lineRenderer))
             {
                 // Check if either node is clustered
                 GameObject startPos = connection.startNode;
                 GameObject endPos = connection.endNode;
-        
+
                 if (lodManager != null && lodManager.enabled)
                 {
-                    // Get cluster if node is clustered
                     var startCluster = lodManager.GetClusterForNode(connection.startNode);
                     var endCluster = lodManager.GetClusterForNode(connection.endNode);
-            
+
                     if (startCluster != null) startPos = startCluster;
                     if (endCluster != null) endPos = endCluster;
                 }
-        
+
                 connection.lineRenderer.SetPosition(0, startPos.transform.position);
                 connection.lineRenderer.SetPosition(1, endPos.transform.position);
+        
+                // UPDATE THE EDGE COLLIDER TOO
+                var edgeCollider = connection.lineRenderer.GetComponent<EdgeCollider2D>();
+                if (edgeCollider != null)
+                {
+                    UpdateEdgeCollider(edgeCollider, connection.lineRenderer);
+                }
             }
         }
+
 
 
         private void ClearConnections()
@@ -376,6 +383,7 @@ namespace _3DConnections.Runtime.Managers
                 if (!ScriptableObjectInventory.Instance.conSo.connections[i].startNode ||
                     !ScriptableObjectInventory.Instance.conSo.connections[i].endNode ||
                     !ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer) continue;
+            
                 // Update the native array
                 ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2] = ScriptableObjectInventory.Instance
                     .conSo.connections[i].startNode.transform.position;
@@ -387,8 +395,17 @@ namespace _3DConnections.Runtime.Managers
                     ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2]);
                 ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.SetPosition(1,
                     ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2 + 1]);
+            
+                // UPDATE THE EDGE COLLIDER TOO
+                var edgeCollider = ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer
+                    .GetComponent<EdgeCollider2D>();
+                if (edgeCollider != null)
+                {
+                    UpdateEdgeCollider(edgeCollider, ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer);
+                }
             }
         }
+
 
         // ReSharper disable once MemberCanBeMadeStatic.Global
         public void HighlightCycles(Color color, float duration)

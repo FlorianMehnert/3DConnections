@@ -274,7 +274,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cfc4ba3e3e74511920b8cc2c85691c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetLayerName: OverlayScene
+  targetLayerNodesName: Nodes
+  targetLayerEdgesName: Edges
   targetCamera: {fileID: 907117478}
 --- !u!1001 &315801065
 PrefabInstance:
@@ -284,6 +285,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 907117478}
     - target: {fileID: 275891097617498144, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: parentObject
       value: 
@@ -699,6 +704,10 @@ PrefabInstance:
     - target: {fileID: 5073936627618289257, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 1633
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1780,7 +1789,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selectionRectangle: {fileID: 1594128251}
   selectionRectColor: {r: 0.3, g: 0.5, b: 0.8, a: 0.3}
-  targetLayerName: OverlayScene
+  targetLayerNodesName: Nodes
+  targetLayerEdgesName: Edges
 --- !u!1 &1271229564
 GameObject:
   m_ObjectHideFlags: 0
@@ -2425,6 +2435,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 980942165}
     m_Modifications:
+    - target: {fileID: 913140036512005793, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 913140036512005793, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 913140036512005793, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 932598528739218250, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2508,6 +2530,14 @@ PrefabInstance:
     - target: {fileID: 2167316569316997211, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
       propertyPath: m_Name
       value: Searchbar
+      objectReference: {fileID: 0}
+    - target: {fileID: 6179757855129650951, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6179757855129650951, guid: 010592bedb4a60041a938c040afb7ad9, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
