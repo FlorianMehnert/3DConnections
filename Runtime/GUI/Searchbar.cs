@@ -6,8 +6,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using _3DConnections.Runtime.ScriptableObjects;
 using _3DConnections.Runtime.Nodes;
+using _3DConnections.Runtime.Nodes.Connection;
 
 namespace _3DConnections.Runtime.GUI
 {
@@ -20,6 +20,15 @@ namespace _3DConnections.Runtime.GUI
 
         [Header("Search Settings")]
         public float searchDelay = 0.3f;
+        [Tooltip("Dim non-matching nodes and edges to make matches stand out")]
+        public bool dimNonMatches = true;
+        [Range(0.1f, 1f)]
+        [Tooltip("How much to dim non-matching objects (lower = darker)")]
+        public float dimIntensity = 0.3f;
+        [Tooltip("Color for dimmed objects")]
+        public Color dimColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+        [Tooltip("Color for highlighted matching objects")]
+        public Color highlightColor = Color.yellow;
 
         private float _lastSearchTime;
         private string _lastSearchTerm;
@@ -28,6 +37,9 @@ namespace _3DConnections.Runtime.GUI
         // Input Actions
         private InputAction searchFocusAction;
         private InputAction clearSearchAction;
+        
+        public InputActionAsset inputActions;
+        private InputActionMap gameplayMap;
 
         [Header("Performance Settings")]
         public int maxSearchResults = 100;
@@ -35,23 +47,26 @@ namespace _3DConnections.Runtime.GUI
         private List<SearchableEdge> _cachedEdges;
         private bool _cacheValid = false;
 
-        private NodeGraphScriptableObject NodeGraph =>
-            ScriptableObjectInventory.ScriptableObjectInventory.Instance ? ScriptableObjectInventory.ScriptableObjectInventory.Instance.graph : null;
-
-        private NodeConnectionsScriptableObject ConnectionsGraph =>
-            ScriptableObjectInventory.ScriptableObjectInventory.Instance ? ScriptableObjectInventory.ScriptableObjectInventory.Instance.conSo : null;
+        // Store original line widths for edges
+        private Dictionary<LineRenderer, float> _originalLineWidths = new Dictionary<LineRenderer, float>();
 
         // Cached searchable data structures
         private struct SearchableNode
         {
             public GameObject gameObject;
             public string name;
+            public LocalNodeConnections connections;
+            public ColoredObject coloredObject;
+            public Renderer renderer;
         }
 
         private struct SearchableEdge
         {
-            public NodeConnection connection;
+            public GameObject gameObject;
             public string name;
+            public EdgeType edgeType;
+            public ColoredObject coloredObject;
+            public LineRenderer lineRenderer;
         }
 
         private void Awake()
@@ -63,6 +78,8 @@ namespace _3DConnections.Runtime.GUI
                 .With("Button", "<Keyboard>/f");
 
             clearSearchAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/escape");
+            
+            
         }
 
         private void OnEnable()
@@ -75,6 +92,17 @@ namespace _3DConnections.Runtime.GUI
             
             searchFocusAction.performed += OnSearchFocus;
             clearSearchAction.performed += OnClearSearch;
+            
+            if (searchInputField)
+            {
+                searchInputField.onSelect.AddListener(OnInputFieldFocused);
+                searchInputField.onDeselect.AddListener(OnInputFieldDefocused);
+                if (inputActions != null)
+                {
+                    gameplayMap = inputActions.FindActionMap("NodeInteractivity");
+                    gameplayMap = inputActions.FindActionMap("UI");
+                }
+            }
 
             // Invalidate cache when enabled
             _cacheValid = false;
@@ -86,8 +114,27 @@ namespace _3DConnections.Runtime.GUI
             searchFocusAction.performed -= OnSearchFocus;
             clearSearchAction.performed -= OnClearSearch;
             
+            if (searchInputField)
+            {
+                searchInputField.onSelect.RemoveListener(OnInputFieldFocused);
+                searchInputField.onDeselect.RemoveListener(OnInputFieldDefocused);
+            }
+            
             searchFocusAction.Disable();
             clearSearchAction.Disable();
+        }
+        
+        private void OnInputFieldFocused(string text)
+        {
+            clearSearchAction.Disable();
+            gameplayMap.Disable();
+            // Keep searchFocusAction enabled since it uses Ctrl modifier
+        }
+
+        private void OnInputFieldDefocused(string text)
+        {
+            clearSearchAction.Enable();
+            gameplayMap.Enable();
         }
 
         private void OnDestroy()
@@ -115,32 +162,72 @@ namespace _3DConnections.Runtime.GUI
             }
         }
 
+        /// <summary>
+        /// Build cache using the same method as BetterSearchProvider's GetSearchScope
+        /// </summary>
         private void BuildCache()
         {
             if (_cacheValid && _cachedNodes != null && _cachedEdges != null) return;
 
-            // Use object pooling for better memory management
+            // Initialize or clear lists
             if (_cachedNodes == null) _cachedNodes = new List<SearchableNode>();
             else _cachedNodes.Clear();
-    
+
             if (_cachedEdges == null) _cachedEdges = new List<SearchableEdge>();
             else _cachedEdges.Clear();
 
-            // Cache with capacity pre-allocation for better performance
-            var nodeGraph = NodeGraph;
-            if (nodeGraph?.AllNodes != null)
+            _originalLineWidths.Clear();
+
+            // Search for nodes using the same method as BetterSearchProvider
+            var parentNodes = GameObject.Find("ParentNodesObject");
+            if (parentNodes != null)
             {
-                _cachedNodes.Capacity = nodeGraph.AllNodes.Count;
-                foreach (var node in nodeGraph.AllNodes)
+                var nodeTransforms = parentNodes.GetComponentsInChildren<Transform>()
+                    .Where(t => t != parentNodes.transform); // Exclude parent itself
+
+                foreach (var nodeTransform in nodeTransforms)
                 {
-                    if (node)
+                    if (nodeTransform == null) continue;
+                    var go = nodeTransform.gameObject;
+                    
+                    _cachedNodes.Add(new SearchableNode
                     {
-                        _cachedNodes.Add(new SearchableNode
-                        {
-                            gameObject = node,
-                            name = node.name.ToLowerInvariant()
-                        });
+                        gameObject = go,
+                        name = go.name.ToLowerInvariant(),
+                        connections = go.GetComponent<LocalNodeConnections>(),
+                        coloredObject = go.GetComponent<ColoredObject>(),
+                        renderer = go.GetComponent<Renderer>()
+                    });
+                }
+            }
+
+            // Search for edges using EdgeType component
+            var parentEdges = GameObject.Find("ParentEdgesObject");
+            if (parentEdges != null)
+            {
+                var edgeTransforms = parentEdges.GetComponentsInChildren<Transform>()
+                    .Where(t => t != parentEdges.transform); // Exclude parent itself
+
+                foreach (var edgeTransform in edgeTransforms)
+                {
+                    if (edgeTransform == null) continue;
+                    var go = edgeTransform.gameObject;
+                    var lineRenderer = go.GetComponent<LineRenderer>();
+                    
+                    // Store original line width
+                    if (lineRenderer != null && !_originalLineWidths.ContainsKey(lineRenderer))
+                    {
+                        _originalLineWidths[lineRenderer] = lineRenderer.startWidth;
                     }
+                    
+                    _cachedEdges.Add(new SearchableEdge
+                    {
+                        gameObject = go,
+                        name = go.name.ToLowerInvariant(),
+                        edgeType = go.GetComponent<EdgeType>(),
+                        coloredObject = go.GetComponent<ColoredObject>(),
+                        lineRenderer = lineRenderer
+                    });
                 }
             }
 
@@ -164,16 +251,13 @@ namespace _3DConnections.Runtime.GUI
             if (_searchCoroutine != null)
                 StopCoroutine(_searchCoroutine);
 
-            // Use a more aggressive debounce for better performance
             _searchCoroutine = StartCoroutine(DelayedSearch(searchText));
         }
 
         private System.Collections.IEnumerator DelayedSearch(string searchText)
         {
-            // Wait for the debounce period
             yield return new WaitForSeconds(searchDelay);
     
-            // Only proceed if this is still the most recent search
             if (Time.time - _lastSearchTime >= searchDelay - 0.01f && searchText == searchInputField.text)
             {
                 PerformSearch(searchText);
@@ -182,9 +266,6 @@ namespace _3DConnections.Runtime.GUI
 
         private async void PerformSearch(string searchText)
         {
-            var nodeGraph = NodeGraph;
-            if (!nodeGraph) return;
-
             _lastSearchTerm = searchText;
             BuildCache();
 
@@ -195,106 +276,166 @@ namespace _3DConnections.Runtime.GUI
                 return;
             }
 
-            // Perform search on background thread
+            // Perform search on background thread for better performance
             var (nodeMatches, edgeMatches) = await Task.Run(() => SearchNodesAndEdges(searchText));
     
             // Return to main thread for UI updates
-            HighlightMatches(nodeMatches, edgeMatches);
+            HighlightAndDimObjects(nodeMatches, edgeMatches);
             UpdateResultsCount(nodeMatches.Count + edgeMatches.Count, GetTotalSearchableCount());
         }
-
-
-        
 
         private (List<SearchableNode> nodeMatches, List<SearchableEdge> edgeMatches) SearchNodesAndEdges(string searchText)
         {
             string lowerSearchText = searchText.ToLowerInvariant();
     
+            // Search nodes by name
             var nodeMatches = _cachedNodes
-                .Where(node => node.name.IndexOf(lowerSearchText, StringComparison.Ordinal) >= 0)
+                .Where(node => node.name.Contains(lowerSearchText))
                 .Take(maxSearchResults / 2)
                 .ToList();
     
+            // Search edges by name and connection type
             var edgeMatches = _cachedEdges
-                .Where(edge => edge.name.IndexOf(lowerSearchText, StringComparison.Ordinal) >= 0)
+                .Where(edge => 
+                    edge.name.Contains(lowerSearchText) ||
+                    (edge.edgeType != null && edge.edgeType.connectionType != null && 
+                     edge.edgeType.connectionType.ToLowerInvariant().Contains(lowerSearchText)))
                 .Take(maxSearchResults / 2)
                 .ToList();
 
             return (nodeMatches, edgeMatches);
         }
 
-
-        private void HighlightMatches(List<SearchableNode> nodeMatches, List<SearchableEdge> edgeMatches)
+        /// <summary>
+        /// Highlight matching objects and optionally dim non-matching ones
+        /// </summary>
+        private void HighlightAndDimObjects(List<SearchableNode> nodeMatches, List<SearchableEdge> edgeMatches)
         {
-            var nodeGraph = NodeGraph;
-            
             // Clear previous highlights
             ClearAllHighlights();
 
-            // Highlight matching nodes using existing NodeGraph method
-            if (nodeMatches.Count > 0)
+            // Create HashSets for fast lookup
+            var matchingNodeSet = new HashSet<SearchableNode>(nodeMatches);
+            var matchingEdgeSet = new HashSet<SearchableEdge>(edgeMatches);
+
+            // Process all nodes
+            foreach (var node in _cachedNodes)
             {
-                var matchingNodeObjects = nodeMatches.Select(n => n.gameObject).ToList();
-                nodeGraph.SearchNodes(_lastSearchTerm); // This should highlight the nodes
+                if (node.coloredObject != null)
+                {
+                    if (matchingNodeSet.Contains(node))
+                    {
+                        // Highlight matching nodes
+                        node.coloredObject.Highlight(highlightColor, float.MaxValue, highlightForever: true);
+                    }
+                    else if (dimNonMatches)
+                    {
+                        // Dim non-matching nodes
+                        ApplyDimming(node.coloredObject, node.renderer);
+                    }
+                }
             }
 
-            // Highlight matching edges
-            foreach (var edgeMatch in edgeMatches)
+            // Process all edges
+            foreach (var edge in _cachedEdges)
             {
-                HighlightEdge(edgeMatch.connection, true);
+                if (matchingEdgeSet.Contains(edge))
+                {
+                    // Highlight matching edges
+                    if (edge.coloredObject != null)
+                    {
+                        edge.coloredObject.Highlight(highlightColor, float.MaxValue, highlightForever: true);
+                    }
+                    
+                    // Make matching edge lines thicker
+                    if (edge.lineRenderer != null && _originalLineWidths.TryGetValue(edge.lineRenderer, out float originalWidth))
+                    {
+                        edge.lineRenderer.startWidth = originalWidth * 2f;
+                        edge.lineRenderer.endWidth = originalWidth * 2f;
+                    }
+                }
+                else if (dimNonMatches)
+                {
+                    // Dim non-matching edges
+                    if (edge.coloredObject != null)
+                    {
+                        ApplyDimming(edge.coloredObject, null);
+                    }
+                    
+                    // Optionally make non-matching edge lines thinner
+                    if (edge.lineRenderer != null && _originalLineWidths.TryGetValue(edge.lineRenderer, out float originalWidth))
+                    {
+                        edge.lineRenderer.startWidth = originalWidth * 0.5f;
+                        edge.lineRenderer.endWidth = originalWidth * 0.5f;
+                        
+                        // Also dim the line renderer color
+                        var material = edge.lineRenderer.material;
+                        if (material != null)
+                        {
+                            var currentColor = material.color;
+                            material.color = Color.Lerp(currentColor, dimColor, 1f - dimIntensity);
+                        }
+                    }
+                }
             }
         }
 
-        private void HighlightEdge(NodeConnection connection, bool highlight)
+        /// <summary>
+        /// Apply dimming effect to a ColoredObject
+        /// </summary>
+        private void ApplyDimming(ColoredObject coloredObject, Renderer renderer)
         {
-            if (connection?.lineRenderer == null) return;
+            if (coloredObject == null) return;
 
-            var coloredObject = connection.lineRenderer.GetComponent<ColoredObject>();
-            if (coloredObject == null)
+            // Use the ColoredObject's highlight method with dim color
+            coloredObject.Highlight(dimColor, float.MaxValue, highlightForever: true);
+            
+            // Additionally, if there's a renderer, we can adjust its material directly
+            if (renderer != null && renderer.material != null)
             {
-                coloredObject = connection.lineRenderer.gameObject.AddComponent<ColoredObject>();
-                coloredObject.SetOriginalColor(connection.connectionColor);
-            }
-
-            if (highlight)
-            {
-                // Highlight with a bright color (e.g., yellow)
-                Color highlightColor = Color.yellow;
-                highlightColor.a = 0.8f;
-                coloredObject.Highlight(highlightColor, float.MaxValue); // Persistent highlight
-                
-                // Make the line thicker when highlighted
-                connection.lineRenderer.startWidth = connection.lineWidth * 2f;
-                connection.lineRenderer.endWidth = connection.lineWidth * 2f;
-            }
-            else
-            {
-                // Remove highlight
-                coloredObject.SetToOriginalColor();
-                
-                // Reset line width
-                connection.lineRenderer.startWidth = connection.lineWidth;
-                connection.lineRenderer.endWidth = connection.lineWidth;
+                var material = renderer.material;
+                if (material.HasProperty("_Color"))
+                {
+                    var originalColor = material.GetColor("_Color");
+                    material.SetColor("_Color", Color.Lerp(originalColor, dimColor, 1f - dimIntensity));
+                }
             }
         }
 
         private void ClearAllHighlights()
         {
-            var nodeGraph = NodeGraph;
-            var connectionsGraph = ConnectionsGraph;
-
-            // Clear node highlights
-            if (nodeGraph)
+            // Clear node highlights and dimming
+            foreach (var node in _cachedNodes)
             {
-                nodeGraph.ClearSearchHighlights();
+                if (node.coloredObject != null)
+                {
+                    node.coloredObject.SetToOriginalColor();
+                }
             }
 
-            // Clear edge highlights
-            if (connectionsGraph?.connections != null)
+            // Clear edge highlights and restore line widths
+            foreach (var edge in _cachedEdges)
             {
-                foreach (var connection in connectionsGraph.connections)
+                if (edge.coloredObject != null)
                 {
-                    HighlightEdge(connection, false);
+                    edge.coloredObject.ManualClearHighlight();
+                }
+                
+                // Restore original line width and color
+                if (edge.lineRenderer != null)
+                {
+                    if (_originalLineWidths.TryGetValue(edge.lineRenderer, out float originalWidth))
+                    {
+                        edge.lineRenderer.startWidth = originalWidth;
+                        edge.lineRenderer.endWidth = originalWidth;
+                    }
+                    
+                    // Restore line renderer material color
+                    var material = edge.lineRenderer.material;
+                    if (material != null)
+                    {
+                        material.color = Color.white;
+                    }
                 }
             }
         }
@@ -316,6 +457,10 @@ namespace _3DConnections.Runtime.GUI
             else
             {
                 resultsCountText.text = $"Found: {matches} / {total}";
+                if (dimNonMatches)
+                {
+                    resultsCountText.text += " (dimming enabled)";
+                }
             }
         }
 
@@ -331,7 +476,6 @@ namespace _3DConnections.Runtime.GUI
             _lastSearchTerm = "";
         }
 
-        // Called when the input field loses focus (defocus)
         public void OnSearchDefocus(string _)
         {
             ClearAllHighlights();
@@ -339,10 +483,8 @@ namespace _3DConnections.Runtime.GUI
             _lastSearchTerm = "";
         }
 
-        // Called when editing ends (e.g., user presses Enter or clicks away)
         private void OnSearchEndEdit(string searchText)
         {
-            // Perform final search when user finishes editing
             if (!string.IsNullOrEmpty(searchText))
             {
                 PerformSearch(searchText);
@@ -356,10 +498,9 @@ namespace _3DConnections.Runtime.GUI
             searchInputField.ActivateInputField();
         }
 
-        // Input System callbacks - now properly connected to keyboard events
         private void OnSearchFocus(InputAction.CallbackContext ctx)
         {
-            if (ctx.performed) // Only trigger on key press, not release
+            if (ctx.performed && !searchInputField.isFocused)
             {
                 FocusSearchInput();
             }
@@ -367,7 +508,7 @@ namespace _3DConnections.Runtime.GUI
 
         private void OnClearSearch(InputAction.CallbackContext ctx)
         {
-            if (ctx.performed && !string.IsNullOrEmpty(_lastSearchTerm))
+            if (ctx.performed && !searchInputField.isFocused && !string.IsNullOrEmpty(_lastSearchTerm))
             {
                 ClearSearch();
             }
@@ -377,6 +518,34 @@ namespace _3DConnections.Runtime.GUI
         {
             InvalidateCache();
             BuildCache();
+        }
+
+        /// <summary>
+        /// Toggle dimming of non-matching objects
+        /// </summary>
+        public void ToggleDimming()
+        {
+            dimNonMatches = !dimNonMatches;
+            
+            // Re-run the search if there's an active search term
+            if (!string.IsNullOrEmpty(_lastSearchTerm))
+            {
+                PerformSearch(_lastSearchTerm);
+            }
+        }
+
+        /// <summary>
+        /// Set dimming intensity
+        /// </summary>
+        public void SetDimIntensity(float intensity)
+        {
+            dimIntensity = Mathf.Clamp01(intensity);
+            
+            // Re-run the search if there's an active search term
+            if (!string.IsNullOrEmpty(_lastSearchTerm))
+            {
+                PerformSearch(_lastSearchTerm);
+            }
         }
     }
 }
