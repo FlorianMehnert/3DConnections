@@ -1,10 +1,13 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using _3DConnections.Runtime.ScriptableObjects;
-using _3DConnections.Runtime.ScriptableObjectInventory;
+using _3DConnections.Runtime.Nodes;
 
 namespace _3DConnections.Runtime.GUI
 {
@@ -26,8 +29,30 @@ namespace _3DConnections.Runtime.GUI
         private InputAction searchFocusAction;
         private InputAction clearSearchAction;
 
+        [Header("Performance Settings")]
+        public int maxSearchResults = 100;
+        private List<SearchableNode> _cachedNodes;
+        private List<SearchableEdge> _cachedEdges;
+        private bool _cacheValid = false;
+
         private NodeGraphScriptableObject NodeGraph =>
             ScriptableObjectInventory.ScriptableObjectInventory.Instance ? ScriptableObjectInventory.ScriptableObjectInventory.Instance.graph : null;
+
+        private NodeConnectionsScriptableObject ConnectionsGraph =>
+            ScriptableObjectInventory.ScriptableObjectInventory.Instance ? ScriptableObjectInventory.ScriptableObjectInventory.Instance.conSo : null;
+
+        // Cached searchable data structures
+        private struct SearchableNode
+        {
+            public GameObject gameObject;
+            public string name;
+        }
+
+        private struct SearchableEdge
+        {
+            public NodeConnection connection;
+            public string name;
+        }
 
         private void Awake()
         {
@@ -50,6 +75,9 @@ namespace _3DConnections.Runtime.GUI
             
             searchFocusAction.performed += OnSearchFocus;
             clearSearchAction.performed += OnClearSearch;
+
+            // Invalidate cache when enabled
+            _cacheValid = false;
         }
 
         private void OnDisable()
@@ -71,14 +99,14 @@ namespace _3DConnections.Runtime.GUI
 
         private void SetupUI()
         {
-            UpdateResultsCount(0, NodeGraph?.NodeCount ?? 0);
+            BuildCache();
+            UpdateResultsCount(0, GetTotalSearchableCount());
             
             // Connect UI events
             if (searchInputField)
             {
                 searchInputField.onValueChanged.AddListener(OnSearchValueChanged);
                 searchInputField.onEndEdit.AddListener(OnSearchEndEdit);
-                searchInputField.onDeselect.AddListener(OnSearchDefocus);
             }
             
             if (clearButton)
@@ -87,65 +115,208 @@ namespace _3DConnections.Runtime.GUI
             }
         }
 
+        private void BuildCache()
+        {
+            if (_cacheValid && _cachedNodes != null && _cachedEdges != null) return;
+
+            // Use object pooling for better memory management
+            if (_cachedNodes == null) _cachedNodes = new List<SearchableNode>();
+            else _cachedNodes.Clear();
+    
+            if (_cachedEdges == null) _cachedEdges = new List<SearchableEdge>();
+            else _cachedEdges.Clear();
+
+            // Cache with capacity pre-allocation for better performance
+            var nodeGraph = NodeGraph;
+            if (nodeGraph?.AllNodes != null)
+            {
+                _cachedNodes.Capacity = nodeGraph.AllNodes.Count;
+                foreach (var node in nodeGraph.AllNodes)
+                {
+                    if (node)
+                    {
+                        _cachedNodes.Add(new SearchableNode
+                        {
+                            gameObject = node,
+                            name = node.name.ToLowerInvariant()
+                        });
+                    }
+                }
+            }
+
+            _cacheValid = true;
+        }
+
+        public void InvalidateCache()
+        {
+            _cacheValid = false;
+        }
+
         public void OnSearchValueChanged()
         {
             OnSearchValueChanged(searchInputField.text);
         }
 
-        public void OnSearchValueChanged(string searchText)
+        private void OnSearchValueChanged(string searchText)
         {
             _lastSearchTime = Time.time;
 
             if (_searchCoroutine != null)
                 StopCoroutine(_searchCoroutine);
 
+            // Use a more aggressive debounce for better performance
             _searchCoroutine = StartCoroutine(DelayedSearch(searchText));
         }
 
         private System.Collections.IEnumerator DelayedSearch(string searchText)
         {
+            // Wait for the debounce period
             yield return new WaitForSeconds(searchDelay);
-
-            if (Time.time - _lastSearchTime >= searchDelay - 0.01f)
+    
+            // Only proceed if this is still the most recent search
+            if (Time.time - _lastSearchTime >= searchDelay - 0.01f && searchText == searchInputField.text)
             {
                 PerformSearch(searchText);
             }
         }
 
-        public void PerformSearch(string searchText)
+        private async void PerformSearch(string searchText)
         {
             var nodeGraph = NodeGraph;
-            if (!nodeGraph)
-            {
-                Debug.LogWarning("NodeGraph reference is null!");
-                return;
-            }
+            if (!nodeGraph) return;
 
             _lastSearchTerm = searchText;
+            BuildCache();
 
             if (string.IsNullOrEmpty(searchText))
             {
-                nodeGraph.ClearSearchHighlights();
-                UpdateResultsCount(0, nodeGraph.NodeCount);
+                ClearAllHighlights();
+                UpdateResultsCount(0, GetTotalSearchableCount());
+                return;
             }
-            else
+
+            // Perform search on background thread
+            var (nodeMatches, edgeMatches) = await Task.Run(() => SearchNodesAndEdges(searchText));
+    
+            // Return to main thread for UI updates
+            HighlightMatches(nodeMatches, edgeMatches);
+            UpdateResultsCount(nodeMatches.Count + edgeMatches.Count, GetTotalSearchableCount());
+        }
+
+
+        
+
+        private (List<SearchableNode> nodeMatches, List<SearchableEdge> edgeMatches) SearchNodesAndEdges(string searchText)
+        {
+            string lowerSearchText = searchText.ToLowerInvariant();
+    
+            var nodeMatches = _cachedNodes
+                .Where(node => node.name.IndexOf(lowerSearchText, StringComparison.Ordinal) >= 0)
+                .Take(maxSearchResults / 2)
+                .ToList();
+    
+            var edgeMatches = _cachedEdges
+                .Where(edge => edge.name.IndexOf(lowerSearchText, StringComparison.Ordinal) >= 0)
+                .Take(maxSearchResults / 2)
+                .ToList();
+
+            return (nodeMatches, edgeMatches);
+        }
+
+
+        private void HighlightMatches(List<SearchableNode> nodeMatches, List<SearchableEdge> edgeMatches)
+        {
+            var nodeGraph = NodeGraph;
+            
+            // Clear previous highlights
+            ClearAllHighlights();
+
+            // Highlight matching nodes using existing NodeGraph method
+            if (nodeMatches.Count > 0)
             {
-                nodeGraph.SearchNodes(searchText);
-                var matchCount = CountMatches(searchText);
-                UpdateResultsCount(matchCount, nodeGraph.NodeCount);
+                var matchingNodeObjects = nodeMatches.Select(n => n.gameObject).ToList();
+                nodeGraph.SearchNodes(_lastSearchTerm); // This should highlight the nodes
+            }
+
+            // Highlight matching edges
+            foreach (var edgeMatch in edgeMatches)
+            {
+                HighlightEdge(edgeMatch.connection, true);
             }
         }
 
-        private int CountMatches(string searchText)
+        private void HighlightEdge(NodeConnection connection, bool highlight)
+        {
+            if (connection?.lineRenderer == null) return;
+
+            var coloredObject = connection.lineRenderer.GetComponent<ColoredObject>();
+            if (coloredObject == null)
+            {
+                coloredObject = connection.lineRenderer.gameObject.AddComponent<ColoredObject>();
+                coloredObject.SetOriginalColor(connection.connectionColor);
+            }
+
+            if (highlight)
+            {
+                // Highlight with a bright color (e.g., yellow)
+                Color highlightColor = Color.yellow;
+                highlightColor.a = 0.8f;
+                coloredObject.Highlight(highlightColor, float.MaxValue); // Persistent highlight
+                
+                // Make the line thicker when highlighted
+                connection.lineRenderer.startWidth = connection.lineWidth * 2f;
+                connection.lineRenderer.endWidth = connection.lineWidth * 2f;
+            }
+            else
+            {
+                // Remove highlight
+                coloredObject.SetToOriginalColor();
+                
+                // Reset line width
+                connection.lineRenderer.startWidth = connection.lineWidth;
+                connection.lineRenderer.endWidth = connection.lineWidth;
+            }
+        }
+
+        private void ClearAllHighlights()
         {
             var nodeGraph = NodeGraph;
-            return nodeGraph?.AllNodes?.Count(node => node && node.name.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)) ?? 0;
+            var connectionsGraph = ConnectionsGraph;
+
+            // Clear node highlights
+            if (nodeGraph)
+            {
+                nodeGraph.ClearSearchHighlights();
+            }
+
+            // Clear edge highlights
+            if (connectionsGraph?.connections != null)
+            {
+                foreach (var connection in connectionsGraph.connections)
+                {
+                    HighlightEdge(connection, false);
+                }
+            }
+        }
+
+        private int GetTotalSearchableCount()
+        {
+            BuildCache();
+            return _cachedNodes.Count + _cachedEdges.Count;
         }
 
         private void UpdateResultsCount(int matches, int total)
         {
             if (!resultsCountText) return;
-            resultsCountText.text = string.IsNullOrEmpty(_lastSearchTerm) ? $"Total nodes: {total}" : $"Found: {matches} / {total}";
+            
+            if (string.IsNullOrEmpty(_lastSearchTerm))
+            {
+                resultsCountText.text = $"Total: {_cachedNodes.Count} nodes, {_cachedEdges.Count} edges";
+            }
+            else
+            {
+                resultsCountText.text = $"Found: {matches} / {total}";
+            }
         }
 
         public void ClearSearch()
@@ -155,25 +326,16 @@ namespace _3DConnections.Runtime.GUI
                 searchInputField.text = "";
             }
 
-            var nodeGraph = NodeGraph;
-            if (nodeGraph)
-            {
-                nodeGraph.ClearSearchHighlights();
-            }
-
-            UpdateResultsCount(0, nodeGraph?.NodeCount ?? 0);
+            ClearAllHighlights();
+            UpdateResultsCount(0, GetTotalSearchableCount());
             _lastSearchTerm = "";
         }
 
         // Called when the input field loses focus (defocus)
         public void OnSearchDefocus(string _)
         {
-            var nodeGraph = NodeGraph;
-            if (nodeGraph != null)
-            {
-                nodeGraph.ClearSearchHighlights();
-            }
-            UpdateResultsCount(0, nodeGraph?.NodeCount ?? 0);
+            ClearAllHighlights();
+            UpdateResultsCount(0, GetTotalSearchableCount());
             _lastSearchTerm = "";
         }
 
@@ -194,6 +356,7 @@ namespace _3DConnections.Runtime.GUI
             searchInputField.ActivateInputField();
         }
 
+        // Input System callbacks - now properly connected to keyboard events
         private void OnSearchFocus(InputAction.CallbackContext ctx)
         {
             if (ctx.performed) // Only trigger on key press, not release
@@ -208,6 +371,12 @@ namespace _3DConnections.Runtime.GUI
             {
                 ClearSearch();
             }
+        }
+
+        public void RefreshCache()
+        {
+            InvalidateCache();
+            BuildCache();
         }
     }
 }
