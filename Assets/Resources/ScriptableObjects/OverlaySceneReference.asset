@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useStaticValues: 1
   sceneName: OverlayScene
-  scenePath: Assets/3DConnections/Assets/Scenes/OverlayScene.unity
+  scenePath: Assets/Scenes/OverlayScene.unity

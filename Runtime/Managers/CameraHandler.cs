@@ -1,3 +1,5 @@
+using UnityEngine.Serialization;
+
 namespace _3DConnections.Runtime.Managers
 {
     using System.Collections.Generic;
@@ -20,7 +22,7 @@ namespace _3DConnections.Runtime.Managers
     {
         public float zoomSpeed = 10f;
 
-        private Camera _cam;
+        [FormerlySerializedAs("_cam")] public Camera cam;
         private Vector3 _lastMousePosition;
         private float _screenWidth;
         private float _screenHeight;
@@ -43,7 +45,6 @@ namespace _3DConnections.Runtime.Managers
 
         private void Start()
         {
-            _cam = ScriptableObjectInventory.Instance.overlay.GetCameraOfScene();
             AddLayerToCamera("OverlayScene");
 
             // Find or create LOD manager
@@ -92,10 +93,10 @@ namespace _3DConnections.Runtime.Managers
             HandlePan();
 
             var movement = new Vector3(_moveAmountGamepad.x, _moveAmountGamepad.y, 0) *
-                           (5 * Time.deltaTime * _cam.orthographicSize);
-            _cam.transform.position += movement;
-            _cam.orthographicSize += _zoomGamepad * _cam.orthographicSize;
-            _cam.orthographicSize = Mathf.Abs(_cam.orthographicSize);
+                           (5 * Time.deltaTime * cam.orthographicSize);
+            cam.transform.position += movement;
+            cam.orthographicSize += _zoomGamepad * cam.orthographicSize;
+            cam.orthographicSize = Mathf.Abs(cam.orthographicSize);
         }
 
         private void CalculateWorldDimensions()
@@ -104,8 +105,8 @@ namespace _3DConnections.Runtime.Managers
             _screenHeight = Screen.height;
             // Calculate world width and height based on camera's orthographic size and aspect ratio
             var aspectRatio = (float)Screen.width / Screen.height;
-            _worldWidth = _cam.orthographicSize * 2f * aspectRatio;
-            _worldHeight = _cam.orthographicSize * 2f;
+            _worldWidth = cam.orthographicSize * 2f * aspectRatio;
+            _worldHeight = cam.orthographicSize * 2f;
         }
 
         private void HandleZoom()
@@ -114,8 +115,8 @@ namespace _3DConnections.Runtime.Managers
             if (scroll == 0f) return;
             CalculateWorldDimensions();
             // Calculate zoom speed dynamically based on the current zoom level
-            var dynamicZoomSpeed = zoomSpeed * (_cam.orthographicSize / 10f);
-            _cam.orthographicSize -= scroll * dynamicZoomSpeed;
+            var dynamicZoomSpeed = zoomSpeed * (cam.orthographicSize / 10f);
+            cam.orthographicSize -= scroll * dynamicZoomSpeed;
         }
 
         private void HandlePan()
@@ -135,7 +136,7 @@ namespace _3DConnections.Runtime.Managers
 
             var move = new Vector3(-horizontalWorldMovement, -verticalWorldMovement, 0);
 
-            _cam.transform.position += move;
+            cam.transform.position += move;
 
             _lastMousePosition = Input.mousePosition;
         }
@@ -205,24 +206,24 @@ namespace _3DConnections.Runtime.Managers
                 var newPosition = new Vector3(
                     targetPosition.x,
                     targetPosition.y,
-                    _cam.transform.position.z
+                    cam.transform.position.z
                 );
-                _cam.orthographicSize = 3;
-                _cam.transform.position = newPosition;
+                cam.orthographicSize = 3;
+                cam.transform.position = newPosition;
             }
         }
 
         private void SetCameraToBounds(Bounds bounds)
         {
             var center = bounds.center;
-            _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+            cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
             var size = Mathf.Max(bounds.extents.x, bounds.extents.y);
-            _cam.orthographicSize = size * padding;
+            cam.orthographicSize = size * padding;
         }
 
         private void AdjustCameraToViewChildren()
         {
-            if (!_cam || !parentObject)
+            if (!cam || !parentObject)
             {
                 Debug.LogWarning("Camera or Parent Object is not assigned.");
                 return;
@@ -255,12 +256,12 @@ namespace _3DConnections.Runtime.Managers
 
             // Center the camera on the bounds
             var center = combinedBounds.center;
-            _cam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+            cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
 
             // Adjust orthographic size
             var size = Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.y);
             if (size == 0) size = 1;
-            _cam.orthographicSize = size * padding;
+            cam.orthographicSize = size * padding;
         }
         
         public static void AdjustCameraToViewObjects(Camera cam, IEnumerable<GameObject> targets, float padding = 1.1f)
@@ -370,7 +371,7 @@ namespace _3DConnections.Runtime.Managers
         public void Capture()
         {
             if (ScriptableObjectInventory.Instance.graph.AllNodes == null ||
-                ScriptableObjectInventory.Instance.graph.AllNodes.Count == 0 || !_cam)
+                ScriptableObjectInventory.Instance.graph.AllNodes.Count == 0 || !cam)
             {
                 Debug.LogError("Missing camera or nodes");
                 return;
@@ -397,10 +398,10 @@ namespace _3DConnections.Runtime.Managers
             var camGo = new GameObject("TempCaptureCamera");
             var tempCam = camGo.AddComponent<Camera>();
             tempCam.cullingMask = ~(1 << LayerMask.NameToLayer("OverlayScene"));
-            tempCam.CopyFrom(_cam); // Copy all settings from your main cam
+            tempCam.CopyFrom(cam); // Copy all settings from your main cam
             tempCam.orthographic = true;
             tempCam.orthographicSize = cameraHeight / 2f;
-            tempCam.transform.position = new Vector3(center.x, center.y, _cam.transform.position.z);
+            tempCam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
             tempCam.targetTexture = rt;
 
             tempCam.Render();
