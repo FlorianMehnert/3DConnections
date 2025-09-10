@@ -1,0 +1,92 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
+    <ui:VisualElement name="Panel" class="panel hidden" style="display: flex; margin-top: 0;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 1; justify-content: center;">
+            <ui:TabView reorderable="true" name="tabs">
+                <ui:Tab label="Start" name="AnalysisTab" closeable="false">
+                    <ui:VisualElement name="Container" class="menu">
+                        <ui:Button text="Analyze Scene" name="AnalyzeScene" class="unity-button pink" style="background-color: rgb(26, 26, 26);" />
+                        <ui:Button text="Remove Physics" name="RemovePhysics" class="unity-button khaki" style="background-color: rgb(26, 26, 26);" />
+                        <ui:Button text="Clear" name="Clear" class="unity-button mint" style="background-color: rgb(26, 26, 26);" />
+                        <ui:Foldout text="Options" enabled="true" name="Foldout" value="false">
+                            <ui:Toggle label="Find dynamic references" name="AllowDynamic" data-source-type="_3DConnections.Runtime.Managers.SceneAnalyzer, _3DConnections.Runtime.Managers" data-source-path="analyzeDynamicReferences" value="false">
+                                <Bindings>
+                                    <ui:DataBinding property="value" data-source-path="lookupDynamicReferences" data-source-type="_3DConnections.Runtime.Managers.SceneAnalyzer, _3DConnections.Runtime.Managers" binding-mode="TwoWay" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/AnalyzerConfig.asset?fileID=11400000&amp;guid=7bbde96c694ff254da727afcd65e4ab3&amp;type=2#AnalyzerConfig" />
+                                </Bindings>
+                            </ui:Toggle>
+                        </ui:Foldout>
+                    </ui:VisualElement>
+                </ui:Tab>
+                <ui:Tab label="Sim" name="SimTab">
+                    <ui:VisualElement name="Container" class="menu">
+                        <ui:DropdownField label="Sim. Type" index="1" name="DropdownSimType" choices="Static,Default,Burst,GRIP,ComponentV2,MinimalGPU" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" data-source-path="simulationType">
+                            <Bindings>
+                                <ui:DataBinding property="index" data-source-path="SimulationTypeIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:DropdownField>
+                        <ui:Slider label="Stiffness" value="42" high-value="1" name="SliderStiffness" low-value="1E-05">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="Stiffness" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:Slider>
+                        <ui:Slider label="Damping" value="42" high-value="1" name="SliderDamping">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="damping" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:Slider>
+                        <ui:Slider label="Radius" value="42" high-value="10" name="SliderRadius" low-value="2">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="colliderRadius" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:Slider>
+                        <ui:Slider label="Response" value="42" high-value="1" name="SliderResponse" fill="false" show-input-field="false" direction="Horizontal" inverted="false" low-value="1E-05">
+                            <Bindings>
+                                <ui:DataBinding property="value" data-source-path="CollisionResponseStrength" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/PhysicsSimConfig.asset?fileID=11400000&amp;guid=dfaa7161300c3249bb28074fd3076708&amp;type=2#PhysicsSimConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:Slider>
+                    </ui:VisualElement>
+                </ui:Tab>
+                <ui:Tab label="Vis" name="VisTab" closeable="false">
+                    <ui:VisualElement name="Container" class="menu">
+                        <ui:DropdownField label="Scene" choices="SampleScene,OverlayScene" name="DropdownScene" index="1">
+                            <Bindings>
+                                <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/AnalyzerConfig.asset?fileID=11400000&amp;guid=7bbde96c694ff254da727afcd65e4ab3&amp;type=2#AnalyzerConfig" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:DropdownField>
+                        <ui:DropdownField label="Layout" choices="Grid,Radial,Tree,GRIP,Sugiyama,Multiscale" index="2" name="DropdownLayout">
+                            <Bindings>
+                                <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
+                            </Bindings>
+                        </ui:DropdownField>
+                        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                            <ui:SliderInt label="Colors" value="42" high-value="4" name="ColorSlider" style="flex-basis: 50%;">
+                                <Bindings>
+                                    <ui:DataBinding property="value" data-source-path="palettePreset" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                                </Bindings>
+                            </ui:SliderInt>
+                            <ui:Toggle label="generate" toggle-on-label-click="true" name="AlternativeColorsToggle" style="flex-basis: 50%;">
+                                <Bindings>
+                                    <ui:DataBinding property="value" data-source-path="generateColor" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/nodeColorSettings.asset?fileID=11400000&amp;guid=504eee6cf71fcfbb6af3b91af5220206&amp;type=2#nodeColorSettings" binding-mode="TwoWay" />
+                                </Bindings>
+                            </ui:Toggle>
+                        </ui:VisualElement>
+                        <ui:VisualElement style="flex-grow: 1; flex-direction: row; padding-left: 10px;">
+                            <ui:Label text="ConType" style="justify-content: flex-start; -unity-text-align: middle-left; padding-left: 2px;" />
+                            <ui:ToggleButtonGroup is-multiple-selection="true" value="000" allow-empty-selection="true" style="flex-direction: column;">
+                                <ui:Button text="HR" name="HR" style="padding-right: 10px; padding-left: 10px;" />
+                                <ui:Button text="CR" name="CR" style="padding-left: 10px; padding-right: 10px;" />
+                                <ui:Button text="FR" name="FR" style="padding-right: 10px; padding-left: 10px;" />
+                                <ui:Button text="DR" name="DR" style="padding-right: 10px; padding-left: 10px;" />
+                            </ui:ToggleButtonGroup>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:Tab>
+                <ui:Tab label="Layout" name="LayoutTab">
+                    <ui:VisualElement name="Container" class="menu">
+                        <ui:Toggle label="Enable LOD" name="LOD" />
+                    </ui:VisualElement>
+                </ui:Tab>
+            </ui:TabView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

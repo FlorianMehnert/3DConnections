@@ -1,0 +1,15 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/ModularMenu.uss?fileID=7433441132597879392&amp;guid=02c05cb35fc742e7807e8059a8446ba3&amp;type=3#ModularMenu" />
+    <engine:VisualElement name="settings-window" class="settings-window" style="display: flex; opacity: 0.9;">
+        <engine:Label text="Settings" class="settings-title" style="flex-grow: 0; flex-direction: row; justify-content: flex-end; color: rgb(252, 176, 213); height: 47px; margin-left: 4px; -unity-text-align: middle-left; align-items: center;">
+            <engine:GroupBox style="flex-direction: row; height: 39px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; justify-content: flex-end; align-self: center; align-items: center;">
+                <engine:Button text="Reset" name="reset-button" style="color: rgb(82, 29, 60); background-color: rgb(252, 176, 213); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; margin-top: 2px; margin-bottom: 2px; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; margin-right: 4px; margin-left: 4px; width: auto; height: 24px; font-size: 20px;" />
+                <engine:Button name="cancel-button" enabled="true" icon-image="project://database/Assets/3DConnections/Assets/Resources/Icons/close.svg?fileID=7388822144124034973&amp;guid=6a7b4e6bd3ccf0d839f8ebf6c81c3977&amp;type=3#close" class="settings-button" style="overflow: hidden; opacity: 1; background-color: rgb(252, 176, 213); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0;" />
+            </engine:GroupBox>
+        </engine:Label>
+        <engine:ScrollView class="settings-scroll">
+            <engine:VisualElement name="settings-container" class="settings-container" />
+        </engine:ScrollView>
+        <engine:VisualElement class="settings-actions" />
+    </engine:VisualElement>
+</engine:UXML>

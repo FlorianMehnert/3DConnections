@@ -1,0 +1,13 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:TabView view-data-key="TabbedMenu" reorderable="true">
+        <engine:Tab label="London" view-data-key="LondonTab">
+            <engine:Label text="London is the capital city of England" />
+        </engine:Tab>
+        <engine:Tab label="Paris" view-data-key="ParisTab">
+            <engine:Label text="Paris is the capital of France" />
+        </engine:Tab>
+        <engine:Tab label="Ottawa" view-data-key="OttawaTab">
+            <engine:Label text="Ottawa is the capital of Canada" />
+        </engine:Tab>
+    </engine:TabView>
+</engine:UXML>
