@@ -8,7 +8,7 @@ namespace _3DConnections.Editor
     using System.Collections.Generic;
 
     [CustomEditor(typeof(SceneAnalyzer))]
-    public class SceneAnalyzerEditor : Editor
+    public class SceneAnalyzerIgnoredTypesListEditor : Editor
     {
         private SceneAnalyzer _analyzer;
         private string[] _availableTypes;

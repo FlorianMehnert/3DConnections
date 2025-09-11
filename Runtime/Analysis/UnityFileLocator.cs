@@ -83,20 +83,29 @@ namespace _3DConnections.Runtime.Analysis
             if (string.IsNullOrEmpty(absolutePath)) return null;
             try
             {
-                var full = Path.GetFullPath(absolutePath).Replace('\'', '/');
+                var full = Path.GetFullPath(absolutePath).Replace('\\', '/');
                 var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."))
-                    .Replace('\'', '/');
+                    .Replace('\\', '/');
+                if (!projectRoot.EndsWith("/"))
+                    projectRoot += "/";
                 if (!full.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
                     return null;
-                var relative = full.Substring(projectRoot.Length).TrimStart('/');
-                // Expect "Assets/..." or "Packages/..." here. AssetDatabase supports both.
+                var relative = full[projectRoot.Length..];
                 if (relative.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) ||
                     relative.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
                 {
                     return relative;
                 }
-                // If it's under the project but not under Assets/ or Packages/, it's not importable by AssetDatabase.
-                return null;
+
+                const string libCache = "Library/PackageCache/";
+                if (!relative.StartsWith(libCache, StringComparison.OrdinalIgnoreCase)) return null;
+                var rest = relative[libCache.Length..];
+                var firstSlash = rest.IndexOf('/');
+                if (firstSlash <= 0) return null;
+                var pkgFolder = rest[..firstSlash];     // com.company.pkg@1.2.3
+                var pkgId = pkgFolder.Split('@')[0];    // com.company.pkg
+                var tail = rest[firstSlash..];          // /Runtime/Foo.cs
+                return $"Packages/{pkgId}{tail}";
             }
             catch
             {
