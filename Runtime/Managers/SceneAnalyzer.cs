@@ -32,6 +32,10 @@ namespace _3DConnections.Runtime.Managers
         [Header("Filter Settings")]
         [SerializeField] private AnalysisFilterSettings filterSettings = new();
 
+        [Header("Analysis Limits")] [SerializeField] private List<string> allowedScriptAssemblies = new() { 
+            // Put your .asmdef assembly names here, e.g.: // "MyGame.Runtime", "MyGame.Editor", "Assembly-CSharp"
+        };
+        
         [SerializeField] private TraversalSettings traversalSettings = new();
 
         // Services
@@ -53,7 +57,7 @@ namespace _3DConnections.Runtime.Managers
         private void InitializeServices()
         {
             _logger = new UnityLogger();
-            _fileLocator = new UnityFileLocator();
+            _fileLocator = new UnityFileLocator(allowedScriptAssemblies);
             _typeResolver = new UnityTypeResolver();
 
             // Initialize progress reporter based on context

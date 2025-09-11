@@ -86,7 +86,7 @@ namespace _3DConnections.Runtime.Analysis
                     if (methodName == null) continue;
 
                     bool isAddComponent = _settings.ShowAddComponentCalls && methodName.StartsWith("AddComponent");
-                    bool isGetComponent = _settings.ShowGetComponentCalls && methodName.StartsWith("GetComponent");
+                    bool isGetComponent = _settings.ShowGetComponentCalls && (methodName == "GetComponent" || methodName.StartsWith("GetComponent") || methodName == "TryGetComponent");
 
                     if (!isAddComponent && !isGetComponent) continue;
 
