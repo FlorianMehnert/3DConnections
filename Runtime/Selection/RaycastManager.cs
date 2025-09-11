@@ -22,7 +22,7 @@ namespace _3DConnections.Runtime.Selection
 
             if (_targetLayerNodesMask == 0)
                 Debug.LogError($"Layer '{targetLayerNodesName}' not found!");
-            
+
             if (_targetLayerEdgesMask == 0)
                 Debug.LogError($"Layer '{targetLayerNodesName}' not found!");
         }
@@ -54,7 +54,7 @@ namespace _3DConnections.Runtime.Selection
             var edgeHits = Physics2D.OverlapPointAll(mouseWorldPosition, _targetLayerEdgesMask);
 
             var hits = nodeHits.Concat(edgeHits);
-            
+
             if (!hits.Any()) return null;
 
             var closestHit = hits.First();
@@ -70,7 +70,6 @@ namespace _3DConnections.Runtime.Selection
 
             var closestObject = closestHit.GetComponent<Collider2D>().gameObject;
             return closestObject;
-
         }
     }
 }

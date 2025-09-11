@@ -10,7 +10,7 @@ namespace _3DConnections.Runtime.Selection
         private Vector3 _dragStartWorld;
         private GameObject _draggedObject;
         private readonly Dictionary<GameObject, Vector3> _originalPositions = new();
-        
+
         private ISelectionHandler _selectionHandler;
 
         public bool IsDragging => _isDragging;
@@ -28,11 +28,11 @@ namespace _3DConnections.Runtime.Selection
             _isDragging = true;
             _draggedObject = obj;
             _dragStartWorld = worldPosition;
-            
+
             // Store original positions for all selected objects
             _originalPositions.Clear();
             var selectedObjects = _selectionHandler.GetSelectedObjects();
-            
+
             foreach (var selectedObj in selectedObjects)
             {
                 if (selectedObj != null)
@@ -47,7 +47,7 @@ namespace _3DConnections.Runtime.Selection
             if (!_isDragging || !_draggedObject) return;
 
             var dragDelta = currentWorldPosition - _dragStartWorld;
-            
+
             // Update positions for all selected objects
             foreach (var (obj, originalPos) in _originalPositions.ToArray())
             {
@@ -68,11 +68,11 @@ namespace _3DConnections.Runtime.Selection
             if (!_isDragging) return false;
 
             bool wasDragged = Vector3.Distance(_dragStartWorld, currentWorldPosition) > 0.01f;
-            
+
             _isDragging = false;
             _draggedObject = null;
             _originalPositions.Clear();
-            
+
             return wasDragged;
         }
 
@@ -85,7 +85,7 @@ namespace _3DConnections.Runtime.Selection
             {
                 var obj = kvp.Key;
                 var originalPos = kvp.Value;
-                
+
                 if (obj != null)
                 {
                     obj.transform.position = originalPos;

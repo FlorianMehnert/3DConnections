@@ -18,19 +18,21 @@ namespace _3DConnections.Runtime.Managers
     /// </summary>
     public class GraphLODManager : MonoBehaviour
     {
-        [Header("LOD Settings")] 
-        [SerializeField] private float nodeHeightThreshold = 20f; // Projected height threshold for merging
+        [Header("LOD Settings")] [SerializeField]
+        private float nodeHeightThreshold = 20f; // Projected height threshold for merging
+
         [SerializeField] private float minZoomForFullDetail = 50f;
         [SerializeField] private float maxZoomForMinDetail = 150f;
         [SerializeField] private int gridCellSize = 2;
         [SerializeField] private float nodeAggregationThreshold = 1f;
         [SerializeField] private float lodUpdateThreshold = 0.02f; // Minimum change needed to update LOD
-        
-        [Header("Visual Settings")] 
-        [SerializeField] public GameObject clusterNodePrefab; // Prefab for aggregated nodes
+
+        [Header("Visual Settings")] [SerializeField]
+        public GameObject clusterNodePrefab; // Prefab for aggregated nodes
+
         [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 2f);
         private bool _showText;
-        
+
         private Material _aggregatedEdgeMaterial;
         private const float AggregatedEdgeWidth = 2f;
         private const float BaseNodeSize = 5f; // Base size for individual nodes
@@ -53,16 +55,16 @@ namespace _3DConnections.Runtime.Managers
         private bool _isLODActive;
         private Dictionary<string, List<NodeConnection>> _cachedEdgeGroups;
         private bool _useCurrentColors = true;
-        
+
         // Transition management
         private Dictionary<GameObject, Vector3> _targetPositions;
         private Dictionary<GameObject, Vector3> _targetScales;
         private Dictionary<GameObject, Color> _targetColors;
         private Coroutine _transitionCoroutine;
-        
+
         // Move integration
         private Dictionary<GameObject, IMoveHandler> _moveHandlers;
-        
+
         public interface IMoveHandler
         {
             void OnNodeMoved(GameObject node, Vector3 newPosition);
@@ -82,7 +84,7 @@ namespace _3DConnections.Runtime.Managers
             _targetScales = new Dictionary<GameObject, Vector3>();
             _targetColors = new Dictionary<GameObject, Color>();
             _moveHandlers = new Dictionary<GameObject, IMoveHandler>();
-            
+
             ForceClearAllState();
             Initialize();
             RestoreFullDetail();
@@ -96,7 +98,7 @@ namespace _3DConnections.Runtime.Managers
                 StopCoroutine(_transitionCoroutine);
                 _transitionCoroutine = null;
             }
-            
+
             // Always restore original graph visuals before disabling
             if (_isLODActive)
             {
@@ -121,7 +123,12 @@ namespace _3DConnections.Runtime.Managers
         public void OnToggleClusterInfo()
         {
             _showText = !_showText;
-            foreach (var text in from node in ScriptableObjectInventory.Instance.graph.AllNodes where node.GetComponent<ClusterNodeData>() select node.GetComponentInChildren<TextMeshPro>() into text where text select text)
+            foreach (var text in from node in ScriptableObjectInventory.Instance.graph.AllNodes
+                     where node.GetComponent<ClusterNodeData>()
+                     select node.GetComponentInChildren<TextMeshPro>()
+                     into text
+                     where text
+                     select text)
             {
                 text.enabled = _showText;
             }
@@ -138,8 +145,8 @@ namespace _3DConnections.Runtime.Managers
             if (!(Mathf.Abs(newLODLevel - _currentLODLevel) > lodUpdateThreshold)) return;
             _currentLODLevel = newLODLevel;
             UpdateLOD();
-            
-    
+
+
             if (_isLODActive)
             {
                 UpdateAggregatedEdgePositions();
@@ -149,11 +156,11 @@ namespace _3DConnections.Runtime.Managers
         private float CalculateProjectedNodeHeight(GameObject node)
         {
             if (!node || !_camera) return 0f;
-            
+
             // Calculate the projected height of the node in screen space
             var bounds = GetNodeBounds(node);
             var worldHeight = bounds.size.y;
-            
+
             // Convert world height to screen height
             var screenHeight = worldHeight / _camera.orthographicSize * Screen.height * 0.5f;
             return screenHeight;
@@ -173,7 +180,7 @@ namespace _3DConnections.Runtime.Managers
                 StopCoroutine(_transitionCoroutine);
                 _transitionCoroutine = null;
             }
-            
+
             // Clear cluster nodes
             foreach (var cluster in _clusterNodes.Values.Where(cluster => cluster))
             {
@@ -183,7 +190,7 @@ namespace _3DConnections.Runtime.Managers
             }
 
             _clusterNodes.Clear();
-            
+
             // Clear aggregated edges
             foreach (var edge in _aggregatedEdges.Values)
             {
@@ -215,13 +222,19 @@ namespace _3DConnections.Runtime.Managers
         private float CalculateLODLevel(float zoom)
         {
             // Primary LOD calculation based on zoom
-            var zoomBasedLOD = Mathf.Clamp01((zoom - minZoomForFullDetail) / (maxZoomForMinDetail - minZoomForFullDetail));
-            
+            var zoomBasedLOD =
+                Mathf.Clamp01((zoom - minZoomForFullDetail) / (maxZoomForMinDetail - minZoomForFullDetail));
+
             // Secondary consideration: average projected node height
             var avgProjectedHeight = 0f;
             var visibleNodes = 0;
-            
-            foreach (var projectedHeight in from node in _originalNodes where node && node.activeInHierarchy select CalculateProjectedNodeHeight(node) into projectedHeight where projectedHeight > 0 select projectedHeight)
+
+            foreach (var projectedHeight in from node in _originalNodes
+                     where node && node.activeInHierarchy
+                     select CalculateProjectedNodeHeight(node)
+                     into projectedHeight
+                     where projectedHeight > 0
+                     select projectedHeight)
             {
                 avgProjectedHeight += projectedHeight;
                 visibleNodes++;
@@ -229,7 +242,7 @@ namespace _3DConnections.Runtime.Managers
 
             if (visibleNodes <= 0) return zoomBasedLOD;
             avgProjectedHeight /= visibleNodes;
-                
+
             // If nodes are too small on screen, increase the LOD level
             if (!(avgProjectedHeight < nodeHeightThreshold)) return zoomBasedLOD;
             var heightBasedLOD = 1f - (avgProjectedHeight / nodeHeightThreshold);
@@ -256,7 +269,7 @@ namespace _3DConnections.Runtime.Managers
                 _lastAppliedLODLevel = _currentLODLevel;
             }
         }
-        
+
         public void ForceUpdateEdges()
         {
             if (!_isLODActive) return;
@@ -264,19 +277,19 @@ namespace _3DConnections.Runtime.Managers
             UpdateAggregatedEdgePositions();
         }
 
-        
+
         private void UpdateAggregatedEdgePositions()
         {
             foreach (var edgePair in _aggregatedEdges)
             {
                 if (!edgePair.Value) continue;
-        
+
                 var edgeData = edgePair.Value.GetComponent<AggregatedEdgeData>();
                 if (!edgeData || !edgeData.startCluster || !edgeData.endCluster) continue;
-        
+
                 var lr = edgePair.Value.GetComponent<LineRenderer>();
                 if (!lr) continue;
-        
+
                 // Update the line renderer positions to follow the clusters
                 lr.SetPosition(0, edgeData.startCluster.transform.position);
                 lr.SetPosition(1, edgeData.endCluster.transform.position);
@@ -290,6 +303,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 StopCoroutine(_transitionCoroutine);
             }
+
             _transitionCoroutine = StartCoroutine(SmoothTransitionCoroutine(targetState));
         }
 
@@ -297,36 +311,36 @@ namespace _3DConnections.Runtime.Managers
         {
             // Prepare a target state
             targetState.Invoke();
-    
+
             // Animate transitions over a few frames
             const float transitionTime = 0.3f;
             var elapsed = 0f;
-    
+
             while (elapsed < transitionTime)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / transitionTime;
                 t = Mathf.SmoothStep(0f, 1f, t);
-        
+
                 // Interpolate positions, scales, and colors
                 foreach (var kvp in _targetPositions.Where(kvp => kvp.Key))
                 {
                     kvp.Key.transform.position = Vector3.Lerp(kvp.Key.transform.position, kvp.Value, t);
                 }
-        
+
                 if (_isLODActive)
                 {
                     UpdateAggregatedEdgePositions();
                 }
-        
+
                 yield return null;
             }
-            
+
             // Clear transition targets
             _targetPositions.Clear();
             _targetScales.Clear();
             _targetColors.Clear();
-            
+
             _transitionCoroutine = null;
         }
 
@@ -385,7 +399,7 @@ namespace _3DConnections.Runtime.Managers
 
             // Track which clusters are still needed
             var activeClusterPositions = new HashSet<Vector2Int>();
-            
+
             // Clear tracking collections for rebuild
             _nodeToClusterMap.Clear();
             _clusteredNodes.Clear();
@@ -397,7 +411,9 @@ namespace _3DConnections.Runtime.Managers
             }
 
             // Remove clusters that are no longer needed
-            var clustersToRemove = (from clusterPair in _clusterNodes where !activeClusterPositions.Contains(clusterPair.Key) select clusterPair.Key).ToList();
+            var clustersToRemove = (from clusterPair in _clusterNodes
+                where !activeClusterPositions.Contains(clusterPair.Key)
+                select clusterPair.Key).ToList();
 
             foreach (var clusterPos in clustersToRemove)
             {
@@ -407,6 +423,7 @@ namespace _3DConnections.Runtime.Managers
                     _clusterToNodesMap.Remove(clusterToRemove);
                     Destroy(clusterToRemove);
                 }
+
                 _clusterNodes.Remove(clusterPos);
             }
 
@@ -449,7 +466,7 @@ namespace _3DConnections.Runtime.Managers
             // Calculate a new center position
             Vector3 center = nodes.Aggregate(Vector3.zero, (current, node) => current + node.transform.position);
             center /= nodes.Count;
-            
+
             // Set up a smooth transition
             _targetPositions[cluster] = center;
 
@@ -469,17 +486,17 @@ namespace _3DConnections.Runtime.Managers
             var targetScale = new Vector3(1, 1, 1) * (BaseNodeSize * scaleMultiplier);
             targetScale.z = 1; // Ensure z-axis is always 1
             _targetScales[cluster] = targetScale;
-            
-            
+
 
             // Calculate target color using HSV averaging
-            var avgColor = CalculateAverageColor(nodes, node => 
+            var avgColor = CalculateAverageColor(nodes, node =>
             {
                 var coloredObj = node.GetComponent<ColoredObject>();
                 if (coloredObj)
                 {
                     return coloredObj.GetOriginalColor();
                 }
+
                 return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
             }, useHSV: true);
 
@@ -502,7 +519,7 @@ namespace _3DConnections.Runtime.Managers
             cluster.GetComponent<Renderer>().sortingOrder = 0; // Clusters should be on top of edges
             cluster.name = $"Cluster_{gridPos.x}_{gridPos.y} ({nodes.Count} nodes)";
             cluster.transform.SetParent(ScriptableObjectInventory.Instance.graph.AllNodes[0].transform.parent);
-            
+
             // label to display contained nodes
             var text = cluster.GetComponentInChildren<TextMeshPro>();
             text.sortingOrder = 1; // Label should be on top of the cluster
@@ -527,18 +544,20 @@ namespace _3DConnections.Runtime.Managers
             if (_useCurrentColors)
             {
                 // Use current colors (which might be highlighted)
-                avgColor = CalculateAverageColor(nodes, node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, useHSV: true);
+                avgColor = CalculateAverageColor(nodes,
+                    node => node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black, useHSV: true);
             }
             else
             {
                 // Use original colors
-                avgColor = CalculateAverageColor(nodes, node => 
+                avgColor = CalculateAverageColor(nodes, node =>
                 {
                     var coloredObj = node.GetComponent<ColoredObject>();
                     if (coloredObj != null)
                     {
                         return coloredObj.GetOriginalColor();
                     }
+
                     return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
                 }, useHSV: true);
             }
@@ -608,7 +627,8 @@ namespace _3DConnections.Runtime.Managers
             }
         }
 
-        private static Color CalculateAverageColor<T>(IEnumerable<T> items, Func<T, Color> colorSelector, bool useHSV = true)
+        private static Color CalculateAverageColor<T>(IEnumerable<T> items, Func<T, Color> colorSelector,
+            bool useHSV = true)
         {
             int count = 0;
 
@@ -695,6 +715,7 @@ namespace _3DConnections.Runtime.Managers
                 {
                     Destroy(edgeToRemove);
                 }
+
                 _aggregatedEdges.Remove(edgeKey);
             }
 
@@ -720,7 +741,7 @@ namespace _3DConnections.Runtime.Managers
 
                 var startRep = GetNodeRepresentative(connection.startNode);
                 var endRep = GetNodeRepresentative(connection.endNode);
-                
+
                 // Hide if part of an aggregation, show if not
                 bool shouldHide = startRep != connection.startNode || endRep != connection.endNode;
                 connection.lineRenderer.enabled = !shouldHide;
@@ -740,7 +761,7 @@ namespace _3DConnections.Runtime.Managers
 
             var lr = edgeObj.GetComponent<LineRenderer>();
             if (!lr) return;
-            
+
             lr.sortingLayerName = "Default";
             lr.sortingOrder = -1; // Edges behind clusters
 
@@ -756,7 +777,7 @@ namespace _3DConnections.Runtime.Managers
             lr.startWidth = width;
             lr.endWidth = width;
 
-            var avgColor = CalculateAverageColor(connections, conn => 
+            var avgColor = CalculateAverageColor(connections, conn =>
             {
                 var coloredObj = conn.lineRenderer.GetComponent<ColoredObject>();
                 return coloredObj ? coloredObj.GetOriginalColor() : conn.lineRenderer.startColor;
@@ -829,14 +850,16 @@ namespace _3DConnections.Runtime.Managers
             {
                 lr.material = _aggregatedEdgeMaterial;
             }
-            
+
             // Calculate average color using ORIGINAL colors, not current colors
-            var avgColor = CalculateAverageColor(connections, conn => 
+            var avgColor = CalculateAverageColor(connections, conn =>
             {
                 var coloredObj = conn.lineRenderer.GetComponent<ColoredObject>();
-                return coloredObj != null ?
+                return coloredObj != null
+                    ?
                     // Use the original color stored in ColoredObject
-                    coloredObj.GetOriginalColor() :
+                    coloredObj.GetOriginalColor()
+                    :
                     // Fallback to the current color if no ColoredObject
                     conn.lineRenderer.startColor;
             }, useHSV: true);
@@ -868,9 +891,9 @@ namespace _3DConnections.Runtime.Managers
             // Restore all original nodes
             if (_originalNodes != null)
             {
-                foreach (var node in _originalNodes)
+                foreach (var node in _originalNodes.Where(node => node))
                 {
-                    if (node) node.SetActive(true);
+                    node.SetActive(true);
                 }
             }
 
@@ -911,6 +934,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 RestoreFullDetail();
             }
+
             ForceClearAllState();
         }
 
@@ -925,7 +949,9 @@ namespace _3DConnections.Runtime.Managers
         /// </summary>
         public List<GameObject> GetClusterContents(GameObject cluster)
         {
-            return _clusterToNodesMap.TryGetValue(cluster, out var nodes) ? new List<GameObject>(nodes) : new List<GameObject>();
+            return _clusterToNodesMap.TryGetValue(cluster, out var nodes)
+                ? new List<GameObject>(nodes)
+                : new List<GameObject>();
         }
 
         /// <summary>
@@ -945,6 +971,7 @@ namespace _3DConnections.Runtime.Managers
             {
                 return _clusterNodes.GetValueOrDefault(gridPos);
             }
+
             return null;
         }
 
@@ -958,7 +985,7 @@ namespace _3DConnections.Runtime.Managers
             UpdateLOD();
         }
 
-        
+
         /// <summary>
         /// Enable or disable smooth transitions
         /// </summary>
@@ -968,12 +995,13 @@ namespace _3DConnections.Runtime.Managers
             if (enableTransition || _transitionCoroutine == null) return;
             StopCoroutine(_transitionCoroutine);
             _transitionCoroutine = null;
-                
+
             // Apply all target states immediately
             foreach (var kvp in _targetPositions)
             {
                 if (kvp.Key) kvp.Key.transform.position = kvp.Value;
             }
+
             foreach (var kvp in _targetScales)
             {
                 if (!kvp.Key) continue;
@@ -981,13 +1009,14 @@ namespace _3DConnections.Runtime.Managers
                 Vector3 targetScale = new Vector3(kvp.Value.x, kvp.Value.y, 1f);
                 kvp.Key.transform.localScale = Vector3.Lerp(startScale, targetScale, 1);
             }
+
             foreach (var kvp in _targetColors)
             {
                 if (!kvp.Key) continue;
                 var objectRenderer = kvp.Key.GetComponent<Renderer>();
                 if (objectRenderer) objectRenderer.material.color = kvp.Value;
             }
-                
+
             _targetPositions.Clear();
             _targetScales.Clear();
             _targetColors.Clear();
@@ -1000,16 +1029,16 @@ namespace _3DConnections.Runtime.Managers
         {
             // Always refresh with original colors when this is called
             _useCurrentColors = false;
-    
+
             // Refresh cluster node colors first
             RefreshClusterNodeColors();
-    
+
             // Force update of all aggregated edges
             if (_isLODActive)
             {
                 // Re-apply LOD to update everything with original colors
                 UpdateEdgeCumulation();
-        
+
                 // Also update existing clusters
                 foreach (var gridPos in _clusterNodes.Select(clusterPair => clusterPair.Key))
                 {
@@ -1025,7 +1054,7 @@ namespace _3DConnections.Runtime.Managers
                 // This ensures that when LOD activates next time, it uses the correct colors
                 _useCurrentColors = false;
             }
-    
+
             // Reset to use current colors for normal operation
             _useCurrentColors = true;
         }
@@ -1034,31 +1063,32 @@ namespace _3DConnections.Runtime.Managers
         private void RefreshClusterNodeColors()
         {
             if (!_isLODActive) return;
-    
+
             foreach (var clusterPair in _clusterNodes)
             {
                 var gridPos = clusterPair.Key;
                 var cluster = clusterPair.Value;
-        
+
                 if (!cluster || !_spatialGrid.TryGetValue(gridPos, out var nodes)) continue;
-        
+
                 // Recalculate color using original colors
-                var avgColor = CalculateAverageColor(nodes, node => 
+                var avgColor = CalculateAverageColor(nodes, node =>
                 {
                     var coloredObj = node.GetComponent<ColoredObject>();
                     if (coloredObj != null)
                     {
                         return coloredObj.GetOriginalColor();
                     }
+
                     return node.TryGetComponent<Renderer>(out var r) ? r.material.color : Color.black;
                 }, useHSV: true);
-        
+
                 // Update cluster renderer
                 if (cluster.TryGetComponent<Renderer>(out var clusterRenderer))
                 {
                     clusterRenderer.material.color = avgColor;
                 }
-        
+
                 // Update ColoredObject
                 var coloredObject = cluster.GetComponent<ColoredObject>();
                 if (coloredObject)
@@ -1067,7 +1097,5 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
         }
-
-
     }
 }

@@ -8,14 +8,15 @@ using UnityEngine.XR;
 namespace _3DConnections.Runtime.Selection
 {
     using ScriptableObjectInventory;
+
     public class InputValidator : MonoBehaviour
     {
         [SerializeField] private bool isActive = true;
-        
-        public bool IsActive 
-        { 
-            get => isActive; 
-            set => isActive = value; 
+
+        public bool IsActive
+        {
+            get => isActive;
+            set => isActive = value;
         }
 
         public bool ShouldProcessInput()
@@ -23,7 +24,7 @@ namespace _3DConnections.Runtime.Selection
             // Check if menu is open
             if (ScriptableObjectInventory.Instance.menuState?.menuOpen == true)
                 return false;
-            
+
             // Check if system is active
             if (!isActive)
                 return false;
@@ -48,7 +49,7 @@ namespace _3DConnections.Runtime.Selection
         public void PingInEditor(GameObject target)
         {
             if (target == null) return;
-            
+
             EditorGUIUtility.PingObject(target);
             UnityEditor.Selection.activeGameObject = target;
         }

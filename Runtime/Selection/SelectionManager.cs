@@ -11,19 +11,20 @@ namespace _3DConnections.Runtime.Selection
 {
     public class SelectionManager : MonoBehaviour
     {
-        [Header("Components")]
-        [SerializeField] private InputValidator inputValidator;
+        [Header("Components")] [SerializeField]
+        private InputValidator inputValidator;
+
         [SerializeField] private RaycastManager raycastManager;
         [SerializeField] private SelectionRectangle selectionRectangle;
         [SerializeField] private ObjectSelector objectSelector;
         [SerializeField] private DragHandler dragHandler;
         [SerializeField] private ClickDetector clickDetector;
 
-        [Header("Input Settings")]
-        [SerializeField] private InputActionAsset inputActions;
-        
-        [Header("Canvas Settings")]
-        [SerializeField] private Material highlightMaterial;
+        [Header("Input Settings")] [SerializeField]
+        private InputActionAsset inputActions;
+
+        [Header("Canvas Settings")] [SerializeField]
+        private Material highlightMaterial;
 
         // Input Actions
         private InputAction _selectAction;
@@ -72,6 +73,7 @@ namespace _3DConnections.Runtime.Selection
                 Debug.LogError("RaycastManager component not found in children!");
                 return;
             }
+
             raycastManager.Initialize(_displayCamera);
 
             // Initialize selection rectangle
@@ -82,6 +84,7 @@ namespace _3DConnections.Runtime.Selection
                 Debug.LogError("SelectionRectangle component not found in children!");
                 return;
             }
+
             selectionRectangle.Initialize(_displayCamera);
 
             // Initialize object selector
@@ -92,6 +95,7 @@ namespace _3DConnections.Runtime.Selection
                 Debug.LogError("ObjectSelector component not found in children!");
                 return;
             }
+
             objectSelector.Initialize(inputValidator);
 
             // Initialize drag handler
@@ -102,6 +106,7 @@ namespace _3DConnections.Runtime.Selection
                 Debug.LogError("DragHandler component not found in children!");
                 return;
             }
+
             dragHandler.Initialize(objectSelector);
 
             // Initialize click detector
@@ -112,6 +117,7 @@ namespace _3DConnections.Runtime.Selection
                 Debug.LogError("ClickDetector component not found in children!");
                 return;
             }
+
             clickDetector.OnDoubleClick += HandleDoubleClick;
         }
 
@@ -119,7 +125,7 @@ namespace _3DConnections.Runtime.Selection
         {
             inputActions?.Enable();
             SetupInputActions();
-            
+
             if (soi.Instance != null)
             {
                 soi.Instance.clearEvent.onEventTriggered.AddListener(HandleClearEvent);
@@ -129,7 +135,7 @@ namespace _3DConnections.Runtime.Selection
         private void OnDisable()
         {
             inputActions?.Disable();
-            
+
             if (soi.Instance != null)
             {
                 soi.Instance.clearEvent.onEventTriggered.RemoveListener(HandleClearEvent);
@@ -185,7 +191,7 @@ namespace _3DConnections.Runtime.Selection
             if (_selectAction != null && _selectAction.IsPressed())
             {
                 Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
-                
+
                 if (dragHandler.IsDragging)
                 {
                     dragHandler.UpdateDrag(mouseWorldPos);
@@ -194,7 +200,7 @@ namespace _3DConnections.Runtime.Selection
                 else if (selectionRectangle.IsDrawing)
                 {
                     selectionRectangle.UpdateSelection(_mousePosition.ReadValue<Vector2>());
-                    
+
                     // Select objects in rectangle
                     var objectsInRect = selectionRectangle.GetObjectsInSelection();
                     foreach (var obj in objectsInRect)
@@ -216,7 +222,7 @@ namespace _3DConnections.Runtime.Selection
 
             Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
             var closestObj = raycastManager.GetClosestObjectToMouse(mouseWorldPos);
-            
+
             if (closestObj != null)
             {
                 if (closestObj.GetComponent<EdgeType>()) Debug.Log($"hit an edge {closestObj.name}");
@@ -261,7 +267,7 @@ namespace _3DConnections.Runtime.Selection
         private void OnPingEditor(InputAction.CallbackContext context)
         {
             if (!inputValidator.ShouldProcessInput()) return;
-            
+
 #if UNITY_EDITOR
             if (selectionRectangle.IsDrawing) return;
             inputValidator.PingInEditor(gameObject);
@@ -311,11 +317,11 @@ namespace _3DConnections.Runtime.Selection
         private void HandleSelectRelease()
         {
             Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
-            
+
             if (selectionRectangle.IsDrawing)
             {
                 selectionRectangle.EndSelection();
-                
+
                 // Update graph selection bounds
                 if (soi.Instance?.graph != null)
                 {
@@ -331,7 +337,7 @@ namespace _3DConnections.Runtime.Selection
             if (dragHandler.IsDragging)
             {
                 bool wasDragged = dragHandler.EndDrag(mouseWorldPos);
-                
+
                 // If object wasn't actually dragged, it was just a click
                 if (!wasDragged && dragHandler.DraggedObject != null)
                 {
@@ -343,7 +349,7 @@ namespace _3DConnections.Runtime.Selection
         private void HandleDoubleClick(GameObject hitObject)
         {
             if (!hitObject) return;
-            
+
             objectSelector.DeselectAll();
             CloseContextMenu();
             objectSelector.enableEditorPing = true;
@@ -371,21 +377,22 @@ namespace _3DConnections.Runtime.Selection
         {
             Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
             var hit = raycastManager.RaycastDown(mouseWorldPos);
-            
+
             if (!hit.collider)
             {
                 // Clear highlights first
                 NodeGraphScriptableObject.ClearAllHighlights();
-        
+
                 // Then refresh LOD colors to use original colors
                 var lodManager = FindFirstObjectByType<GraphLODManager>();
                 if (lodManager != null)
                 {
                     lodManager.RefreshAggregatedEdgeColors();
                 }
+
                 return;
             }
-            
+
             if (soi.Instance?.graph != null)
             {
                 soi.Instance.graph.HighlightNodeConnections(hit.transform.gameObject, 1);
@@ -423,7 +430,7 @@ namespace _3DConnections.Runtime.Selection
 
         private void CloseContextMenu()
         {
-            if (_currentContextMenu != null) 
+            if (_currentContextMenu != null)
             {
                 Destroy(_currentContextMenu);
                 _currentContextMenu = null;

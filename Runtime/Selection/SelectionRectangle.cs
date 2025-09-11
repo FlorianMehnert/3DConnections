@@ -92,7 +92,14 @@ namespace _3DConnections.Runtime.Selection
                 obj.layer == LayerMask.NameToLayer(targetLayerNodesName) ||
                 obj.layer == LayerMask.NameToLayer(targetLayerEdgesName));
 
-            return (from obj in objects let objectCollider = obj.GetComponent<Collider2D>() where objectCollider let worldPosition = objectCollider.bounds.center let screenPosition = _targetCamera.WorldToScreenPoint(worldPosition) let rectAdjustedPosition = new Vector2(screenPosition.x, screenHeight - screenPosition.y) where selectionRect.Contains(rectAdjustedPosition) select obj).ToList();
+            return (from obj in objects
+                let objectCollider = obj.GetComponent<Collider2D>()
+                where objectCollider
+                let worldPosition = objectCollider.bounds.center
+                let screenPosition = _targetCamera.WorldToScreenPoint(worldPosition)
+                let rectAdjustedPosition = new Vector2(screenPosition.x, screenHeight - screenPosition.y)
+                where selectionRect.Contains(rectAdjustedPosition)
+                select obj).ToList();
         }
 
 
