@@ -159,6 +159,7 @@ namespace _3DConnections.Runtime.Selection
             _pingEditorAction = inputActions.FindAction("PingEditor");
             _shiftModifier = inputActions.FindAction("ShiftModifier");
             _mousePosition = inputActions.FindAction("MousePosition");
+            selectionRectangle.SetMousePositionAction(_mousePosition);
 
             // Subscribe to events
             if (_selectAction != null)
@@ -217,15 +218,18 @@ namespace _3DConnections.Runtime.Selection
         #region Input Event Handlers
 
         private void OnSelectStarted(InputAction.CallbackContext context)
-        {
+        { 
+#if UNITY_EDITOR 
+            if (inputValidator != null && inputValidator.ConsumeFocusClick()) return;
+#endif
             if (!inputValidator.ShouldProcessInput()) return;
-
-            Vector2 mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
+            var mouseWorldPos = raycastManager.GetMouseWorldPosition(_mousePosition);
             var closestObj = raycastManager.GetClosestObjectToMouse(mouseWorldPos);
 
             if (closestObj != null)
             {
-                if (closestObj.GetComponent<EdgeType>()) Debug.Log($"hit an edge {closestObj.name}");
+                if (closestObj.GetComponent<EdgeType>()) 
+                    Debug.Log($"hit an edge {closestObj.name}");
                 HandleObjectClick(closestObj, mouseWorldPos);
             }
             else
@@ -302,16 +306,14 @@ namespace _3DConnections.Runtime.Selection
         {
             if (EventSystem.current.IsPointerOverGameObject()) return;
 
-            // Start drawing selection rectangle
-            Vector2 screenPos = _mousePosition.ReadValue<Vector2>();
+            Vector2 screenPos = _mousePosition?.ReadValue<Vector2>() ?? Input.mousePosition;
+            if (screenPos == Vector2.zero)
+                screenPos = Input.mousePosition;
             selectionRectangle.StartSelection(screenPos);
 
-            // Deselect all if shift is not pressed
-            if (!IsShiftPressed())
-            {
-                objectSelector.DeselectAll();
-                CloseContextMenu();
-            }
+            if (IsShiftPressed()) return;
+            objectSelector.DeselectAll();
+            CloseContextMenu();
         }
 
         private void HandleSelectRelease()

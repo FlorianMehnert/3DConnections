@@ -39,16 +39,41 @@ namespace _3DConnections.Runtime.Selection
         private bool IsMouseInSceneView()
         {
 #if UNITY_EDITOR
-            return EditorWindow.mouseOverWindow && EditorWindow.mouseOverWindow.GetType().Name == "GameView";
-#else
-            return true; // Always true in runtime builds
+            var w = EditorWindow.mouseOverWindow; 
+            return w && w.GetType().Name == "GameView"; 
+#else 
+            return true;
 #endif
         }
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR 
+        private EditorWindow _lastFocusedWindow; 
+        private bool _skipNextClick;
+        
+        private void Update()
+        {
+            var focused = EditorWindow.focusedWindow;
+            if (focused == _lastFocusedWindow) return;
+            _lastFocusedWindow = focused;
+            if (focused && focused.GetType().Name == "GameView")
+            {
+                _skipNextClick = true;
+            }
+        }
+        
+        public bool ConsumeFocusClick()
+        {
+            if (_skipNextClick)
+            {
+                _skipNextClick = false;
+                return true;
+            }
+            return false;
+        }
+        
         public void PingInEditor(GameObject target)
         {
-            if (target == null) return;
+            if (!target) return;
 
             EditorGUIUtility.PingObject(target);
             UnityEditor.Selection.activeGameObject = target;
