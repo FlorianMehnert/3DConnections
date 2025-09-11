@@ -81,11 +81,12 @@
 }
 
 .unity-text-element {
-    -unity-font-definition: resource('Fonts/Source_Sans_3/static/SourceSans3-Regular SDF 1');
+    -unity-font-definition: resource('Fonts/Source_Sans_3/static/SourceSans3-Regular');
     font-size: 45px;
     -unity-text-align: upper-center;
     color: rgb(200, 200, 200);
     -unity-font-style: normal;
+    -unity-text-generator: standard;
 }
 
 .unity-button:hover {
@@ -338,4 +339,5 @@ VisualElement > .unity-text-field > .unity-text-field__label {
     padding-right: 4px;
     padding-bottom: 4px;
     padding-left: 4px;
+    -unity-font-definition: resource('Fonts/Source_Sans_3/static/SourceSans3-Regular');
 }
