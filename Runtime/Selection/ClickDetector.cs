@@ -28,22 +28,21 @@ namespace _3DConnections.Runtime.Selection
             
             _lastClickTime = currentTime;
 
-            if (_clickCount == 1)
+            switch (_clickCount)
             {
-                // Start timer for potential double-click
-                Invoke(nameof(ProcessSingleClick), doubleClickThreshold);
-                return false; // Not processed yet
+                case 1:
+                    // Start timer for potential double-click
+                    Invoke(nameof(ProcessSingleClick), doubleClickThreshold);
+                    return false; // Not processed yet
+                case 2:
+                    // Cancel single click and process double click immediately
+                    CancelInvoke(nameof(ProcessSingleClick));
+                    _clickCount = 0;
+                    OnDoubleClick?.Invoke(clickedObject);
+                    return true; // Double click processed
+                default:
+                    return false;
             }
-            else if (_clickCount == 2)
-            {
-                // Cancel single click and process double click immediately
-                CancelInvoke(nameof(ProcessSingleClick));
-                _clickCount = 0;
-                OnDoubleClick?.Invoke(clickedObject);
-                return true; // Double click processed
-            }
-            
-            return false;
         }
 
         private void ProcessSingleClick()
