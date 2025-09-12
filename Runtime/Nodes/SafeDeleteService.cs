@@ -63,8 +63,8 @@ namespace _3DConnections.Runtime.Nodes
                 state.InboundSubscriptionCount = 0;
             }
 
-            var subscriptionConnectionTypes = new []{"getComponentCall, addComponentCall, Event, Action, Delegate, Invocation"};
-            var referenceConnectionTypes = new []{"referenceConnection, parentChildConnection, referenceConnection"};
+            var subscriptionConnectionTypes = new []{"getComponentCall", "addComponentCall", "Event", "Action", "Delegate", "Invocation"};
+            var referenceConnectionTypes = new []{"componentConnection", "parentChildConnection", "referenceConnection"};
             
             // Count inbound connections by type
             foreach (var conn in connections.Where(c => c?.endNode && c.startNode))
@@ -73,19 +73,21 @@ namespace _3DConnections.Runtime.Nodes
                 if (!state) continue;
                 
                 // subscription
-                if (subscriptionConnectionTypes.Contains(conn.connectionType))
+                if (subscriptionConnectionTypes.Any(item => 
+                        conn.connectionType.IndexOf(item, System.StringComparison.OrdinalIgnoreCase) >= 0))
                 {
                     state.InboundSubscriptionCount++;
                 }
                 
                 // reference
-                else if (referenceConnectionTypes.Contains(conn.connectionType))
+                else if (referenceConnectionTypes.Any(item => 
+                             conn.connectionType.IndexOf(item, System.StringComparison.OrdinalIgnoreCase) >= 0))
                 {
                     state.InboundReferenceCount++;
                 }
                 else
                 {
-                    Debug.Log("<b><color=cyan>Wrong connection type detected during recomputation of SafeDeletion state for :</color></b>", gameObject);
+                    Debug.Log($"<b><color=cyan>Wrong connection type detected during recomputation of SafeDeletion state for :</color>{conn.lineRenderer.gameObject} with type of {conn.connectionType}</b>");
                 }
             }
             
