@@ -70,7 +70,8 @@ namespace _3DConnections.Runtime.Nodes
                 "Event", 
                 "Action", 
                 "Delegate", 
-                "Invocation"
+                "Invocation",
+                "otherComponentCall"
             };
             
             var referenceConnectionTypes = new []
@@ -173,11 +174,24 @@ namespace _3DConnections.Runtime.Nodes
         public List<(GameObject source, string info)> GetInboundSubscribers(GameObject node)
         {
             var result = new List<(GameObject, string)>();
+    
+            // Use the same subscription connection types as in RecomputeAll
+            var subscriptionConnectionTypes = new []
+            {
+                "getComponentCall", 
+                "addComponentCall",
+                "otherComponentCall",
+                "Event", 
+                "Action", 
+                "Delegate", 
+                "Invocation"
+            };
+    
             var connections = soi.Instance.conSo.connections
-                .Where(c => c?.endNode == node && 
-                           (c.connectionType?.Contains("event") == true || 
-                            c.connectionType == "eventSubscription"));
-            
+                .Where(c => c?.endNode == node && c?.connectionType != null &&
+                            subscriptionConnectionTypes.Any(item => 
+                                c.connectionType.IndexOf(item, System.StringComparison.OrdinalIgnoreCase) >= 0));
+    
             foreach (var conn in connections)
             {
                 var info = "";
@@ -187,8 +201,9 @@ namespace _3DConnections.Runtime.Nodes
                 }
                 result.Add((conn.startNode, info));
             }
-            
+    
             return result;
         }
+
     }
 }

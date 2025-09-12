@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 namespace _3DConnections.Runtime.Managers
 {
     using Events;
@@ -236,6 +238,16 @@ namespace _3DConnections.Runtime.Managers
                 // Limit the input string length to avoid overflow
                 if (_inputString.Length > 50) _inputString = _inputString[^50..];
             }
+        }
+
+        /// <summary>
+        /// Manually register for each event and describe what is being executed
+        /// </summary>
+        /// <param name="actionName"></param>
+        [UsedImplicitly]
+        public void ShowKeyAction(string actionName)
+        {
+            _inputString = actionName;
         }
 
         private static bool IsConfirm()
