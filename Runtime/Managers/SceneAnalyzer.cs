@@ -26,9 +26,6 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private NodeSettings nodeSettings = new();
 
-        [Header("Analysis Settings")] [SerializeField]
-        private AnalysisFilterSettings componentSettings = new();
-        
         [Header("Filter Settings")]
         [SerializeField] private AnalysisFilterSettings filterSettings = new();
 
@@ -68,7 +65,7 @@ namespace _3DConnections.Runtime.Managers
 #endif
 
             _nodeManager = new NodeGraphManager(nodePrefab, parentNode, nodeSettings, _logger);
-            _componentAnalyzer = new ComponentReferenceAnalyzer(_fileLocator, _typeResolver, _logger, componentSettings,
+            _componentAnalyzer = new ComponentReferenceAnalyzer(_fileLocator, _typeResolver, _logger, filterSettings,
                 _progressReporter);
             _eventAnalyzer = new EventAnalyzer(_fileLocator, _typeResolver, _logger, _progressReporter);
             _traversalService = new SceneTraversalService(_nodeManager, _logger, traversalSettings, _progressReporter);
@@ -172,14 +169,7 @@ namespace _3DConnections.Runtime.Managers
                 _componentAnalyzer.AnalyzeComponentReferences(type);
             }
 
-            if (filterSettings.FilteredOutputOnly)
-            {
-                ((ComponentReferenceAnalyzer)_componentAnalyzer).CreateDynamicConnections(_nodeManager, filterSettings);
-            }
-            else
-            {
-                _componentAnalyzer.CreateDynamicConnections(_nodeManager, filterSettings);
-            }
+            ((ComponentReferenceAnalyzer)_componentAnalyzer).CreateDynamicConnections(_nodeManager, filterSettings);
         }
 
         private void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes)
