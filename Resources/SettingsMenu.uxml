@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/3DConnections/Assets/UI%20Toolkit/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
+    <Style src="project://database/Assets/3DConnections/Resources/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
     <ui:VisualElement name="Panel" class="panel hidden" style="display: flex; margin-top: 0;">
         <ui:VisualElement name="VisualElement" style="flex-grow: 1; justify-content: center;">
             <ui:TabView reorderable="true" name="tabs">
@@ -53,7 +53,7 @@
                                 <ui:DataBinding property="index" data-source-path="sceneIndex" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/AnalyzerConfig.asset?fileID=11400000&amp;guid=7bbde96c694ff254da727afcd65e4ab3&amp;type=2#AnalyzerConfig" binding-mode="TwoWay" />
                             </Bindings>
                         </ui:DropdownField>
-                        <ui:DropdownField label="Layout" choices="Grid,Radial,Tree,GRIP,Sugiyama,Multiscale" index="2" name="DropdownLayout">
+                        <ui:DropdownField label="Layout" choices="Grid,Radial,Tree,GRIP,Sugiyama,FM³" index="2" name="DropdownLayout">
                             <Bindings>
                                 <ui:DataBinding property="index" data-source-path="layoutType" data-source="project://database/Assets/3DConnections/Assets/Resources/ScriptableObjects/LayoutParameters.asset?fileID=11400000&amp;guid=22eaa6a769169557ea327a3dcf50993c&amp;type=2#LayoutParameters" binding-mode="TwoWay" />
                             </Bindings>
