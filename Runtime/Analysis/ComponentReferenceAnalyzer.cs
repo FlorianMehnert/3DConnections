@@ -233,8 +233,5 @@ namespace _3DConnections.Runtime.Analysis
         public bool DifferentiateEventTypes = true;
         public bool DifferentiateComponentCallTypes = true;
         public bool ShowCodeReferences = true;
-    
-        [Header("Output Filtering")]
-        public bool FilteredOutputOnly = false; // When true, only shows filtered types
     }
 }

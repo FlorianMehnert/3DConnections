@@ -63,14 +63,31 @@ namespace _3DConnections.Runtime.Nodes
                 state.InboundSubscriptionCount = 0;
             }
 
-            var subscriptionConnectionTypes = new []{"getComponentCall", "addComponentCall", "Event", "Action", "Delegate", "Invocation"};
-            var referenceConnectionTypes = new []{"componentConnection", "parentChildConnection", "referenceConnection"};
+            var subscriptionConnectionTypes = new []
+            {
+                "getComponentCall", 
+                "addComponentCall", 
+                "Event", 
+                "Action", 
+                "Delegate", 
+                "Invocation"
+            };
+            
+            var referenceConnectionTypes = new []
+            {
+                "componentConnection", 
+                "parentChildConnection", 
+                "referenceConnection"
+            };
             
             // Count inbound connections by type
             foreach (var conn in connections.Where(c => c?.endNode && c.startNode))
             {
                 var state = conn.endNode.GetComponent<NodeSafetyState>();
-                if (!state) continue;
+                if (!state) 
+                {
+                    state = conn.endNode.AddComponent<NodeSafetyState>();
+                }
                 
                 // subscription
                 if (subscriptionConnectionTypes.Any(item => 

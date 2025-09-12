@@ -175,15 +175,7 @@ namespace _3DConnections.Runtime.Managers
         private void AnalyzeEvents(IEnumerable<Type> monoBehaviourTypes)
         {
             _eventAnalyzer.AnalyzeEvents(monoBehaviourTypes);
-    
-            if (filterSettings.FilteredOutputOnly)
-            {
-                ((EventAnalyzer)_eventAnalyzer).CreateEventConnections(_nodeManager, filterSettings);
-            }
-            else
-            {
-                _eventAnalyzer.CreateEventConnections(_nodeManager, filterSettings);
-            }
+            ((EventAnalyzer)_eventAnalyzer).CreateEventConnections(_nodeManager, filterSettings);
         }
 
         private IEnumerator RunNextFrame(Action action)
