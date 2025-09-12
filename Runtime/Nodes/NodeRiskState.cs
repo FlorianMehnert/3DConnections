@@ -55,31 +55,14 @@ namespace _3DConnections.Runtime.Nodes
             else
                 RiskState = NodeRiskState.Orphan;
             
-            // Update visuals
-            switch (RiskState)
+            badgeObject.SetActive(true);
+            badgeRenderer.color = RiskState switch
             {
-                case NodeRiskState.Orphan:
-                    badgeObject.SetActive(true);
-                    // Subtle green glow
-                    glowComponent.Highlight(new Color(0.2f, 1f, 0.2f, 0.5f), 
-                        duration: 0.5f, highlightForever: true, 
-                        emissionColor: new Color(0.1f, 0.5f, 0.1f));
-                    break;
-                    
-                case NodeRiskState.HardLinks:
-                    badgeObject.SetActive(true);
-                    badgeRenderer.color = new Color(1f, 0.7f, 0f, 1f); // Amber
-                    badgeText.text = InboundReferenceCount.ToString();
-                    glowComponent.ManualClearHighlight();
-                    break;
-                    
-                case NodeRiskState.Subscriptions:
-                    badgeObject.SetActive(true);
-                    badgeRenderer.color = new Color(1f, 0.2f, 0.2f, 1f); // Red
-                    badgeText.text = InboundSubscriptionCount.ToString();
-                    glowComponent.ManualClearHighlight();
-                    break;
-            }
+                NodeRiskState.Orphan => Color.green,
+                NodeRiskState.HardLinks => new Color(1f, 0.7f, 0f, 1f),
+                NodeRiskState.Subscriptions => new Color(1f, 0.2f, 0.2f, 1f),
+                _ => badgeRenderer.color
+            };
         }
         
         public void OnBadgeClicked()
