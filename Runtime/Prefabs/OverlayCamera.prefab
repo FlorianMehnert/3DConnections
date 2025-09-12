@@ -75,7 +75,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 97
+    m_Bits: 1633
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -100,6 +100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   zoomSpeed: 10
+  cam: {fileID: 6810327768359966640}
   padding: 1.1
   parentObject: {fileID: 0}
   width: 2000
@@ -128,7 +129,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -207,19 +208,71 @@ MonoBehaviour:
     m_ActionId: 39609140-d730-4995-89ea-3acb296162bf
     m_ActionName: cameraMovement/zoom
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.NavigatableMenu,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnNavigationPerformed
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: ae44f52d-ca96-4c80-854e-28af3fc57fce
     m_ActionName: 'UI/Submit[/XInputControllerWindows/buttonEast]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.NavigatableMenu,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnNavigationPerformed
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 8c597d60-34b9-4f2d-ac3b-668294d5968e
     m_ActionName: 'UI/Navigate[/XInputControllerWindows/rightStick/up,/XInputControllerWindows/rightStick/down,/XInputControllerWindows/rightStick/left,/XInputControllerWindows/rightStick/right,/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.NavigatableMenu,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnTabSwitchPerformed
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: f8c32cfa-ac4b-40c5-99f7-512114adbc47
     m_ActionName: 'UI/Tab[/XInputControllerWindows/leftShoulder,/XInputControllerWindows/rightShoulder]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.GUI.RadiusNodeScalingIndicator,
+          _3DConnections.Runtime.GUI
+        m_MethodName: Confirm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 0cdedd1a-ff56-4aff-9116-69853e352992
     m_ActionName: 'UI/Click[/Mouse/leftButton,/Pen/tip]'
   - m_PersistentCalls:
@@ -227,11 +280,49 @@ MonoBehaviour:
     m_ActionId: 2ec20d90-8627-42e8-9e23-db67cb922d08
     m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.NavigatableMenu,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnMenuToggle
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: c66abac5-3633-4965-9dc0-345381f1f6e7
     m_ActionName: 'UI/ToggleUI[/XInputControllerWindows/buttonNorth,/XInputControllerWindows/select,/XInputControllerWindows/start]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.InfoPanelNavigation,
+          _3DConnections.Runtime.GUI
+        m_MethodName: OnMenuToggle
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 2018e517-002e-46fb-bfe4-2494bdfc88f8
     m_ActionName: 'UI/InfoPanel[/Keyboard/t]'
   - m_PersistentCalls:
@@ -287,6 +378,70 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 9e974731-6b44-429f-85ac-277a6d61d5a2
     m_ActionName: LOD/Toggle Information
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Selection.SelectionManager,
+          _3DConnections.Runtime.Selection
+        m_MethodName: FocusOnNode
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 260993916698367870}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.GraphLODManager,
+          _3DConnections.Runtime.Managers
+        m_MethodName: RefreshAggregatedEdgeColors
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: bead2de1-02a2-4e67-85d3-f8c213abb885
+    m_ActionName: CubeSelection/Focus
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.Managers.NodeProximityController,
+          _3DConnections.Runtime.Managers
+        m_MethodName: ToggleSimulation
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: eb3a8d73-9ee6-4fd1-bc56-b13022dbbcc4
+    m_ActionName: NodeInteractivity/Toggle Proximity Scaling
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: _3DConnections.Runtime.GUI.RadiusNodeScalingIndicator,
+          _3DConnections.Runtime.GUI
+        m_MethodName: Toggle
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 8cecd2ef-d40d-48da-8c2b-89d6e84b7b12
+    m_ActionName: UI/Scale Nodes
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: cameraMovement
@@ -311,7 +466,6 @@ MonoBehaviour:
   nodeAggregationThreshold: 5
   lodUpdateThreshold: 0.02
   clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
-  transitionSpeed: 5
   scaleCurve:
     serializedVersion: 2
     m_Curve:

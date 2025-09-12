@@ -638,6 +638,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "RecalculateNodeCount",
+                    "type": "Button",
+                    "id": "b9ef965a-e04c-4a93-b745-2cc87b208496",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -748,6 +757,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Toggle Proximity Scaling",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4e918431-bc8c-4f89-9616-22a5871bc894",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RecalculateNodeCount",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
