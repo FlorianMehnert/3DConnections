@@ -26,13 +26,15 @@ namespace _3DConnections.Runtime.Managers
         [SerializeField] private GameObject nodePrefab;
         [SerializeField] private NodeSettings nodeSettings = new();
 
-        [Header("Filter Settings")]
-        [SerializeField] private AnalysisFilterSettings filterSettings = new();
+        [Header("Filter Settings")] [SerializeField]
+        private AnalysisFilterSettings filterSettings = new();
 
-        [Header("Analysis Limits")] [SerializeField] private List<string> allowedScriptAssemblies = new() { 
+        [Header("Analysis Limits")] [SerializeField]
+        private List<string> allowedScriptAssemblies = new()
+        {
             // Put your .asmdef assembly names here, e.g.: // "MyGame.Runtime", "MyGame.Editor", "Assembly-CSharp"
         };
-        
+
         [SerializeField] private TraversalSettings traversalSettings = new();
 
         // Services
@@ -134,17 +136,24 @@ namespace _3DConnections.Runtime.Managers
 
                     // Update node count
                     soi.Instance.graph.InvokeOnAllCountChanged();
+
+                    // needs to be invoked once as in the NodeConnectionManager connections are only updated when using simType!=static
+                    NodeConnectionManager.Instance.UpdateConnections();
                 }
                 catch (OperationCanceledException)
                 {
                     _logger.Log("Analysis cancelled by user");
                     onComplete?.Invoke();
+                    NodeConnectionManager.Instance.UpdateConnections();
+                    soi.Instance.graph.InvokeOnAllCountChanged();
                 }
                 catch (Exception e)
                 {
                     _logger.LogError($"Analysis failed: {e.Message}");
                     _progressReporter.CompleteOperation();
                     onComplete?.Invoke();
+                    NodeConnectionManager.Instance.UpdateConnections();
+                    soi.Instance.graph.InvokeOnAllCountChanged();
                 }
             }
         }
