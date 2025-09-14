@@ -1,4 +1,5 @@
 using _3DConnections.Runtime.Nodes.Connection;
+using _3DConnections.Runtime.ScriptableObjects;
 
 namespace _3DConnections.Runtime.Managers
 {
@@ -8,7 +9,6 @@ namespace _3DConnections.Runtime.Managers
     using Unity.Mathematics;
     using UnityEngine;
     using Color = UnityEngine.Color;
-    
     using ScriptableObjectInventory;
     using Scene;
     using Nodes;
@@ -69,12 +69,12 @@ namespace _3DConnections.Runtime.Managers
             ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.AddListener(HandleEvent);
         }
 
-		private void OnDisable()
+        private void OnDisable()
         {
             if (ScriptableObjectInventory.Instance == null) return;
             ScriptableObjectInventory.Instance.conSo.connections.Clear();
             ScriptableObjectInventory.Instance.clearEvent.onEventTriggered.RemoveListener(HandleEvent);
-		}
+        }
 
         /// <summary>
         /// Handle ClearEvent
@@ -86,6 +86,12 @@ namespace _3DConnections.Runtime.Managers
         }
 
         private void Update()
+        {
+            if (ScriptableObjectInventory.Instance.simConfig.SimulationType == SimulationType.Static) return;
+            UpdateConnections();
+        }
+
+        public void UpdateConnections()
         {
             if (ScriptableObjectInventory.Instance.conSo.usingNativeArray)
             {
@@ -137,7 +143,7 @@ namespace _3DConnections.Runtime.Managers
             lineRenderer.name = startNode.name + "-" + endNode.name;
 
             var type = lineObj.GetComponent<EdgeType>();
-            if (type) 
+            if (type)
             {
                 type.connectionType = connectionType;
                 if (codeReference != null)
@@ -145,7 +151,7 @@ namespace _3DConnections.Runtime.Managers
                     type.codeReference = codeReference;
                 }
             }
-            
+
             if (!lineObj.GetComponent<Collider2D>())
             {
                 var edgeCollider2D = lineObj.AddComponent<EdgeCollider2D>();
@@ -179,16 +185,17 @@ namespace _3DConnections.Runtime.Managers
             ScriptableObjectInventory.Instance.conSo.connections.Add(newConnection);
             return newConnection;
         }
-        
+
         private void UpdateEdgeCollider(EdgeCollider2D edgeCollider2D, LineRenderer lineRenderer)
         {
             if (lineRenderer.positionCount < 2) return;
-    
+
             Vector2[] points = new Vector2[lineRenderer.positionCount];
             for (int i = 0; i < lineRenderer.positionCount; i++)
             {
                 points[i] = lineRenderer.transform.InverseTransformPoint(lineRenderer.GetPosition(i));
             }
+
             edgeCollider2D.points = points;
         }
 
@@ -215,7 +222,7 @@ namespace _3DConnections.Runtime.Managers
 
                 connection.lineRenderer.SetPosition(0, startPos.transform.position);
                 connection.lineRenderer.SetPosition(1, endPos.transform.position);
-        
+
                 // UPDATE THE EDGE COLLIDER TOO
                 var edgeCollider = connection.lineRenderer.GetComponent<EdgeCollider2D>();
                 if (edgeCollider != null)
@@ -224,7 +231,6 @@ namespace _3DConnections.Runtime.Managers
                 }
             }
         }
-
 
 
         private void ClearConnections()
@@ -267,7 +273,7 @@ namespace _3DConnections.Runtime.Managers
                 {
                     continue;
                 }
-                
+
 
                 // avoid duplicating spring joints
                 var alreadyExists = false;
@@ -383,7 +389,7 @@ namespace _3DConnections.Runtime.Managers
                 if (!ScriptableObjectInventory.Instance.conSo.connections[i].startNode ||
                     !ScriptableObjectInventory.Instance.conSo.connections[i].endNode ||
                     !ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer) continue;
-            
+
                 // Update the native array
                 ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2] = ScriptableObjectInventory.Instance
                     .conSo.connections[i].startNode.transform.position;
@@ -395,13 +401,14 @@ namespace _3DConnections.Runtime.Managers
                     ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2]);
                 ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer.SetPosition(1,
                     ScriptableObjectInventory.Instance.conSo.NativeConnections[i * 2 + 1]);
-            
+
                 // UPDATE THE EDGE COLLIDER TOO
                 var edgeCollider = ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer
                     .GetComponent<EdgeCollider2D>();
                 if (edgeCollider != null)
                 {
-                    UpdateEdgeCollider(edgeCollider, ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer);
+                    UpdateEdgeCollider(edgeCollider,
+                        ScriptableObjectInventory.Instance.conSo.connections[i].lineRenderer);
                 }
             }
         }

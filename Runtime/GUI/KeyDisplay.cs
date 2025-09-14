@@ -224,6 +224,7 @@ namespace _3DConnections.Runtime.Managers
                         else if (_inputString.StartsWith("5"))
                         {
                             ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.ComponentV2;
+                            ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.ComponentV2;
                             simulationManager.Simulate();
                         }
 
