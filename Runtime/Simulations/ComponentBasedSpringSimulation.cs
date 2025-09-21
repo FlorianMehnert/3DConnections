@@ -1,4 +1,5 @@
 ﻿using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 using UnityEngine;
 using soi = _3DConnections.Runtime.ScriptableObjectInventory.ScriptableObjectInventory;
@@ -20,9 +21,9 @@ namespace _3DConnections.Runtime.Simulations
 
         private static void Simulate(SimulationType simulationType)
         {
-            if (simulationType != SimulationType.Default) return;
+            if (simulationType != SimulationType.UnityPhysics) return;
             soi.Instance?.graph?.NodesAddComponent(typeof(Rigidbody2D));
-            // TODO: implement this again using event? NodeConnectionManager.Instance?.AddSpringsToConnections();
+            NodeConnectionManager.Instance?.AddSpringsToConnections();
         }
 
         public string GetStatus()

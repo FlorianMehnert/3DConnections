@@ -11,12 +11,12 @@
 }
 
 .hidden {
-    display: none;
     transition-duration: 0.3s, 0.3s;
     transition-property: display, opacity;
     transition-timing-function: linear, ease-in-out;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 .visible {
@@ -81,12 +81,12 @@
 }
 
 .unity-text-element {
-    -unity-font-definition: resource('Fonts/Source_Sans_3/static/SourceSans3-Regular');
     font-size: 45px;
     -unity-text-align: upper-center;
     color: rgb(200, 200, 200);
     -unity-font-style: normal;
-    -unity-text-generator: standard;
+    -unity-font-definition: resource('Fonts/Tilt_Neon/static/TiltNeon-Regular SDF 1');
+    -unity-text-generator: advanced;
 }
 
 .unity-button:hover {
@@ -224,7 +224,6 @@
 
 .unity-tab__header {
     background-color: rgba(76, 85, 63, 0.5);
-    flex-grow: 1;
 }
 
 .unity-tab__header:hover {
@@ -339,5 +338,10 @@ VisualElement > .unity-text-field > .unity-text-field__label {
     padding-right: 4px;
     padding-bottom: 4px;
     padding-left: 4px;
-    -unity-font-definition: resource('Fonts/Source_Sans_3/static/SourceSans3-Regular');
+}
+
+.unity-tab-view__content-viewport {
+    flex-grow: 1;
+    background-color: rgb(76, 85, 63);
+    border-top-right-radius: 4px;
 }

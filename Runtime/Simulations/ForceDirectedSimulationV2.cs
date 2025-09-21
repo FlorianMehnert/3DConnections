@@ -1,4 +1,5 @@
 using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.Managers;
 using _3DConnections.Runtime.ScriptableObjects;
 
 namespace _3DConnections.Runtime.Simulations
@@ -270,8 +271,9 @@ namespace _3DConnections.Runtime.Simulations
         }
         private void Simulate(SimulationType simulationType)
         {
-            if (simulationType != SimulationType.ComponentV2) return;
+            if (simulationType != SimulationType.ForceDirected) return;
             Initialize();
+            NodeConnectionManager.Instance?.UpdateConnections();
         }
     }
 }

@@ -198,33 +198,19 @@ namespace _3DConnections.Runtime.Managers
                         if (_inputString.StartsWith("0"))
                         {
                             ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Static;
+                            ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.Static;
                             simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("1"))
                         {
-                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Default;
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.UnityPhysics;
+                            ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.UnityPhysics;
                             simulationManager.Simulate();
                         }
                         else if (_inputString.StartsWith("2"))
                         {
-                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Burst;
-                            simulationManager.Simulate();
-                        }
-
-                        else if (_inputString.StartsWith("3"))
-                        {
-                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.GRIP;
-                            simulationManager.Simulate();
-                        }
-                        else if (_inputString.StartsWith("4"))
-                        {
-                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.MinimalGPU;
-                            simulationManager.Simulate();
-                        }
-                        else if (_inputString.StartsWith("5"))
-                        {
-                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.ComponentV2;
-                            ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.ComponentV2;
+                            ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.ForceDirected;
+                            ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.ForceDirected;
                             simulationManager.Simulate();
                         }
 
