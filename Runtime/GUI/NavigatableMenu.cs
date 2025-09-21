@@ -1,5 +1,4 @@
-﻿
-namespace _3DConnections.Runtime.Managers
+﻿namespace _3DConnections.Runtime.Managers
 {
     using ScriptableObjects;
     using UnityEngine;
@@ -70,7 +69,7 @@ namespace _3DConnections.Runtime.Managers
             }
             if (_menuDocument == null) return;
             var root = _menuDocument.rootVisualElement;
-            var panel = root.Q<VisualElement>("Panel"); 
+            var panel = root.Q<VisualElement>("Panel");
             if (panel.ClassListContains("visible"))
             {
                 panel.RemoveFromClassList("visible");
@@ -82,6 +81,9 @@ namespace _3DConnections.Runtime.Managers
                 panel.RemoveFromClassList("hidden");
                 panel.AddToClassList("visible");
                 menuState.menuOpen = true;
+                var parent = root.parent;
+                root.RemoveFromHierarchy();
+                parent.Add(root);
             }
         }
 
