@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/3DConnections/Resources/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=4beeb2febbed314629a629509bfb8d5e&amp;type=3#SettingsMenu" />
     <ui:VisualElement style="width: 1px; height: 0;" />
-    <ui:VisualElement name="Root" class="panel" style="display: flex; margin-top: 0;">
-        <ui:VisualElement name="Panel" class="hidden" style="flex-grow: 1; justify-content: center;">
+    <ui:VisualElement name="Panel" class="panel hidden" style="display: flex; margin-top: 0;">
+        <ui:VisualElement name="MenuWidth" style="flex-grow: 1; justify-content: center;">
             <ui:TabView reorderable="true" name="tabs">
                 <ui:Tab label="Start" name="AnalysisTab" closeable="false">
                     <ui:VisualElement name="Container" class="menu">
