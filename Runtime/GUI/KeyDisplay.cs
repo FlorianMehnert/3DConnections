@@ -200,18 +200,21 @@ namespace _3DConnections.Runtime.Managers
                             ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.Static;
                             ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.Static;
                             simulationManager.Simulate();
+                            _inputString = "Remove the simulation";
                         }
                         else if (_inputString.StartsWith("1"))
                         {
                             ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.UnityPhysics;
                             ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.UnityPhysics;
                             simulationManager.Simulate();
+                            _inputString =  "Apply a spring component based simulation";
                         }
                         else if (_inputString.StartsWith("2"))
                         {
                             ScriptableObjectInventory.Instance.simulationParameters.simulationType = SimulationType.ForceDirected;
                             ScriptableObjectInventory.Instance.simConfig.SimulationType = SimulationType.ForceDirected;
                             simulationManager.Simulate();
+                            _inputString = "Apply a custom force-directed simulation";
                         }
 
                         _inputString = "";

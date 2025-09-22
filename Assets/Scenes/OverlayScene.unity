@@ -412,7 +412,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1138076968}
   m_SourcePrefab: {fileID: 100100000, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
 --- !u!1 &487318149
 GameObject:
@@ -578,6 +581,7 @@ GameObject:
   - component: {fileID: 574136029}
   - component: {fileID: 574136034}
   - component: {fileID: 574136035}
+  - component: {fileID: 574136036}
   m_Layer: 5
   m_Name: SettingsMenu
   m_TagString: SettingsMenu
@@ -652,6 +656,19 @@ MonoBehaviour:
   uiDocumentLeft: {fileID: 618342027}
   clusterNodePrefab: {fileID: 3223943839497402569, guid: 00f24ce43b2f1f54b9a9d2d898d5e63d, type: 3}
   analyzeEventChannel: {fileID: 11400000, guid: 6422ab8ac61a1d042979a0908f199ac3, type: 2}
+--- !u!114 &574136036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574136028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c32271ce756c47ae901bef0793ed1123, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _3DConnections.Runtime.GUI::_3DConnections.Runtime.GUI.MenuCapture
+  renderTexture: {fileID: 8400000, guid: 1f15f195a0a0bff4aae41bdfb05dbded, type: 2}
 --- !u!114 &587484234 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8882412740120550191, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
@@ -1411,6 +1428,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1138076962 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+  m_PrefabInstance: {fileID: 315801065}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1138076968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1138076962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b17aea43e05b4db8b1c982bf4a6c5be9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _3DConnections.Runtime.GUI::_3DConnections.Runtime.GUI._3DConnections.Runtime.GUI.NodegraphScreenshot
+  orthoCamera: {fileID: 907117478}
+  width: 4096
+  height: 4096
 --- !u!1 &1237854937
 GameObject:
   m_ObjectHideFlags: 0
