@@ -433,8 +433,7 @@ namespace _3DConnections.Runtime.Managers
                         {
                             col = go.AddComponent<ColoredObject>();
                             var emissionColor = color * 5.0f;
-                            col.Highlight(color, duration, actionAfterHighlight: () => Destroy(col),
-                                emissionColor: emissionColor);
+                            col.Highlight(color, duration, actionAfterHighlight: () => Destroy(col));
                         }
                     }
                 }

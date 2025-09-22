@@ -2,61 +2,55 @@ namespace _3DConnections.Runtime.Nodes
 {
     using UnityEngine;
     using UnityEngine.Events;
-    using Managers.Scene;
-    using System.Linq;
 
     public class ColoredObject : MonoBehaviour
     {
-        [SerializeField] private Color originalColor;
+        [SerializeField] private Color originalColor = Color.white;
         private Renderer _objectRenderer;
-        private int _targetLayerMask;
+        private Material _materialInstance;
 
         private bool _isHighlighting;
         private float _highlightDuration = 1.0f;
         private bool _highlightForever;
         private float _timer;
         private UnityAction _actionAfterHighlight;
-        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+        private static readonly int ColorProperty = Shader.PropertyToID("_Color");
 
         private void Awake()
         {
             _objectRenderer = GetComponent<Renderer>();
-            if (_objectRenderer == null || _objectRenderer.material == null) return;
-            if (_objectRenderer is LineRenderer lineRenderer)
+            if (_objectRenderer == null) return;
+
+            // Create unique material instance
+            _materialInstance = _objectRenderer.material;
+
+            if (_objectRenderer is LineRenderer)
             {
-                originalColor = lineRenderer.startColor;
+                // Our custom shader drives _Color, not start/endColor
+                if (_materialInstance.HasProperty(ColorProperty))
+                    originalColor = _materialInstance.GetColor(ColorProperty);
             }
             else
             {
-                originalColor = _objectRenderer.material.color;
+                originalColor = _materialInstance.color;
             }
         }
-
-        private void Start()
-        {
-            _objectRenderer = GetComponent<Renderer>();
-            if (_objectRenderer == null || _objectRenderer.material == null) return;
-            if (_objectRenderer is LineRenderer lineRenderer)
-            {
-                originalColor = lineRenderer.startColor;
-            }
-            else
-            {
-                originalColor = _objectRenderer.material.color;
-            }
-        }
-
 
         private void Update()
         {
             if (!_isHighlighting) return;
+
             _timer += Time.deltaTime;
             if (_highlightForever) return;
-            if (!(_timer >= _highlightDuration)) return;
-            _isHighlighting = false;
-            _actionAfterHighlight?.Invoke();
-            ResetColor();
+
+            if (_timer >= _highlightDuration)
+            {
+                _isHighlighting = false;
+                _actionAfterHighlight?.Invoke();
+                ResetColor();
+            }
         }
 
         public void ManualClearHighlight()
@@ -70,33 +64,32 @@ namespace _3DConnections.Runtime.Nodes
 
         private void ResetColor()
         {
-            if (!_objectRenderer || !_objectRenderer.material) return;
-            if (_objectRenderer is LineRenderer lineRenderer)
+            if (!_materialInstance) return;
+
+            if (_objectRenderer is LineRenderer)
             {
-                lineRenderer.startColor = originalColor;
-                lineRenderer.endColor = originalColor;
-                lineRenderer.material.DisableKeyword("_EMISSION");
+                _materialInstance.SetColor(ColorProperty, originalColor);
             }
             else
             {
-                _objectRenderer.material.color = originalColor;
-                _objectRenderer.material.DisableKeyword("_EMISSION");
+                _materialInstance.color = originalColor;
+                _materialInstance.DisableKeyword("_EMISSION");
             }
         }
 
         public void SetToOriginalColor()
         {
-            if (!_objectRenderer || !_objectRenderer.material) return;
+            if (!_materialInstance) return;
 
-            if (_objectRenderer is LineRenderer lineRenderer)
+            if (_objectRenderer is LineRenderer)
             {
-                lineRenderer.startColor = originalColor;
-                lineRenderer.endColor = originalColor;
+                _materialInstance.SetColor(ColorProperty, originalColor);
             }
             else
             {
-                _objectRenderer.material.color = originalColor;
+                _materialInstance.color = originalColor;
             }
+
             _isHighlighting = false;
             _highlightForever = false;
         }
@@ -104,16 +97,16 @@ namespace _3DConnections.Runtime.Nodes
         public void SetOriginalColor(Color color)
         {
             originalColor = color;
+            if (!_materialInstance) return;
+
+            if (_objectRenderer is LineRenderer)
+                _materialInstance.SetColor(ColorProperty, originalColor);
+            else
+                _materialInstance.color = originalColor;
         }
 
-        public Color GetOriginalColor()
-        {
-            return originalColor;
-        }
+        public Color GetOriginalColor() => originalColor;
 
-        /// <summary>
-        /// Highlights the LineRenderer by changing its color temporarily.
-        /// </summary>
         public void Highlight(
             Color highlightColor,
             float duration,
@@ -121,31 +114,23 @@ namespace _3DConnections.Runtime.Nodes
             UnityAction actionAfterHighlight = null,
             Color emissionColor = default)
         {
-            if (!_objectRenderer || !_objectRenderer.material)
+            if (!_materialInstance)
                 return;
 
-            // Handle LineRenderer separately
-            if (_objectRenderer is LineRenderer lineRenderer)
+            if (_objectRenderer is LineRenderer)
             {
-                lineRenderer.startColor = highlightColor;
-                lineRenderer.endColor = highlightColor;
-
-                lineRenderer.material.EnableKeyword("_EMISSION");
-                if (emissionColor == default)
-                    emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
-
-                lineRenderer.material.SetColor(EmissionColor, emissionColor);
+                // Transparent-with-alpha shader: just set _Color
+                _materialInstance.SetColor(ColorProperty, highlightColor);
             }
             else
             {
-                _objectRenderer.material.color = highlightColor;
-                _objectRenderer.material.EnableKeyword("_EMISSION");
+                _materialInstance.color = highlightColor;
+                _materialInstance.EnableKeyword("_EMISSION");
                 if (emissionColor == default)
                     emissionColor = Color.HSVToRGB(0.1f, 1f, 1f) * 5.0f;
-                _objectRenderer.material.SetColor(EmissionColor, emissionColor);
+                _materialInstance.SetColor(EmissionColor, emissionColor);
             }
 
-            // Common highlight logic
             _highlightDuration = duration;
             _timer = 0f;
             _isHighlighting = true;

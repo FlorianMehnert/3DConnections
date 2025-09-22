@@ -289,6 +289,10 @@ PrefabInstance:
       propertyPath: parentObject
       value: 
       objectReference: {fileID: 108217077}
+    - target: {fileID: 1241412518822067057, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_RenderPostProcessing
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2167307905950667471, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_Name
       value: OverlayCamera
@@ -408,6 +412,18 @@ PrefabInstance:
     - target: {fileID: 5073936627618289257, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_HDR
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_TargetTexture
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6810327768359966640, guid: dce885e693d88b282ae0ce1d683d7d33, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 4294967295
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

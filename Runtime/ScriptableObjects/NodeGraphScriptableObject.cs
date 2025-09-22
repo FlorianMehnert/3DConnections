@@ -404,12 +404,10 @@ namespace _3DConnections.Runtime.ScriptableObjects
                     // Highlight matching nodes
                     if (hasSearchTerm)
                     {
-                        var emissionColor = searchHighlightColor * searchHighlightIntensity;
                         coloredObject.Highlight(
                             highlightColor: searchHighlightColor,
                             duration: 1f,
-                            highlightForever: true,
-                            emissionColor: emissionColor
+                            highlightForever: true
                         );
 
                         // Also increase text size for better visibility

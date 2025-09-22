@@ -5,36 +5,39 @@
     public class NodegraphScreenshot : MonoBehaviour
     {
         public Camera orthoCamera;
-        public int width = 4096;
-        public int height = 4096;
+        public int width = 1024;
+        public int height = 1024;
 
         [ContextMenu("Capture Transparent")]
-        private void Capture()
+        void Capture()
         {
-            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
-            {
-                antiAliasing = 8
-            };
+            // Create RT with alpha support
+            RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+            rt.Create();
+
+            // Setup camera
             orthoCamera.targetTexture = rt;
-
             orthoCamera.clearFlags = CameraClearFlags.SolidColor;
-            orthoCamera.backgroundColor = new Color(0, 0, 0, 0);
+            orthoCamera.backgroundColor = new Color(0, 0, 0, 0); // transparent!
 
+            // Render into RT
             orthoCamera.Render();
 
+            // Copy to Texture2D
             RenderTexture.active = rt;
-            var tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             tex.Apply();
 
+            // Reset
             orthoCamera.targetTexture = null;
             RenderTexture.active = null;
-            Destroy(rt);
+            rt.Release();
 
-            var bytes = tex.EncodeToPNG();
-            var path = Application.dataPath + "/../nodegraph_transparent.png";
+            // Save to disk
+            byte[] bytes = tex.EncodeToPNG();
+            string path = Application.dataPath + "/capture.png";
             System.IO.File.WriteAllBytes(path, bytes);
-
             Debug.Log("Saved capture with transparency to " + path);
         }
     }
