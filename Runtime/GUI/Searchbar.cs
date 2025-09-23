@@ -417,7 +417,7 @@ namespace _3DConnections.Runtime.GUI
             {
                 if (edge.coloredObject != null)
                 {
-                    edge.coloredObject.ManualClearHighlight();
+                    edge.coloredObject.SetToOriginalColor();
                 }
                 
                 // Restore original line width and color
@@ -426,13 +426,6 @@ namespace _3DConnections.Runtime.GUI
                 {
                     edge.lineRenderer.startWidth = originalWidth;
                     edge.lineRenderer.endWidth = originalWidth;
-                }
-                    
-                // Restore line renderer material color
-                var material = edge.lineRenderer.material;
-                if (material != null)
-                {
-                    material.color = Color.white;
                 }
             }
         }
