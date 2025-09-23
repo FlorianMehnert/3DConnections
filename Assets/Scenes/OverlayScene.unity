@@ -685,6 +685,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: _3DConnections.Runtime.GUI::_3DConnections.Runtime.GUI.MenuCapture
   renderTexture: {fileID: 8400000, guid: 1f15f195a0a0bff4aae41bdfb05dbded, type: 2}
+  uiCamera: {fileID: 907117478}
 --- !u!114 &587484234 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8882412740120550191, guid: ded277e1a6cab38f2adc685c0f15384a, type: 3}
