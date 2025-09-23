@@ -81,19 +81,16 @@ namespace _3DConnections.Runtime.Managers
 
         private void OnGUI()
         {
-            // Handle input events here instead of Update - OnGUI is event-driven [[4]]
             if (Event.current.type == EventType.KeyDown)
             {
                 HandleKeyInput(Event.current.keyCode);
             }
 
-            // Set the position and size of the text area
             const float x = 10f;
             var y = Screen.height - 50f;
             const float width = 500f;
             const float height = 40f;
 
-            // Draw the input string on the screen
             GUI.Label(new Rect(x, y, width, height), _inputString, _style);
             GUI.Label(new Rect(x, y - height, width, height), _debugString, _debugStyle);
         }
@@ -101,48 +98,32 @@ namespace _3DConnections.Runtime.Managers
         private void HandleKeyInput(KeyCode keyCode)
         {
             _lastInputTime = Time.time;
-            
-            // Start fade coroutine
-            if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
-            _fadeCoroutine = StartCoroutine(FadeTextAfterDelay());
-            
-            // Start clear input coroutine
-            if (_clearInputCoroutine != null) StopCoroutine(_clearInputCoroutine);
-            _clearInputCoroutine = StartCoroutine(ClearInputAfterDelay());
 
-            // Handle special cases for Shift + key combinations
+            if (keyCode == KeyCode.Return || keyCode == KeyCode.KeypadEnter)
+            {
+                ProcessCommands();
+                _inputString = "";
+                return;
+            }
+
+            if (keyCode == KeyCode.Backspace)
+            {
+                if (_inputString.Length > 0)
+                    _inputString = _inputString.Remove(_inputString.Length - 1);
+                return;
+            }
+
+            string character;
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
-            {
-                if (keyCode == KeyCode.Backspace)
-                {
-                    _inputString = "";
-                    return;
-                }
-                
-                _inputString += GetShiftedCharacter(keyCode);
-            }
+                character = GetShiftedCharacter(keyCode);
             else
-            {
-                if (keyCode == KeyCode.Backspace)
-                {
-                    if (_inputString.Length > 0)
-                        _inputString = _inputString.Remove(_inputString.Length - 1);
-                    return;
-                }
-                
-                if (ShouldIgnoreKey(keyCode) && !IsConfirm())
-                    return;
-                    
-                _inputString += GetRegularCharacter(keyCode);
-            }
+                character = GetRegularCharacter(keyCode);
 
-            // Check for commands
-            ProcessCommands();
-
-            // Limit the input string length to avoid overflow
-            if (_inputString.Length > 50) 
-                _inputString = _inputString[^50..];
+            // Only add the character if it's not empty
+            if (!string.IsNullOrEmpty(character))
+                _inputString += character;
         }
+
 
         private string GetShiftedCharacter(KeyCode keyCode)
         {
@@ -192,10 +173,20 @@ namespace _3DConnections.Runtime.Managers
                 KeyCode.Keypad1 => "1",
                 KeyCode.Keypad2 => "2",
                 KeyCode.Keypad3 => "3",
-                KeyCode.Return => "",
-                _ => keyCode.ToString()
+                KeyCode.Colon => ":",
+                KeyCode.Semicolon => ";",
+                KeyCode.Comma => ",",
+                KeyCode.Minus => "-",
+                KeyCode.Equals => "=",
+                KeyCode.Slash => "/",
+                KeyCode.Backslash => "\\",
+                KeyCode.Quote => "'",
+                KeyCode.LeftBracket => "[",
+                KeyCode.RightBracket => "]",
+                _ => ""
             };
         }
+
 
         private bool ShouldIgnoreKey(KeyCode keyCode)
         {
@@ -206,25 +197,51 @@ namespace _3DConnections.Runtime.Managers
 
         private void ProcessCommands()
         {
-            if (_inputString.Contains(":q") && IsConfirm())
+            if (_inputString == ":q")
             {
                 ExitApplication();
             }
-            else if (_inputString.Contains("loadscene") && IsConfirm())
+            else if (_inputString == "loadscene")
             {
                 HandleLoadScene();
             }
-            else if (_inputString.Contains("stats") && IsConfirm())
+            else if (_inputString == "stats")
             {
                 HandleStats();
             }
-            else if ((_inputString.Contains("clear") || _inputString.Contains("reset")) && IsConfirm())
+            else if (_inputString is "clear" or "reset")
             {
                 clearEvent.TriggerEvent();
             }
-            else if (IsConfirm())
+            else if (_inputString == "0" || _inputString.StartsWith("0"))
             {
-                HandleSimulationCommands();
+                SetSimulationType(SimulationType.Static, "Remove the simulation");
+                FindFirstObjectByType<SimulationManager>()?.Simulate();
+            }
+            else if (_inputString == "1" || _inputString.StartsWith("1"))
+            {
+                SetSimulationType(SimulationType.UnityPhysics, "Apply a spring component based simulation");
+                FindFirstObjectByType<SimulationManager>()?.Simulate();
+            }
+            else if (_inputString == "2" || _inputString.StartsWith("2"))
+            {
+                SetSimulationType(SimulationType.ForceDirected, "Apply a custom force-directed simulation");
+                FindFirstObjectByType<SimulationManager>()?.Simulate();
+            }
+            else if (_inputString.EndsWith("None"))
+            {
+                // Handle the case where "None" is added at the end of input
+                string baseInput = _inputString.Replace("None", "").Trim();
+                if (baseInput == "1")
+                {
+                    SetSimulationType(SimulationType.UnityPhysics, "Apply a spring component based simulation");
+                    FindFirstObjectByType<SimulationManager>()?.Simulate();
+                }
+                else if (baseInput == "2")
+                {
+                    SetSimulationType(SimulationType.ForceDirected, "Apply a custom force-directed simulation");
+                    FindFirstObjectByType<SimulationManager>()?.Simulate();
+                }
             }
         }
 
