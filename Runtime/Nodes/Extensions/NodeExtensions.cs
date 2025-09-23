@@ -24,28 +24,29 @@ namespace _3DConnections.Runtime.Nodes.Extensions
         public static void SetNodeColor(this GameObject go, Object obj, Color gameObjectColor, Color componentColor,
             Color scriptableObjectColor, Color assetColor, bool isAsset = false, Color overrideColor = default)
         {
-            var componentRenderer = go.GetComponent<Renderer>();
-            if (!componentRenderer) return;
+            var coloredObject = go.GetComponent<ColoredObject>();
+            if (!coloredObject) return;
             if (overrideColor != default)
             {
-                componentRenderer.material.color = overrideColor;
+                coloredObject.SetOriginalColor(overrideColor);
                 return;
             }
 
             if (isAsset)
             {
-                componentRenderer.material.color = assetColor;
+                coloredObject.SetOriginalColor(assetColor);
             }
             else
             {
-                componentRenderer.material.color = obj switch
+                coloredObject.SetOriginalColor(obj switch
                 {
                     GameObject => gameObjectColor,
                     Component => componentColor,
                     ScriptableObject => scriptableObjectColor,
                     _ => Color.black
-                };
+                });
             }
+            coloredObject.SetToOriginalColor();
         }
 
         public static void ScaleNodeUsingComplexityMap(this GameObject nodeObject, Component component,

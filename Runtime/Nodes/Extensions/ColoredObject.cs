@@ -28,7 +28,6 @@ namespace _3DConnections.Runtime.Nodes
 
             if (_objectRenderer is LineRenderer)
             {
-                // Our custom shader drives _Color, not start/endColor
                 if (_materialInstance.HasProperty(ColorProperty))
                     originalColor = _materialInstance.GetColor(ColorProperty);
             }
@@ -87,7 +86,7 @@ namespace _3DConnections.Runtime.Nodes
             }
             else
             {
-                _materialInstance.color = originalColor;
+                _objectRenderer.material.color = originalColor;
             }
 
             _isHighlighting = false;
@@ -119,7 +118,6 @@ namespace _3DConnections.Runtime.Nodes
 
             if (_objectRenderer is LineRenderer)
             {
-                // Transparent-with-alpha shader: just set _Color
                 _materialInstance.SetColor(ColorProperty, highlightColor);
             }
             else
