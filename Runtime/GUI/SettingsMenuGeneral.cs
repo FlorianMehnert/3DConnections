@@ -1,4 +1,5 @@
 using _3DConnections.Runtime.Events;
+using _3DConnections.Runtime.Simulations;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -224,6 +225,8 @@ namespace _3DConnections.Runtime.Managers
                     var pcra = ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive;
                     NodeConnectionManager.SetConnectionType("parentChildConnection", !pcra);
                     ScriptableObjectInventory.Instance.conSo.parentChildReferencesActive = !pcra;
+        
+                    RefreshSimulation();
                 };
                 _hrButton.clicked += _hrButtonHandler;
             }
@@ -236,6 +239,8 @@ namespace _3DConnections.Runtime.Managers
                     var cra = ScriptableObjectInventory.Instance.conSo.componentReferencesActive;
                     NodeConnectionManager.SetConnectionType("componentConnection", !cra);
                     ScriptableObjectInventory.Instance.conSo.componentReferencesActive = !cra;
+        
+                    RefreshSimulation();
                 };
                 _crButton.clicked += _crButtonHandler;
             }
@@ -248,6 +253,8 @@ namespace _3DConnections.Runtime.Managers
                     var fra = ScriptableObjectInventory.Instance.conSo.fieldReferencesActive;
                     NodeConnectionManager.SetConnectionType("referenceConnection", !fra);
                     ScriptableObjectInventory.Instance.conSo.fieldReferencesActive = !fra;
+        
+                    RefreshSimulation();
                 };
                 _srButton.clicked += _srButtonHandler;
             }
@@ -259,9 +266,25 @@ namespace _3DConnections.Runtime.Managers
                 var dra = ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive;
                 NodeConnectionManager.SetConnectionType("dynamicComponentConnection", !dra);
                 ScriptableObjectInventory.Instance.conSo.dynamicReferencesActive = !dra;
+    
+                RefreshSimulation();
             };
             _drButton.clicked += _drButtonHandler;
         }
+        
+        /// <summary>
+        /// Refreshes the force-directed simulation when connection visibility changes
+        /// </summary>
+        private void RefreshSimulation()
+        {
+            // Find the ForceDirectedSimulationV2 component and refresh it
+            var simulation = FindFirstObjectByType<ForceDirectedSimulationV2>();
+            if (simulation != null && simulation.activated)
+            {
+                simulation.RefreshConnectionVisibility();
+            }
+        }
+
 
         private void RemoveUICallbacks()
         {

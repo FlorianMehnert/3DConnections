@@ -19,7 +19,7 @@ namespace _3DConnections.Runtime.Simulations
         public float attractionStrength = 10f;
         public float dampingFactor = 0.9f;
         public float minDistanceToRepel = 1f;
-        public float updateInterval = 0.02f; // Time in seconds between layout updates
+        public float updateInterval = 0.02f;
 
         private List<GameObject> _nodes;
         private NativeArray<float3> _positions;
@@ -60,18 +60,73 @@ namespace _3DConnections.Runtime.Simulations
                 
             }
 
-            // Create connection arrays
-            var connections = ScriptableObjectInventory.Instance.conSo.connections;
-            _connectionStartIndices = new NativeArray<int>(connections.Count, Allocator.Persistent);
-            _connectionEndIndices = new NativeArray<int>(connections.Count, Allocator.Persistent);
+            var allConnections = ScriptableObjectInventory.Instance.conSo.connections;
+            var visibleConnections = FilterVisibleConnections(allConnections);
 
-            for (var i = 0; i < connections.Count; i++)
+            _connectionStartIndices = new NativeArray<int>(visibleConnections.Count, Allocator.Persistent);
+            _connectionEndIndices = new NativeArray<int>(visibleConnections.Count, Allocator.Persistent);
+
+            for (var i = 0; i < visibleConnections.Count; i++)
             {
-                _connectionStartIndices[i] = _nodes.IndexOf(connections[i].startNode);
-                _connectionEndIndices[i] = _nodes.IndexOf(connections[i].endNode);
+                _connectionStartIndices[i] = _nodes.IndexOf(visibleConnections[i].startNode);
+                _connectionEndIndices[i] = _nodes.IndexOf(visibleConnections[i].endNode);
             }
 
             activated = true;
+        }
+
+        /// <summary>
+        /// Filters connections based on their type and visibility settings
+        /// </summary>
+        private List<NodeConnection> FilterVisibleConnections(List<NodeConnection> allConnections)
+        {
+            var conSo = ScriptableObjectInventory.Instance.conSo;
+            var visibleConnections = new List<NodeConnection>();
+
+            foreach (var connection in allConnections)
+            {
+                bool isVisible = connection.connectionType switch
+                {
+                    "parentChildConnection" => conSo.parentChildReferencesActive,
+                    "componentConnection" => conSo.componentReferencesActive,
+                    "referenceConnection" => conSo.fieldReferencesActive,
+                    "dynamicComponentConnection" => conSo.dynamicReferencesActive,
+                    _ => true // Default to visible for unknown types
+                };
+
+                if (isVisible)
+                {
+                    visibleConnections.Add(connection);
+                }
+            }
+
+            return visibleConnections;
+        }
+
+        /// <summary>
+        /// Refreshes the simulation when connection visibility changes
+        /// </summary>
+        public void RefreshConnectionVisibility()
+        {
+            if (!activated || _nodes == null || _nodes.Count == 0) return;
+            
+            // Re-initialize connection arrays with filtered connections
+            var allConnections = ScriptableObjectInventory.Instance.conSo.connections;
+            var visibleConnections = FilterVisibleConnections(allConnections);
+
+            // Dispose old connection arrays
+            if (_connectionStartIndices.IsCreated) _connectionStartIndices.Dispose();
+            if (_connectionEndIndices.IsCreated) _connectionEndIndices.Dispose();
+
+            // Create new connection arrays with only visible connections
+            _connectionStartIndices = new NativeArray<int>(visibleConnections.Count, Allocator.Persistent);
+            _connectionEndIndices = new NativeArray<int>(visibleConnections.Count, Allocator.Persistent);
+
+            for (var i = 0; i < visibleConnections.Count; i++)
+            {
+                _connectionStartIndices[i] = _nodes.IndexOf(visibleConnections[i].startNode);
+                _connectionEndIndices[i] = _nodes.IndexOf(visibleConnections[i].endNode);
+            }
         }
 
         private void OnEnable()
@@ -235,7 +290,7 @@ namespace _3DConnections.Runtime.Simulations
                     }
                 }
 
-                // Calculate attractive forces
+                // Calculate attractive forces - only for visible connections [[11]]
                 for (var i = 0; i < ConnectionStartIndices.Length; i++)
                 {
                     var startIndex = ConnectionStartIndices[i];
