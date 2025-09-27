@@ -1,0 +1,104 @@
+﻿/* Asset Reference Node Styles */
+.asset-node {
+    background-color: #2d4a2d;
+    border-color: #4a7c4a;
+    border-width: 2px;
+    border-radius: 6px;
+    min-width: 180px;
+}
+
+.scriptableobject-node {
+    background-color: #4a2d4a;
+    border-color: #7c4a7c;
+}
+
+.sprite-node {
+    background-color: #2d4a4a;
+    border-color: #4a7c7c;
+}
+
+.material-node {
+    background-color: #4a4a2d;
+    border-color: #7c7c4a;
+}
+
+.prefab-node {
+    background-color: #4a2d2d;
+    border-color: #7c4a4a;
+}
+
+.asset-content-container {
+    padding: 4px;
+    flex-direction: column;
+}
+
+.asset-icon-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.asset-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+.scriptableobject-icon {
+    background-color: #9C27B0;
+}
+
+.sprite-icon {
+    background-color: #00BCD4;
+}
+
+.material-icon {
+    background-color: #CDDC39;
+}
+
+.prefab-icon {
+    background-color: #F44336;
+}
+
+.asset-icon-default {
+    background-color: #607D8B;
+}
+
+.asset-info-container {
+    flex-direction: column;
+    align-items: center;
+}
+
+.asset-type-label {
+    color: #e0e0e0;
+    font-size: 10px;
+    font-style: bold;
+}
+
+.asset-path-label {
+    color: #aaaaaa;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 160px;
+}
+
+.asset-preview {
+    margin-top: 4px;
+    border-radius: 2px;
+}
+
+.asset-reference-port {
+    background-color: #9C27B0;
+}
+
+.asset-reference-edge {
+    --edge-color: #9C27B0;
+    --edge-width: 2px;
+}
+
+.asset-reference-edge:hover {
+    --edge-color: #BA68C8;
+    --edge-width: 3px;
+}
