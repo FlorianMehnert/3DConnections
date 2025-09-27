@@ -45,9 +45,9 @@
             base.BuildContextualMenu(evt);
 
             evt.menu.AppendAction("Highlight",
-                _ => SetHighlighted(true),
+                _ => SetHighlighted(true, Color.red),
                 DropdownMenuAction.AlwaysEnabled);
-            evt.menu.AppendAction("Disable Highlight", _ => SetHighlighted(false), DropdownMenuAction.AlwaysEnabled);
+            evt.menu.AppendAction("Disable Highlight", _ => SetHighlighted(false, null), DropdownMenuAction.AlwaysEnabled);
 
             // Add Focus View option
             evt.menu.AppendAction("Focus View", _ => m_GraphView.FocusOnNode(this), DropdownMenuAction.AlwaysEnabled);
@@ -179,34 +179,33 @@
 
             RefreshExpandedState();
 
-            // Notify graph view that expansion state changed so it can update edge visibility
-            m_GraphView?.ApplyFilters();
+            // ONLY update edge visibility for THIS node, don't call ApplyFilters()
             m_GraphView?.UpdateEdgeVisibilityForNode(this);
         }
+
 
         public override void OnSelected()
         {
             base.OnSelected();
             Selection.activeGameObject = m_GameObject;
-            SetHighlighted(true);
+            SetHighlighted(true, Color.yellow);
         }
 
         public override void OnUnselected()
         {
             base.OnUnselected();
-            SetHighlighted(false);
+            SetHighlighted(false, Color.red);
         }
 
-        public void SetHighlighted(bool highlighted)
+        public void SetHighlighted(bool highlighted, Color? highlightColor)
         {
             var borderStyle = m_NodeBorder.style;
-            var highlightColor = Color.red;
-            if (highlighted)
+            if (highlighted && highlightColor.HasValue)
             {
-                borderStyle.borderBottomColor = highlightColor;
-                borderStyle.borderTopColor = highlightColor;
-                borderStyle.borderLeftColor = highlightColor;
-                borderStyle.borderRightColor = highlightColor;
+                borderStyle.borderBottomColor = highlightColor.Value;
+                borderStyle.borderTopColor = highlightColor.Value;
+                borderStyle.borderLeftColor = highlightColor.Value;
+                borderStyle.borderRightColor = highlightColor.Value;
                 borderStyle.borderBottomWidth = 2;
                 borderStyle.borderTopWidth = 2;
                 borderStyle.borderLeftWidth = 2;
@@ -214,14 +213,17 @@
             }
             else
             {
-                borderStyle.borderBottomColor = highlightColor;
-                borderStyle.borderTopColor = highlightColor;
-                borderStyle.borderLeftColor = highlightColor;
-                borderStyle.borderRightColor = highlightColor;
-                borderStyle.borderBottomWidth = 0;
-                borderStyle.borderTopWidth = 0;
-                borderStyle.borderLeftWidth = 0;
-                borderStyle.borderRightWidth = 0;
+                if (highlightColor.HasValue)
+                {
+                    borderStyle.borderBottomColor = highlightColor.Value;
+                    borderStyle.borderTopColor = highlightColor.Value;
+                    borderStyle.borderLeftColor = highlightColor.Value;
+                    borderStyle.borderRightColor = highlightColor.Value;
+                    borderStyle.borderBottomWidth = 0;
+                    borderStyle.borderTopWidth = 0;
+                    borderStyle.borderLeftWidth = 0;
+                    borderStyle.borderRightWidth = 0;
+                }
             }
         }
 

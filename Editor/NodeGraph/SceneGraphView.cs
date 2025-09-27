@@ -129,7 +129,7 @@ namespace _3DConnections.Editor.NodeGraph
             // First pass: clear highlights
             foreach (var kvp in m_GameObjectNodes)
             {
-                kvp.Value.SetHighlighted(false);
+                kvp.Value.SetHighlighted(false, null);
             }
 
             ClearSelection();
@@ -188,7 +188,7 @@ namespace _3DConnections.Editor.NodeGraph
                 }
 
                 // Highlight the focused node
-                m_FocusedNode.SetHighlighted(true);
+                m_FocusedNode.SetHighlighted(true, Color.blueViolet);
 
                 // Show only edges between visible nodes
                 foreach (var edge in graphElements.OfType<Edge>())
@@ -204,6 +204,29 @@ namespace _3DConnections.Editor.NodeGraph
                     else
                     {
                         edge.style.display = DisplayStyle.None;
+                    }
+                }
+
+                foreach (var node in relatedNodes)
+                {
+                    // Apply search filter and highlight matches
+                    var matchesSearch = !string.IsNullOrEmpty(m_SearchFilter) &&
+                                        node.name.ToLower().Contains(m_SearchFilter);
+
+                    if (visible)
+                    {
+                        if (matchesSearch)
+                        {
+                            node.SetHighlighted(true, Color.red);
+                        }
+                        else
+                        {
+                            node.SetHighlighted(false, null);
+                        }
+                    }
+                    else
+                    {
+                        node.style.display = DisplayStyle.None;
                     }
                 }
             }
@@ -233,7 +256,7 @@ namespace _3DConnections.Editor.NodeGraph
 
                         if (matchesSearch)
                         {
-                            node.SetHighlighted(true);
+                            node.SetHighlighted(true, Color.red);
                         }
                     }
                     else
@@ -722,35 +745,58 @@ namespace _3DConnections.Editor.NodeGraph
         }
 
         public void UpdateEdgeVisibilityForNode(GameObjectGraphNode node)
+{
+    foreach (var edge in graphElements.OfType<Edge>())
+    {
+        bool shouldUpdateEdge = false;
+        bool shouldShow = true;
+
+        // Check if this edge is connected to the toggled node
+        if (edge.output?.node == node)
         {
-            foreach (var edge in graphElements.OfType<Edge>())
+            shouldUpdateEdge = true;
+            // If the node is collapsed and this is a component reference output port, hide the edge
+            if (!node.IsExpanded && node.GetComponentElementFromPort(edge.output) != null)
             {
-                // Check if the edge is connected to any of the node's component reference output ports
-                bool isConnectedToCollapsedPort = false;
-
-                // Check output port
-                if (edge.output != null && edge.output.node == node)
-                {
-                    // If the node is collapsed and this is a component reference output port, hide the edge
-                    if (!node.IsExpanded && node.GetComponentElementFromPort(edge.output) != null)
-                    {
-                        isConnectedToCollapsedPort = true;
-                    }
-                }
-
-                // Check input port (for reference input port, you may want to hide those edges too)
-                if (edge.input != null && edge.input.node == node)
-                {
-                    // If the node is collapsed and this is a component reference input port, hide the edge
-                    if (!node.IsExpanded && node.GetComponentElementFromPort(edge.input) != null)
-                    {
-                        isConnectedToCollapsedPort = true;
-                    }
-                }
-
-                edge.style.display = isConnectedToCollapsedPort ? DisplayStyle.None : DisplayStyle.Flex;
+                shouldShow = false;
             }
         }
+
+        if (edge.input?.node == node)
+        {
+            shouldUpdateEdge = true;
+            // If the node is collapsed and this is a component reference input port, hide the edge
+            if (!node.IsExpanded && node.GetComponentElementFromPort(edge.input) != null)
+            {
+                shouldShow = false;
+            }
+        }
+
+        // Only update edges that are actually connected to this node
+        if (shouldUpdateEdge)
+        {
+            // Also check the other end of the edge to make sure it should be visible
+            if (shouldShow)
+            {
+                // Check if the other end is also expanded (if it's a GameObjectGraphNode)
+                if (edge.output?.node is GameObjectGraphNode otherOutputNode && edge.output.node != node)
+                {
+                    if (!otherOutputNode.IsExpanded && otherOutputNode.GetComponentElementFromPort(edge.output) != null)
+                        shouldShow = false;
+                }
+                
+                if (edge.input?.node is GameObjectGraphNode otherInputNode && edge.input.node != node)
+                {
+                    if (!otherInputNode.IsExpanded && otherInputNode.GetComponentElementFromPort(edge.input) != null)
+                        shouldShow = false;
+                }
+            }
+
+            edge.style.display = shouldShow ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+    }
+}
+
 
         public void UpdateAllEdgeVisibility()
         {
