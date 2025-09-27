@@ -1,11 +1,12 @@
-﻿namespace _3DConnections.Editor.NodeGraph
+﻿using System.Linq;
+
+namespace _3DConnections.Editor.NodeGraph
 {
     using UnityEngine;
     using UnityEditor;
     using UnityEngine.UIElements;
     using UnityEditor.Experimental.GraphView;
     using System.Collections.Generic;
-    using System.Linq;
 
     public class SceneGraphView : GraphView
     {
@@ -98,105 +99,6 @@
             }
         }
 
-
-        private bool ShouldShowGameObjectNode(GameObject gameObject, GameObjectGraphNode node)
-        {
-            // Hierarchy depth filter
-            if (m_MaxHierarchyDepth != -1)
-            {
-                int depth = GetGameObjectHierarchyDepth(gameObject);
-                if (depth > m_MaxHierarchyDepth) return false;
-            }
-
-            // Search filter - REMOVED: Now all nodes stay visible during search
-            // The search highlighting is handled separately in ApplyFilters()
-
-            // Focus mode filter
-            if (m_FocusMode && m_FocusedNode != null)
-            {
-                return IsNodeInFocusScope(node);
-            }
-
-            return true;
-        }
-
-        private bool ShouldShowAssetNode(Object asset)
-        {
-            // Search filter - REMOVED: Now all asset nodes stay visible during search
-            // The search highlighting is handled separately in ApplyFilters()
-
-            // Focus mode filter
-            if (m_FocusMode && m_FocusedNode != null)
-            {
-                return IsAssetReferencedByFocusedNode(asset);
-            }
-
-            // Only show assets that are actually referenced by visible GameObjects
-            return IsAssetReferencedByVisibleGameObjects(asset);
-        }
-
-        private bool IsNodeInFocusScope(GameObjectGraphNode node)
-        {
-            if (node == m_FocusedNode) return true;
-
-            // Check if this node references assets that the focused node also references
-            var focusedAssets = GetReferencedAssets(m_FocusedNode.GameObject);
-            var nodeAssets = GetReferencedAssets(node.GameObject);
-
-            return focusedAssets.Intersect(nodeAssets).Any();
-        }
-
-        private bool IsAssetReferencedByFocusedNode(Object asset)
-        {
-            if (m_FocusedNode == null) return false;
-            return GetReferencedAssets(m_FocusedNode.GameObject).Contains(asset);
-        }
-
-        private bool IsAssetReferencedByVisibleGameObjects(Object asset)
-        {
-            foreach (var gameObjectNode in m_GameObjectNodes.Values)
-            {
-                if (m_VisibleNodes.Contains(gameObjectNode))
-                {
-                    if (GetReferencedAssets(gameObjectNode.GameObject).Contains(asset))
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        private HashSet<Object> GetReferencedAssets(GameObject gameObject)
-        {
-            var referencedAssets = new HashSet<Object>();
-            var components = gameObject.GetComponents<Component>();
-
-            foreach (var component in components)
-            {
-                if (component == null) continue;
-
-                var serializedObject = new SerializedObject(component);
-                var property = serializedObject.GetIterator();
-
-                if (property.NextVisible(true))
-                {
-                    do
-                    {
-                        if (property.propertyType == SerializedPropertyType.ObjectReference &&
-                            property.objectReferenceValue != null)
-                        {
-                            var referencedObject = property.objectReferenceValue;
-                            if (ShouldCreateAssetNode(referencedObject))
-                            {
-                                referencedAssets.Add(referencedObject);
-                            }
-                        }
-                    } while (property.NextVisible(false));
-                }
-            }
-
-            return referencedAssets;
-        }
 
         private bool ArePortsVisible(Port inputPort, Port outputPort)
         {
@@ -369,7 +271,6 @@
 
         public void OnReferenceChanged(GameObjectGraphNode sourceNode, Component component, string propertyPath)
         {
-            // Remove old connection
             var edgeKey = $"{component.GetInstanceID()}_{propertyPath}";
             if (m_ReferenceEdges.TryGetValue(edgeKey, out var oldEdge))
             {
@@ -403,7 +304,8 @@
                 node.SetExpanded(false);
             }
 
-            ApplyFilters(); // Refresh edge visibility
+            UpdateAllEdgeVisibility();
+            ApplyFilters();
         }
 
         public void ExpandAllNodes()
@@ -413,8 +315,11 @@
                 node.SetExpanded(true);
             }
 
-            ApplyFilters(); // Refresh edge visibility
+            UpdateAllEdgeVisibility();
+            ApplyFilters();
         }
+
+
 
         private void TraverseScene()
         {
@@ -451,10 +356,7 @@
                 var gameObject = kvp.Key;
                 var node = kvp.Value;
 
-                // Create hierarchy connections (parent-child)
                 CreateHierarchyConnections(gameObject, node);
-
-                // Create component reference connections
                 CreateComponentConnections(gameObject, node);
             }
         }
@@ -568,6 +470,61 @@
                 }
             }
         }
+        
+        public void UpdateEdgeVisibilityForNode(GameObjectGraphNode node)
+        {
+            foreach (var edge in graphElements.OfType<Edge>())
+            {
+                // Check if the edge is connected to any of the node's component reference output ports
+                bool isConnectedToCollapsedPort = false;
+
+                // Check output port
+                if (edge.output != null && edge.output.node == node)
+                {
+                    // If the node is collapsed and this is a component reference output port, hide the edge
+                    if (!node.IsExpanded && node.GetComponentElementFromPort(edge.output) != null)
+                    {
+                        isConnectedToCollapsedPort = true;
+                    }
+                }
+                // Check input port (for reference input port, you may want to hide those edges too)
+                if (edge.input != null && edge.input.node == node)
+                {
+                    // If the node is collapsed and this is a component reference input port, hide the edge
+                    if (!node.IsExpanded && node.GetComponentElementFromPort(edge.input) != null)
+                    {
+                        isConnectedToCollapsedPort = true;
+                    }
+                }
+
+                edge.style.display = isConnectedToCollapsedPort ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+        }
+        
+        public void UpdateAllEdgeVisibility()
+        {
+            foreach (var edge in graphElements.OfType<Edge>())
+            {
+                bool shouldShow = true;
+
+                // Check if either end is a component reference port on a collapsed node
+                if (edge.output?.node is GameObjectGraphNode outputNode)
+                {
+                    if (!outputNode.IsExpanded && outputNode.GetComponentElementFromPort(edge.output) != null)
+                        shouldShow = false;
+                }
+                if (edge.input?.node is GameObjectGraphNode inputNode)
+                {
+                    if (!inputNode.IsExpanded && inputNode.GetComponentElementFromPort(edge.input) != null)
+                        shouldShow = false;
+                }
+
+                edge.style.display = shouldShow ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        
+
 
         public void ApplySugiyamaLayout()
         {

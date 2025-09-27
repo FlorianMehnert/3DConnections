@@ -177,6 +177,7 @@
 
             // Notify graph view that expansion state changed so it can update edge visibility
             m_GraphView?.ApplyFilters();
+            m_GraphView?.UpdateEdgeVisibilityForNode(this);
         }
 
         public override void OnSelected()
@@ -219,5 +220,16 @@
                 borderStyle.borderRightWidth = 0;
             }
         }
+        
+        public ComponentElement GetComponentElementFromPort(Port port)
+        {
+            foreach (var componentElement in m_ComponentElements.Values)
+            {
+                if (componentElement.ReferenceOutputPorts.ContainsValue(port))
+                    return componentElement;
+            }
+            return null;
+        }
+
     }
 }
