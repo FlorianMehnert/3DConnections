@@ -11,8 +11,8 @@
         private GameObject m_GameObject;
         private VisualElement m_ComponentContainer;
         private Button m_ExpandButton;
-        private bool m_IsExpanded = false;
-        private Dictionary<string, ComponentElement> m_ComponentElements = new Dictionary<string, ComponentElement>();
+        private bool m_IsExpanded = true;
+        private Dictionary<string, ComponentElement> m_ComponentElements = new();
         private SceneGraphView m_GraphView;
         private VisualElement m_NodeBorder;
 
@@ -28,6 +28,7 @@
             m_GameObject = gameObject;
             m_GraphView = graphView;
             title = gameObject.name;
+            tooltip = "GameObject: " + gameObject.name;
 
             AddToClassList("gameobject-node");
 
@@ -82,9 +83,10 @@
             icon.AddToClassList("gameobject-icon");
             headerContainer.Add(icon);
 
-            // Active toggle
-            var activeToggle = new Toggle();
-            activeToggle.value = m_GameObject.activeInHierarchy;
+            var activeToggle = new Toggle
+            {
+                value = m_GameObject.activeInHierarchy
+            };
             activeToggle.RegisterValueChangedCallback(evt =>
             {
                 Undo.RecordObject(m_GameObject, "Toggle GameObject Active");
