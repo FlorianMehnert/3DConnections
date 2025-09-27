@@ -31,6 +31,5 @@
             System.IO.File.WriteAllBytes(Application.dataPath + "/../menu.png", bytes);
             Debug.Log("Saved menu.png");
         }
-
     }
 }

@@ -1,7 +1,6 @@
 ﻿namespace _3DConnections.Editor.NodeGraph
 {
     using UnityEngine;
-    using UnityEngine.UIElements;
     using System.Collections.Generic;
     using System.Linq;
     using System;
@@ -70,7 +69,7 @@
             // Step 1: Create layout nodes and build relationships
             CreateLayoutNodes(gameObjectNodes, assetNodes);
 
-            // Step 2: Assign layers (hierarchical layering + asset placement)
+            // Step 2: Assign layers with improved asset placement
             AssignLayers();
 
             // Step 3: Add dummy nodes for long edges
@@ -79,7 +78,7 @@
             // Step 4: Minimize crossings (layer by layer sweep)
             MinimizeCrossings();
 
-            // Step 5: Assign X coordinates
+            // Step 5: Assign X coordinates with better asset distribution
             AssignXCoordinates();
 
             // Step 6: Apply positions to actual nodes
@@ -151,6 +150,12 @@
                             {
                                 var referencedObject = property.objectReferenceValue;
 
+                                // Handle sprite texture references (for sprite sheet consolidation)
+                                if (referencedObject is Sprite sprite && sprite.texture != null)
+                                {
+                                    referencedObject = sprite.texture;
+                                }
+
                                 // Check if this is an asset reference
                                 if (m_AssetLayoutNodes.TryGetValue(referencedObject, out var assetLayoutNode))
                                 {
@@ -216,24 +221,8 @@
                 }
             }
 
-            // Step 2: Place assets in a separate layer to the right
-            int assetLayer = maxGameObjectLayer + 2; // Leave some space
-            while (m_Layers.Count <= assetLayer)
-            {
-                m_Layers.Add(new List<LayoutNode>());
-            }
-
-            // Group assets by how many references they have (most referenced first)
-            var sortedAssets = m_AssetLayoutNodes.Values
-                .OrderByDescending(a => a.ReferencedBy.Count)
-                .ThenBy(a => a.Asset?.name ?? "Unknown")
-                .ToList();
-
-            foreach (var assetNode in sortedAssets)
-            {
-                assetNode.Layer = assetLayer;
-                m_Layers[assetLayer].Add(assetNode);
-            }
+            // Step 2: Smart asset placement based on reference patterns
+            PlaceAssetsIntelligently(maxGameObjectLayer);
 
             // Handle any remaining unvisited GameObject nodes
             foreach (var node in m_GameObjectLayoutNodes.Values.Where(n => !visited.Contains(n)))
@@ -244,6 +233,78 @@
                     m_Layers.Add(new List<LayoutNode>());
                 }
                 m_Layers[node.Layer].Add(node);
+            }
+        }
+
+        private void PlaceAssetsIntelligently(int maxGameObjectLayer)
+        {
+            // Group assets by their reference patterns
+            var assetGroups = new Dictionary<int, List<LayoutNode>>();
+            
+            foreach (var assetNode in m_AssetLayoutNodes.Values)
+            {
+                if (assetNode.ReferencedBy.Count == 0)
+                {
+                    // Unreferenced assets go to the far right
+                    int unreferencedLayer = maxGameObjectLayer + 3;
+                    if (!assetGroups.ContainsKey(unreferencedLayer))
+                        assetGroups[unreferencedLayer] = new List<LayoutNode>();
+                    assetGroups[unreferencedLayer].Add(assetNode);
+                    continue;
+                }
+
+                // Calculate the average layer of referencing GameObjects
+                float avgReferencerLayer = (float)assetNode.ReferencedBy.Average(r => r.Layer);
+                
+                // Place asset near the average layer of its references
+                int targetLayer;
+                if (assetNode.ReferencedBy.Count == 1)
+                {
+                    // Single reference: place right next to the referencer
+                    targetLayer = assetNode.ReferencedBy[0].Layer;
+                }
+                else if (assetNode.ReferencedBy.All(r => r.Layer == assetNode.ReferencedBy[0].Layer))
+                {
+                    // All references from same layer: place next to that layer
+                    targetLayer = assetNode.ReferencedBy[0].Layer;
+                }
+                else
+                {
+                    // Multiple references from different layers: place at average + offset
+                    targetLayer = Mathf.RoundToInt(avgReferencerLayer) + maxGameObjectLayer + 1;
+                }
+
+                // Ensure we don't overlap with GameObject layers
+                targetLayer = Math.Max(targetLayer, maxGameObjectLayer + 1);
+
+                if (!assetGroups.ContainsKey(targetLayer))
+                    assetGroups[targetLayer] = new List<LayoutNode>();
+                assetGroups[targetLayer].Add(assetNode);
+            }
+
+            // Add asset groups to layers
+            foreach (var kvp in assetGroups)
+            {
+                int layerIndex = kvp.Key;
+                var assets = kvp.Value;
+
+                // Ensure we have enough layers
+                while (m_Layers.Count <= layerIndex)
+                {
+                    m_Layers.Add(new List<LayoutNode>());
+                }
+
+                // Sort assets by reference count (most referenced first), then by name
+                var sortedAssets = assets
+                    .OrderByDescending(a => a.ReferencedBy.Count)
+                    .ThenBy(a => a.Asset?.name ?? "Unknown")
+                    .ToList();
+
+                foreach (var asset in sortedAssets)
+                {
+                    asset.Layer = layerIndex;
+                    m_Layers[layerIndex].Add(asset);
+                }
             }
         }
 
@@ -358,9 +419,11 @@
                 }
             }
 
-            // Sort by barycenter
+            // Sort by barycenter, but keep assets at the bottom of their layers
             var originalOrder = layer.ToList();
-            var sortedNodes = nodeBaryCenters.OrderBy(x => x.barycenter).Select(x => x.node).ToList();
+            var gameObjectNodes = nodeBaryCenters.Where(x => !x.node.IsAsset).OrderBy(x => x.barycenter).Select(x => x.node);
+            var assetNodes = nodeBaryCenters.Where(x => x.node.IsAsset).OrderBy(x => x.barycenter).Select(x => x.node);
+            var sortedNodes = gameObjectNodes.Concat(assetNodes).ToList();
 
             // Check if order changed
             bool changed = false;
@@ -388,22 +451,46 @@
 
         private void AssignXCoordinates()
         {
-            // Assign coordinates for each layer
+            // Assign coordinates for each layer with improved asset spacing
             for (int layerIndex = 0; layerIndex < m_Layers.Count; layerIndex++)
             {
                 var layer = m_Layers[layerIndex];
                 if (layer.Count == 0) continue;
 
-                float totalWidth = layer.Sum(n => n.Width) + (layer.Count - 1) * NODE_SPACING;
-                float startX = -totalWidth / 2f;
+                // Separate GameObjects and Assets for better positioning
+                var gameObjects = layer.Where(n => !n.IsAsset).ToList();
+                var assets = layer.Where(n => n.IsAsset).ToList();
 
-                float currentX = startX;
-                foreach (var node in layer)
+                float currentY = layerIndex * LAYER_SPACING;
+                
+                // Position GameObjects first
+                if (gameObjects.Count > 0)
                 {
-                    node.X = currentX + node.Width / 2f;
-                    node.Y = layerIndex * LAYER_SPACING;
-                    currentX += node.Width + NODE_SPACING;
+                    PositionNodesInLayer(gameObjects, 0, currentY);
                 }
+
+                // Position Assets below GameObjects with some spacing
+                if (assets.Count > 0)
+                {
+                    float assetYOffset = gameObjects.Count > 0 ? 150f : 0f;
+                    PositionNodesInLayer(assets, 0, currentY + assetYOffset);
+                }
+            }
+        }
+
+        private void PositionNodesInLayer(List<LayoutNode> nodes, float baseX, float y)
+        {
+            if (nodes.Count == 0) return;
+
+            float totalWidth = nodes.Sum(n => n.Width) + (nodes.Count - 1) * NODE_SPACING;
+            float startX = baseX - totalWidth / 2f;
+
+            float currentX = startX;
+            foreach (var node in nodes)
+            {
+                node.X = currentX + node.Width / 2f;
+                node.Y = y;
+                currentX += node.Width + NODE_SPACING;
             }
         }
 
