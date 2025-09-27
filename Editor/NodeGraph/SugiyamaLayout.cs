@@ -66,7 +66,12 @@
         {
             if (gameObjectNodes.Count == 0 && assetNodes.Count == 0) return;
 
-            // Step 1: Create layout nodes and build relationships
+            // Clear previous layout data
+            m_GameObjectLayoutNodes.Clear();
+            m_AssetLayoutNodes.Clear();
+            m_Layers.Clear();
+
+            // Step 1: Create layout nodes and build relationships (only for provided nodes)
             CreateLayoutNodes(gameObjectNodes, assetNodes);
 
             // Step 2: Assign layers with improved asset placement
@@ -84,6 +89,7 @@
             // Step 6: Apply positions to actual nodes
             ApplyPositions();
         }
+
 
         private void CreateLayoutNodes(Dictionary<GameObject, GameObjectGraphNode> gameObjectNodes, Dictionary<UnityEngine.Object, AssetReferenceNode> assetNodes)
         {
@@ -131,7 +137,11 @@
             foreach (var gameObjectKvp in gameObjectNodes)
             {
                 var gameObject = gameObjectKvp.Key;
-                var gameObjectLayoutNode = m_GameObjectLayoutNodes[gameObject];
+        
+                // Only process if we have a layout node for this GameObject
+                if (!m_GameObjectLayoutNodes.TryGetValue(gameObject, out var gameObjectLayoutNode))
+                    continue;
+            
                 var components = gameObject.GetComponents<Component>();
 
                 foreach (var component in components)
@@ -156,7 +166,7 @@
                                     referencedObject = sprite.texture;
                                 }
 
-                                // Check if this is an asset reference
+                                // Only create relationships if both nodes are in our current layout set
                                 if (m_AssetLayoutNodes.TryGetValue(referencedObject, out var assetLayoutNode))
                                 {
                                     // GameObject references Asset
@@ -169,6 +179,7 @@
                 }
             }
         }
+
 
         private void AssignLayers()
         {

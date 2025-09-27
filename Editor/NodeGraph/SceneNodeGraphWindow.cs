@@ -36,7 +36,19 @@ namespace _3DConnections.Editor.NodeGraph
 
             var refreshButton = new ToolbarButton(() => m_GraphView?.RefreshGraph()) { text = "Refresh Graph" };
             var clearButton = new ToolbarButton(() => m_GraphView?.ClearGraph()) { text = "Clear" };
-            var layoutButton = new ToolbarButton(() => m_GraphView?.ApplySugiyamaLayout()) { text = "Apply Layout" };
+            var layoutButton = new ToolbarButton(() => {
+                m_GraphView?.ApplySugiyamaLayout();
+        
+                // Provide feedback about what was laid out
+                if (m_IsFocusMode)
+                {
+                    ShowMessage("Applied Sugiyama layout to focused nodes only");
+                }
+                else
+                {
+                    ShowMessage("Applied Sugiyama layout to all nodes");
+                }
+            }) { text = "Apply Layout" };
             var collapseAllButton = new ToolbarButton(() => m_GraphView?.CollapseAllNodes()) { text = "Collapse All" };
             var expandAllButton = new ToolbarButton(() => m_GraphView?.ExpandAllNodes()) { text = "Expand All" };
 

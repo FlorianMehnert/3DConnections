@@ -167,11 +167,11 @@ namespace _3DConnections.Editor.NodeGraph
                     assetNode.style.display = DisplayStyle.None;
                 }
 
-                // Show only filtered related nodes
+                // Show only filtered related nodes and add to visible collection
                 foreach (var node in relatedNodes)
                 {
                     node.style.display = DisplayStyle.Flex;
-                    m_VisibleNodes.Add(node);
+                    m_VisibleNodes.Add(node); // Important: Add to visible nodes collection
                 }
 
                 // Show related asset nodes (only for visible nodes)
@@ -184,7 +184,7 @@ namespace _3DConnections.Editor.NodeGraph
                 foreach (var assetNode in relatedAssets)
                 {
                     assetNode.style.display = DisplayStyle.Flex;
-                    m_VisibleNodes.Add(assetNode);
+                    m_VisibleNodes.Add(assetNode); // Important: Add to visible nodes collection
                 }
 
                 // Highlight the focused node
@@ -242,7 +242,7 @@ namespace _3DConnections.Editor.NodeGraph
                     }
                 }
 
-                // Show all asset nodes in normal mode (or filter them too if needed)
+                // Show all asset nodes in normal mode
                 foreach (var assetNode in m_AssetNodes.Values)
                 {
                     assetNode.style.display = DisplayStyle.Flex;
@@ -267,7 +267,8 @@ namespace _3DConnections.Editor.NodeGraph
                 }
             }
         }
-        
+
+
         private int GetDepthFromFocusedNode(GameObjectGraphNode targetNode, GameObjectGraphNode focusedNode)
         {
             if (targetNode == focusedNode) return 0;
@@ -275,14 +276,14 @@ namespace _3DConnections.Editor.NodeGraph
             // Use BFS to find the shortest path depth from focused node to target node
             var queue = new Queue<(GameObjectGraphNode node, int depth)>();
             var visited = new HashSet<GameObjectGraphNode>();
-    
+
             queue.Enqueue((focusedNode, 0));
             visited.Add(focusedNode);
 
             while (queue.Count > 0)
             {
                 var (currentNode, currentDepth) = queue.Dequeue();
-        
+
                 // Check all outgoing connections from current node
                 foreach (var edge in graphElements.OfType<Edge>())
                 {
@@ -292,7 +293,7 @@ namespace _3DConnections.Editor.NodeGraph
                         {
                             return currentDepth + 1;
                         }
-                
+
                         if (!visited.Contains(connectedNode))
                         {
                             visited.Add(connectedNode);
@@ -305,7 +306,6 @@ namespace _3DConnections.Editor.NodeGraph
             // If no path found, return a high value to exclude it
             return int.MaxValue;
         }
-
 
 
         private void TraverseRelatedNodes(GameObjectGraphNode startNode, HashSet<GameObjectGraphNode> visited)
@@ -783,9 +783,41 @@ namespace _3DConnections.Editor.NodeGraph
             // Update node sizes first
             m_SugiyamaLayout.UpdateNodeSizes(m_GameObjectNodes, m_AssetNodes);
 
-            // Apply the Sugiyama layout algorithm
-            m_SugiyamaLayout.ApplyLayout(m_GameObjectNodes, m_AssetNodes);
+            if (m_FocusMode && m_FocusedNode != null)
+            {
+                // In focus mode: only layout visible nodes
+                ApplyFocusedSugiyamaLayout();
+            }
+            else
+            {
+                // Normal mode: layout all nodes
+                m_SugiyamaLayout.ApplyLayout(m_GameObjectNodes, m_AssetNodes);
+            }
         }
+
+        private void ApplyFocusedSugiyamaLayout()
+        {
+            // Get only visible GameObject nodes
+            var visibleGameObjectNodes = new Dictionary<GameObject, GameObjectGraphNode>();
+            foreach (var node in m_VisibleNodes.OfType<GameObjectGraphNode>())
+            {
+                visibleGameObjectNodes[node.GameObject] = node;
+            }
+
+            // Get only visible Asset nodes
+            var visibleAssetNodes = new Dictionary<Object, AssetReferenceNode>();
+            foreach (var node in m_VisibleNodes.OfType<AssetReferenceNode>())
+            {
+                visibleAssetNodes[node.Asset] = node;
+            }
+
+            // Apply layout only to visible nodes
+            if (visibleGameObjectNodes.Count > 0 || visibleAssetNodes.Count > 0)
+            {
+                m_SugiyamaLayout.ApplyLayout(visibleGameObjectNodes, visibleAssetNodes);
+            }
+        }
+
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
         {
