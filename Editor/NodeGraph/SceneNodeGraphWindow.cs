@@ -117,10 +117,19 @@ namespace _3DConnections.Editor.NodeGraph
             }
             else
             {
-                m_DepthLabel.text = $"Max Depth: {maxDepth}";
+                if (m_IsFocusMode)
+                {
+                    m_DepthLabel.text = $"Max Depth: {maxDepth} (from focus)";
+                }
+                else
+                {
+                    m_DepthLabel.text = $"Max Depth: {maxDepth} (from root)";
+                }
+
                 m_GraphView?.SetHierarchyDepthFilter(maxDepth);
             }
         }
+
 
         private void UpdateSliderRange()
         {
@@ -195,6 +204,7 @@ namespace _3DConnections.Editor.NodeGraph
                     m_FocusModeButton.text = "Focus Mode: Off";
                     m_FocusModeButton.RemoveFromClassList("focus-mode-active");
                     ShowMessage("Please select a GameObject node to use Focus Mode");
+                    return;
                 }
             }
             else
@@ -203,6 +213,9 @@ namespace _3DConnections.Editor.NodeGraph
                 m_FocusModeButton.RemoveFromClassList("focus-mode-active");
                 m_GraphView.ClearFocusMode();
             }
+
+            // Update depth label to reflect current mode
+            OnDepthSliderChanged(m_HierarchyDepthSlider.value);
         }
     }
 }

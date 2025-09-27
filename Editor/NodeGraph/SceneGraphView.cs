@@ -140,6 +140,23 @@ namespace _3DConnections.Editor.NodeGraph
                 var relatedNodes = new HashSet<GameObjectGraphNode>();
                 TraverseRelatedNodes(m_FocusedNode, relatedNodes);
 
+                // Apply hierarchy depth filter relative to focused node in focus mode
+                if (m_MaxHierarchyDepth >= 0)
+                {
+                    var filteredNodes = new HashSet<GameObjectGraphNode>();
+                    foreach (var node in relatedNodes)
+                    {
+                        int depthFromFocused = GetDepthFromFocusedNode(node, m_FocusedNode);
+                        if (depthFromFocused <= m_MaxHierarchyDepth)
+                        {
+                            filteredNodes.Add(node);
+                        }
+                    }
+
+                    relatedNodes = filteredNodes;
+                }
+
+                // Hide all nodes first
                 foreach (var (gameObject, node) in m_GameObjectNodes)
                 {
                     node.style.display = DisplayStyle.None;
@@ -150,13 +167,14 @@ namespace _3DConnections.Editor.NodeGraph
                     assetNode.style.display = DisplayStyle.None;
                 }
 
+                // Show only filtered related nodes
                 foreach (var node in relatedNodes)
                 {
                     node.style.display = DisplayStyle.Flex;
                     m_VisibleNodes.Add(node);
                 }
 
-                // Show related asset nodes
+                // Show related asset nodes (only for visible nodes)
                 var relatedAssets = new HashSet<AssetReferenceNode>();
                 foreach (var node in relatedNodes)
                 {
@@ -191,12 +209,12 @@ namespace _3DConnections.Editor.NodeGraph
             }
             else
             {
-                // Normal mode: apply search and depth filters
+                // Normal mode: apply search and depth filters from root
                 foreach (var (gameObject, node) in m_GameObjectNodes)
                 {
                     bool visible = true;
 
-                    // Apply hierarchy depth filter
+                    // Apply hierarchy depth filter from root in normal mode
                     if (m_MaxHierarchyDepth >= 0)
                     {
                         int depth = GetGameObjectHierarchyDepth(gameObject);
@@ -224,7 +242,7 @@ namespace _3DConnections.Editor.NodeGraph
                     }
                 }
 
-                // Show all asset nodes in normal mode
+                // Show all asset nodes in normal mode (or filter them too if needed)
                 foreach (var assetNode in m_AssetNodes.Values)
                 {
                     assetNode.style.display = DisplayStyle.Flex;
@@ -249,27 +267,63 @@ namespace _3DConnections.Editor.NodeGraph
                 }
             }
         }
+        
+        private int GetDepthFromFocusedNode(GameObjectGraphNode targetNode, GameObjectGraphNode focusedNode)
+        {
+            if (targetNode == focusedNode) return 0;
+
+            // Use BFS to find the shortest path depth from focused node to target node
+            var queue = new Queue<(GameObjectGraphNode node, int depth)>();
+            var visited = new HashSet<GameObjectGraphNode>();
+    
+            queue.Enqueue((focusedNode, 0));
+            visited.Add(focusedNode);
+
+            while (queue.Count > 0)
+            {
+                var (currentNode, currentDepth) = queue.Dequeue();
+        
+                // Check all outgoing connections from current node
+                foreach (var edge in graphElements.OfType<Edge>())
+                {
+                    if (edge.output?.node == currentNode && edge.input?.node is GameObjectGraphNode connectedNode)
+                    {
+                        if (connectedNode == targetNode)
+                        {
+                            return currentDepth + 1;
+                        }
+                
+                        if (!visited.Contains(connectedNode))
+                        {
+                            visited.Add(connectedNode);
+                            queue.Enqueue((connectedNode, currentDepth + 1));
+                        }
+                    }
+                }
+            }
+
+            // If no path found, return a high value to exclude it
+            return int.MaxValue;
+        }
+
+
 
         private void TraverseRelatedNodes(GameObjectGraphNode startNode, HashSet<GameObjectGraphNode> visited)
         {
             if (!visited.Add(startNode)) return;
 
-            // Traverse through all connected edges
+            // Only traverse through outgoing edges (where startNode is the output/source)
             foreach (var edge in graphElements.OfType<Edge>())
             {
                 GameObjectGraphNode connectedNode = null;
 
-                // Check if this edge connects to our current node
+                // Only check if this edge has startNode as the OUTPUT (source) node
                 if (edge.output?.node == startNode && edge.input?.node is GameObjectGraphNode inputNode)
                 {
                     connectedNode = inputNode;
                 }
-                else if (edge.input?.node == startNode && edge.output?.node is GameObjectGraphNode outputNode)
-                {
-                    connectedNode = outputNode;
-                }
 
-                // Recursively traverse connected nodes
+                // Recursively traverse only outgoing connected nodes
                 if (connectedNode != null)
                 {
                     TraverseRelatedNodes(connectedNode, visited);
@@ -277,15 +331,13 @@ namespace _3DConnections.Editor.NodeGraph
             }
         }
 
+
         private void FindConnectedAssetNodes(GameObjectGraphNode gameObjectNode, HashSet<AssetReferenceNode> assetNodes)
         {
             foreach (var edge in graphElements.OfType<Edge>())
             {
-                if (edge.output?.node == gameObjectNode && edge.input?.node is AssetReferenceNode assetReferenceNode)
-                {
-                    assetNodes.Add(assetReferenceNode);
-                }
-                else if (edge.input?.node == gameObjectNode && edge.output?.node is AssetReferenceNode assetNode)
+                // Only find asset nodes that this GameObject node connects TO (outgoing connections)
+                if (edge.output?.node == gameObjectNode && edge.input?.node is AssetReferenceNode assetNode)
                 {
                     assetNodes.Add(assetNode);
                 }
