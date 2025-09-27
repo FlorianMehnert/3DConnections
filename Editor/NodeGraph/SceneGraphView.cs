@@ -21,6 +21,7 @@ namespace _3DConnections.Editor.NodeGraph
         private HashSet<Node> m_VisibleNodes = new HashSet<Node>();
         private HashSet<Edge> m_VisibleEdges = new HashSet<Edge>();
         private GridBackground grid;
+        private Button m_ExitFocusButton;
 
         public SceneGraphView()
         {
@@ -40,10 +41,8 @@ namespace _3DConnections.Editor.NodeGraph
 
             // Handle connection events
             graphViewChanged += OnGraphViewChanged;
-        }
 
-        private void OnSelectionChanged(List<ISelectable> selection)
-        {
+            RegisterCallback<KeyDownEvent>(OnKeyDown);
         }
 
         public void SetHierarchyDepthFilter(int maxDepth)
@@ -52,22 +51,74 @@ namespace _3DConnections.Editor.NodeGraph
             ApplyFilters();
         }
 
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode == KeyCode.F && selection.Count == 1)
+            {
+                var node = selection.First() as GameObjectGraphNode;
+                if (node != null)
+                {
+                    FocusOnNode(node);
+                    evt.StopPropagation();
+                }
+            }
+            else if (evt.keyCode == KeyCode.Escape && m_FocusMode)
+            {
+                ClearFocusMode();
+                evt.StopPropagation();
+            }
+        }
+
         public void SetSearchFilter(string searchText)
         {
             m_SearchFilter = searchText?.ToLower() ?? "";
             ApplyFilters();
         }
 
-        public void SetFocusMode(GameObjectGraphNode focusNode)
+        public void FocusOnNode(GameObjectGraphNode node)
         {
-            m_FocusMode = focusNode != null;
-            m_FocusedNode = focusNode;
+            m_FocusMode = true;
+            m_FocusedNode = node;
+            ShowExitFocusButton();
             ApplyFilters();
         }
 
         public void ClearFocusMode()
         {
-            SetFocusMode(null);
+            m_FocusMode = false;
+            m_FocusedNode = null;
+            HideExitFocusButton();
+            ApplyFilters();
+        }
+
+        private void ShowExitFocusButton()
+        {
+            if (m_ExitFocusButton == null)
+            {
+                m_ExitFocusButton = new Button(ClearFocusMode)
+                {
+                    text = "Exit Focus Mode (Esc)"
+                };
+                m_ExitFocusButton.AddToClassList("focus-exit-button");
+                m_ExitFocusButton.style.position = Position.Absolute;
+                m_ExitFocusButton.style.top = 10;
+                m_ExitFocusButton.style.right = 10;
+                m_ExitFocusButton.style.backgroundColor = new Color(1f, 0.8f, 0f, 0.9f); // Gold background
+                m_ExitFocusButton.style.color = Color.black;
+                m_ExitFocusButton.style.paddingLeft = 10;
+                m_ExitFocusButton.style.paddingRight = 10;
+                m_ExitFocusButton.style.paddingTop = 5;
+                m_ExitFocusButton.style.paddingBottom = 5;
+                Add(m_ExitFocusButton);
+            }
+
+            m_ExitFocusButton.visible = true;
+        }
+
+        private void HideExitFocusButton()
+        {
+            if (m_ExitFocusButton != null)
+                m_ExitFocusButton.visible = false;
         }
 
         public void ApplyFilters()
@@ -83,22 +134,170 @@ namespace _3DConnections.Editor.NodeGraph
 
             ClearSelection();
 
-            // Second pass: apply visibility and highlight matches
-            foreach (var (gameObject, node) in m_GameObjectNodes)
+            if (m_FocusMode && m_FocusedNode != null)
             {
-                var matchesSearch = !string.IsNullOrEmpty(m_SearchFilter) &&
-                                    gameObject.name.ToLower().Contains(m_SearchFilter);
+                // Focus mode: show only focused node and transitively connected nodes
+                var relatedNodes = new HashSet<GameObjectGraphNode>();
+                TraverseRelatedNodes(m_FocusedNode, relatedNodes);
 
-                m_VisibleNodes.Add(node);
-                node.style.display = DisplayStyle.Flex;
-
-                if (matchesSearch)
+                foreach (var (gameObject, node) in m_GameObjectNodes)
                 {
-                    node.SetHighlighted(true);
+                    node.style.display = DisplayStyle.None;
+                }
+
+                foreach (var assetNode in m_AssetNodes.Values)
+                {
+                    assetNode.style.display = DisplayStyle.None;
+                }
+
+                foreach (var node in relatedNodes)
+                {
+                    node.style.display = DisplayStyle.Flex;
+                    m_VisibleNodes.Add(node);
+                }
+
+                // Show related asset nodes
+                var relatedAssets = new HashSet<AssetReferenceNode>();
+                foreach (var node in relatedNodes)
+                {
+                    FindConnectedAssetNodes(node, relatedAssets);
+                }
+
+                foreach (var assetNode in relatedAssets)
+                {
+                    assetNode.style.display = DisplayStyle.Flex;
+                    m_VisibleNodes.Add(assetNode);
+                }
+
+                // Highlight the focused node
+                m_FocusedNode.SetHighlighted(true);
+
+                // Show only edges between visible nodes
+                foreach (var edge in graphElements.OfType<Edge>())
+                {
+                    bool inputVisible = edge.input?.node != null && m_VisibleNodes.Contains(edge.input.node);
+                    bool outputVisible = edge.output?.node != null && m_VisibleNodes.Contains(edge.output.node);
+
+                    if (inputVisible && outputVisible)
+                    {
+                        edge.style.display = DisplayStyle.Flex;
+                        m_VisibleEdges.Add(edge);
+                    }
+                    else
+                    {
+                        edge.style.display = DisplayStyle.None;
+                    }
+                }
+            }
+            else
+            {
+                // Normal mode: apply search and depth filters
+                foreach (var (gameObject, node) in m_GameObjectNodes)
+                {
+                    bool visible = true;
+
+                    // Apply hierarchy depth filter
+                    if (m_MaxHierarchyDepth >= 0)
+                    {
+                        int depth = GetGameObjectHierarchyDepth(gameObject);
+                        if (depth > m_MaxHierarchyDepth)
+                            visible = false;
+                    }
+
+                    // Apply search filter and highlight matches
+                    var matchesSearch = !string.IsNullOrEmpty(m_SearchFilter) &&
+                                        gameObject.name.ToLower().Contains(m_SearchFilter);
+
+                    if (visible)
+                    {
+                        m_VisibleNodes.Add(node);
+                        node.style.display = DisplayStyle.Flex;
+
+                        if (matchesSearch)
+                        {
+                            node.SetHighlighted(true);
+                        }
+                    }
+                    else
+                    {
+                        node.style.display = DisplayStyle.None;
+                    }
+                }
+
+                // Show all asset nodes in normal mode
+                foreach (var assetNode in m_AssetNodes.Values)
+                {
+                    assetNode.style.display = DisplayStyle.Flex;
+                    m_VisibleNodes.Add(assetNode);
+                }
+
+                // Show all edges between visible nodes
+                foreach (var edge in graphElements.OfType<Edge>())
+                {
+                    bool inputVisible = edge.input?.node != null && m_VisibleNodes.Contains(edge.input.node);
+                    bool outputVisible = edge.output?.node != null && m_VisibleNodes.Contains(edge.output.node);
+
+                    if (inputVisible && outputVisible && ArePortsVisible(edge.input, edge.output))
+                    {
+                        edge.style.display = DisplayStyle.Flex;
+                        m_VisibleEdges.Add(edge);
+                    }
+                    else
+                    {
+                        edge.style.display = DisplayStyle.None;
+                    }
                 }
             }
         }
 
+        private void TraverseRelatedNodes(GameObjectGraphNode startNode, HashSet<GameObjectGraphNode> visited)
+        {
+            if (!visited.Add(startNode)) return;
+
+            // Traverse through all connected edges
+            foreach (var edge in graphElements.OfType<Edge>())
+            {
+                GameObjectGraphNode connectedNode = null;
+
+                // Check if this edge connects to our current node
+                if (edge.output?.node == startNode && edge.input?.node is GameObjectGraphNode inputNode)
+                {
+                    connectedNode = inputNode;
+                }
+                else if (edge.input?.node == startNode && edge.output?.node is GameObjectGraphNode outputNode)
+                {
+                    connectedNode = outputNode;
+                }
+
+                // Recursively traverse connected nodes
+                if (connectedNode != null)
+                {
+                    TraverseRelatedNodes(connectedNode, visited);
+                }
+            }
+        }
+
+        private void FindConnectedAssetNodes(GameObjectGraphNode gameObjectNode, HashSet<AssetReferenceNode> assetNodes)
+        {
+            foreach (var edge in graphElements.OfType<Edge>())
+            {
+                if (edge.output?.node == gameObjectNode && edge.input?.node is AssetReferenceNode assetReferenceNode)
+                {
+                    assetNodes.Add(assetReferenceNode);
+                }
+                else if (edge.input?.node == gameObjectNode && edge.output?.node is AssetReferenceNode assetNode)
+                {
+                    assetNodes.Add(assetNode);
+                }
+            }
+        }
+
+        public void SetFocusMode(GameObjectGraphNode focusNode)
+        {
+            m_FocusMode = focusNode != null;
+            m_FocusedNode = focusNode;
+            ApplyFilters();
+        }
 
         private bool ArePortsVisible(Port inputPort, Port outputPort)
         {
@@ -320,7 +519,6 @@ namespace _3DConnections.Editor.NodeGraph
         }
 
 
-
         private void TraverseScene()
         {
             var rootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
@@ -470,7 +668,7 @@ namespace _3DConnections.Editor.NodeGraph
                 }
             }
         }
-        
+
         public void UpdateEdgeVisibilityForNode(GameObjectGraphNode node)
         {
             foreach (var edge in graphElements.OfType<Edge>())
@@ -487,6 +685,7 @@ namespace _3DConnections.Editor.NodeGraph
                         isConnectedToCollapsedPort = true;
                     }
                 }
+
                 // Check input port (for reference input port, you may want to hide those edges too)
                 if (edge.input != null && edge.input.node == node)
                 {
@@ -500,7 +699,7 @@ namespace _3DConnections.Editor.NodeGraph
                 edge.style.display = isConnectedToCollapsedPort ? DisplayStyle.None : DisplayStyle.Flex;
             }
         }
-        
+
         public void UpdateAllEdgeVisibility()
         {
             foreach (var edge in graphElements.OfType<Edge>())
@@ -513,6 +712,7 @@ namespace _3DConnections.Editor.NodeGraph
                     if (!outputNode.IsExpanded && outputNode.GetComponentElementFromPort(edge.output) != null)
                         shouldShow = false;
                 }
+
                 if (edge.input?.node is GameObjectGraphNode inputNode)
                 {
                     if (!inputNode.IsExpanded && inputNode.GetComponentElementFromPort(edge.input) != null)
@@ -522,8 +722,6 @@ namespace _3DConnections.Editor.NodeGraph
                 edge.style.display = shouldShow ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
-
-        
 
 
         public void ApplySugiyamaLayout()

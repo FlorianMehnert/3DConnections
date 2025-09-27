@@ -98,61 +98,9 @@ namespace _3DConnections.Editor.NodeGraph
             m_GraphView.RefreshGraph();
         }
 
-        // Fixed selection changed handler - uses List<ISelectable> parameter
-        private void OnSelectionChanged(List<ISelectable> selection)
-        {
-            if (selection.Count == 1 && selection[0] is GameObjectGraphNode selectedNode)
-            {
-                m_LastSelectedNode = selectedNode;
-
-                // If focus mode is on, automatically update focus to selected node
-                if (m_IsFocusMode)
-                {
-                    m_GraphView.SetFocusMode(selectedNode);
-                }
-            }
-        }
-
         private void OnSearchChanged(string searchText)
         {
             m_GraphView?.SetSearchFilter(searchText);
-        }
-
-        private void ToggleFocusMode()
-        {
-            m_IsFocusMode = !m_IsFocusMode;
-
-            if (m_IsFocusMode)
-            {
-                m_FocusModeButton.text = "Focus Mode: On";
-                m_FocusModeButton.AddToClassList("focus-mode-active");
-
-                // Use last selected node or current selection for focus
-                if (m_LastSelectedNode != null)
-                {
-                    m_GraphView.SetFocusMode(m_LastSelectedNode);
-                }
-                else if (m_GraphView.selection.Count == 1 &&
-                         m_GraphView.selection.FirstOrDefault() is GameObjectGraphNode selectedNode)
-                {
-                    m_GraphView.SetFocusMode(selectedNode);
-                    m_LastSelectedNode = selectedNode;
-                }
-                else
-                {
-                    // No selection, turn focus mode back off
-                    m_IsFocusMode = false;
-                    m_FocusModeButton.text = "Focus Mode: Off";
-                    m_FocusModeButton.RemoveFromClassList("focus-mode-active");
-                    ShowMessage("Please select a GameObject node to use Focus Mode");
-                }
-            }
-            else
-            {
-                m_FocusModeButton.text = "Focus Mode: Off";
-                m_FocusModeButton.RemoveFromClassList("focus-mode-active");
-                m_GraphView.ClearFocusMode();
-            }
         }
 
         private void ShowMessage(string message)
@@ -204,6 +152,57 @@ namespace _3DConnections.Editor.NodeGraph
             }
 
             return maxChildDepth;
+        }
+
+        private void OnSelectionChanged(List<ISelectable> selection)
+        {
+            if (selection.Count == 1 && selection[0] is GameObjectGraphNode selectedNode)
+            {
+                m_LastSelectedNode = selectedNode;
+
+                // If focus mode is on, automatically update focus to selected node
+                if (m_IsFocusMode)
+                {
+                    m_GraphView.FocusOnNode(selectedNode);
+                }
+            }
+        }
+
+        private void ToggleFocusMode()
+        {
+            m_IsFocusMode = !m_IsFocusMode;
+
+            if (m_IsFocusMode)
+            {
+                m_FocusModeButton.text = "Focus Mode: On";
+                m_FocusModeButton.AddToClassList("focus-mode-active");
+
+                // Use last selected node or current selection for focus
+                if (m_LastSelectedNode != null)
+                {
+                    m_GraphView.FocusOnNode(m_LastSelectedNode);
+                }
+                else if (m_GraphView.selection.Count == 1 &&
+                         m_GraphView.selection.FirstOrDefault() is GameObjectGraphNode selectedNode)
+                {
+                    m_GraphView.FocusOnNode(selectedNode);
+                    m_LastSelectedNode = selectedNode;
+                }
+                else
+                {
+                    // No selection, turn focus mode back off
+                    m_IsFocusMode = false;
+                    m_FocusModeButton.text = "Focus Mode: Off";
+                    m_FocusModeButton.RemoveFromClassList("focus-mode-active");
+                    ShowMessage("Please select a GameObject node to use Focus Mode");
+                }
+            }
+            else
+            {
+                m_FocusModeButton.text = "Focus Mode: Off";
+                m_FocusModeButton.RemoveFromClassList("focus-mode-active");
+                m_GraphView.ClearFocusMode();
+            }
         }
     }
 }

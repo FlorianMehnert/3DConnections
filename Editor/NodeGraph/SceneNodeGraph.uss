@@ -185,9 +185,15 @@
 }
 
 @keyframes search-pulse {
-    0% { border-color: #FFA500; }
-    50% { border-color: #FFD700; }
-    100% { border-color: #FFA500; }
+    0% {
+        border-color: #FFA500;
+    }
+    50% {
+        border-color: #FFD700;
+    }
+    100% {
+        border-color: #FFA500;
+    }
 }
 
 /* Focus Mode Styles */
@@ -210,7 +216,8 @@
 /* Hidden Elements */
 .hidden {
     display: none !important;
-} 
+}
+
 /* GameObject Node Styles */
 .gameobject-node {
     background-color: #2d2d30;
@@ -319,3 +326,22 @@
     border-top-width: 2px;
     border-bottom-width: 2px;
 }
+
+.focus-exit-button {
+    background-color: #FFD700;
+    color: #000000;
+    border-radius: 5px;
+    font-weight: bold;
+    border-width: 1px;
+    border-color: #FFA500;
+}
+
+.focus-exit-button:hover {
+    background-color: #FFA500;
+}
+
+.focus-mode-active {
+    background-color: #4CAF50;
+    color: white;
+}
+

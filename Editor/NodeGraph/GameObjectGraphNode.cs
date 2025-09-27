@@ -48,7 +48,11 @@
                 _ => SetHighlighted(true),
                 DropdownMenuAction.AlwaysEnabled);
             evt.menu.AppendAction("Disable Highlight", _ => SetHighlighted(false), DropdownMenuAction.AlwaysEnabled);
+
+            // Add Focus View option
+            evt.menu.AppendAction("Focus View", _ => m_GraphView.FocusOnNode(this), DropdownMenuAction.AlwaysEnabled);
         }
+
 
         private void CreatePorts()
         {
@@ -220,7 +224,7 @@
                 borderStyle.borderRightWidth = 0;
             }
         }
-        
+
         public ComponentElement GetComponentElementFromPort(Port port)
         {
             foreach (var componentElement in m_ComponentElements.Values)
@@ -228,8 +232,8 @@
                 if (componentElement.ReferenceOutputPorts.ContainsValue(port))
                     return componentElement;
             }
+
             return null;
         }
-
     }
 }
