@@ -597,6 +597,10 @@ namespace _3DConnections.Editor.NodeGraph
                 output = parentNode.HierarchyOutputPort,
                 input = node.HierarchyInputPort
             };
+    
+            edge.output.Connect(edge);
+            edge.input.Connect(edge);
+    
             edge.AddToClassList("hierarchy-edge");
             AddElement(edge);
         }
@@ -699,7 +703,11 @@ namespace _3DConnections.Editor.NodeGraph
                 output = activeOutputPort,
                 input = targetPort
             };
-            
+    
+            // Properly connect the edge to the ports
+            edge.output.Connect(edge);
+            edge.input.Connect(edge);
+    
             // Apply styling
             edge.AddToClassList(targetNode is AssetReferenceNode ? "asset-reference-edge" : "reference-edge");
 
@@ -768,7 +776,15 @@ namespace _3DConnections.Editor.NodeGraph
 
             ports.ForEach((port) =>
             {
-                if (startPort == port || startPort.node == port.node || startPort.direction == port.direction) return;
+                if (startPort == port || startPort.node == port.node || startPort.direction == port.direction) 
+                    return;
+            
+                // Check if target port already has a connection (for single capacity ports)
+                if (port.capacity == Port.Capacity.Single && port.connected)
+                {
+                    // Optionally disconnect existing connection or skip this port
+                    return;
+                }
                 // Additional compatibility checks for reference ports
                 if (startPort.userData is ReferencePortData || port.userData is ReferencePortData)
                 {
@@ -805,7 +821,6 @@ namespace _3DConnections.Editor.NodeGraph
 
         public void UpdateComponentEdgeRouting(GameObjectGraphNode node, ComponentElement componentElement, bool isExpanded)
         {
-            // Get all reference edge data for this component
             var componentEdgeData = m_ReferenceEdgeData
                 .Where(kvp => kvp.Value.ComponentElement == componentElement)
                 .ToList();
@@ -815,23 +830,32 @@ namespace _3DConnections.Editor.NodeGraph
                 var edgeData = kvp.Value;
                 var componentPort = edgeData.OriginalOutputPort;
         
-                // Find the current edge (it could be connected to either port)
-                var currentEdge = graphElements.OfType<Edge>().FirstOrDefault(edge => edge.input == edgeData.TargetPort && (edge.output == componentPort || edge.output == node.CollapsedReferenceOutputPort));
+                // Find and properly disconnect the current edge
+                var currentEdge = graphElements.OfType<Edge>().FirstOrDefault(edge => 
+                    edge.input == edgeData.TargetPort && 
+                    (edge.output == componentPort || edge.output == node.CollapsedReferenceOutputPort));
 
-                if (currentEdge == null) continue;
-                // Remove current edge
-                RemoveElement(currentEdge);
-            
+                if (currentEdge != null)
+                {
+                    // Properly disconnect from ports before removing
+                    currentEdge.output?.Disconnect(currentEdge);
+                    currentEdge.input?.Disconnect(currentEdge);
+                    RemoveElement(currentEdge);
+                }
+        
                 // Create new edge with appropriate output port
                 var newOutputPort = isExpanded ? componentPort : node.CollapsedReferenceOutputPort;
-            
+        
                 var newEdge = new Edge
                 {
                     output = newOutputPort,
                     input = edgeData.TargetPort
                 };
-            
-                // Apply appropriate styling
+        
+                // Properly connect the new edge
+                newEdge.output.Connect(newEdge);
+                newEdge.input.Connect(newEdge);
+        
                 newEdge.AddToClassList(edgeData.TargetNode is AssetReferenceNode
                     ? "asset-reference-edge"
                     : "reference-edge");
@@ -839,6 +863,7 @@ namespace _3DConnections.Editor.NodeGraph
                 AddElement(newEdge);
             }
         }
+
 
 
         // Helper class to store original connection information
