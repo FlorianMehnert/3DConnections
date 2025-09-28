@@ -367,13 +367,6 @@ namespace _3DConnections.Editor.NodeGraph
             }
         }
 
-        public void SetFocusMode(GameObjectGraphNode focusNode)
-        {
-            m_FocusMode = focusNode != null;
-            m_FocusedNode = focusNode;
-            ApplyFilters();
-        }
-
         private bool ArePortsVisible(Port inputPort, Port outputPort)
         {
             // Check if ports are visible based on node expansion state
@@ -578,7 +571,7 @@ namespace _3DConnections.Editor.NodeGraph
                 node.SetExpanded(false);
             }
 
-            UpdateAllEdgeVisibility();
+            UpdateAllEdgeRouting();
             ApplyFilters();
         }
 
@@ -589,8 +582,16 @@ namespace _3DConnections.Editor.NodeGraph
                 node.SetExpanded(true);
             }
 
-            UpdateAllEdgeVisibility();
+            UpdateAllEdgeRouting();
             ApplyFilters();
+        }
+
+        private void UpdateAllEdgeRouting()
+        {
+            foreach (var node in m_GameObjectNodes.Values)
+            {
+                UpdateEdgeRoutingForNode(node);
+            }
         }
 
 
@@ -684,37 +685,46 @@ namespace _3DConnections.Editor.NodeGraph
             Node targetNode = null;
             Port targetPort = null;
 
-            // Check if it's a GameObject or Component reference
-            if (referencedObject is GameObject targetGameObject)
+            switch (referencedObject)
             {
-                if (m_GameObjectNodes.TryGetValue(targetGameObject, out var gameObjectNode))
+                // Check if it's a GameObject or Component reference
+                case GameObject targetGameObject:
                 {
-                    targetNode = gameObjectNode;
-                    targetPort = gameObjectNode.ReferenceInputPort;
-                }
-            }
-            else if (referencedObject is Component targetComponent)
-            {
-                if (m_GameObjectNodes.TryGetValue(targetComponent.gameObject, out var gameObjectNode))
-                {
-                    targetNode = gameObjectNode;
-                    targetPort = gameObjectNode.ReferenceInputPort;
-                }
-            }
-            // Check if it's an asset reference
-            else
-            {
-                // For sprites from sprite sheets, connect to the texture asset node
-                Object assetToConnect = referencedObject;
-                if (referencedObject is Sprite sprite && sprite.texture != null)
-                {
-                    assetToConnect = sprite.texture;
-                }
+                    if (m_GameObjectNodes.TryGetValue(targetGameObject, out var gameObjectNode))
+                    {
+                        targetNode = gameObjectNode;
+                        targetPort = gameObjectNode.ReferenceInputPort;
+                    }
 
-                if (m_AssetNodes.TryGetValue(assetToConnect, out var assetNode))
+                    break;
+                }
+                case Component targetComponent:
                 {
-                    targetNode = assetNode;
-                    targetPort = assetNode.ReferenceInputPort;
+                    if (m_GameObjectNodes.TryGetValue(targetComponent.gameObject, out var gameObjectNode))
+                    {
+                        targetNode = gameObjectNode;
+                        targetPort = gameObjectNode.ReferenceInputPort;
+                    }
+
+                    break;
+                }
+                // Check if it's an asset reference
+                default:
+                {
+                    // For sprites from sprite sheets, connect to the texture asset node
+                    Object assetToConnect = referencedObject;
+                    if (referencedObject is Sprite sprite && sprite.texture != null)
+                    {
+                        assetToConnect = sprite.texture;
+                    }
+
+                    if (m_AssetNodes.TryGetValue(assetToConnect, out var assetNode))
+                    {
+                        targetNode = assetNode;
+                        targetPort = assetNode.ReferenceInputPort;
+                    }
+
+                    break;
                 }
             }
 
@@ -745,57 +755,42 @@ namespace _3DConnections.Editor.NodeGraph
         }
 
         public void UpdateEdgeVisibilityForNode(GameObjectGraphNode node)
-{
-    foreach (var edge in graphElements.OfType<Edge>())
-    {
-        bool shouldUpdateEdge = false;
-        bool shouldShow = true;
-
-        // Check if this edge is connected to the toggled node
-        if (edge.output?.node == node)
         {
-            shouldUpdateEdge = true;
-            // If the node is collapsed and this is a component reference output port, hide the edge
-            if (!node.IsExpanded && node.GetComponentElementFromPort(edge.output) != null)
+            foreach (var edge in graphElements.OfType<Edge>())
             {
-                shouldShow = false;
-            }
-        }
+                bool shouldUpdateEdge = false;
+                bool shouldShow = true;
 
-        if (edge.input?.node == node)
-        {
-            shouldUpdateEdge = true;
-            // If the node is collapsed and this is a component reference input port, hide the edge
-            if (!node.IsExpanded && node.GetComponentElementFromPort(edge.input) != null)
-            {
-                shouldShow = false;
-            }
-        }
-
-        // Only update edges that are actually connected to this node
-        if (shouldUpdateEdge)
-        {
-            // Also check the other end of the edge to make sure it should be visible
-            if (shouldShow)
-            {
-                // Check if the other end is also expanded (if it's a GameObjectGraphNode)
-                if (edge.output?.node is GameObjectGraphNode otherOutputNode && edge.output.node != node)
+                // Check if this edge is connected to the toggled node
+                if (edge.output?.node == node || edge.input?.node == node)
                 {
-                    if (!otherOutputNode.IsExpanded && otherOutputNode.GetComponentElementFromPort(edge.output) != null)
-                        shouldShow = false;
+                    shouldUpdateEdge = true;
+
+                    // Always show edges connected to collapsed ports when node is collapsed
+                    if (!node.IsExpanded)
+                    {
+                        bool isCollapsedPortEdge = (edge.output == node.CollapsedReferenceOutputPort) ||
+                                                   (edge.input == node.CollapsedReferenceInputPort);
+                        shouldShow = isCollapsedPortEdge;
+                    }
+                    else
+                    {
+                        // When expanded, show individual component port edges
+                        bool isComponentPortEdge = (node.GetComponentElementFromPort(edge.output) != null) ||
+                                                   (node.GetComponentElementFromPort(edge.input) != null);
+                        shouldShow = isComponentPortEdge ||
+                                     edge.output == node.HierarchyOutputPort ||
+                                     edge.input == node.HierarchyInputPort ||
+                                     edge.input == node.ReferenceInputPort;
+                    }
                 }
-                
-                if (edge.input?.node is GameObjectGraphNode otherInputNode && edge.input.node != node)
+
+                if (shouldUpdateEdge)
                 {
-                    if (!otherInputNode.IsExpanded && otherInputNode.GetComponentElementFromPort(edge.input) != null)
-                        shouldShow = false;
+                    edge.style.display = shouldShow ? DisplayStyle.Flex : DisplayStyle.None;
                 }
             }
-
-            edge.style.display = shouldShow ? DisplayStyle.Flex : DisplayStyle.None;
         }
-    }
-}
 
 
         public void UpdateAllEdgeVisibility()
@@ -891,6 +886,115 @@ namespace _3DConnections.Editor.NodeGraph
             });
 
             return compatiblePorts;
+        }
+
+        public void UpdateEdgeRoutingForNode(GameObjectGraphNode node)
+        {
+            var edgesToUpdate = new List<Edge>();
+
+            // Find all edges connected to this node's component ports
+            foreach (var edge in graphElements.OfType<Edge>())
+            {
+                bool isComponentEdge = false;
+
+                // Check if edge connects to/from component ports of this node
+                if (edge.output?.node == node && node.GetComponentElementFromPort(edge.output) != null)
+                {
+                    isComponentEdge = true;
+                }
+                else if (edge.input?.node == node && node.GetComponentElementFromPort(edge.input) != null)
+                {
+                    isComponentEdge = true;
+                }
+
+                if (isComponentEdge)
+                {
+                    edgesToUpdate.Add(edge);
+                }
+            }
+
+            // Reroute edges based on expansion state
+            foreach (var edge in edgesToUpdate)
+            {
+                RerouteEdgeForNodeState(edge, node);
+            }
+        }
+
+        private void RerouteEdgeForNodeState(Edge edge, GameObjectGraphNode node)
+        {
+            Port newOutputPort = edge.output;
+            Port newInputPort = edge.input;
+
+            // Handle output port rerouting
+            if (edge.output?.node == node)
+            {
+                if (node.IsExpanded)
+                {
+                    // Node is expanded - edge should connect to specific component port
+                    // The original component port should already be stored or can be determined
+                    // from the edge's userData or by finding the appropriate component port
+                }
+                else
+                {
+                    // Node is collapsed - reroute to collapsed output port
+                    newOutputPort = node.CollapsedReferenceOutputPort;
+                }
+            }
+
+            // Handle input port rerouting  
+            if (edge.input?.node == node)
+            {
+                if (node.IsExpanded)
+                {
+                    // Node is expanded - edge should connect to specific component port or main reference port
+                    // Determine appropriate target port based on connection type
+                }
+                else
+                {
+                    // Node is collapsed - reroute to collapsed input port
+                    newInputPort = node.CollapsedReferenceInputPort;
+                }
+            }
+
+            // Only recreate edge if ports actually changed
+            if (newOutputPort != edge.output || newInputPort != edge.input)
+            {
+                // Store edge data before removing
+                var edgeData = new EdgeConnectionData
+                {
+                    OriginalOutputPort = edge.output,
+                    OriginalInputPort = edge.input,
+                    OutputNode = edge.output?.node,
+                    InputNode = edge.input?.node
+                };
+
+                // Remove old edge
+                RemoveElement(edge);
+
+                // Create new edge with rerouted ports
+                var newEdge = new Edge
+                {
+                    output = newOutputPort,
+                    input = newInputPort
+                };
+
+                // Preserve edge styling
+                newEdge.AddToClassList(edge.GetClasses().FirstOrDefault() ?? "reference-edge");
+
+                // Store connection data for future rerouting
+                newEdge.userData = edgeData;
+
+                AddElement(newEdge);
+            }
+        }
+
+        // Helper class to store original connection information
+        private class EdgeConnectionData
+        {
+            public Port OriginalOutputPort;
+            public Port OriginalInputPort;
+            public Node OutputNode;
+            public Node InputNode;
         }
     }
 }

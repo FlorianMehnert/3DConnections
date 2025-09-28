@@ -15,6 +15,9 @@
         private Dictionary<string, ComponentElement> m_ComponentElements = new();
         private SceneGraphView m_GraphView;
         private VisualElement m_NodeBorder;
+        
+        private Port m_CollapsedReferenceOutputPort;
+        private Port m_CollapsedReferenceInputPort;
 
         public GameObject GameObject => m_GameObject;
         public Port HierarchyOutputPort { get; private set; }
@@ -75,6 +78,13 @@
             ReferenceInputPort.portName = "Referenced By";
             ReferenceInputPort.AddToClassList("reference-port");
             inputContainer.Add(ReferenceInputPort);
+            
+            m_CollapsedReferenceOutputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi,
+                typeof(Object));
+            m_CollapsedReferenceOutputPort.portName = "Component Refs";
+            m_CollapsedReferenceOutputPort.AddToClassList("collapsed-reference-port");
+            m_CollapsedReferenceOutputPort.style.display = DisplayStyle.Flex;
+            outputContainer.Add(m_CollapsedReferenceOutputPort);
         }
 
         private void CreateHeader()
@@ -167,21 +177,29 @@
             // Update component element visibility and ports
             foreach (var componentElement in m_ComponentElements.Values)
             {
-                // Show/hide the component elements themselves
                 componentElement.style.display = m_IsExpanded ? DisplayStyle.Flex : DisplayStyle.None;
 
-                // Update port visibility - only show component ports when expanded
+                // Update individual component port visibility
                 foreach (var port in componentElement.ReferenceOutputPorts.Values)
                 {
                     port.style.display = m_IsExpanded ? DisplayStyle.Flex : DisplayStyle.None;
                 }
             }
 
+            // Toggle collapsed reference ports visibility
+            m_CollapsedReferenceOutputPort.style.display = m_IsExpanded ? DisplayStyle.None : DisplayStyle.Flex;
+            m_CollapsedReferenceInputPort.style.display = m_IsExpanded ? DisplayStyle.None : DisplayStyle.Flex;
+
             RefreshExpandedState();
 
-            // ONLY update edge visibility for THIS node, don't call ApplyFilters()
-            m_GraphView?.UpdateEdgeVisibilityForNode(this);
+            // Update edge routing for this node
+            m_GraphView?.UpdateEdgeRoutingForNode(this);
         }
+
+        // Add public accessors for collapsed ports
+        public Port CollapsedReferenceOutputPort => m_CollapsedReferenceOutputPort;
+        public Port CollapsedReferenceInputPort => m_CollapsedReferenceInputPort;
+    
 
 
         public override void OnSelected()
@@ -213,17 +231,10 @@
             }
             else
             {
-                if (highlightColor.HasValue)
-                {
-                    borderStyle.borderBottomColor = highlightColor.Value;
-                    borderStyle.borderTopColor = highlightColor.Value;
-                    borderStyle.borderLeftColor = highlightColor.Value;
-                    borderStyle.borderRightColor = highlightColor.Value;
                     borderStyle.borderBottomWidth = 0;
                     borderStyle.borderTopWidth = 0;
                     borderStyle.borderLeftWidth = 0;
                     borderStyle.borderRightWidth = 0;
-                }
             }
         }
 
