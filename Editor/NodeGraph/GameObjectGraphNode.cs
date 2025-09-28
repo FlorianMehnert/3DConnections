@@ -137,7 +137,7 @@
 
         private void CreateComponentElement(Component component)
         {
-            var componentElement = new ComponentElement(component, this);
+            var componentElement = new ComponentElement(component, this, m_GraphView);
             m_ComponentElements[component.GetType().Name] = componentElement;
             m_ComponentContainer.Add(componentElement);
         }
@@ -186,9 +186,7 @@
                 }
             }
 
-            // Toggle collapsed reference ports visibility
             m_CollapsedReferenceOutputPort.style.display = m_IsExpanded ? DisplayStyle.None : DisplayStyle.Flex;
-            m_CollapsedReferenceInputPort.style.display = m_IsExpanded ? DisplayStyle.None : DisplayStyle.Flex;
 
             RefreshExpandedState();
 
@@ -199,7 +197,6 @@
         // Add public accessors for collapsed ports
         public Port CollapsedReferenceOutputPort => m_CollapsedReferenceOutputPort;
         public Port CollapsedReferenceInputPort => m_CollapsedReferenceInputPort;
-    
 
 
         public override void OnSelected()
@@ -238,15 +235,9 @@
             }
         }
 
-        public ComponentElement GetComponentElementFromPort(Port port)
+        public void OnComponentElementToggled(ComponentElement componentElement)
         {
-            foreach (var componentElement in m_ComponentElements.Values)
-            {
-                if (componentElement.ReferenceOutputPorts.ContainsValue(port))
-                    return componentElement;
-            }
-
-            return null;
+            m_GraphView?.UpdateComponentEdgeRouting(this, componentElement, m_IsExpanded && componentElement.IsExpanded);
         }
     }
 }

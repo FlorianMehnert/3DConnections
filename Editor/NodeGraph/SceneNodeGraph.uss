@@ -42,6 +42,11 @@
     --edge-width: 3px;
 }
 
+.highlighted-edge {
+    --edge-color: darkSeaGreen;
+    --edge-width: 4px;
+}
+
 /* Asset Reference Node Styles */
 .asset-node {
     background-color: #2d4a2d;
@@ -211,6 +216,12 @@
 
 .graph-view-focus-mode .edge.focus-visible {
     opacity: 1.0;
+}
+
+.edge .highlighted-edge {
+    --selected-edge-color: #FF0000;
+    --ghost-edge-color: #FF0000;
+    --edge-color: #FF0000;
 }
 
 /* Hidden Elements */
