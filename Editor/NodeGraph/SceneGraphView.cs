@@ -280,11 +280,11 @@ namespace _3DConnections.Editor.NodeGraph
                 {
                     var inputVisible = edge.input?.node != null && m_VisibleNodes.Contains(edge.input.node);
                     var outputVisible = edge.output?.node != null && m_VisibleNodes.Contains(edge.output.node);
-    
+
                     // Also check if the ports themselves are visible
                     var inputPortVisible = edge.input?.style.display != DisplayStyle.None;
                     var outputPortVisible = edge.output?.style.display != DisplayStyle.None;
-    
+
                     if (inputVisible && outputVisible && inputPortVisible && outputPortVisible)
                     {
                         edge.style.display = DisplayStyle.Flex;
@@ -384,7 +384,17 @@ namespace _3DConnections.Editor.NodeGraph
             var referencedAssets = new HashSet<Object>();
 
             // Collect all referenced assets from components
-            foreach (var property in from gameObjectNode in m_GameObjectNodes.Values select gameObjectNode.GameObject.GetComponents<Component>() into components from component in components where component != null select new SerializedObject(component) into serializedObject select serializedObject.GetIterator() into property where property.NextVisible(true) select property)
+            foreach (var property in from gameObjectNode in m_GameObjectNodes.Values
+                     select gameObjectNode.GameObject.GetComponents<Component>()
+                     into components
+                     from component in components
+                     where component != null
+                     select new SerializedObject(component)
+                     into serializedObject
+                     select serializedObject.GetIterator()
+                     into property
+                     where property.NextVisible(true)
+                     select property)
             {
                 do
                 {
@@ -454,14 +464,131 @@ namespace _3DConnections.Editor.NodeGraph
 
         private GraphViewChange OnGraphViewChanged(GraphViewChange graphViewChange)
         {
-            if (graphViewChange.edgesToCreate == null) return graphViewChange;
-            foreach (var edge in graphViewChange.edgesToCreate)
+            // Handle edge creation
+            if (graphViewChange.edgesToCreate != null)
             {
-                HandleConnectionCreated(edge);
+                foreach (var edge in graphViewChange.edgesToCreate)
+                {
+                    // Check if this is a hierarchy edge
+                    if (IsHierarchyEdge(edge))
+                    {
+                        HandleHierarchyConnectionCreated(edge);
+                    }
+                    else
+                    {
+                        HandleConnectionCreated(edge);
+                    }
+                }
+            }
+
+            // Handle edge removal
+            if (graphViewChange.elementsToRemove != null)
+            {
+                foreach (var element in graphViewChange.elementsToRemove)
+                {
+                    if (element is Edge edge && IsHierarchyEdge(edge))
+                    {
+                        HandleHierarchyConnectionRemoved(edge);
+                    }
+                }
             }
 
             return graphViewChange;
         }
+
+        private bool IsHierarchyEdge(Edge edge)
+        {
+            // Check if the ports are hierarchy ports
+            return edge.output?.node is GameObjectGraphNode outputNode &&
+                   edge.input?.node is GameObjectGraphNode inputNode &&
+                   edge.output == outputNode.HierarchyOutputPort &&
+                   edge.input == inputNode.HierarchyInputPort;
+        }
+
+        private void HandleHierarchyConnectionCreated(Edge edge)
+        {
+            if (edge.output?.node is not GameObjectGraphNode parentNode || 
+                edge.input?.node is not GameObjectGraphNode childNode)
+                return;
+
+            var parentGameObject = parentNode.GameObject;
+            var childGameObject = childNode.GameObject;
+    
+            // Show confirmation dialog
+            if (!EditorUtility.DisplayDialog("Change Hierarchy", 
+                    $"Set '{childGameObject.name}' as child of '{parentGameObject.name}'?", 
+                    "Yes", "Cancel"))
+            {
+                // User cancelled - remove the edge
+                schedule.Execute(() => {
+                    edge.output?.Disconnect(edge);
+                    edge.input?.Disconnect(edge);
+                    RemoveElement(edge);
+                });
+                return;
+            }
+
+            // Prevent circular dependencies
+            if (IsCircularDependency(parentGameObject, childGameObject))
+            {
+                EditorUtility.DisplayDialog("Invalid Operation",
+                    "Cannot create this hierarchy connection as it would create a circular dependency.", "OK");
+
+                // Remove the edge
+                schedule.Execute(() =>
+                {
+                    edge.output?.Disconnect(edge);
+                    edge.input?.Disconnect(edge);
+                    RemoveElement(edge);
+                });
+                return;
+            }
+
+            // Record undo operation
+            Undo.RecordObject(childGameObject.transform, $"Set Parent to {parentGameObject.name}");
+
+            // Update the actual transform hierarchy
+            childGameObject.transform.SetParent(parentGameObject.transform);
+
+            // Mark the scene as dirty
+            EditorUtility.SetDirty(childGameObject);
+
+            // Add hierarchy edge styling
+            edge.AddToClassList("hierarchy-edge");
+        }
+
+        private void HandleHierarchyConnectionRemoved(Edge edge)
+        {
+            if (edge.input?.node is not GameObjectGraphNode childNode)
+                return;
+
+            var childGameObject = childNode.GameObject;
+
+            // Record undo operation
+            Undo.RecordObject(childGameObject.transform, "Remove Parent");
+
+            // Remove from parent (make it a root object)
+            childGameObject.transform.SetParent(null);
+
+            // Mark the scene as dirty
+            EditorUtility.SetDirty(childGameObject);
+        }
+
+        private bool IsCircularDependency(GameObject potentialParent, GameObject potentialChild)
+        {
+            // Check if potentialParent is already a child of potentialChild
+            Transform current = potentialParent.transform;
+
+            while (current != null)
+            {
+                if (current.gameObject == potentialChild)
+                    return true;
+                current = current.parent;
+            }
+
+            return false;
+        }
+
 
         private void HandleConnectionCreated(Edge edge)
         {
@@ -597,10 +724,10 @@ namespace _3DConnections.Editor.NodeGraph
                 output = parentNode.HierarchyOutputPort,
                 input = node.HierarchyInputPort
             };
-    
+
             edge.output.Connect(edge);
             edge.input.Connect(edge);
-    
+
             edge.AddToClassList("hierarchy-edge");
             AddElement(edge);
         }
@@ -697,22 +824,22 @@ namespace _3DConnections.Editor.NodeGraph
                 // Component is expanded - use the component's specific port
                 activeOutputPort = componentPort;
             }
-            
+
             var edge = new Edge
             {
                 output = activeOutputPort,
                 input = targetPort
             };
-    
+
             // Properly connect the edge to the ports
             edge.output.Connect(edge);
             edge.input.Connect(edge);
-    
+
             // Apply styling
             edge.AddToClassList(targetNode is AssetReferenceNode ? "asset-reference-edge" : "reference-edge");
 
             AddElement(edge);
-            
+
             // Store edge data for tracking
             var edgeKey = $"{component.GetInstanceID()}_{property.propertyPath}";
             m_ReferenceEdgeData[edgeKey] = new ReferenceEdgeData
@@ -776,15 +903,50 @@ namespace _3DConnections.Editor.NodeGraph
 
             ports.ForEach((port) =>
             {
-                if (startPort == port || startPort.node == port.node || startPort.direction == port.direction) 
+                if (startPort == port || startPort.node == port.node || startPort.direction == port.direction)
                     return;
-            
+
+                // Special handling for hierarchy ports
+                if (startPort.node is GameObjectGraphNode startGameObjectNode &&
+                    port.node is GameObjectGraphNode targetGameObjectNode)
+                {
+                    // Check if these are hierarchy ports
+                    bool isStartHierarchyPort = startPort == startGameObjectNode.HierarchyOutputPort ||
+                                                startPort == startGameObjectNode.HierarchyInputPort;
+                    bool isTargetHierarchyPort = port == targetGameObjectNode.HierarchyOutputPort ||
+                                                 port == targetGameObjectNode.HierarchyInputPort;
+
+                    if (isStartHierarchyPort && isTargetHierarchyPort)
+                    {
+                        // Only allow hierarchy connections between GameObjects
+                        // Check for single capacity on input ports
+                        if (port.capacity == Port.Capacity.Single && port.connected)
+                        {
+                            // For hierarchy input ports, we might want to allow replacement
+                            // Disconnect the existing connection first
+                            var existingEdge = port.connections.FirstOrDefault();
+                            if (existingEdge != null)
+                            {
+                                schedule.Execute(() =>
+                                {
+                                    existingEdge.output?.Disconnect(existingEdge);
+                                    existingEdge.input?.Disconnect(existingEdge);
+                                    RemoveElement(existingEdge);
+                                });
+                            }
+                        }
+
+                        compatiblePorts.Add(port);
+                        return;
+                    }
+                }
+
                 // Check if target port already has a connection (for single capacity ports)
                 if (port.capacity == Port.Capacity.Single && port.connected)
                 {
-                    // Optionally disconnect existing connection or skip this port
                     return;
                 }
+
                 // Additional compatibility checks for reference ports
                 if (startPort.userData is ReferencePortData || port.userData is ReferencePortData)
                 {
@@ -795,8 +957,9 @@ namespace _3DConnections.Editor.NodeGraph
                         compatiblePorts.Add(port);
                     }
                 }
-                else
+                else if (!(startPort.node is GameObjectGraphNode) || !(port.node is GameObjectGraphNode))
                 {
+                    // Allow connections for non-GameObject nodes (like AssetReferenceNode)
                     compatiblePorts.Add(port);
                 }
             });
@@ -804,10 +967,11 @@ namespace _3DConnections.Editor.NodeGraph
             return compatiblePorts;
         }
 
+
         public void UpdateEdgeRoutingForNode(GameObjectGraphNode node)
         {
             var components = node.GameObject.GetComponents<Component>();
-    
+
             foreach (var component in components)
             {
                 var componentElement = node.GetComponentElement(component);
@@ -819,7 +983,8 @@ namespace _3DConnections.Editor.NodeGraph
         }
 
 
-        public void UpdateComponentEdgeRouting(GameObjectGraphNode node, ComponentElement componentElement, bool isExpanded)
+        public void UpdateComponentEdgeRouting(GameObjectGraphNode node, ComponentElement componentElement,
+            bool isExpanded)
         {
             var componentEdgeData = m_ReferenceEdgeData
                 .Where(kvp => kvp.Value.ComponentElement == componentElement)
@@ -829,10 +994,10 @@ namespace _3DConnections.Editor.NodeGraph
             {
                 var edgeData = kvp.Value;
                 var componentPort = edgeData.OriginalOutputPort;
-        
+
                 // Find and properly disconnect the current edge
-                var currentEdge = graphElements.OfType<Edge>().FirstOrDefault(edge => 
-                    edge.input == edgeData.TargetPort && 
+                var currentEdge = graphElements.OfType<Edge>().FirstOrDefault(edge =>
+                    edge.input == edgeData.TargetPort &&
                     (edge.output == componentPort || edge.output == node.CollapsedReferenceOutputPort));
 
                 if (currentEdge != null)
@@ -842,20 +1007,20 @@ namespace _3DConnections.Editor.NodeGraph
                     currentEdge.input?.Disconnect(currentEdge);
                     RemoveElement(currentEdge);
                 }
-        
+
                 // Create new edge with appropriate output port
                 var newOutputPort = isExpanded ? componentPort : node.CollapsedReferenceOutputPort;
-        
+
                 var newEdge = new Edge
                 {
                     output = newOutputPort,
                     input = edgeData.TargetPort
                 };
-        
+
                 // Properly connect the new edge
                 newEdge.output.Connect(newEdge);
                 newEdge.input.Connect(newEdge);
-        
+
                 newEdge.AddToClassList(edgeData.TargetNode is AssetReferenceNode
                     ? "asset-reference-edge"
                     : "reference-edge");
@@ -863,7 +1028,6 @@ namespace _3DConnections.Editor.NodeGraph
                 AddElement(newEdge);
             }
         }
-
 
 
         // Helper class to store original connection information
